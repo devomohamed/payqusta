@@ -18,8 +18,8 @@ if (hasBackofficeToken && !isPortalPath) {
   });
 }
 
-// Register PWA Service Worker in production only.
-if (import.meta.env.PROD) {
+// Register PWA Service Worker only on secure contexts (HTTPS/localhost).
+if (import.meta.env.PROD && window.isSecureContext) {
   const updateSW = registerSW({
     onNeedRefresh() {
       if (confirm('تحديث جديد متاح. هل تريد التحديث؟')) {
@@ -31,7 +31,7 @@ if (import.meta.env.PROD) {
     },
   });
 } else if ('serviceWorker' in navigator) {
-  // Prevent stale SW from hijacking Vite dev module requests.
+  // Prevent stale SW from hijacking requests on non-secure origins.
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => registration.unregister());
   });
