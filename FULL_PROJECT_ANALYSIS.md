@@ -181,3 +181,55 @@ The main gap is not feature count; the main gap is consistency and hardening acr
 ## 8) Final Assessment
 
 The project is commercially promising and already functionally rich. The fastest path to value now is engineering hardening, not adding many new features. If the critical/high issues above are addressed in sequence, PayQusta can move from fast-moving implementation to stable production-grade SaaS.
+
+## 9) Status Re-Check (Second Review)
+
+Review date: 2026-02-23
+
+### Immediate Action List Status
+
+1. Enforce permission middleware on products/invoices/customers/settings routes.
+- Status: Partially done
+- Evidence:
+  - `src/routes/productRoutes.js` uses `checkPermission(...)` broadly.
+  - `src/routes/customerRoutes.js` uses `checkPermission(...)` broadly.
+  - `src/routes/invoiceRoutes.js` uses `checkPermission(...)` broadly.
+  - `src/routes/index.js` includes `checkPermission(...)` on users/suppliers/expenses/settings.
+- Gap: Not yet verified as 100% complete across every sensitive endpoint in all route files.
+
+2. Unify super-admin authorization checks in one place.
+- Status: Done
+- Evidence:
+  - No remaining inline checks found for `if (!req.user.isSuperAdmin)` in `src/controllers/superAdminController.js`.
+  - Super-admin gating handled by middleware route protection.
+
+3. Run UTF-8 text cleanup on frontend/backend/docs.
+- Status: Not done
+- Evidence:
+  - Garbled text still visible in files like `README.md` and various Arabic strings in source.
+
+4. Add CI workflow with test/build gates.
+- Status: Not done
+- Evidence:
+  - `.github/workflows` is not present.
+
+5. Add integration tests for subscription and payment critical paths.
+- Status: Not done (formal)
+- Evidence:
+  - No formal `*.test.*` / `*.spec.*` files under `src` and `client`.
+  - Ad-hoc scripts exist (`test_invoice_creation.js`, `test_analytics.js`, `scripts/run_smoke_tests.js`) but not integrated into a formal test suite/CI.
+
+### Additional Important Notes from Re-Check
+
+- Security/ops duplication still exists:
+  - Security stack appears duplicated between `src/middleware/security.js` and `server.js`.
+- Plan feature gating still partial:
+  - `whatsapp_notifications` check exists in `src/controllers/settingsController.js`.
+  - A centralized reusable `requireFeature(...)` middleware is still missing across premium modules.
+
+### Updated Recommendation Priority
+
+- P0: UTF-8 cleanup + CI workflow + formal tests.
+- P1: Complete permission coverage audit endpoint-by-endpoint.
+- P1: Centralize feature gating middleware and apply to premium features.
+- P2: Consolidate security middleware to one source of truth.

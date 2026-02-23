@@ -8,9 +8,10 @@
     "dev": "nodemon --max-http-header-size=81920 server.js",
     "seed": "node src/utils/seeder.js",
     "test": "jest --coverage",
-    "client:install": "cd client && npm install",
+    "client:install": "cd client && npm install --include=dev",
     "client:dev": "cd client && npm run dev",
     "client:build": "cd client && npm run build",
+    "postinstall": "npm run client:install && npm run client:build",
     "check:customers-encoding": "node scripts/check-customers-mojibake.js"
   },
   "dependencies": {

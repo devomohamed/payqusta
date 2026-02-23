@@ -227,7 +227,6 @@ class SettingsController {
    */
   testWhatsApp = catchAsync(async (req, res, next) => {
     const { phone } = req.body;
-    await this.ensureWhatsAppAllowed(req.tenantId);
     if (!phone) return next(AppError.badRequest('رقم الهاتف مطلوب للاختبار'));
 
     // Get current config info
@@ -303,7 +302,6 @@ class SettingsController {
    * Get all WhatsApp Templates from Meta account
    */
   checkWhatsAppTemplates = catchAsync(async (req, res, next) => {
-    await this.ensureWhatsAppAllowed(req.tenantId);
     // Get tenant whatsapp config for dynamic WABA_ID and template names
     const tenant = await Tenant.findById(req.tenantId);
     const tenantWhatsapp = tenant?.whatsapp;
@@ -393,7 +391,6 @@ class SettingsController {
    */
   applyTemplateMapping = catchAsync(async (req, res, next) => {
     const { wabaId, templateNames, templateLanguages } = req.body;
-    await this.ensureWhatsAppAllowed(req.tenantId);
 
     const updateData = {};
     if (wabaId) updateData['whatsapp.wabaId'] = wabaId;
