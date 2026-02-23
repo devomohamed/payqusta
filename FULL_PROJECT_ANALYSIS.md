@@ -227,6 +227,24 @@ Review date: 2026-02-23
   - `whatsapp_notifications` check exists in `src/controllers/settingsController.js`.
   - A centralized reusable `requireFeature(...)` middleware is still missing across premium modules.
 
+
+
+
+
+Name     : Ahmad elsheikh
+Type     : Forex Hedged USD
+Server   : MetaQuotes-Demo
+Login    : 103477700
+Password : GzMgL*M2
+Investor : WhNqA*7j
+
+
+
+
+
+
+
+
 ### Updated Recommendation Priority
 
 - P0: UTF-8 cleanup + CI workflow + formal tests.
