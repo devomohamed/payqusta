@@ -31,15 +31,19 @@ const addons = [
     }
 ];
 
+
+
+
 const seedDB = async () => {
     try {
+
         console.log('Clearing existing addons...');
         await Addon.deleteMany({});
-
         console.log('Inserting new addons...');
         await Addon.insertMany(addons);
 
         console.log('✅ Addons seeded successfully!');
+   
     } catch (err) {
         console.error('❌ Error seeding addons:', err);
     } finally {
