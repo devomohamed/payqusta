@@ -105,9 +105,10 @@ const corsOptions = {
 
 const isProduction = process.env.NODE_ENV === 'production';
 const hasHttps = process.env.ENABLE_HTTPS === 'true';
+const useSecureHeaders = isProduction && hasHttps;
 
 const helmetConfig = helmet({
-  contentSecurityPolicy: isProduction ? {
+  contentSecurityPolicy: useSecureHeaders ? {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
@@ -119,11 +120,11 @@ const helmetConfig = helmet({
     },
   } : false, // Disable CSP in development
   // Avoid secure-context headers when app is served over plain HTTP.
-  originAgentCluster: hasHttps,
-  crossOriginOpenerPolicy: hasHttps ? { policy: 'same-origin' } : false,
+  originAgentCluster: useSecureHeaders,
+  crossOriginOpenerPolicy: useSecureHeaders ? { policy: 'same-origin' } : false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   crossOriginEmbedderPolicy: false,
-  hsts: isProduction && hasHttps ? {
+  hsts: useSecureHeaders ? {
     maxAge: 31536000, // 1 year
     includeSubDomains: true,
     preload: true,
