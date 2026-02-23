@@ -171,12 +171,25 @@ const auditLog = (action, resource) => {
       // Log after successful response
       if (data.success) {
         const AuditLog = require('../models/AuditLog');
+        // Attempt to extract tenant ID from response if not available in req (e.g., when creating a tenant)
+        let resolvedTenant = req.tenantId;
+        if (!resolvedTenant && data.data) {
+          if (data.data.tenant && data.data.tenant._id) resolvedTenant = data.data.tenant._id;
+          else if (data.data._id && resource === 'tenant') resolvedTenant = data.data._id;
+        }
+
+        // Attempt to extract resourceId for nested responses like { tenant, owner }
+        let resolvedResourceId = req.params.id || data.data?._id;
+        if (!resolvedResourceId && data.data) {
+          if (data.data.tenant && data.data.tenant._id) resolvedResourceId = data.data.tenant._id;
+        }
+
         AuditLog.log({
-          tenant: req.tenantId,
+          tenant: resolvedTenant,
           user: req.user?._id,
           action,
           resource,
-          resourceId: req.params.id || data.data?._id,
+          resourceId: resolvedResourceId,
           details: { method: req.method, path: req.path },
           ipAddress: req.ip,
           userAgent: req.get('User-Agent'),
