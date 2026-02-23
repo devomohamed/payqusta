@@ -93,16 +93,6 @@ class PayQustaServer {
       next();
     });
 
-    // Enforce HTTPS in production when running behind proxy/load balancer.
-    this.app.use((req, res, next) => {
-      if (process.env.NODE_ENV !== 'production') return next();
-      const proto = req.headers['x-forwarded-proto'];
-      if (proto && proto !== 'https') {
-        return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
-      }
-      next();
-    });
-
     const security = require('./src/middleware/security');
 
     // Security headers with Helmet
