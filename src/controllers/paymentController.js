@@ -3,7 +3,7 @@
  * Handles payment link generation, webhooks, and transaction queries
  */
 
-const paymentGatewayService = require('../services/paymentGatewayService');
+const paymentGatewayService = require('../services/PaymentGatewayService');
 const PaymentTransaction = require('../models/PaymentTransaction');
 const catchAsync = require('../utils/catchAsync');
 const ApiResponse = require('../utils/ApiResponse');
