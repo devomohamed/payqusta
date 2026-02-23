@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Users, FileText, Truck,
   Settings, LogOut, X, Zap, BarChart3, Target, Receipt,
   AlertTriangle, ChevronDown, ChevronLeft, Boxes, Clock,
   PieChart, TrendingUp, Crown, Building2, Shield, Activity,
-  Upload, Database, Archive, DollarSign, ShoppingCart, Video,
+  Upload, Database, Archive, DollarSign, ShoppingCart, Video, Bell,
   ShoppingBag, RefreshCcw, MessageCircle, FileCheck, Star, Tag,
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 
 export default function Sidebar({ open, onClose }) {
   const { user, tenant, logout } = useAuthStore();
-  const navigate = useNavigate();
   const location = useLocation();
+  const isSystemSuperAdmin =
+    !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
 
   // Dropdown states
+  const [dashboardOpen, setDashboardOpen] = useState(
+    location.pathname === '/' || location.pathname === '/command-center'
+  );
   const [adminOpen, setAdminOpen] = useState(
     location.pathname.startsWith('/admin')
   );
@@ -28,17 +32,21 @@ export default function Sidebar({ open, onClose }) {
   const [toolsOpen, setToolsOpen] = useState(
     location.pathname === '/import' || location.pathname === '/backup'
   );
+  const [settingsOpen, setSettingsOpen] = useState(
+    location.pathname.startsWith('/settings') || location.pathname === '/admin/audit-logs'
+  );
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   // Check if paths are active
-  const isAdminActive = location.pathname.startsWith('/admin');
+  const isDashboardActive = location.pathname === '/' || location.pathname === '/command-center';
+  const isAdminActive = location.pathname.startsWith('/admin') && location.pathname !== '/admin/audit-logs';
   const isProductsActive = location.pathname.startsWith('/products') || location.pathname === '/low-stock';
   const isReportsActive = location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/business-reports';
   const isToolsActive = location.pathname === '/import' || location.pathname === '/backup';
+  const isSettingsActive = location.pathname.startsWith('/settings') || location.pathname === '/admin/audit-logs';
 
   const NavItem = ({ to, icon: Icon, label, end = false, badge = null }) => (
     <NavLink
@@ -97,9 +105,17 @@ export default function Sidebar({ open, onClose }) {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
+          {tenant?.branding?.logo ? (
+            <img
+              src={tenant.branding.logo}
+              alt="Logo"
+              className="w-11 h-11 object-contain"
+            />
+          ) : (
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+          )}
           <div>
             <h1 className="text-lg font-extrabold tracking-tight truncate max-w-[150px]">
               {user?.branch?.name || tenant?.name || 'PayQusta'}
@@ -112,7 +128,7 @@ export default function Sidebar({ open, onClose }) {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
         {/* Super Admin Section - Only for Super Admin */}
-        {user?.isSuperAdmin && (
+        {isSystemSuperAdmin && (
           <>
             <div className="px-2 py-2">
               <div className="flex items-center gap-2 text-xs font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
@@ -120,7 +136,8 @@ export default function Sidebar({ open, onClose }) {
                 <span>Super Admin</span>
               </div>
             </div>
-            <NavItem to="/super-admin" icon={Crown} label="لوحة التحكم الرئيسية" />
+            <NavItem to="/super-admin/plans" icon={Crown} label="إدارة الباقات والأسعار" />
+            <NavItem to="/super-admin/requests" icon={FileText} label="طلبات الاشتراك والإيصالات" />
             <NavItem to="/tenant-management" icon={Building2} label="إدارة المتاجر والفروع" />
             <div className="my-3 border-t border-gray-200 dark:border-gray-700"></div>
           </>
@@ -136,47 +153,73 @@ export default function Sidebar({ open, onClose }) {
               </div>
             </div>
 
-            <NavItem to="/admin/users" icon={Shield} label="الموظفين" />
+            <NavItem to="/admin/users" icon={Shield} label={isSystemSuperAdmin ? "مديري النظام" : "الموظفين"} />
             <NavItem to="/roles" icon={Shield} label="الصلاحيات والأدوار" />
-            <NavItem to="/admin/audit-logs" icon={Activity} label="سجل النشاطات" />
 
             <div className="my-3 border-t border-gray-200 dark:border-gray-700" />
           </>
         )}
 
         {/* Staff Tools - Cash Drawer (Shift Management) */}
-        {!user?.isSuperAdmin && (
+        {!isSystemSuperAdmin && (
           <NavItem to="/cash-drawer" icon={DollarSign} label="إدارة الخزينة (الوردية)" />
         )}
 
-        <NavItem to="/" icon={LayoutDashboard} label="لوحة التحكم" end />
-        <NavItem to="/quick-sale" icon={Zap} label="بيع سريع ⚡" />
-        <NavItem to="/command-center" icon={Target} label="مركز القيادة" />
-
-        {/* Products Dropdown */}
+        {/* Dashboard Dropdown */}
         <div>
           <DropdownButton
-            isOpen={productsOpen}
-            isActive={isProductsActive}
-            onClick={() => setProductsOpen(!productsOpen)}
-            icon={Package}
-            label="المنتجات"
+            isOpen={dashboardOpen}
+            isActive={isDashboardActive}
+            onClick={() => setDashboardOpen(!dashboardOpen)}
+            icon={LayoutDashboard}
+            label="الرئيسية"
           />
-          <div className={`overflow-hidden transition-all duration-200 ${productsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
+          <div className={`overflow-hidden transition-all duration-200 ${dashboardOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
-              <SubNavItem to="/products" icon={Boxes} label="كل المنتجات" />
-              <SubNavItem to="/stock-adjustments" icon={Archive} label="تسوية المخزون" />
-              <SubNavItem to="/low-stock" icon={AlertTriangle} label="نقص المخزون" />
+              <SubNavItem to="/" icon={LayoutDashboard} label="نظرة عامة" />
+              {!isSystemSuperAdmin && (
+                <SubNavItem to="/command-center" icon={Target} label="مركز القيادة" />
+              )}
             </div>
           </div>
         </div>
 
-        <NavItem to="/customers" icon={Users} label="العملاء" />
-        <NavItem to="/invoices" icon={FileText} label="الفواتير" />
-        {(user?.role === 'admin' || user?.isSuperAdmin) && (
+        {!isSystemSuperAdmin && (
+          <NavItem to="/quick-sale" icon={Zap} label="بيع سريع ⚡" />
+        )}
+
+        {/* Products Dropdown */}
+        {!isSystemSuperAdmin && (
+          <div>
+            <DropdownButton
+              isOpen={productsOpen}
+              isActive={isProductsActive}
+              onClick={() => setProductsOpen(!productsOpen)}
+              icon={Package}
+              label="المنتجات"
+            />
+            <div className={`overflow-hidden transition-all duration-200 ${productsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
+              <div className="space-y-1 py-1">
+                <SubNavItem to="/products" icon={Boxes} label="كل المنتجات" />
+                <SubNavItem to="/stock-adjustments" icon={Archive} label="تسوية المخزون" />
+                <SubNavItem to="/low-stock" icon={AlertTriangle} label="نقص المخزون" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isSystemSuperAdmin && (
+          <>
+            <NavItem to="/customers" icon={Users} label="العملاء" />
+            <NavItem to="/invoices" icon={FileText} label="الفواتير" />
+          </>
+        )}
+
+        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
           <NavItem to="/portal-orders" icon={ShoppingBag} label="طلبات البوابة" />
         )}
-        {(user?.role === 'admin' || user?.role === 'vendor') && (
+
+        {!isSystemSuperAdmin && (user?.role === 'admin' || user?.role === 'vendor') && (
           <>
             <NavItem to="/returns-management" icon={RefreshCcw} label="المرتجعات" />
             <NavItem to="/kyc-review" icon={FileCheck} label="مستندات العملاء" />
@@ -185,8 +228,13 @@ export default function Sidebar({ open, onClose }) {
             <NavItem to="/coupons" icon={Tag} label="كوبونات الخصم" />
           </>
         )}
-        <NavItem to="/suppliers" icon={Truck} label="الموردين" />
-        <NavItem to="/expenses" icon={Receipt} label="المصروفات" />
+
+        {!isSystemSuperAdmin && (
+          <>
+            <NavItem to="/suppliers" icon={Truck} label="الموردين" />
+            <NavItem to="/expenses" icon={Receipt} label="المصروفات" />
+          </>
+        )}
 
         {/* Reports Dropdown */}
         <div>
@@ -195,20 +243,29 @@ export default function Sidebar({ open, onClose }) {
             isActive={isReportsActive}
             onClick={() => setReportsOpen(!reportsOpen)}
             icon={BarChart3}
-            label="التقارير"
+            label={isSystemSuperAdmin ? "تحليلات النظام" : "التقارير"}
           />
           <div className={`overflow-hidden transition-all duration-200 ${reportsOpen ? 'max-h-60 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
-              <SubNavItem to="/reports" icon={PieChart} label="التقارير العامة" />
-              <SubNavItem to="/business-reports" icon={TrendingUp} label="التقارير التجارية" />
-              <SubNavItem to="/aging-report" icon={Clock} label="أعمار الديون" />
+              {isSystemSuperAdmin ? (
+                <>
+                  <SubNavItem to="/super-admin/analytics" icon={PieChart} label="إيرادات المتاجر" />
+                  <SubNavItem to="/admin/statistics" icon={TrendingUp} label="إحصائيات النظام" />
+                </>
+              ) : (
+                <>
+                  <SubNavItem to="/reports" icon={PieChart} label="التقارير العامة" />
+                  <SubNavItem to="/business-reports" icon={TrendingUp} label="التقارير التجارية" />
+                  <SubNavItem to="/aging-report" icon={Clock} label="أعمار الديون" />
+                </>
+              )}
             </div>
           </div>
         </div>
 
 
-        {/* Tools Dropdown - Only for Admin/Super Admin */}
-        {(user?.role === 'admin' || user?.isSuperAdmin) && (
+        {/* Tools Dropdown - Only for regular Admin */}
+        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
           <div>
             <DropdownButton
               isOpen={toolsOpen}
@@ -227,17 +284,39 @@ export default function Sidebar({ open, onClose }) {
           </div>
         )}
 
-        {/* Branches - Only for Admin/Super Admin */}
-        {(user?.role === 'admin' || user?.isSuperAdmin) && (
+        {/* Branches - Only for regular Admin */}
+        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
           <NavItem to="/branches" icon={Building2} label="الفروع" />
         )}
 
-        {/* Cameras - Only for Admin/Super Admin */}
-        {(user?.role === 'admin' || user?.isSuperAdmin) && (
+        {/* Cameras - Only for regular Admin */}
+        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
           <NavItem to="/cameras" icon={Video} label="المراقبة الحية" />
         )}
 
-        <NavItem to="/settings" icon={Settings} label="الإعدادات" />
+        {/* Subscriptions - Only for regular Admin */}
+        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
+          <NavItem to="/subscriptions" icon={Crown} label="الاشتراك والباقات" />
+        )}
+
+        {/* Settings Dropdown */}
+        <div>
+          <DropdownButton
+            isOpen={settingsOpen}
+            isActive={isSettingsActive}
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            icon={Settings}
+            label="الإعدادات"
+          />
+          <div className={`overflow-hidden transition-all duration-200 ${settingsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
+            <div className="space-y-1 py-1">
+              <SubNavItem to="/settings" icon={Settings} label="الإعدادات العامة" />
+              {(user?.role === 'admin' || isSystemSuperAdmin) && (
+                <SubNavItem to="/admin/audit-logs" icon={Activity} label="سجل النشاطات" />
+              )}
+            </div>
+          </div>
+        </div>
       </nav>
 
       {/* User Card */}

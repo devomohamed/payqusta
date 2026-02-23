@@ -93,111 +93,35 @@ class PayQustaServer {
       next();
     });
 
+    const security = require('./src/middleware/security');
+
     // Security headers with Helmet
-    this.app.use(helmet({
-      contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
-          connectSrc: ["'self'"],
-          fontSrc: ["'self'", 'data:'],
-          objectSrc: ["'none'"],
-          upgradeInsecureRequests: [],
-        },
-      } : false, // Disable CSP in development for easier debugging
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
-      crossOriginEmbedderPolicy: false,
-      hsts: process.env.NODE_ENV === 'production' ? {
-        maxAge: 31536000, // 1 year
-        includeSubDomains: true,
-        preload: true,
-      } : false,
-      noSniff: true, // X-Content-Type-Options: nosniff
-      frameguard: { action: 'deny' }, // X-Frame-Options: DENY
-      xssFilter: true, // X-XSS-Protection: 1; mode=block
-    }));
+    this.app.use(security.helmetConfig);
 
     // CORS configuration
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000',
-    ];
+    this.app.use(security.corsMiddleware);
 
-    if (process.env.CLIENT_URL) {
-      allowedOrigins.push(process.env.CLIENT_URL);
-    }
-
-    this.app.use(cors({
-      origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
-      exposedHeaders: ['Content-Disposition'], // For file downloads
-    }));
-
-    // General API Rate limiting
-    const apiLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: (req) => {
-        const isPortalRequest = req.originalUrl?.startsWith('/api/v1/portal');
-        if (isPortalRequest) {
-          return process.env.NODE_ENV === 'production' ? 600 : 5000;
-        }
-        return process.env.NODE_ENV === 'production' ? 100 : 1000;
-      },
-      message: {
-        success: false,
-        message: 'تم تجاوز الحد الأقصى للطلبات. يرجى المحاولة لاحقاً.',
-      },
-      standardHeaders: true,
-      legacyHeaders: false,
-    });
-    this.app.use('/api', apiLimiter);
-
-    // Strict Auth Rate Limiter (5 attempts per 15 mins)
-    const authLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 5,
-      skipSuccessfulRequests: true,
-      message: {
-        success: false,
-        message: 'تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة بعد 15 دقيقة',
-      },
-    });
-    this.app.use('/api/v1/auth/login', authLimiter);
-    this.app.use('/api/v1/auth/register', authLimiter);
-
-    // Password Reset Rate Limiter (3 attempts per hour)
-    const passwordResetLimiter = rateLimit({
-      windowMs: 60 * 60 * 1000,
-      max: 3,
-      message: {
-        success: false,
-        message: 'تم تجاوز عدد محاولات إعادة تعيين كلمة المرور. يرجى المحاولة بعد ساعة',
-      },
-    });
-    this.app.use('/api/v1/auth/forgot-password', passwordResetLimiter);
-    this.app.use('/api/v1/auth/reset-password', passwordResetLimiter);
+    // Rate limiting
+    this.app.use('/api', security.apiLimiter);
+    this.app.use('/api/v1/auth/login', security.authLimiter);
+    this.app.use('/api/v1/auth/register', security.authLimiter);
+    this.app.use('/api/v1/auth/forgot-password', security.passwordResetLimiter);
+    this.app.use('/api/v1/auth/reset-password', security.passwordResetLimiter);
 
     // Body parsing
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+    // Handle JSON parse errors (e.g. body sent as "null" literal string)
+    this.app.use((err, req, res, next) => {
+      if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ success: false, message: 'طلب غير صالح — الـ JSON المرسل غير صحيح' });
+      }
+      next(err);
+    });
+
     // Sanitize data against NoSQL injection
-    this.app.use(mongoSanitize());
+    this.app.use(security.mongoSanitizeConfig);
 
     // Prevent HTTP param pollution
     this.app.use(hpp());

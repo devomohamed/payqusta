@@ -15,10 +15,10 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
-    // Extract token from Authorization header OR query string (for SSE)
+    // Extract token from Authorization header OR query string (only for SSE stream)
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-    } else if (req.query.token) {
+    } else if (req.query.token && req.originalUrl.includes('/stream')) {
       token = req.query.token;
     }
 
@@ -118,8 +118,21 @@ const publicTenantScope = async (req, res, next) => {
     }
 
     // Try to get tenant from header, query or slug
-    const tenantId = req.headers['x-tenant-id'] || req.query.tenant;
+    let tenantId = req.headers['x-tenant-id'] || req.query.tenant;
     const slug = req.query.slug || req.headers['x-tenant-slug'];
+
+    // If still missing, attempt to extract from Authorization header
+    if (!tenantId && !slug && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.tenant) {
+          tenantId = decoded.tenant;
+        }
+      } catch (err) {
+        // Ignore token errors here, fallback below
+      }
+    }
 
     if (!tenantId && !slug) {
       return next(AppError.badRequest('يرجى تحديد المتجر (x-tenant-id أو slug)'));

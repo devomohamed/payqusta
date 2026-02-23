@@ -27,7 +27,7 @@ const fieldCollectorSchema = new mongoose.Schema({
   assignedRegions: [{
     type: String, // e.g., 'Downtown', 'West Side'
   }],
-  
+
   // Targets
   dailyTarget: {
     type: Number,
@@ -93,22 +93,21 @@ const fieldCollectorSchema = new mongoose.Schema({
 });
 
 // Indexes
-fieldCollectorSchema.index({ tenant: 1, isActive: 1 });
-fieldCollectorSchema.index({ user: 1 });
+fieldCollectorSchema.index({ tenant: 1, isActive: 1 }); // user index is already created by unique:true
 
 // Virtual: Success Rate
-fieldCollectorSchema.virtual('successRate').get(function() {
+fieldCollectorSchema.virtual('successRate').get(function () {
   if (this.stats.totalVisits === 0) return 0;
   return ((this.stats.successfulVisits / this.stats.totalVisits) * 100).toFixed(2);
 });
 
 // Virtual: Today's Performance
-fieldCollectorSchema.methods.getTodayPerformance = async function() {
+fieldCollectorSchema.methods.getTodayPerformance = async function () {
   const CollectionTask = mongoose.model('CollectionTask');
-  
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  
+
   const tasks = await CollectionTask.find({
     collector: this._id,
     createdAt: { $gte: startOfDay }
@@ -116,7 +115,7 @@ fieldCollectorSchema.methods.getTodayPerformance = async function() {
 
   const collected = tasks.filter(t => t.status === 'collected')
     .reduce((sum, t) => sum + t.collectedAmount, 0);
-  
+
   return {
     tasksAssigned: tasks.length,
     tasksCompleted: tasks.filter(t => t.status === 'collected').length,

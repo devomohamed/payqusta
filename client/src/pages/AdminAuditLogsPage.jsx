@@ -19,7 +19,7 @@ export default function AdminAuditLogsPage() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
 
-  const LIMIT = 20;
+  const LIMIT = 8;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,9 +67,9 @@ export default function AdminAuditLogsPage() {
         return <CheckCircle className="w-4 h-4 text-blue-500" />;
       case 'stock_change':
         return <Activity className="w-4 h-4 text-amber-500" />;
-        case 'import':
-        case 'restore':
-          return <Activity className="w-4 h-4 text-purple-500" />;
+      case 'import':
+      case 'restore':
+        return <Activity className="w-4 h-4 text-purple-500" />;
       case 'view':
         return <Eye className="w-4 h-4" />;
       default:
@@ -162,15 +162,15 @@ export default function AdminAuditLogsPage() {
               <option value="update">تحديث</option>
               <option value="delete">حذف</option>
               <option value="bulk_delete">حذف جماعي</option>
-              
+
               {/* Business Actions */}
               <option value="payment">تسجيل دفعة</option>
               <option value="stock_change">تغيير مخزون</option>
-              
+
               {/* System Actions */}
               <option value="import">استيراد بيانات</option>
               <option value="restore">استعادة نسخة احتياطية</option>
-              
+
               {/* Auth */}
               <option value="login">تسجيل دخول</option>
               <option value="logout">تسجيل خروج</option>

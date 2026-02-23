@@ -4,8 +4,8 @@
   "description": "PayQusta — Multi-Vendor SaaS CRM for Sales, Inventory & Installment Management",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node --max-http-header-size=81920 server.js",
+    "dev": "nodemon --max-http-header-size=81920 server.js",
     "seed": "node src/utils/seeder.js",
     "test": "jest --coverage",
     "client:install": "cd client && npm install",

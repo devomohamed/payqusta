@@ -124,7 +124,7 @@ userSchema.methods.generateAuthToken = function () {
     {
       id: this._id,
       role: this.role,
-      tenant: this.tenant,
+      tenant: this.tenant?._id ? this.tenant._id.toString() : this.tenant, // Ensure only ID is embedded
       sv: this.sessionVersion || 0,
     },
     process.env.JWT_SECRET,

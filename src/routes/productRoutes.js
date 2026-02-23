@@ -2,32 +2,33 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 const { authorize, auditLog } = require('../middleware/auth');
+const { checkPermission } = require('../middleware/checkPermission');
 const checkLimit = require('../middleware/checkLimit');
 const { uploadSingle } = require('../middleware/upload');
 
 // --- Products --- (coordinator can view and update stock)
-router.get('/', productController.getAll);
-router.get('/low-stock', authorize('vendor', 'admin', 'coordinator'), productController.getLowStock);
-router.get('/summary', authorize('vendor', 'admin', 'coordinator'), productController.getStockSummary);
+router.get('/', checkPermission('products', 'read'), productController.getAll);
+router.get('/low-stock', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'read'), productController.getLowStock);
+router.get('/summary', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'read'), productController.getStockSummary);
 
-router.get('/categories', authorize('vendor', 'admin', 'coordinator'), productController.getCategories);
-// router.get('/barcode/:code', ... ) // Moved to public
+router.get('/categories', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'read'), productController.getCategories);
+router.get('/barcode/:code', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'read'), productController.getByBarcode);
 // router.get('/:id', ... ) // Moved to public
 
-router.post('/', authorize('vendor', 'admin'), checkLimit('product'), auditLog('create', 'product'), productController.create);
-router.put('/:id', authorize('vendor', 'admin'), auditLog('update', 'product'), productController.update);
-router.delete('/:id', authorize('vendor', 'admin'), auditLog('delete', 'product'), productController.delete);
-router.patch('/:id/stock', authorize('vendor', 'admin', 'coordinator'), auditLog('stock_change', 'product'), productController.updateStock);
+router.post('/', authorize('vendor', 'admin'), checkPermission('products', 'create'), checkLimit('product'), auditLog('create', 'product'), productController.create);
+router.put('/:id', authorize('vendor', 'admin'), checkPermission('products', 'update'), auditLog('update', 'product'), productController.update);
+router.delete('/:id', authorize('vendor', 'admin'), checkPermission('products', 'delete'), auditLog('delete', 'product'), productController.delete);
+router.patch('/:id/stock', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'update'), auditLog('stock_change', 'product'), productController.updateStock);
 const { uploadMultiple } = require('../middleware/upload');
-router.post('/:id/upload-image', authorize('vendor', 'admin'), uploadMultiple, productController.uploadImage);
-router.delete('/:id/images/:imageUrl', authorize('vendor', 'admin'), productController.deleteImage);
+router.post('/:id/upload-image', authorize('vendor', 'admin'), checkPermission('products', 'update'), uploadMultiple, productController.uploadImage);
+router.delete('/:id/images/:imageUrl', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.deleteImage);
 
 // Restock
-router.post('/:id/request-restock', authorize('vendor', 'admin'), productController.requestRestock);
-router.post('/request-restock-bulk', authorize('vendor', 'admin'), productController.requestRestockBulk);
+router.post('/:id/request-restock', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.requestRestock);
+router.post('/request-restock-bulk', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.requestRestockBulk);
 
 // Bulk Ops
-router.post('/bulk-delete', authorize('vendor', 'admin'), auditLog('bulk_delete', 'product'), async (req, res, next) => {
+router.post('/bulk-delete', authorize('vendor', 'admin'), checkPermission('products', 'delete'), auditLog('bulk_delete', 'product'), async (req, res, next) => {
   try {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids) || ids.length === 0) return next(require('../utils/AppError').badRequest('يرجى تحديد المنتجات'));

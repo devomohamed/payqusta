@@ -9,8 +9,10 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const WhatsAppService = require('../services/WhatsAppService');
 const catchAsync = require('../utils/catchAsync');
+const logger = require('../utils/logger');
 
 class SettingsController {
+
   /**
    * GET /api/v1/settings
    * Get all settings for current tenant
@@ -19,7 +21,7 @@ class SettingsController {
     const tenant = await Tenant.findById(req.tenantId);
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
-    console.log(`[GET_SETTINGS] Tenant ${req.tenantId} categories:`, tenant.settings?.categories);
+    logger.info(`[GET_SETTINGS] Tenant ${req.tenantId} categories:`, tenant.settings?.categories);
 
     const user = req.user ? await User.findById(req.user._id).select('-password') : null;
 
@@ -100,6 +102,7 @@ class SettingsController {
    */
   updateWhatsApp = catchAsync(async (req, res, next) => {
     const { whatsappNumber, whatsappToken, whatsappPhoneId, wabaId, notifications, templateNames, templateLanguages } = req.body;
+    await this.ensureWhatsAppAllowed(req.tenantId);
 
     const updateData = {
       'whatsapp.enabled': !!(whatsappToken && whatsappPhoneId),
@@ -224,6 +227,7 @@ class SettingsController {
    */
   testWhatsApp = catchAsync(async (req, res, next) => {
     const { phone } = req.body;
+    await this.ensureWhatsAppAllowed(req.tenantId);
     if (!phone) return next(AppError.badRequest('رقم الهاتف مطلوب للاختبار'));
 
     // Get current config info
@@ -268,10 +272,38 @@ class SettingsController {
   });
 
   /**
+   * POST /api/v1/settings/whatsapp/topup
+   * Create a checkout session / payment link for a WhatsApp top-up bundle
+   */
+  topupWhatsApp = catchAsync(async (req, res, next) => {
+    const { packageDetails, gateway } = req.body;
+    await this.ensureWhatsAppAllowed(req.tenantId);
+    // packageDetails could be e.g. { messages: 1000, price: 500 }
+
+    // For now, auto-approve topup for testing logic (till gateway is fully wired)
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    if (!tenant.whatsapp.quota) {
+      tenant.whatsapp.quota = { limit: 0, used: 0 };
+    }
+
+    const addedMessages = packageDetails?.messages || 500;
+    tenant.whatsapp.quota.limit += addedMessages;
+    await tenant.save();
+
+    ApiResponse.success(res, {
+      whatsapp: tenant.whatsapp,
+      addedMessages
+    }, `تم إضافة ${addedMessages} رسالة إلى رصيدك بنجاح (وضع تجريبي)`);
+  });
+
+  /**
    * GET /api/v1/settings/whatsapp/templates
    * Get all WhatsApp Templates from Meta account
    */
   checkWhatsAppTemplates = catchAsync(async (req, res, next) => {
+    await this.ensureWhatsAppAllowed(req.tenantId);
     // Get tenant whatsapp config for dynamic WABA_ID and template names
     const tenant = await Tenant.findById(req.tenantId);
     const tenantWhatsapp = tenant?.whatsapp;
@@ -361,6 +393,7 @@ class SettingsController {
    */
   applyTemplateMapping = catchAsync(async (req, res, next) => {
     const { wabaId, templateNames, templateLanguages } = req.body;
+    await this.ensureWhatsAppAllowed(req.tenantId);
 
     const updateData = {};
     if (wabaId) updateData['whatsapp.wabaId'] = wabaId;
@@ -434,7 +467,7 @@ class SettingsController {
       { new: true, runValidators: true }
     );
 
-    console.log(`[UPDATE_CATS] Tenant ${req.tenantId} updated categories to:`, tenant.settings.categories);
+    logger.info(`[UPDATE_CATS] Tenant ${req.tenantId} updated categories to:`, tenant.settings.categories);
 
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
@@ -448,7 +481,7 @@ class SettingsController {
   deleteCategory = catchAsync(async (req, res, next) => {
     const { name } = req.params;
     const decodedCategory = decodeURIComponent(name);
-    console.log(`[SETTINGS_DEL_CAT] Delete request for: "${decodedCategory}" (Tenant: ${req.tenantId})`);
+    logger.info(`[SETTINGS_DEL_CAT] Delete request for: "${decodedCategory}" (Tenant: ${req.tenantId})`);
 
     if (!decodedCategory) {
       return next(AppError.badRequest('اسم التصنيف مطلوب'));
@@ -463,15 +496,15 @@ class SettingsController {
       { category: decodedCategory, ...req.tenantFilter },
       { category: fallbackCategory }
     );
-    console.log(`[SETTINGS_DEL_CAT] Reassigned ${productUpdate.modifiedCount} products to "Other"`);
+    logger.info(`[SETTINGS_DEL_CAT] Reassigned ${productUpdate.modifiedCount} products to "Other"`);
 
     // 2. Remove from tenant settings
     const tenant = await Tenant.findByIdAndUpdate(
       req.tenantId,
-      { $pull: { 'settings.categories': decodedCategory } },
+      { $pull: { 'settings.categories': { name: decodedCategory } } },
       { new: true }
     );
-    console.log(`[SETTINGS_DEL_CAT] Removed from tenant settings. New list:`, tenant?.settings?.categories);
+    logger.info(`[SETTINGS_DEL_CAT] Removed from tenant settings. New list:`, tenant?.settings?.categories);
 
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
@@ -484,3 +517,7 @@ class SettingsController {
 
 
 module.exports = new SettingsController();
+
+
+
+

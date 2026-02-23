@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu, Sun, Moon, Search } from 'lucide-react';
-import { useThemeStore } from '../store';
+import { useThemeStore, useAuthStore } from '../store';
 import NotificationDropdown from './NotificationDropdown';
 import GlobalSearch from './GlobalSearch';
 import BranchSwitcher from './BranchSwitcher';
-import { useAuthStore } from '../store';
 
 const pageTitles = {
   '/': 'لوحة التحكم',
@@ -14,6 +13,8 @@ const pageTitles = {
   '/invoices': 'الفواتير',
   '/suppliers': 'الموردين',
   '/settings': 'الإعدادات',
+  '/super-admin/plans': 'إدارة الباقات والأسعار',
+  '/tenant-management': 'إدارة المتاجر والفروع',
 };
 
 export default function Header({ onMenuClick }) {
@@ -22,8 +23,9 @@ export default function Header({ onMenuClick }) {
   const { tenant, user } = useAuthStore();
   const title = pageTitles[location.pathname] || 'لوحة التحكم';
   const [searchOpen, setSearchOpen] = useState(false);
+  const isSystemSuperAdmin =
+    !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
 
-  // Keyboard shortcut: Ctrl+K or Cmd+K to open search
   React.useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -59,15 +61,18 @@ export default function Header({ onMenuClick }) {
                   {tenant?.name}
                 </span>
               )}
+              {isSystemSuperAdmin && (
+                <span className="mr-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                  SUPER
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Branch Switcher */}
           <BranchSwitcher />
 
-          {/* Global Search */}
           <button
             onClick={() => setSearchOpen(true)}
             className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
@@ -80,7 +85,6 @@ export default function Header({ onMenuClick }) {
             </kbd>
           </button>
 
-          {/* Mobile Search */}
           <button
             onClick={() => setSearchOpen(true)}
             className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
@@ -89,10 +93,8 @@ export default function Header({ onMenuClick }) {
             <Search className="w-5 h-5" />
           </button>
 
-          {/* Real Notification System */}
           <NotificationDropdown />
 
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
@@ -102,7 +104,6 @@ export default function Header({ onMenuClick }) {
         </div>
       </header>
 
-      {/* Global Search Modal */}
       <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );

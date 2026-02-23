@@ -32,14 +32,14 @@ export default function ProductsPage() {
     name: '', sku: '', barcode: '', category: 'هواتف', price: '', cost: '',
     stockQuantity: '', minQuantity: '5', description: '', supplier: '', expiryDate: '',
   });
-  const LIMIT = 12;
+  const LIMIT = 8;
 
   const [pendingImages, setPendingImages] = useState([]);
 
   // Load categories & suppliers once
   useEffect(() => {
-    productsApi.getCategories().then((r) => setCategories(r.data.data || [])).catch(() => {});
-    suppliersApi.getAll({ limit: 100 }).then((r) => setSuppliers(r.data.data || [])).catch(() => {});
+    productsApi.getCategories().then((r) => setCategories(r.data.data || [])).catch(() => { });
+    suppliersApi.getAll({ limit: 100 }).then((r) => setSuppliers(r.data.data || [])).catch(() => { });
   }, []);
 
   const loadProducts = useCallback(async () => {
@@ -70,13 +70,13 @@ export default function ProductsPage() {
       if (!data.supplier) delete data.supplier;
       let createdId = editId;
 
-      if (editId) { 
-        await productsApi.update(editId, data); 
-        toast.success('تم تحديث المنتج ✅'); 
-      } else { 
-        const res = await productsApi.create(data); 
+      if (editId) {
+        await productsApi.update(editId, data);
+        toast.success('تم تحديث المنتج ✅');
+      } else {
+        const res = await productsApi.create(data);
         createdId = res.data.data._id;
-        toast.success('تم إضافة المنتج ✅'); 
+        toast.success('تم إضافة المنتج ✅');
       }
 
       // Upload pending images if any (only for new products or new images in edit mode if we supported it there too)
@@ -95,7 +95,7 @@ export default function ProductsPage() {
         }
       }
 
-      setShowModal(false); 
+      setShowModal(false);
       setPendingImages([]);
       loadProducts();
     } catch (err) { toast.error(err.response?.data?.message || 'حدث خطأ'); }
@@ -182,33 +182,33 @@ export default function ProductsPage() {
     }
 
     if (editId) {
-        setUploadingImage(true);
-        try {
+      setUploadingImage(true);
+      try {
         const formData = new FormData();
         // Append all files to 'images' field
         for (let i = 0; i < files.length; i++) {
-            formData.append('images', files[i]);
+          formData.append('images', files[i]);
         }
         formData.append('setAsThumbnail', productImages.length === 0 ? 'true' : 'false');
 
         const res = await productsApi.uploadImage(editId, formData);
-        
+
         // Update state with new images (backend returns { images: [...] })
         const newImages = res.data.data.images || [res.data.data.image]; // Fallback for single
         setProductImages([...productImages, ...newImages]);
-        
+
         toast.success(`تم رفع ${files.length > 1 ? files.length + ' صور' : 'الصورة'} بنجاح ✅`);
-        } catch (err) {
+      } catch (err) {
         toast.error(err.response?.data?.message || 'خطأ في رفع الصور');
-        } finally {
+      } finally {
         setUploadingImage(false);
         e.target.value = '';
-        }
+      }
     } else {
-        // Pending upload
-        setPendingImages([...pendingImages, ...Array.from(files)]);
-        toast.success(`تم اختيار ${files.length} صور (سيتم الرفع عند الحفظ)`);
-        e.target.value = '';
+      // Pending upload
+      setPendingImages([...pendingImages, ...Array.from(files)]);
+      toast.success(`تم اختيار ${files.length} صور (سيتم الرفع عند الحفظ)`);
+      e.target.value = '';
     }
   };
 
@@ -217,13 +217,13 @@ export default function ProductsPage() {
     if (!editId) return; // Should not happen for pending images via this function
 
     if (confirm('هل أنت متأكد من حذف الصورة؟')) {
-        try {
+      try {
         await productsApi.deleteImage(editId, imageUrl);
         setProductImages(productImages.filter(img => img !== imageUrl));
         toast.success('تم حذف الصورة');
-        } catch (err) {
+      } catch (err) {
         toast.error('خطأ في حذف الصورة');
-        }
+      }
     }
   };
 
@@ -252,7 +252,7 @@ export default function ProductsPage() {
   };
 
   const activeFilters = [stockFilter, categoryFilter, supplierFilter].filter(Boolean).length;
-  
+
   // Count low stock products by supplier
   const lowStockBySupplier = products.reduce((acc, p) => {
     if (p.stockStatus === 'low_stock' || p.stockStatus === 'out_of_stock') {
@@ -340,8 +340,8 @@ export default function ProductsPage() {
                   <p className="font-semibold text-sm">{info.name}</p>
                   <p className="text-xs text-red-500">{info.count} منتج منخفض</p>
                 </div>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="whatsapp"
                   loading={sendingRestock === suppId}
                   onClick={() => handleRequestRestock(suppId)}
@@ -405,24 +405,24 @@ export default function ProductsPage() {
                     </div>
                   )}
 
-          {/* Branch Inventory Breakdown */}
-          {p.inventory && p.inventory.length > 0 && (
-            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs">
-              <p className="font-bold text-gray-500 mb-1">توزيع المخزون:</p>
-              <div className="space-y-1">
-                {p.inventory.map((inv, idx) => (
-                  <div key={idx} className="flex justify-between items-center">
-                    <span>{inv.branch?.name || 'فرع غير معروف'}</span>
-                    <span className={`font-bold ${inv.quantity <= inv.minQuantity ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {inv.quantity}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  {/* Branch Inventory Breakdown */}
+                  {p.inventory && p.inventory.length > 0 && (
+                    <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs">
+                      <p className="font-bold text-gray-500 mb-1">توزيع المخزون:</p>
+                      <div className="space-y-1">
+                        {p.inventory.map((inv, idx) => (
+                          <div key={idx} className="flex justify-between items-center">
+                            <span>{inv.branch?.name || 'فرع غير معروف'}</span>
+                            <span className={`font-bold ${inv.quantity <= inv.minQuantity ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                              {inv.quantity}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
                       <p className="text-[10px] text-gray-400">سعر البيع</p>
                       <p className="text-sm font-extrabold text-primary-500">{(p.price || 0).toLocaleString('ar-EG')}</p>
@@ -444,7 +444,7 @@ export default function ProductsPage() {
                       <Edit className="w-3.5 h-3.5" /> تعديل
                     </button>
                     {(p.stockStatus === 'low_stock' || p.stockStatus === 'out_of_stock') && getSupplierId(p) && (
-                      <button 
+                      <button
                         onClick={() => handleRequestRestock(getSupplierId(p))}
                         disabled={sendingRestock === getSupplierId(p)}
                         className="px-3 py-2 rounded-xl border-2 border-green-200 dark:border-green-500/30 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors disabled:opacity-50"
@@ -467,19 +467,24 @@ export default function ProductsPage() {
       )}
 
       {/* Add/Edit Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل منتج' : 'إضافة منتج جديد'} size="md">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل منتج' : 'إضافة منتج جديد'} size="lg">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input label="اسم المنتج *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="sm:col-span-2" />
-          <Input label="كود SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
-          <RichTextEditor 
-            label="وصف المنتج" 
-            value={form.description} 
-            onChange={(content) => setForm({ ...form, description: content })} 
-            className="sm:col-span-2"
-          />
+          <div className="animate-fade-in sm:col-span-2" style={{ animationDelay: '50ms' }}>
+            <Input label="اسم المنتج *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <Input label="كود SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+          </div>
+          <div className="animate-fade-in sm:col-span-2" style={{ animationDelay: '150ms' }}>
+            <RichTextEditor
+              label="وصف المنتج"
+              value={form.description}
+              onChange={(content) => setForm({ ...form, description: content })}
+            />
+          </div>
 
           {/* Barcode input with scanner and search */}
-          <div className="relative">
+          <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
             <Input
               label="الباركود"
               value={form.barcode}
@@ -487,33 +492,53 @@ export default function ProductsPage() {
               placeholder="أدخل الباركود أو امسحه"
             />
             <div className="absolute left-2 top-[34px] flex gap-1">
-               <button
+              <button
                 type="button"
                 onClick={async () => {
-                    if(!form.barcode) return toast.error('أدخل الباركود أولاً');
-                    const loadToast = toast.loading('جاري البحث...');
+                  if (!form.barcode) return toast.error('أدخل الباركود أولاً');
+                  const loadToast = toast.loading('جاري البحث...');
+                  try {
+                    // 1. Check local DB first
                     try {
-                        const { barcodeService } = await import('../services/BarcodeService');
-                        const productData = await barcodeService.getProductByBarcode(form.barcode);
-                        if (productData) {
-                            toast.success('تم العثور على المنتج!', { id: loadToast });
-                            setForm(prev => ({
-                                ...prev,
-                                name: productData.name || prev.name,
-                                description: productData.brand ? `ماركة: ${productData.brand}` : prev.description,
-                            }));
-                             if (productData.image) {
-                                toast((t) => (
-                                    <div className="flex items-center gap-2">
-                                        <img src={productData.image} className="w-10 h-10 rounded" alt="Found" />
-                                        <div className="text-sm"><p className="font-bold">وجدنا صورة!</p><a href={productData.image} target="_blank" className="text-blue-500 underline text-xs">عرض</a></div>
-                                    </div>
-                                ), { duration: 5000 });
-                            }
-                        } else {
-                            toast.error('لم يتم العثور على المنتج', { id: loadToast });
-                        }
-                    } catch { toast.error('خطأ في البحث', { id: loadToast }); }
+                      const res = await productsApi.getByBarcode(form.barcode);
+                      if (res?.data?.data) {
+                        toast.success('هذا الباركود موجود بالفعل! جاري فتحه للتعديل...', { id: loadToast });
+                        const p = res.data.data;
+                        setEditId(p._id);
+                        setForm({
+                          name: p.name, sku: p.sku || '', barcode: p.barcode || '',
+                          category: p.category, price: String(p.price), cost: String(p.cost),
+                          stockQuantity: String(p.stock?.quantity || 0),
+                          minQuantity: String(p.stock?.minQuantity || 5),
+                          description: p.description || '', supplier: p.supplier?._id || p.supplier || '',
+                          expiryDate: p.expiryDate ? p.expiryDate.split('T')[0] : ''
+                        });
+                        return;
+                      }
+                    } catch (err) { /* If 404, continue to OpenFoodFacts */ }
+
+                    // 2. Fetch from OpenFoodFacts
+                    const { barcodeService } = await import('../services/BarcodeService');
+                    const productData = await barcodeService.getProductByBarcode(form.barcode);
+                    if (productData) {
+                      toast.success('تم العثور على المنتج!', { id: loadToast });
+                      setForm(prev => ({
+                        ...prev,
+                        name: productData.name || prev.name,
+                        description: productData.brand ? `ماركة: ${productData.brand}` : prev.description,
+                      }));
+                      if (productData.image) {
+                        toast((t) => (
+                          <div className="flex items-center gap-2">
+                            <img src={productData.image} className="w-10 h-10 rounded" alt="Found" />
+                            <div className="text-sm"><p className="font-bold">وجدنا صورة!</p><a href={productData.image} target="_blank" className="text-blue-500 underline text-xs">عرض</a></div>
+                          </div>
+                        ), { duration: 5000 });
+                      }
+                    } else {
+                      toast.error('لم يتم العثور على المنتج', { id: loadToast });
+                    }
+                  } catch { toast.error('خطأ في البحث', { id: loadToast }); }
                 }}
                 className="p-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
                 title="بحث عن بيانات المنتج"
@@ -531,33 +556,45 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <Select label="الفئة" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-            options={[...(categories.length > 0 ? categories : ['هواتف', 'لابتوب', 'تابلت', 'إكسسوارات', 'شاشات', 'أخرى']).map((c) => ({ value: c, label: `${catIcon(c)} ${c}` }))]} />
+          <div className="animate-fade-in" style={{ animationDelay: '250ms' }}>
+            <Select label="الفئة" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+              options={[...(categories.length > 0 ? categories : ['هواتف', 'لابتوب', 'تابلت', 'إكسسوارات', 'شاشات', 'أخرى']).map((c) => ({ value: c, label: `${catIcon(c)} ${c}` }))]} />
+          </div>
 
           {/* Supplier dropdown */}
-          <Select label="المورد" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })}
-            options={[{ value: '', label: 'بدون مورد' }, ...suppliers.map((s) => ({ value: s._id, label: `🚛 ${s.name}` }))]} />
+          <div className="animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <Select label="المورد" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+              options={[{ value: '', label: 'بدون مورد' }, ...suppliers.map((s) => ({ value: s._id, label: `🚛 ${s.name}` }))]} />
+          </div>
 
-          <Input label="سعر البيع *" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-          <Input label="سعر التكلفة *" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
-          <Input label="الكمية بالمخزون" type="number" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
-          <Input label="الحد الأدنى (تنبيه)" type="number" value={form.minQuantity} onChange={(e) => setForm({ ...form, minQuantity: e.target.value })} />
-          <div className="flex flex-col gap-2">
+          <div className="animate-fade-in" style={{ animationDelay: '350ms' }}>
+            <Input label="سعر البيع *" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          </div>
+          <div className="animate-fade-in" style={{ animationDelay: '400ms' }}>
+            <Input label="سعر التكلفة *" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+          </div>
+          <div className="animate-fade-in" style={{ animationDelay: '450ms' }}>
+            <Input label="الكمية بالمخزون" type="number" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
+          </div>
+          <div className="animate-fade-in" style={{ animationDelay: '500ms' }}>
+            <Input label="الحد الأدنى (تنبيه)" type="number" value={form.minQuantity} onChange={(e) => setForm({ ...form, minQuantity: e.target.value })} />
+          </div>
+          <div className="flex flex-col gap-2 animate-fade-in" style={{ animationDelay: '550ms' }}>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={!!form.expiryDate} 
+              <input
+                type="checkbox"
+                checked={!!form.expiryDate}
                 onChange={(e) => setForm({ ...form, expiryDate: e.target.checked ? new Date().toISOString().split('T')[0] : '' })}
-                className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500" 
+                className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">للمنتج تاريخ صلاحية</span>
             </label>
-            
+
             {form.expiryDate && (
-              <Input 
-                type="date" 
-                value={form.expiryDate ? form.expiryDate.split('T')[0] : ''} 
-                onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} 
+              <Input
+                type="date"
+                value={form.expiryDate ? form.expiryDate.split('T')[0] : ''}
+                onChange={(e) => setForm({ ...form, expiryDate: e.target.value })}
                 className="animate-fade-in"
               />
             )}
@@ -565,13 +602,13 @@ export default function ProductsPage() {
         </div>
 
         {/* Product Images */}
-        <div className="mt-4">
+        <div className="mt-6 animate-fade-in" style={{ animationDelay: '600ms' }}>
           <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
             صور المنتج
           </label>
 
           {/* Image Upload Button */}
-          <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <label className="flex items-center justify-center gap-2 px-4 py-5 rounded-2xl border-2 border-dashed border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/10 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300">
             <input
               type="file"
               multiple
@@ -583,12 +620,15 @@ export default function ProductsPage() {
             {uploadingImage ? (
               <div className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
             ) : (
-              <>
-                <Upload className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {editId ? 'رفع صور (اختر أكثر من صورة)' : 'اختر صور (سيتم الرفع مع الحفظ)'}
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-800/50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
+                  <Upload className="w-5 h-5 text-primary-500" />
+                </div>
+                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                  {editId ? 'إضافة صور إضافية الموديل' : 'اختر صور (سيتم الرفع مع الحفظ)'}
                 </span>
-              </>
+                <span className="text-xs text-gray-400">يمكنك سحب وإفلات الصور هنا</span>
+              </div>
             )}
           </label>
 
@@ -674,12 +714,32 @@ export default function ProductsPage() {
           onScan={async (barcode) => {
             setShowBarcodeScanner(false);
             const loadToast = toast.loading('جاري البحث عن بيانات المنتج...');
-            
+
             try {
+              // 1. Check local DB first
+              try {
+                const res = await productsApi.getByBarcode(barcode);
+                if (res?.data?.data) {
+                  toast.success('هذا الباركود موجود بالفعل! تم فتحه للتعديل...', { id: loadToast });
+                  const p = res.data.data;
+                  setEditId(p._id);
+                  setForm({
+                    name: p.name, sku: p.sku || '', barcode: barcode,
+                    category: p.category, price: String(p.price), cost: String(p.cost),
+                    stockQuantity: String(p.stock?.quantity || 0),
+                    minQuantity: String(p.stock?.minQuantity || 5),
+                    description: p.description || '', supplier: p.supplier?._id || p.supplier || '',
+                    expiryDate: p.expiryDate ? p.expiryDate.split('T')[0] : ''
+                  });
+                  return;
+                }
+              } catch (err) { /* If 404, continue to OpenFoodFacts */ }
+
+              // 2. Fetch from OpenFoodFacts
               // Dynamically import service on demand
               const { barcodeService } = await import('../services/BarcodeService');
               const productData = await barcodeService.getProductByBarcode(barcode);
-              
+
               if (productData) {
                 toast.success('تم العثور على بيانات المنتج! 🥫✨', { id: loadToast });
                 setForm(prev => ({
@@ -690,19 +750,19 @@ export default function ProductsPage() {
                   // We can't set image directly as file, but we could handle URL if backend supported it. 
                   // For now, we just auto-fill text fields.
                 }));
-                
+
                 // If image URL found, user might want to download/upload it. 
                 // Enhanced feature: Show the image to user to confirm?
                 if (productData.image) {
-                    toast((t) => (
-                        <div className="flex items-center gap-2">
-                            <img src={productData.image} className="w-10 h-10 rounded" alt="Found" />
-                            <div className="text-sm">
-                                <p className="font-bold">وجدنا صورة للمنتج!</p>
-                                <a href={productData.image} target="_blank" className="text-blue-500 underline text-xs">عرض الصورة</a>
-                            </div>
-                        </div>
-                    ), { duration: 5000 });
+                  toast((t) => (
+                    <div className="flex items-center gap-2">
+                      <img src={productData.image} className="w-10 h-10 rounded" alt="Found" />
+                      <div className="text-sm">
+                        <p className="font-bold">وجدنا صورة للمنتج!</p>
+                        <a href={productData.image} target="_blank" className="text-blue-500 underline text-xs">عرض الصورة</a>
+                      </div>
+                    </div>
+                  ), { duration: 5000 });
                 }
 
               } else {

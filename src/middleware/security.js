@@ -16,17 +16,19 @@ const cors = require('cors');
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per windowMs
-  message: 'تم تجاوز الحد المسموح من الطلبات. يرجى المحاولة لاحقاً',
+  max: (req) => {
+    const isPortalRequest = req.originalUrl?.startsWith('/api/v1/portal');
+    if (isPortalRequest) {
+      return process.env.NODE_ENV === 'production' ? 600 : 5000;
+    }
+    return process.env.NODE_ENV === 'production' ? 100 : 1000;
+  },
+  message: {
+    success: false,
+    message: 'تم تجاوز الحد المسموح من الطلبات. يرجى المحاولة لاحقاً',
+  },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  handler: (req, res) => {
-    res.status(429).json({
-      success: false,
-      message: 'تم تجاوز الحد المسموح من الطلبات. يرجى المحاولة لاحقاً',
-      retryAfter: req.rateLimit.resetTime,
-    });
-  },
 });
 
 /**
@@ -34,16 +36,12 @@ const apiLimiter = rateLimit({
  * 5 login attempts per 15 minutes per IP
  */
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts
-  skipSuccessfulRequests: true, // Don't count successful requests
-  message: 'تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة بعد 15 دقيقة',
-  handler: (req, res) => {
-    res.status(429).json({
-      success: false,
-      message: 'تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة بعد 15 دقيقة',
-      retryAfter: Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60), // minutes
-    });
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  skipSuccessfulRequests: true,
+  message: {
+    success: false,
+    message: 'تم تجاوز عدد محاولات تسجيل الدخول. يرجى المحاولة بعد 15 دقيقة',
   },
 });
 
@@ -52,14 +50,11 @@ const authLimiter = rateLimit({
  * 3 requests per hour per IP
  */
 const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 3,
-  message: 'تم تجاوز عدد محاولات إعادة تعيين كلمة المرور. يرجى المحاولة بعد ساعة',
-  handler: (req, res) => {
-    res.status(429).json({
-      success: false,
-      message: 'تم تجاوز عدد محاولات إعادة تعيين كلمة المرور. يرجى المحاولة بعد ساعة',
-    });
+  message: {
+    success: false,
+    message: 'تم تجاوز عدد محاولات إعادة تعيين كلمة المرور. يرجى المحاولة بعد ساعة',
   },
 });
 
@@ -70,89 +65,82 @@ const passwordResetLimiter = rateLimit({
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  message: 'تم تجاوز عدد مرات رفع الملفات. يرجى المحاولة لاحقاً',
+  message: {
+    success: false,
+    message: 'تم تجاوز عدد مرات رفع الملفات. يرجى المحاولة لاحقاً'
+  },
 });
 
 // ============ CORS Configuration ============
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    const allowedOrigins = [
-      'http://localhost:5173', // Vite dev server
-      'http://localhost:3000', // Alternative dev port
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000',
-    ];
-
-    // In production, add your domain
-    if (process.env.NODE_ENV === 'production' && process.env.CLIENT_URL) {
-      allowedOrigins.push(process.env.CLIENT_URL);
+    const origins = [...allowedOrigins];
+    if (process.env.CLIENT_URL) {
+      origins.push(process.env.CLIENT_URL);
     }
 
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    if (origins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Allow cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Disposition'], // For file downloads
-  maxAge: 86400, // 24 hours
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+  exposedHeaders: ['Content-Disposition'],
 };
 
 // ============ Helmet Configuration ============
 
 const helmetConfig = helmet({
-  contentSecurityPolicy: {
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (for React)
-      scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts (for React)
-      imgSrc: ["'self'", 'data:', 'https:', 'blob:'], // Allow images from anywhere
-      connectSrc: ["'self'", 'http://localhost:*', 'ws://localhost:*'], // Allow API calls
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+      connectSrc: ["'self'"],
       fontSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+      upgradeInsecureRequests: [],
     },
-  },
-  crossOriginEmbedderPolicy: false, // Disable for development
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin resources
+  } : false, // Disable CSP in development
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false,
+  hsts: process.env.NODE_ENV === 'production' ? {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  } : false,
+  noSniff: true, // X-Content-Type-Options: nosniff
+  frameguard: { action: 'deny' }, // X-Frame-Options: DENY
+  xssFilter: true, // X-XSS-Protection: 1; mode=block
 });
 
 // ============ Mongo Sanitization ============
 
-/**
- * MongoDB Injection Protection
- * Removes $ and . from user input
- */
-const mongoSanitizeConfig = mongoSanitize({
-  replaceWith: '_', // Replace prohibited characters with _
-  onSanitize: ({ req, key }) => {
-    console.warn(`⚠️ Potential MongoDB injection attempt detected in ${key}`);
-  },
-});
+const mongoSanitizeConfig = mongoSanitize();
 
 // ============ Export ============
 
 module.exports = {
-  // Rate Limiters
   apiLimiter,
   authLimiter,
   passwordResetLimiter,
   uploadLimiter,
-
-  // CORS
   corsOptions,
   corsMiddleware: cors(corsOptions),
-
-  // Helmet
   helmetConfig,
-
-  // Mongo Sanitization
   mongoSanitizeConfig,
 };

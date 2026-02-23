@@ -16,7 +16,12 @@ class NotificationController {
   async getAll(req, res, next) {
     try {
       const { page, limit, skip, sort } = Helpers.getPaginationParams(req.query);
-      const filter = { tenant: req.tenantId, recipient: req.user._id };
+      const isSuperAdmin = req.user.isSuperAdmin ||
+        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
+
+      // Build filter — super admin has no tenant, see all their own notifications
+      const filter = { recipient: req.user._id };
+      if (!isSuperAdmin && req.tenantId) filter.tenant = req.tenantId;
 
       if (req.query.unread === 'true') filter.isRead = false;
       if (req.query.type) filter.type = req.query.type;
@@ -37,7 +42,10 @@ class NotificationController {
    */
   async getUnreadCount(req, res, next) {
     try {
-      const count = await Notification.getUnreadCount(req.tenantId, req.user._id);
+      const isSuperAdmin = req.user.isSuperAdmin ||
+        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
+      const tenantId = isSuperAdmin ? null : req.tenantId;
+      const count = await Notification.getUnreadCount(tenantId, req.user._id);
       ApiResponse.success(res, { count });
     } catch (error) {
       next(error);
@@ -49,10 +57,12 @@ class NotificationController {
    */
   async markAsRead(req, res, next) {
     try {
-      await Notification.findOneAndUpdate(
-        { _id: req.params.id, tenant: req.tenantId, recipient: req.user._id },
-        { isRead: true, readAt: new Date() }
-      );
+      const isSuperAdmin = req.user.isSuperAdmin ||
+        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
+      const filter = { _id: req.params.id, recipient: req.user._id };
+      if (!isSuperAdmin && req.tenantId) filter.tenant = req.tenantId;
+
+      await Notification.findOneAndUpdate(filter, { isRead: true, readAt: new Date() });
       ApiResponse.success(res, null, 'تم التعليم كمقروء');
     } catch (error) {
       next(error);
@@ -64,7 +74,10 @@ class NotificationController {
    */
   async markAllAsRead(req, res, next) {
     try {
-      await Notification.markAllRead(req.tenantId, req.user._id);
+      const isSuperAdmin = req.user.isSuperAdmin ||
+        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
+      const tenantId = isSuperAdmin ? null : req.tenantId;
+      await Notification.markAllRead(tenantId, req.user._id);
       ApiResponse.success(res, null, 'تم تعليم الكل كمقروء');
     } catch (error) {
       next(error);
@@ -76,9 +89,12 @@ class NotificationController {
    */
   async deleteOne(req, res, next) {
     try {
-      await Notification.findOneAndDelete({
-        _id: req.params.id, tenant: req.tenantId, recipient: req.user._id,
-      });
+      const isSuperAdmin = req.user.isSuperAdmin ||
+        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
+      const filter = { _id: req.params.id, recipient: req.user._id };
+      if (!isSuperAdmin && req.tenantId) filter.tenant = req.tenantId;
+
+      await Notification.findOneAndDelete(filter);
       ApiResponse.success(res, null, 'تم حذف الإشعار');
     } catch (error) {
       next(error);

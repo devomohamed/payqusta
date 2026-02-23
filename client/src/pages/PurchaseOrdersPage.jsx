@@ -33,7 +33,7 @@ export default function PurchaseOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
-  
+
   const [form, setForm] = useState({
     supplier: '',
     items: [],
@@ -50,7 +50,7 @@ export default function PurchaseOrdersPage() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/purchase-orders?page=${page}&limit=20`);
+      const res = await api.get(`/purchase-orders?page=${page}&limit=8`);
       setOrders(res.data.data);
       setPagination(res.data.pagination);
     } catch (err) {
@@ -64,14 +64,14 @@ export default function PurchaseOrdersPage() {
     try {
       const res = await api.get('/suppliers?limit=100');
       setSuppliers(res.data.data);
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const loadProducts = async () => {
     try {
       const res = await api.get('/products?limit=100');
       setProducts(res.data.data);
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const handleOpenCreate = () => {
@@ -89,7 +89,7 @@ export default function PurchaseOrdersPage() {
   const handleItemChange = (index, field, value) => {
     const items = [...form.items];
     items[index][field] = value;
-    
+
     if (field === 'product') {
       const product = products.find(p => p._id === value);
       if (product) {
@@ -97,11 +97,11 @@ export default function PurchaseOrdersPage() {
         items[index].totalCost = items[index].quantity * items[index].unitCost;
       }
     }
-    
+
     if (field === 'quantity' || field === 'unitCost') {
       items[index].totalCost = items[index].quantity * items[index].unitCost;
     }
-    
+
     setForm({ ...form, items });
   };
 
@@ -134,7 +134,7 @@ export default function PurchaseOrdersPage() {
         itemId: item._id,
         receivedQuantity: item.quantity,
       }));
-      
+
       await api.post(`/purchase-orders/${selectedOrder._id}/receive`, { receivedItems });
       notify.success('تم استلام أمر الشراء وتحديث المخزون');
       setShowReceiveModal(false);
@@ -164,10 +164,10 @@ export default function PurchaseOrdersPage() {
       {loading ? (
         <LoadingSpinner />
       ) : orders.length === 0 ? (
-        <EmptyState 
-          icon={ShoppingCart} 
-          title="لا توجد أوامر شراء" 
-          description="ابدأ بإنشاء أمر شراء جديد من الموردين" 
+        <EmptyState
+          icon={ShoppingCart}
+          title="لا توجد أوامر شراء"
+          description="ابدأ بإنشاء أمر شراء جديد من الموردين"
         />
       ) : (
         <Card>
@@ -199,8 +199,8 @@ export default function PurchaseOrdersPage() {
                     <td className="p-4 font-bold">{order.totalAmount.toFixed(2)} ج.م</td>
                     <td className="p-4">
                       {order.status === 'approved' && (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleOpenReceive(order)}
                           icon={<Check className="w-4 h-4" />}
                         >
@@ -213,7 +213,7 @@ export default function PurchaseOrdersPage() {
               </tbody>
             </table>
           </div>
-          
+
           {pagination.totalPages > 1 && (
             <div className="p-4">
               <Pagination currentPage={page} totalPages={pagination.totalPages} onPageChange={setPage} />
@@ -242,7 +242,7 @@ export default function PurchaseOrdersPage() {
                 إضافة منتج
               </Button>
             </div>
-            
+
             {form.items.map((item, index) => (
               <div key={index} className="grid grid-cols-12 gap-2 mb-2 items-end">
                 <div className="col-span-5">

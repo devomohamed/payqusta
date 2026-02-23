@@ -4,68 +4,72 @@
 const Tenant = require('../models/Tenant');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Customer = require('../models/Customer');
 const Branch = require('../models/Branch');
-const PLANS = require('../config/plans');
 const AppError = require('../utils/AppError');
 
 const checkLimit = (resource) => {
   return async (req, res, next) => {
     try {
-      // 1. Get current tenant and plan
-      // For 'store' creation, we check the User's owned tenants count (if we implement multi-tenant users later)
-      // For now, let's assume req.tenantId is set for Product/User creation.
-      
-      let planId = 'free';
-      let currentUsage = 0;
-      let limit = 0;
-
-      // Special handling for creating a NEW Store (Branch)
-      if (resource === 'store') {
-        if (!req.tenantId) return next();
-        const tenant = await Tenant.findById(req.tenantId);
-        if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
-
-        const planId = tenant.subscription?.plan || 'free';
-        const plan = PLANS[planId];
-        if (!plan) return next();
-
-        const storeLimit = plan.limits.stores;
-        const currentBranches = await Branch.countDocuments({ tenant: req.tenantId, isActive: true });
-
-        if (currentBranches >= storeLimit) {
-          return next(AppError.forbidden(
-            `لقد وصلت للحد الأقصى من الفروع المسموح به في باقتك (${storeLimit}). يرجى ترقية الباقة لإضافة المزيد.`
-          ));
-        }
+      if (!req.tenantId && !req.tenant) {
         return next();
       }
 
-      // Check existence of tenant
-      if (!req.tenantId) {
-         // If no tenant context (shouldn't happen for protected routes), skip or error
-         return next();
-      }
+      const tenantId = req.tenantId || req.tenant._id;
+      const tenant = req.tenant || await Tenant.findById(tenantId).populate('subscription.plan');
 
-      const tenant = await Tenant.findById(req.tenantId);
       if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
-      planId = tenant.subscription?.plan || 'free';
-      const plan = PLANS[planId];
-      if (!plan) return next(AppError.badRequest('خطة اشتراك غير صالحة'));
+      // 1. Check if subscription is active or in trial
+      const status = tenant.subscription?.status;
+      if (['suspended', 'cancelled'].includes(status)) {
+        return next(AppError.forbidden('عفواً، حسابك موقوف أو تم إلغاؤه. يرجى مراجعة حالة الاشتراك.'));
+      }
 
-      // 2. Count current usage based on resource
+      if (status === 'trial') {
+        const trialEnds = new Date(tenant.subscription.trialEndsAt);
+        if (trialEnds < new Date()) {
+          // Trial ended, should be updated to suspended or past_due by cron, but we block here anyway
+          return next(AppError.forbidden('انتهت الفترة التجريبية (14 يوم). يرجى الاشتراك في باقة للاستمرار.'));
+        }
+      } else if (status === 'past_due') {
+        return next(AppError.forbidden('يرجى سداد الفاتورة المعلقة لاستمرار الخدمة.'));
+      }
+
+      // 2. Get limits (from plan if populated, or fallback to grandfathered limits in tenant.subscription)
+      const limits = {
+        products: tenant.subscription?.plan?.limits?.maxProducts || tenant.subscription?.maxProducts || 50,
+        customers: tenant.subscription?.plan?.limits?.maxCustomers || tenant.subscription?.maxCustomers || 100,
+        users: tenant.subscription?.plan?.limits?.maxUsers || tenant.subscription?.maxUsers || 3,
+        stores: tenant.subscription?.plan?.limits?.maxBranches || tenant.subscription?.maxBranches || 1,
+      };
+
+      let currentUsage = 0;
+      let limit = 0;
+      let resourceNameAr = '';
+
       switch (resource) {
         case 'product':
-          limit = plan.limits.products;
-          currentUsage = await Product.countDocuments({ tenant: req.tenantId, isActive: true });
+          limit = limits.products;
+          currentUsage = await Product.countDocuments({ tenant: tenantId, isActive: true });
+          resourceNameAr = 'المنتجات';
           break;
         case 'user':
-          limit = plan.limits.users;
-          currentUsage = await User.countDocuments({ tenant: req.tenantId, isActive: true });
+          limit = limits.users;
+          currentUsage = await User.countDocuments({ tenant: tenantId, isActive: true });
+          resourceNameAr = 'المستخدمين';
           break;
-        // case 'invoice':
-          // could check monthly invoice count here
-          // break;
+        case 'customer':
+          limit = limits.customers;
+          currentUsage = await Customer.countDocuments({ tenant: tenantId, isActive: true });
+          resourceNameAr = 'العملاء';
+          break;
+        case 'store':
+        case 'branch':
+          limit = limits.stores;
+          currentUsage = await Branch.countDocuments({ tenant: tenantId, isActive: true });
+          resourceNameAr = 'الفروع/المتاجر';
+          break;
         default:
           return next();
       }
@@ -73,7 +77,7 @@ const checkLimit = (resource) => {
       // 3. Compare
       if (currentUsage >= limit) {
         return next(AppError.forbidden(
-          `عفواً، لقد وصلت للحد الأقصى من ${resource === 'product' ? 'المنتجات' : 'المستخدمين'} المسموح به في باقتك (${limit}). يرجى ترقية الباقة لإضافة المزيد.`
+          `عفواً، لقد وصلت للحد الأقصى من ${resourceNameAr} المسموح به في باقتك (${limit}). يرجى ترقية الباقة لإضافة المزيد.`
         ));
       }
 

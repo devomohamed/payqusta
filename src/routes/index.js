@@ -3,9 +3,10 @@
  */
 
 const router = require('express').Router();
-// Import checkLimit
 const checkLimit = require('../middleware/checkLimit');
 const { protect, authorize, tenantScope, publicTenantScope, auditLog } = require('../middleware/auth');
+const { checkPermission } = require('../middleware/checkPermission');
+const { requireSuperAdmin } = require('../middleware/requireSuperAdmin');
 const authController = require('../controllers/authController');
 const dashboardController = require('../controllers/dashboardController');
 const notificationController = require('../controllers/notificationController');
@@ -13,6 +14,7 @@ const expenseController = require('../controllers/expenseController');
 const settingsController = require('../controllers/settingsController');
 const adminController = require('../controllers/adminController');
 const tenantController = require('../controllers/tenantController');
+const { requireFeature } = require('../middleware/requireFeature');
 const reportsController = require('../controllers/reportsController');
 const searchController = require('../controllers/searchController');
 const importController = require('../controllers/importController');
@@ -36,12 +38,6 @@ router.post('/auth/reset-password/:token', authController.resetPassword);
 router.post('/auth/logout', protect, authController.logout);
 router.post('/auth/logout-all', protect, authController.logoutAll);
 
-// ============ PUBLIC STOREFRONT ROUTES ============
-// Note: Product/Customer public routes are now handled dynamically or need to be potentially routed via the modules if they support public access.
-// For now, retaining the specific public overrides here or ensuring modules handle them.
-// The previous index.js had specific public routes for products/settings.
-router.get('/settings', publicTenantScope, settingsController.getSettings);
-
 // We need to route public product requests to the product controller, but scoped.
 // Since we moved standard product routes to ./productRoutes, we can mount them there.
 // However, public routes use 'publicTenantScope'.
@@ -49,6 +45,10 @@ router.get('/settings', publicTenantScope, settingsController.getSettings);
 const productController = require('../controllers/productController');
 const customerController = require('../controllers/customerController');
 const invoiceController = require('../controllers/invoiceController');
+
+router.get('/storefront/settings', settingsController.getStorefrontSettings);
+router.get('/settings', publicTenantScope, settingsController.getSettings);
+router.use('/plans', require('./planRoutes'));
 
 // Product Public Routes - Move to /store or similar to avoid conflict with Admin API
 // router.get('/products', publicTenantScope, productController.getAll);
@@ -80,11 +80,11 @@ router.put('/auth/update-password', authController.updatePassword);
 router.put('/auth/update-profile', authController.updateProfile);
 router.put('/auth/update-avatar', uploadSingle, authController.updateAvatar);
 router.delete('/auth/remove-avatar', authController.removeAvatar);
-router.get('/auth/users', authorize('vendor', 'admin'), authController.getTenantUsers);
-router.post('/auth/users', authorize('vendor', 'admin'), checkLimit('user'), authController.addUser);
-router.put('/auth/users/:id', authorize('vendor', 'admin'), authController.updateTenantUser);
-router.delete('/auth/users/:id', authorize('vendor', 'admin'), authController.deleteTenantUser);
-router.post('/auth/add-user', authorize('vendor', 'admin'), checkLimit('user'), authController.addUser);
+router.get('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'read'), authController.getTenantUsers);
+router.post('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
+router.put('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'update'), authController.updateTenantUser);
+router.delete('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'delete'), authController.deleteTenantUser);
+router.post('/auth/add-user', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
 router.post('/auth/switch-tenant', tenantController.switchTenant);
 
 // --- Tenant / Branches ---
@@ -112,18 +112,18 @@ router.use('/invoices', require('./invoiceRoutes'));
 router.use('/bi', require('./biRoutes'));
 
 // --- Suppliers --- (coordinator can view)
-router.get('/suppliers', authorize('vendor', 'admin', 'coordinator'), supplierController.getAll);
-router.get('/suppliers/upcoming-payments', authorize('vendor', 'admin', 'coordinator'), supplierController.getUpcomingPayments);
-router.get('/suppliers/:id', authorize('vendor', 'admin', 'coordinator'), supplierController.getById);
-router.get('/suppliers/:id/low-stock-products', authorize('vendor', 'admin', 'coordinator'), supplierController.getLowStockProducts);
-router.post('/suppliers', authorize('vendor', 'admin'), auditLog('create', 'supplier'), supplierController.create);
-router.put('/suppliers/:id', authorize('vendor', 'admin'), auditLog('update', 'supplier'), supplierController.update);
-router.delete('/suppliers/:id', authorize('vendor', 'admin'), auditLog('delete', 'supplier'), supplierController.delete);
-router.post('/suppliers/:id/purchase', authorize('vendor', 'admin'), auditLog('payment', 'supplier'), supplierController.recordPurchase);
-router.post('/suppliers/:id/payments/:paymentId/pay', authorize('vendor', 'admin'), auditLog('payment', 'supplier'), supplierController.recordPayment);
-router.post('/suppliers/:id/pay-all', authorize('vendor', 'admin'), auditLog('payment', 'supplier'), supplierController.payAllOutstanding);
-router.post('/suppliers/:id/send-reminder', authorize('vendor', 'admin'), supplierController.sendReminder);
-router.post('/suppliers/:id/request-restock', authorize('vendor', 'admin', 'coordinator'), supplierController.requestRestock);
+router.get('/suppliers', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getAll);
+router.get('/suppliers/upcoming-payments', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getUpcomingPayments);
+router.get('/suppliers/:id', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getById);
+router.get('/suppliers/:id/low-stock-products', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getLowStockProducts);
+router.post('/suppliers', authorize('vendor', 'admin'), checkPermission('suppliers', 'create'), auditLog('create', 'supplier'), supplierController.create);
+router.put('/suppliers/:id', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('update', 'supplier'), supplierController.update);
+router.delete('/suppliers/:id', authorize('vendor', 'admin'), checkPermission('suppliers', 'delete'), auditLog('delete', 'supplier'), supplierController.delete);
+router.post('/suppliers/:id/purchase', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('payment', 'supplier'), supplierController.recordPurchase);
+router.post('/suppliers/:id/payments/:paymentId/pay', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('payment', 'supplier'), supplierController.recordPayment);
+router.post('/suppliers/:id/pay-all', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('payment', 'supplier'), supplierController.payAllOutstanding);
+router.post('/suppliers/:id/send-reminder', authorize('vendor', 'admin'), checkPermission('suppliers', 'read'), supplierController.sendReminder);
+router.post('/suppliers/:id/request-restock', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'update'), supplierController.requestRestock);
 
 // --- Notifications ---
 router.get('/notifications', notificationController.getAll);
@@ -140,26 +140,41 @@ router.use('/stock-adjustments', require('./stockAdjustmentRoutes'));
 router.use('/cash-shifts', require('./cashShiftRoutes'));
 
 // --- Expenses ---
-router.get('/expenses', authorize('vendor', 'admin', 'coordinator'), expenseController.getAll);
-router.get('/expenses/summary', authorize('vendor', 'admin', 'coordinator'), expenseController.getSummary);
-router.get('/expenses/categories', authorize('vendor', 'admin', 'coordinator'), expenseController.getCategories);
-router.post('/expenses', authorize('vendor', 'admin'), auditLog('create', 'expense'), expenseController.create);
-router.put('/expenses/:id', authorize('vendor', 'admin'), auditLog('update', 'expense'), expenseController.update);
-router.delete('/expenses/:id', authorize('vendor', 'admin'), auditLog('delete', 'expense'), expenseController.delete);
+router.get('/expenses', authorize('vendor', 'admin', 'coordinator'), checkPermission('expenses', 'read'), expenseController.getAll);
+router.get('/expenses/summary', authorize('vendor', 'admin', 'coordinator'), checkPermission('expenses', 'read'), expenseController.getSummary);
+router.get('/expenses/categories', authorize('vendor', 'admin', 'coordinator'), checkPermission('expenses', 'read'), expenseController.getCategories);
+router.post('/expenses', authorize('vendor', 'admin'), checkPermission('expenses', 'create'), auditLog('create', 'expense'), expenseController.create);
+router.put('/expenses/:id', authorize('vendor', 'admin'), checkPermission('expenses', 'update'), auditLog('update', 'expense'), expenseController.update);
+router.delete('/expenses/:id', authorize('vendor', 'admin'), checkPermission('expenses', 'delete'), auditLog('delete', 'expense'), expenseController.delete);
 
 // --- Settings ---
-router.put('/settings/store', authorize('vendor', 'admin'), settingsController.updateStore);
-router.put('/settings/whatsapp', authorize('vendor', 'admin'), settingsController.updateWhatsApp);
-router.post('/settings/whatsapp/test', authorize('vendor', 'admin'), settingsController.testWhatsApp);
-router.get('/settings/whatsapp/templates', authorize('vendor', 'admin', 'coordinator'), settingsController.checkWhatsAppTemplates);
-router.post('/settings/whatsapp/create-templates', authorize('vendor', 'admin'), settingsController.createWhatsAppTemplates);
-router.post('/settings/whatsapp/detect-templates', authorize('vendor', 'admin'), settingsController.detectTemplates);
-router.post('/settings/whatsapp/apply-templates', authorize('vendor', 'admin'), settingsController.applyTemplateMapping);
-router.put('/settings/branding', authorize('vendor', 'admin'), settingsController.updateBranding);
+router.put('/settings/store', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateStore);
+router.put('/settings/whatsapp', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.updateWhatsApp);
+router.post('/settings/whatsapp/test', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.testWhatsApp);
+router.post('/settings/whatsapp/topup', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.topupWhatsApp);
+router.get('/settings/whatsapp/templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.checkWhatsAppTemplates);
+router.post('/settings/whatsapp/create-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.createWhatsAppTemplates);
+router.post('/settings/whatsapp/detect-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.detectTemplates);
+router.post('/settings/whatsapp/apply-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.applyTemplateMapping);
+router.put('/settings/branding', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateBranding);
 router.put('/settings/user', settingsController.updateUser);
 router.put('/settings/password', settingsController.changePassword);
-router.put('/settings/categories', authorize('vendor', 'admin'), settingsController.updateCategories);
-router.delete('/settings/categories/:name', authorize('vendor', 'admin'), settingsController.deleteCategory);
+router.put('/settings/categories', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateCategories);
+router.delete('/settings/categories/:name', authorize('vendor', 'admin'), checkPermission('settings', 'delete'), settingsController.deleteCategory);
+
+// --- Subscriptions & Billing ---
+router.use('/subscriptions', require('./subscriptionRoutes'));
+
+// --- Addons Marketplace ---
+const addonController = require('../controllers/addonController');
+router.get('/addons', authorize('vendor', 'admin'), addonController.getAllAddons);
+router.post('/addons/:key/purchase', authorize('vendor', 'admin'), addonController.purchaseAddon);
+
+// --- Referral Program ---
+const referralController = require('../controllers/referralController');
+router.get('/referrals/my-code', authorize('vendor', 'admin'), referralController.getMyCode);
+router.get('/referrals/stats', authorize('vendor', 'admin'), referralController.getStats);
+router.post('/referrals/apply', referralController.applyCode);
 
 // --- Owner Management (Returns, KYC, Support) ---
 const ownerMgmt = require('../controllers/ownerManagementController');
@@ -199,12 +214,22 @@ router.use('/collection', require('./collectionRoutes'));
 router.get('/admin/dashboard', authorize('admin'), adminController.getDashboard);
 router.get('/admin/statistics', authorize('admin'), adminController.getStatistics);
 
+// Revenue Analytics
+const revenueAnalyticsController = require('../controllers/revenueAnalyticsController');
+router.get('/admin/analytics/revenue', authorize('admin'), revenueAnalyticsController.getRevenueAnalytics);
+
 // Tenant Management
 router.get('/admin/tenants', authorize('admin'), adminController.getTenants);
 router.post('/admin/tenants', authorize('admin'), auditLog('create', 'tenant'), adminController.createTenant);
 router.put('/admin/tenants/:id', authorize('admin'), auditLog('update', 'tenant'), adminController.updateTenant);
 router.delete('/admin/tenants/:id', authorize('admin'), auditLog('delete', 'tenant'), adminController.deleteTenant);
 router.post('/admin/tenants/:id/reset-password', authorize('admin'), adminController.resetTenantPassword);
+
+// Plans Management (Super Admin)
+const planController = require('../controllers/planController');
+router.post('/admin/plans', authorize('admin'), planController.createPlan);
+router.put('/admin/plans/:id', authorize('admin'), planController.updatePlan);
+router.delete('/admin/plans/:id', authorize('admin'), planController.deletePlan);
 
 // User Management
 router.get('/admin/users', authorize('admin'), adminController.getUsers);
@@ -289,3 +314,4 @@ const backupUpload = multer({
 router.post('/backup/restore-json', authorize('vendor', 'admin'), backupUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreJSON);
 
 module.exports = router;
+

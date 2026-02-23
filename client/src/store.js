@@ -17,7 +17,16 @@ export const api = axios.create({
 // Add auth token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('payqusta_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    // Self-heal: If token is absurdly large (e.g. > 10KB due to old bug storing base64 logos), clear it to prevent 431 errors
+    if (token.length > 10000) {
+      console.warn('PayQusta: Detected oversized legacy token. Clearing and redirecting to login to prevent 431 errors.');
+      localStorage.removeItem('payqusta_token');
+      window.location.href = '/login';
+      return Promise.reject(new Error('Token too large, redirecting to login.'));
+    }
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -43,6 +52,7 @@ export const useAuthStore = create((set, get) => ({
   token: localStorage.getItem('payqusta_token'),
   isAuthenticated: !!localStorage.getItem('payqusta_token'),
   loading: false,
+  loggingOut: false,
 
   login: async (email, password) => {
     set({ loading: true });
@@ -96,13 +106,23 @@ export const useAuthStore = create((set, get) => ({
   },
 
   logout: async () => {
+    if (get().loggingOut) return;
+    const token = get().token || localStorage.getItem('payqusta_token');
+
+    // Clear client auth state immediately to avoid route bounce and double-click logout.
+    set({ user: null, tenant: null, token: null, isAuthenticated: false, loggingOut: true });
+    localStorage.removeItem('payqusta_token');
+
     try {
-      await api.post('/auth/logout');
+      if (token) {
+        await api.post('/auth/logout', null, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
     } catch (error) {
       console.error('Logout API failed:', error);
     } finally {
-      localStorage.removeItem('payqusta_token');
-      set({ user: null, tenant: null, token: null, isAuthenticated: false });
+      set({ loggingOut: false });
       window.location.href = '/login';
     }
   },
@@ -230,6 +250,7 @@ export const invoicesApi = {
   getOverdue: () => api.get('/invoices/overdue'),
   getUpcoming: (days) => api.get('/invoices/upcoming-installments', { params: { days } }),
   getSalesSummary: (period) => api.get('/invoices/sales-summary', { params: { period } }),
+  generatePaymentLink: (id, gateway) => api.post(`/invoices/${id}/payment-link`, { gateway }),
 };
 
 // Suppliers API
@@ -279,6 +300,15 @@ export const biApi = {
   whatIfSimulator: (data) => api.post('/bi/what-if', data),
 };
 
+// Subscription API (Tenant Level)
+export const subscriptionApi = {
+  getPlans: () => api.get('/plans'),
+  getMySubscription: () => api.get('/subscriptions/my-subscription'),
+  subscribe: (planId, gateway) => api.post('/subscriptions/subscribe', { planId, gateway }),
+  getPaymentMethods: () => api.get('/subscriptions/payment-methods'),
+  submitReceipt: (data) => api.post('/subscriptions/submit-receipt', data),
+};
+
 // Audit Logs API (Tenant Level)
 export const auditLogsApi = {
   getLogs: (params) => api.get('/audit-logs', { params }),
@@ -320,6 +350,15 @@ export const superAdminApi = {
   impersonateTenant: (id) => api.post(`/super-admin/tenants/${id}/impersonate`),
   getAnalytics: () => api.get('/super-admin/analytics'),
   getTenantDetails: (id) => api.get(`/super-admin/tenants/${id}/details`),
+  getPlans: () => api.get('/super-admin/plans'),
+  createPlan: (data) => api.post('/super-admin/plans', data),
+  updatePlan: (id, data) => api.put(`/super-admin/plans/${id}`, data),
+  deletePlan: (id) => api.delete(`/super-admin/plans/${id}`),
+  getPaymentMethods: () => api.get('/super-admin/payment-methods'),
+  updatePaymentMethods: (data) => api.put('/super-admin/payment-methods', data),
+  getSubscriptionRequests: (params) => api.get('/super-admin/subscription-requests', { params }),
+  approveSubscriptionRequest: (id) => api.post(`/super-admin/subscription-requests/${id}/approve`),
+  rejectSubscriptionRequest: (id, reason) => api.post(`/super-admin/subscription-requests/${id}/reject`, { reason }),
 };
 
 // Admin API (Legacy / Tenant Admin)

@@ -57,7 +57,7 @@ export default function CustomersPage() {
   const [actionType, setActionType] = useState(null); // 'print' or 'whatsapp'
 
   const printRef = useRef(null);
-  const LIMIT = 15;
+  const LIMIT = 8;
 
   useEffect(() => {
     try {
@@ -360,7 +360,7 @@ export default function CustomersPage() {
     const map = {
       paid: { variant: 'success', label: 'مسدد', icon: CheckCircle },
       pending: { variant: 'warning', label: 'قيد السداد', icon: Clock },
-      partially_paid: { variant: 'primary', label: 'Ù…Ø³Ø¯Ø¯ Ø¬Ø²Ø¦ÙŠØ§Ù‹', icon: Clock },
+      partially_paid: { variant: 'primary', label: 'مسدد جزئياً', icon: Clock },
       overdue: { variant: 'danger', label: 'متأخر', icon: AlertTriangle },
     };
     const s = map[status] || map.pending;

@@ -5,31 +5,31 @@ import {
   LayoutGrid, Target, TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuthStore, useThemeStore, api } from '../store';
+import { useAuthStore, api } from '../store';
 import { Button, Card, Input, Badge, LoadingSpinner, StatCard } from '../components/UI';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export default function BranchDashboardPage() {
-  const { user, logout, getMe } = useAuthStore();
+  const { user } = useAuthStore();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const branchId = user?.branch?._id;
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchStats = async () => {
       try {
-        // Refresh user profile to get latest XP/Badges
-        await getMe();
-
-        // Get branch stats from new endpoint
-        if (!user?.branch?._id) {
-          setLoading(false);
+        if (!branchId) {
+          if (mounted) setLoading(false);
           return;
         }
 
-        const statsRes = await api.get(`/branches/${user.branch._id}/stats`);
+        const statsRes = await api.get(`/branches/${branchId}/stats`);
         const statsData = statsRes.data.data;
+
+        if (!mounted) return;
 
         setStats({
           today: statsData.today,
@@ -40,6 +40,7 @@ export default function BranchDashboardPage() {
       } catch (err) {
         console.error('Error fetching branch stats:', err);
         // Fallback to empty state
+        if (!mounted) return;
         setStats({
           today: { sales: 0, paid: 0, invoicesCount: 0, expenses: 0, profit: 0 },
           currentShift: null,
@@ -47,11 +48,15 @@ export default function BranchDashboardPage() {
           gamification: null
         });
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
     fetchStats();
-  }, [user]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [branchId]);
 
   return (
     <div className="space-y-6 animate-fade-in">

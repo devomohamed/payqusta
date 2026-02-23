@@ -142,7 +142,13 @@ class AdminController {
         trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
       },
       settings: {
-        categories: ['عام', 'ملابس', 'إلكترونيات', 'مشروبات', 'مأكولات'], // Default categories
+        categories: [
+          { name: 'عام', isVisible: true },
+          { name: 'ملابس', isVisible: true },
+          { name: 'إلكترونيات', isVisible: true },
+          { name: 'مشروبات', isVisible: true },
+          { name: 'مأكولات', isVisible: true }
+        ], // Default categories
       }
     });
 

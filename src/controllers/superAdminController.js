@@ -9,8 +9,11 @@ const Branch = require('../models/Branch');
 const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
+const SubscriptionRequest = require('../models/SubscriptionRequest');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
+const catchAsync = require('../utils/catchAsync');
+const NotificationService = require('../services/NotificationService');
 
 class SuperAdminController {
   /**
@@ -19,10 +22,6 @@ class SuperAdminController {
    */
   async getAllTenants(req, res, next) {
     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
       const tenants = await Tenant.find({ isActive: true })
         .select('name businessInfo createdAt')
         .sort({ createdAt: -1 });
@@ -47,7 +46,7 @@ class SuperAdminController {
             createdAt: tenant.createdAt,
             isActive: tenant.isActive,
             subscription: tenant.subscription,
-            owner, 
+            owner,
             stats: {
               branches: branchCount,
               users: userCount,
@@ -70,10 +69,6 @@ class SuperAdminController {
    */
   async getSystemAnalytics(req, res, next) {
     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
       const [
         totalTenants,
         totalBranches,
@@ -143,10 +138,6 @@ class SuperAdminController {
    */
   async getTenantDetails(req, res, next) {
     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
       const tenant = await Tenant.findById(req.params.id);
       if (!tenant) return next(AppError.notFound('المحل غير موجود'));
 
@@ -189,10 +180,6 @@ class SuperAdminController {
    */
   async createTenant(req, res, next) {
     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
       const { name, businessInfo, adminEmail, adminPassword } = req.body;
 
       if (!name || !adminEmail || !adminPassword) {
@@ -225,22 +212,18 @@ class SuperAdminController {
    */
   async updateTenant(req, res, next) {
     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
       const { name, isActive, subscription } = req.body;
       const tenant = await Tenant.findById(req.params.id);
-      
+
       if (!tenant) return next(AppError.notFound('المحل غير موجود'));
 
       if (name) tenant.name = name;
       if (isActive !== undefined) {
-          tenant.isActive = isActive;
-          // Deactivate/Activate all users of this tenant? 
-          // Usually we want to block access if tenant is inactive. 
-          // Middleware `tenantScope` or login should check tenant.isActive
-          await User.updateMany({ tenant: tenant._id }, { isActive: isActive });
+        tenant.isActive = isActive;
+        // Deactivate/Activate all users of this tenant? 
+        // Usually we want to block access if tenant is inactive. 
+        // Middleware `tenantScope` or login should check tenant.isActive
+        await User.updateMany({ tenant: tenant._id }, { isActive: isActive });
       }
       if (subscription) tenant.subscription = subscription;
 
@@ -258,16 +241,12 @@ class SuperAdminController {
    */
   async deleteTenant(req, res, next) {
     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
       const tenant = await Tenant.findById(req.params.id);
       if (!tenant) return next(AppError.notFound('المحل غير موجود'));
 
       tenant.isActive = false;
       await tenant.save();
-      
+
       // Deactivate all users
       await User.updateMany({ tenant: tenant._id }, { isActive: false });
 
@@ -282,33 +261,129 @@ class SuperAdminController {
    * Login as this tenant's admin
    */
   async impersonateTenant(req, res, next) {
-     try {
-      if (!req.user.isSuperAdmin) {
-        return next(AppError.forbidden('صلاحية Super Admin مطلوبة'));
-      }
-
+    try {
       const tenant = await Tenant.findById(req.params.id);
       if (!tenant) return next(AppError.notFound('المحل غير موجود'));
 
       // Find the admin user for this tenant
       const adminUser = await User.findOne({ tenant: tenant._id, role: 'admin' }).sort({ createdAt: 1 });
-      
+
       if (!adminUser) {
-          return next(AppError.notFound('لا يوجد مدير لهذا المحل'));
+        return next(AppError.notFound('لا يوجد مدير لهذا المحل'));
       }
 
       // Generate token for this user
       const token = adminUser.getSignedJwtToken();
 
-      ApiResponse.success(res, { 
-          token, 
-          user: adminUser,
-          tenant
+      ApiResponse.success(res, {
+        token,
+        user: adminUser,
+        tenant
       }, `تم الدخول كـ ${adminUser.name}`);
-     } catch (error) {
-       next(error);
-     }
+    } catch (error) {
+      next(error);
+    }
   }
+  /**
+   * GET /api/v1/super-admin/subscription-requests
+   * List all subscription requests
+   */
+  getSubscriptionRequests = catchAsync(async (req, res) => {
+    const { status = 'pending' } = req.query;
+    const query = {};
+    if (status !== 'all') {
+      query.status = status;
+    }
+
+    const requests = await SubscriptionRequest.find(query)
+      .populate('tenant', 'name email phone')
+      .populate('plan', 'name price currency')
+      .sort('-createdAt');
+
+    ApiResponse.success(res, requests);
+  });
+
+  /**
+   * POST /api/v1/super-admin/subscription-requests/:id/approve
+   * Approves a request and activates the tenant's subscription
+   */
+  approveSubscriptionRequest = catchAsync(async (req, res, next) => {
+    const request = await SubscriptionRequest.findById(req.params.id)
+      .populate('plan');
+
+    if (!request) {
+      return next(AppError.notFound('الطلب غير موجود'));
+    }
+
+    if (request.status !== 'pending') {
+      return next(AppError.badRequest('تم التعامل مع هذا الطلب مسبقاً'));
+    }
+
+    const tenant = await Tenant.findById(request.tenant);
+    if (!tenant) {
+      return next(AppError.notFound('المتجر غير موجود'));
+    }
+
+    // Activate subscription
+    tenant.subscription.plan = request.plan._id;
+    tenant.subscription.status = 'active';
+    tenant.subscription.gateway = request.gateway;
+
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    if (request.plan.billingCycle === 'yearly') {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1);
+    }
+
+    tenant.subscription.currentPeriodStart = startDate;
+    tenant.subscription.currentPeriodEnd = endDate;
+    tenant.subscription.maxProducts = request.plan.limits.maxProducts;
+    tenant.subscription.maxCustomers = request.plan.limits.maxCustomers;
+    tenant.subscription.maxUsers = request.plan.limits.maxUsers;
+    tenant.subscription.maxBranches = request.plan.limits.maxBranches;
+
+    await tenant.save();
+
+    // Mark request as approved
+    request.status = 'approved';
+    request.approvedBy = req.user.id;
+    await request.save();
+
+    // Send Notification to Vendor + Super Admin
+    NotificationService.onSubscriptionApproved(tenant._id, request.plan.name, tenant.name).catch(() => { });
+
+    ApiResponse.success(res, { request, tenant: tenant.subscription }, 'تم الموافقة على الطلب وتفعيل الاشتراك بنجاح');
+  });
+
+  /**
+   * POST /api/v1/super-admin/subscription-requests/:id/reject
+   * Rejects a subscription request
+   */
+  rejectSubscriptionRequest = catchAsync(async (req, res, next) => {
+    const { reason } = req.body;
+    const request = await SubscriptionRequest.findById(req.params.id);
+
+    if (!request) {
+      return next(AppError.notFound('الطلب غير موجود'));
+    }
+
+    if (request.status !== 'pending') {
+      return next(AppError.badRequest('تم التعامل مع هذا الطلب مسبقاً'));
+    }
+
+    // Mark request as rejected
+    request.status = 'rejected';
+    request.approvedBy = req.user.id;
+    request.rejectionReason = reason || 'تم الرفض بواسطة الإدارة';
+    await request.save();
+
+    // Send Notification to Vendor + Super Admin
+    NotificationService.onSubscriptionRejected(request.tenant, request.rejectionReason, '').catch(() => { });
+
+    ApiResponse.success(res, request, 'تم رفض الطلب بنجاح');
+  });
 }
 
 module.exports = new SuperAdminController();

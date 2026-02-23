@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  MessageCircle, CheckCircle, AlertTriangle, Info, Hash, RefreshCw, Zap, 
-  FileText, Save, TestTube, ExternalLink, Loader2 
+import {
+  MessageCircle, CheckCircle, AlertTriangle, Info, Hash, RefreshCw, Zap,
+  FileText, Save, TestTube, ExternalLink, Loader2
 } from 'lucide-react';
 import { useAuthStore, api } from '../../store';
 import { Button, Input, Badge } from '../UI';
@@ -9,21 +9,24 @@ import { notify } from '../AnimatedNotification';
 
 export default function SettingsWhatsApp() {
   const { tenant, getMe } = useAuthStore();
-  const [whatsappForm, setWhatsappForm] = useState({ 
-    phoneNumber: '', 
-    accessToken: '', 
-    phoneNumberId: '', 
-    wabaId: '', 
-    notifications: {}, 
-    templateNames: {}, 
-    templateLanguages: {} 
+  const [whatsappForm, setWhatsappForm] = useState({
+    phoneNumber: '',
+    accessToken: '',
+    phoneNumberId: '',
+    wabaId: '',
+    notifications: {},
+    templateNames: {},
+    templateLanguages: {}
   });
-  
+
   const [saving, setSaving] = useState(false);
   const [testingWhatsApp, setTestingWhatsApp] = useState(false);
   const [detectingTemplates, setDetectingTemplates] = useState(false);
   const [detectedTemplates, setDetectedTemplates] = useState(null);
   const [whatsappStatus, setWhatsappStatus] = useState(null);
+
+  const [quota, setQuota] = useState({ limit: 0, used: 0 });
+  const [toppingUp, setToppingUp] = useState(false);
 
   useEffect(() => {
     if (tenant) {
@@ -41,6 +44,7 @@ export default function SettingsWhatsApp() {
         templateNames: tenant.whatsapp?.templateNames || {},
         templateLanguages: tenant.whatsapp?.templateLanguages || {},
       });
+      setQuota(tenant.whatsapp?.quota || { limit: 0, used: 0 });
       if (tenant.whatsapp?.enabled && tenant.whatsapp?.accessToken) {
         setWhatsappStatus('success');
       }
@@ -123,6 +127,23 @@ export default function SettingsWhatsApp() {
     }
   };
 
+  const handleTopup = async () => {
+    setToppingUp(true);
+    try {
+      const res = await api.post('/settings/whatsapp/topup', {
+        packageDetails: { messages: 500 }
+      });
+      if (res.data?.success) {
+        notify.success(res.data.message);
+        getMe(); // Refetch tenant data to update quota
+      }
+    } catch (err) {
+      notify.error(err.response?.data?.message || 'خطأ في الشحن');
+    } finally {
+      setToppingUp(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -150,6 +171,45 @@ export default function SettingsWhatsApp() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Quota Section */}
+      <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-gray-500" />
+            <h3 className="font-bold">رصيد الرسائل (Quota)</h3>
+          </div>
+          <Button
+            onClick={handleTopup}
+            loading={toppingUp}
+            icon={<Zap className="w-4 h-4" />}
+          >
+            شحن الرصيد (500 رسالة)
+          </Button>
+        </div>
+
+        <div className="mb-2 flex justify-between text-sm">
+          <span className="text-gray-500 dark:text-gray-400">المستهلك: {quota.used}</span>
+          <span className="font-bold">الحصة الإجمالية: {quota.limit} رسالة</span>
+        </div>
+
+        <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${quota.used >= quota.limit && quota.limit > 0 ? 'bg-red-500' : (quota.limit - quota.used <= 20) && quota.limit > 0 ? 'bg-amber-500' : 'bg-primary-500'}`}
+            style={{ width: `${quota.limit > 0 ? Math.min((quota.used / quota.limit) * 100, 100) : 0}%` }}
+          />
+        </div>
+        {quota.limit > 0 && quota.limit - quota.used <= 20 && quota.limit - quota.used > 0 && (
+          <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" /> الرصيد أوشك على النفاذ!
+          </p>
+        )}
+        {quota.limit > 0 && quota.used >= quota.limit && (
+          <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" /> لقد استنفدت رصيد الرسائل. يرجى شحن الرصيد لمواصلة إرسال الإشعارات.
+          </p>
+        )}
       </div>
 
       {/* API Credentials */}
@@ -208,11 +268,10 @@ export default function SettingsWhatsApp() {
                   <span className="font-medium">{t.name}</span>
                   <span className="text-xs text-gray-400">{t.language}</span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  t.status === 'APPROVED' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' :
-                  t.status === 'PENDING' ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
-                  'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'
-                }`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.status === 'APPROVED' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' :
+                    t.status === 'PENDING' ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
+                      'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'
+                  }`}>
                   {t.status}
                 </span>
               </div>

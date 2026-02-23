@@ -37,7 +37,7 @@ export default function AdminUsersPage() {
     tenantId: '',
   });
 
-  const LIMIT = 15;
+  const LIMIT = 8;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -321,8 +321,8 @@ export default function AdminUsersPage() {
                     <td className="p-4">
                       <Badge variant={
                         user.role === 'admin' ? 'warning' :
-                        user.role === 'vendor' ? 'primary' :
-                        'gray'
+                          user.role === 'vendor' ? 'primary' :
+                            'gray'
                       }>
                         <Shield className="w-3 h-3 mr-1" />
                         {user.role}

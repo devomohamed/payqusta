@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   TrendingUp, FileText, Clock, Boxes, CreditCard, AlertTriangle,
-  Users, Truck, Calendar, DollarSign, Star, Zap, BarChart3, Store,
+  Users, Truck, Calendar, DollarSign, Star, Zap, BarChart3, Store, Link2
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
@@ -20,7 +20,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // Fetch branches for filter
     if (user?.role === 'admin' || user?.isSuperAdmin) {
-      getBranches().then(setBranches).catch(() => {});
+      getBranches().then(setBranches).catch(() => { });
     }
   }, [user]);
 
@@ -193,7 +193,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Link to="/customers" className="p-4 rounded-xl bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 hover:border-primary-200 transition-all">
           <Users className="w-5 h-5 text-primary-500 mb-2" /><p className="text-2xl font-black">{data.customers?.total || 0}</p><p className="text-xs text-gray-400">عميل</p>
         </Link>
@@ -205,6 +205,12 @@ export default function DashboardPage() {
         </div>
         <div className="p-4 rounded-xl bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800">
           <Star className="w-5 h-5 text-violet-500 mb-2" /><p className="text-2xl font-black">{data.installments?.upcomingCount || 0}</p><p className="text-xs text-gray-400">أقساط قريبة</p>
+        </div>
+        <div className="p-4 rounded-xl bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 border-b-4 border-b-indigo-500">
+          <Link2 className="w-5 h-5 text-indigo-500 mb-2" />
+          <p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{fmt(data.quickCollections?.totalCollected || 0)} ج.م</p>
+          <p className="text-[11px] font-bold text-gray-500">تحصيل الروابط</p>
+          <p className="text-[10px] text-gray-400 mt-1">العمولة: {fmt(data.quickCollections?.totalFees || 0)} ج.م</p>
         </div>
       </div>
     </div>

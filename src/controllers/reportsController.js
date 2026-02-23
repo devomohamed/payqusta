@@ -1,8 +1,16 @@
 const ReportsService = require('../services/ReportsService');
 const ExcelService = require('../services/ExcelService');
+const Tenant = require('../models/Tenant');
 const ApiResponse = require('../utils/ApiResponse');
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
+
+const requireAddon = async (tenantId, addonKey) => {
+  const tenant = await Tenant.findById(tenantId).select('addons');
+  if (!tenant || !tenant.addons || !tenant.addons.includes(addonKey)) {
+    throw new AppError('هذه الميزة متاحة فقط ضمن حزمة التقارير المتقدمة', 403);
+  }
+};
 
 /**
  * Reports Controller
@@ -31,6 +39,7 @@ class ReportsController {
    * Get profit analysis report
    */
   getProfitReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { startDate, endDate, branch } = req.query;
 
     const report = await ReportsService.getProfitReport(req.tenantId, {
@@ -47,6 +56,7 @@ class ReportsController {
    * Get inventory report
    */
   getInventoryReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { lowStockOnly, category } = req.query;
 
     const report = await ReportsService.getInventoryReport(req.tenantId, {
@@ -62,6 +72,7 @@ class ReportsController {
    * Get customer report
    */
   getCustomerReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { startDate, endDate, minPurchases } = req.query;
 
     const report = await ReportsService.getCustomerReport(req.tenantId, {
@@ -78,6 +89,7 @@ class ReportsController {
    * Get product performance report
    */
   getProductPerformanceReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { startDate, endDate, limit } = req.query;
 
     const report = await ReportsService.getProductPerformanceReport(req.tenantId, {
@@ -115,6 +127,7 @@ class ReportsController {
    * Export profit report to Excel
    */
   exportProfitReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { startDate, endDate, branch } = req.query;
 
     const report = await ReportsService.getProfitReport(req.tenantId, {
@@ -135,6 +148,7 @@ class ReportsController {
    * Export inventory report to Excel
    */
   exportInventoryReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { lowStockOnly, category } = req.query;
 
     const report = await ReportsService.getInventoryReport(req.tenantId, {
@@ -154,6 +168,7 @@ class ReportsController {
    * Export customer report to Excel
    */
   exportCustomerReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { startDate, endDate, minPurchases } = req.query;
 
     const report = await ReportsService.getCustomerReport(req.tenantId, {
@@ -174,6 +189,7 @@ class ReportsController {
    * Export product performance report to Excel
    */
   exportProductPerformanceReport = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
     const { startDate, endDate, limit } = req.query;
 
     const report = await ReportsService.getProductPerformanceReport(req.tenantId, {

@@ -15,7 +15,7 @@ export default function StorefrontLayout({ children }) {
 
   const loadSettings = async () => {
     try {
-      const res = await api.get('/settings');
+      const res = await api.get('/storefront/settings');
       setSettings(res.data.data);
     } catch (err) { }
   };
@@ -40,9 +40,17 @@ export default function StorefrontLayout({ children }) {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/store" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-black text-xl">
-                {settings?.store?.name?.[0] || 'P'}
-              </div>
+              {settings?.branding?.logo ? (
+                <img
+                  src={settings.branding.logo}
+                  alt={settings?.store?.name || 'Store Logo'}
+                  className="w-10 h-10 object-contain"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white font-black text-xl">
+                  {settings?.store?.name?.[0] || 'P'}
+                </div>
+              )}
               <span className="text-xl font-black bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent">
                 {settings?.store?.name || 'PayQusta Store'}
               </span>

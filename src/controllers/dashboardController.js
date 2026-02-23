@@ -8,6 +8,7 @@ const Product = require('../models/Product');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
 const Expense = require('../models/Expense');
+const PaymentTransaction = require('../models/PaymentTransaction');
 const mongoose = require('mongoose');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
@@ -24,24 +25,24 @@ class DashboardController {
     const invoiceFilter = { tenant: tenantId };
     const productFilter = { tenant: tenantId, isActive: true }; // Product filtering is handled by getStockSummary or manually
     const customerFilter = { tenant: tenantId, isActive: true };
-    
+
     if (branchId) {
       invoiceFilter.branch = branchId;
       // customerFilter.branch = branchId; // Optional: Only if you strictly want customers registered at this branch
     }
 
-    const [salesSummary, stockSummary, customerCount, supplierCount, recentInvoices, topProducts] =
+    const [salesSummary, stockSummary, customerCount, supplierCount, recentInvoices, topProducts, quickCollections] =
       await Promise.all([
         Invoice.getSalesSummary(req.tenantId, 30, branchId),
         Product.getStockSummary(req.tenantId, branchId),
         Customer.countDocuments(customerFilter),
         Supplier.countDocuments({ tenant: tenantId, isActive: true }),
         Invoice.find(invoiceFilter)
-           .sort('-createdAt')
-           .limit(10)
-           .populate('customer', 'name phone')
-           .select('invoiceNumber customer totalAmount paidAmount remainingAmount status createdAt')
-           .lean(),
+          .sort('-createdAt')
+          .limit(10)
+          .populate('customer', 'name phone')
+          .select('invoiceNumber customer totalAmount paidAmount remainingAmount status createdAt')
+          .lean(),
         // Top products by sales
         Invoice.aggregate([
           { $match: { ...invoiceFilter, status: { $ne: 'cancelled' } } },
@@ -56,6 +57,11 @@ class DashboardController {
           },
           { $sort: { totalRevenue: -1 } },
           { $limit: 5 },
+        ]),
+        // Quick Collections via Gateways
+        PaymentTransaction.aggregate([
+          { $match: { tenant: tenantId, status: 'success' } },
+          { $group: { _id: null, totalCollected: { $sum: '$amount' }, totalFees: { $sum: '$fees' } } }
         ]),
       ]);
 
@@ -102,6 +108,7 @@ class DashboardController {
         upcomingCount: upcomingInstallments.length,
         overdueCount,
       },
+      quickCollections: quickCollections[0] || { totalCollected: 0, totalFees: 0 },
       monthlySales,
       topProducts,
       recentInvoices,
@@ -189,7 +196,7 @@ class DashboardController {
   getProfitIntelligence = catchAsync(async (req, res, next) => {
     const tenantId = new mongoose.Types.ObjectId(req.tenantId);
     const branchId = req.query.branch ? new mongoose.Types.ObjectId(req.query.branch) : null;
-    
+
     const matchStage = { tenant: tenantId, status: { $ne: 'cancelled' } };
     if (branchId) matchStage.branch = branchId;
 
@@ -466,13 +473,13 @@ class DashboardController {
   getBusinessHealth = catchAsync(async (req, res, next) => {
     const tenantId = new mongoose.Types.ObjectId(req.tenantId);
     const branchId = req.query.branch ? new mongoose.Types.ObjectId(req.query.branch) : null;
-    
+
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
     const filter = { tenant: tenantId };
     if (branchId) filter.branch = branchId;
-    
+
     const expenseFilter = { tenant: tenantId, isActive: true, date: { $gte: thirtyDaysAgo } };
     // Note: Expense model doesn't have branch yet, so we return all expenses or 0
     // For accuracy in branch view, we might want to exclude expenses or distribute them
@@ -604,7 +611,7 @@ class DashboardController {
 
     // Get current balance (collected - expenses this month)
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    
+
     const [collectedThisMonth, expensesThisMonth] = await Promise.all([
       Invoice.aggregate([
         { $match: { tenant: tenantId, ...(branchId && { branch: branchId }), 'payments.date': { $gte: monthStart } } },
@@ -620,11 +627,11 @@ class DashboardController {
 
     const initialCollection = collectedThisMonth[0]?.total || 0;
     const initialExpenses = expensesThisMonth[0]?.total || 0;
-    
+
     // If branch filtering is on, initial expenses is technically unknown for that branch, 
     // but we subtract global expenses? Or 0?
     // Let's subtract 0 if branch filtering is ON to avoid confusion, or assume expenses are for all branches
-    
+
     runningBalance = initialCollection - initialExpenses;
 
     // Build 30-day forecast

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Bell, Check, CheckCheck, Clock, AlertTriangle, CreditCard,
   FileText, Package, Truck, UserPlus, Star, X, Trash2, ChevronDown,
+  Store, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { api, API_URL } from '../store';
 
@@ -16,6 +17,9 @@ const iconMap = {
   truck: Truck,
   'user-plus': UserPlus,
   star: Star,
+  store: Store,
+  'check-circle': CheckCircle,
+  'alert-circle': AlertCircle,
   bell: Bell,
 };
 
@@ -197,7 +201,10 @@ export default function NotificationDropdown() {
   const handleClick = (notification) => {
     if (!notification.isRead) markAsRead(notification._id);
     if (notification.link) {
-      navigate(notification.link);
+      const navLink = notification.link === '/admin/subscriptions'
+        ? '/super-admin/requests'
+        : notification.link;
+      navigate(navLink);
       setOpen(false);
     }
   };

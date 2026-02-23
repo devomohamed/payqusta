@@ -17,9 +17,20 @@ export default function SettingsCategories() {
   const loadCategories = async () => {
     setLoading(true);
     try {
-      // Fetch all categories (configured + used in products)
-      const res = await productsApi.getCategories();
-      setCategories(res.data.data || []);
+      // Merge configured categories with categories already used by products.
+      const [settingsRes, productsRes] = await Promise.all([
+        api.get('/settings'),
+        productsApi.getCategories(),
+      ]);
+
+      const settingsCategories = settingsRes.data?.data?.tenant?.settings?.categories || [];
+      const settingsNames = settingsCategories
+        .map((cat) => (typeof cat === 'string' ? cat : cat?.name))
+        .filter(Boolean);
+
+      const productCategories = productsRes.data?.data || [];
+      const merged = Array.from(new Set([...settingsNames, ...productCategories]));
+      setCategories(merged);
     } catch (err) {
       notify.error('فشل في تحميل التصنيفات');
     } finally {
@@ -140,3 +151,4 @@ export default function SettingsCategories() {
     </div>
   );
 }
+

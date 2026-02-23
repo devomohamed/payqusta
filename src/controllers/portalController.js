@@ -15,6 +15,7 @@ const Helpers = require('../utils/helpers');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 
 // Helper to generate token for customer
 const generateToken = (id) => {
@@ -317,14 +318,15 @@ class PortalController {
     // Ensure we handle potential null/undefined
     const settingsCategories = customer.tenant?.settings?.categories || [];
 
-    console.log('[PORTAL_DASHBOARD] Tenant:', tenantId);
-    console.log('[PORTAL_DASHBOARD] Settings Categories:', settingsCategories);
-    console.log('[PORTAL_DASHBOARD] Aggregated Counts:', categoryCounts);
+    logger.info(`[PORTAL_DASHBOARD] Tenant: ${tenantId}`);
+    logger.info(`[PORTAL_DASHBOARD] Settings Categories:`, settingsCategories);
+    logger.info(`[PORTAL_DASHBOARD] Aggregated Counts:`, categoryCounts);
 
-    if (settingsCategories.length > 0) {
-      // Use settings categories directly (they should be strings now)
-      // Filter out any non-string values just in case DB has mixed data
-      categoriesList = settingsCategories.filter(c => typeof c === 'string');
+    if (settingsCategories && settingsCategories.length > 0) {
+      // Use settings categories directly (handle both legacy strings and new object format)
+      categoriesList = settingsCategories
+        .filter(c => c && (typeof c === 'string' || c.name))
+        .map(c => typeof c === 'string' ? c : c.name);
     } else {
       // Fallback to aggregation results
       categoriesList = categoryCounts.map(c => c._id);
@@ -886,9 +888,9 @@ class PortalController {
       Product.distinct('category', { tenant: customer.tenant._id || customer.tenant, isActive: true })
     ]);
 
-    console.log('[PORTAL_GET_PRODUCTS] Filter:', JSON.stringify(filter));
-    console.log('[PORTAL_GET_PRODUCTS] Found products:', total);
-    console.log('[PORTAL_GET_PRODUCTS] Found categories:', categories);
+    logger.info(`[PORTAL_GET_PRODUCTS] Filter: ${JSON.stringify(filter)}`);
+    logger.info(`[PORTAL_GET_PRODUCTS] Found products: ${total}`);
+    logger.info(`[PORTAL_GET_PRODUCTS] Found categories:`, categories);
 
     ApiResponse.success(res, {
       products,

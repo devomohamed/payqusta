@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter } from 'lucide-react';
+import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter, Link as LinkIcon, Copy, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
 import { invoicesApi, customersApi, productsApi } from '../store';
@@ -31,6 +31,13 @@ export default function InvoicesPage() {
   const [creating, setCreating] = useState(false);
   const [productSearch, setProductSearch] = useState('');
 
+  // Payment Link States
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkInvoice, setLinkInvoice] = useState(null);
+  const [generatedLink, setGeneratedLink] = useState('');
+  const [linkGateway, setLinkGateway] = useState('paymob');
+  const [linkLoading, setLinkLoading] = useState(false);
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
@@ -39,7 +46,7 @@ export default function InvoicesPage() {
   const [installments, setInstallments] = useState(3);
   const [frequency, setFrequency] = useState('monthly');
   const [downPayment, setDownPayment] = useState('');
-  const LIMIT = 10;
+  const LIMIT = 8;
 
   useEffect(() => {
     try {
@@ -181,6 +188,27 @@ export default function InvoicesPage() {
         },
       },
     });
+  };
+
+  const handleGenerateLink = async () => {
+    if (!linkInvoice) return;
+    setLinkLoading(true);
+    setGeneratedLink('');
+    try {
+      const res = await invoicesApi.generatePaymentLink(linkInvoice._id, linkGateway);
+      setGeneratedLink(res.data.paymentLink);
+      toast.success('تم إنشاء الرابط بنجاح');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'فشل توليد الرابط');
+    } finally {
+      setLinkLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (!generatedLink) return;
+    navigator.clipboard.writeText(generatedLink);
+    toast.success('تم نسخ الرابط للحافظة');
   };
 
   const handleSendWhatsApp = async (inv) => {
@@ -337,6 +365,13 @@ export default function InvoicesPage() {
                               >
                                 <Check className="w-4 h-4" />
                               </button>
+                              <button
+                                onClick={() => { setLinkInvoice(inv); setGeneratedLink(''); setShowLinkModal(true); }}
+                                className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 transition-colors"
+                                title="إنشاء رابط دفع"
+                              >
+                                <LinkIcon className="w-4 h-4" />
+                              </button>
                             </>
                           ) : (
                             <span className="text-emerald-500"><Check className="w-5 h-5" /></span>
@@ -410,8 +445,8 @@ export default function InvoicesPage() {
                     <button
                       onClick={() => addToCart(p)}
                       className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${inCart
-                          ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                          : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-primary-500 hover:text-primary-500'
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-primary-500 hover:text-primary-500'
                         }`}
                     >
                       {inCart ? `مضاف (${inCart.quantity})` : 'إضافة'}
@@ -487,6 +522,81 @@ export default function InvoicesPage() {
               <Button variant="ghost" onClick={() => setShowPayModal(false)}>إلغاء</Button>
               <Button icon={<Check className="w-4 h-4" />} onClick={handlePay}>تأكيد الدفع</Button>
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Payment Link Modal */}
+      <Modal open={showLinkModal} onClose={() => setShowLinkModal(false)} title="رابط التحصيل السريع" size="sm">
+        {linkInvoice && (
+          <div className="space-y-4">
+            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center border border-indigo-100 dark:border-indigo-800">
+              <p className="text-sm text-indigo-800 dark:text-indigo-200">المبلغ المستحق</p>
+              <p className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">{fmt(linkInvoice.remainingAmount)} ج.م</p>
+              <p className="text-xs text-indigo-500 dark:text-indigo-300 mt-1">سيتم تحميل رسوم بوابة الدفع على العميل</p>
+            </div>
+
+            {!generatedLink ? (
+              <>
+                <Select
+                  label="بوابة الدفع"
+                  value={linkGateway}
+                  onChange={(e) => setLinkGateway(e.target.value)}
+                  options={[
+                    { value: 'paymob', label: '💳 بطاقة بنكية (Paymob)' },
+                    { value: 'stripe', label: '💳 بطاقة دولية (Stripe)' },
+                    { value: 'instapay', label: '📱 انستا باي (InstaPay)' },
+                    { value: 'vodafone_cash', label: '🔴 فودافون كاش' }
+                  ]}
+                />
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button variant="ghost" onClick={() => setShowLinkModal(false)}>إلغاء</Button>
+                  <Button icon={<LinkIcon className="w-4 h-4" />} onClick={handleGenerateLink} loading={linkLoading}>
+                    إنشاء الرابط
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4 mt-2">
+                <div className="flex justify-center mb-4">
+                  <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(generatedLink)}`}
+                      alt="QR Code"
+                      className="w-32 h-32"
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value={generatedLink}
+                    className="w-full pr-12 pl-4 py-3 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 text-sm font-medium outline-none"
+                  />
+                  <button
+                    onClick={copyToClipboard}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-300 dark:hover:bg-emerald-700 transition-colors"
+                    title="نسخ الرابط"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex justify-between gap-3">
+                  <Button variant="ghost" onClick={() => { setGeneratedLink(''); setShowLinkModal(false); }} className="flex-1">إغلاق</Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => window.open(generatedLink, '_blank')}
+                    icon={<ExternalLink className="w-4 h-4" />}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    فتح الرابط
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

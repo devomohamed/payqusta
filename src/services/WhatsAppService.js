@@ -46,14 +46,67 @@ class WhatsAppService {
   }
 
   /**
-   * Helper: Get credentials from config or fallback (for backward compatibility if needed)
+   * Helper: Get credentials from config or fallback
    * @param {object|null} config - { accessToken, phoneNumberId }
    */
   getCredentials(config) {
     return {
       token: config?.accessToken || process.env.WHATSAPP_ACCESS_TOKEN,
-      phoneId: config?.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID
+      phoneId: config?.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID,
+      isCustomCredentials: !!(config?.accessToken && config?.phoneNumberId),
     };
+  }
+
+  /**
+   * Check if tenant is allowed to send message (quota validation)
+   */
+  async _checkQuota(config) {
+    const creds = this.getCredentials(config);
+    // If they use their own WhatsApp credentials, don't apply system quota
+    if (creds.isCustomCredentials) return { allowed: true, tenant: null };
+
+    // Otherwise, check system quota
+    let tenant = null;
+    if (config && typeof config.parent === 'function') {
+      tenant = config.parent(); // Get full Tenant document from subdocument
+    } else if (typeof config === 'string') {
+      const Tenant = require('../models/Tenant');
+      tenant = await Tenant.findById(config);
+    }
+
+    if (tenant) {
+      if (!tenant.whatsapp.quota) tenant.whatsapp.quota = { limit: 0, used: 0 };
+      const quota = tenant.whatsapp.quota;
+
+      // If limit is 0 or usage exceeded
+      if (quota.limit <= 0 || quota.used >= quota.limit) {
+        return { allowed: false, tenant };
+      }
+      return { allowed: true, tenant };
+    }
+
+    // Default allow for system calls without tenant context
+    return { allowed: true, tenant: null };
+  }
+
+  /**
+   * Increment quota used and trigger alerts if needed
+   */
+  async _incrementQuota(tenant) {
+    if (tenant) {
+      tenant.whatsapp.quota.used += 1;
+
+      const limit = tenant.whatsapp.quota.limit;
+      const used = tenant.whatsapp.quota.used;
+      const threshold = tenant.whatsapp.billing?.alertThreshold || 20;
+
+      if (limit - used === threshold) {
+        logger.warn(`[WhatsApp Quota Alert] Tenant ${tenant.name} (${tenant._id}) has only ${threshold} messages left.`);
+        // Note: Could add NotificationService call here to show alert in dashboard
+      }
+
+      await tenant.save();
+    }
   }
 
   /**
@@ -177,7 +230,7 @@ class WhatsAppService {
    * MESSAGE TEMPLATES — Main method for 24h+ messaging
    * =====================================================
    */
-  
+
   /**
    * Send a pre-approved Message Template
    * @param {string} to - Phone number
@@ -190,10 +243,17 @@ class WhatsAppService {
    */
   async sendTemplate(to, templateName, languageCode = 'ar', bodyParams = [], headerParams = [], buttonParams = [], config = null) {
     const { token, phoneId } = this.getCredentials(config);
-    
+
     if (!this.isConfigured(config)) {
       logger.warn('[WhatsApp] Not configured — skipping template message');
       return { success: false, skipped: true, reason: 'not_configured' };
+    }
+
+    // Quota Check
+    const quotaCheck = await this._checkQuota(config);
+    if (!quotaCheck.allowed) {
+      logger.warn(`[WhatsApp] Quota exceeded for tenant ${quotaCheck.tenant?._id}. Cannot send message.`);
+      return { success: false, skipped: true, reason: 'quota_exceeded' };
     }
 
     try {
@@ -202,7 +262,7 @@ class WhatsAppService {
 
       // Build components array
       const components = [];
-      
+
       // Header parameters (if any)
       if (headerParams.length > 0) {
         components.push({
@@ -261,17 +321,20 @@ class WhatsAppService {
       const messageId = response.data?.messages?.[0]?.id;
       logger.info(`[WhatsApp] ✅ Template sent successfully!`);
       logger.info(`[WhatsApp] Template: ${templateName}, Message ID: ${messageId}`);
-      
-      return { 
-        success: true, 
-        data: response.data, 
+
+      // Deduct Quota
+      await this._incrementQuota(quotaCheck.tenant);
+
+      return {
+        success: true,
+        data: response.data,
         messageId,
         templateUsed: templateName,
       };
     } catch (error) {
       const errorData = error.response?.data?.error;
       logger.error(`[WhatsApp] ❌ Template send failed: ${JSON.stringify(errorData || error.message)}`);
-      
+
       // Handle specific template errors
       if (errorData?.code === 132000) {
         logger.error(`[WhatsApp] Template "${templateName}" not found or not approved`);
@@ -284,7 +347,7 @@ class WhatsAppService {
       } else if (errorData?.code === 132015) {
         logger.error('[WhatsApp] Template not available for this language');
       }
-      
+
       return { success: false, error: errorData || error.message, templateName };
     }
   }
@@ -294,7 +357,7 @@ class WhatsAppService {
    * SMART SEND — Tries template first, falls back to regular
    * =====================================================
    */
-  
+
   /**
    * Smart send - tries template first, then regular message
    * @param {string} to - Phone number
@@ -312,7 +375,7 @@ class WhatsAppService {
       }
       logger.warn(`[WhatsApp] Template failed, trying regular message...`);
     }
-    
+
     // Fallback to regular message (only works in 24h window)
     const messageResult = await this.sendMessage(to, message, config);
     return { ...messageResult, method: 'message' };
@@ -419,10 +482,17 @@ class WhatsAppService {
 
   async sendMessage(to, message, config = null) {
     const { token, phoneId } = this.getCredentials(config);
-    
+
     if (!this.isConfigured(config)) {
       logger.warn('WhatsApp not configured — skipping message');
       return { success: false, skipped: true, reason: 'not_configured' };
+    }
+
+    // Quota Check
+    const quotaCheck = await this._checkQuota(config);
+    if (!quotaCheck.allowed) {
+      logger.warn(`[WhatsApp] Quota exceeded for tenant ${quotaCheck.tenant?._id}. Cannot send text message.`);
+      return { success: false, skipped: true, reason: 'quota_exceeded' };
     }
 
     try {
@@ -447,23 +517,27 @@ class WhatsAppService {
       );
 
       logger.info(`[WhatsApp] ✅ Message sent to ${phone}`);
+
+      // Deduct Quota
+      await this._incrementQuota(quotaCheck.tenant);
+
       return { success: true, data: response.data, messageId: response.data?.messages?.[0]?.id };
     } catch (error) {
       const errorDetails = error.response?.data?.error || error.message;
       logger.error(`[WhatsApp] ❌ Send failed to ${to}: ${JSON.stringify(errorDetails)}`);
-      
+
       // Check if it's a 24h window error
       if (error.response?.data?.error?.code === 131047) {
         logger.info('[WhatsApp] 24h window expired - use Message Template instead');
-        return { 
-          success: false, 
-          failed: true, 
+        return {
+          success: false,
+          failed: true,
           error: errorDetails,
           needsTemplate: true,
           hint: 'استخدم Message Template للإرسال خارج نافذة 24 ساعة',
         };
       }
-      
+
       return { success: false, failed: true, error: errorDetails };
     }
   }
@@ -473,7 +547,7 @@ class WhatsAppService {
    */
   async uploadMedia(filepath, mimeType = 'application/pdf', config = null) {
     const { token, phoneId } = this.getCredentials(config);
-    
+
     if (!this.isConfigured(config)) {
       return { success: false, reason: 'not_configured' };
     }
@@ -513,6 +587,13 @@ class WhatsAppService {
       return { success: false, skipped: true, reason: 'not_configured' };
     }
 
+    // Quota Check
+    const quotaCheck = await this._checkQuota(config);
+    if (!quotaCheck.allowed) {
+      logger.warn(`[WhatsApp] Quota exceeded for tenant ${quotaCheck.tenant?._id}. Cannot send document.`);
+      return { success: false, skipped: true, reason: 'quota_exceeded' };
+    }
+
     try {
       const uploadResult = await this.uploadMedia(filepath, 'application/pdf', config);
       if (!uploadResult.success) {
@@ -546,26 +627,29 @@ class WhatsAppService {
       const messageId = response.data?.messages?.[0]?.id;
       logger.info(`[WhatsApp] ✅ Document queued: ${filename}`);
       logger.info(`[WhatsApp] Message ID: ${messageId}`);
-      
-      return { 
-        success: true, 
+
+      // Deduct Quota
+      await this._incrementQuota(quotaCheck.tenant);
+
+      return {
+        success: true,
         data: response.data,
         messageId,
       };
     } catch (error) {
       const errorData = error.response?.data?.error;
       logger.error(`[WhatsApp] ❌ Document send failed: ${JSON.stringify(errorData || error.message)}`);
-      
+
       // Check if 24h window expired
       if (errorData?.code === 131047) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: errorData,
           needsTemplate: true,
           hint: 'استخدم Message Template للإرسال خارج نافذة 24 ساعة',
         };
       }
-      
+
       return { success: false, error: errorData || error.message };
     }
   }

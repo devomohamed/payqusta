@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useAuthStore, useThemeStore } from './store';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -24,6 +25,7 @@ import CommandCenterPage from './pages/CommandCenterPage';
 import ExpensesPage from './pages/ExpensesPage';
 import LowStockPage from './pages/LowStockPage';
 import SettingsPage from './pages/SettingsPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 import CamerasPage from './pages/CamerasPage';
 import CashDrawerPage from './pages/CashDrawerPage';
 import RolesPage from './pages/RolesPage';
@@ -38,14 +40,19 @@ import AdminStatisticsPage from './pages/AdminStatisticsPage';
 import ImportDataPage from './pages/ImportDataPage';
 import BackupRestorePage from './pages/BackupRestorePage';
 import BranchManagement from './pages/BranchManagement';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import TenantManagementPage from './pages/TenantManagementPage';
+import SuperAdminPlansPage from './pages/SuperAdminPlansPage';
+import SubscriptionRequestsPage from './pages/SubscriptionRequestsPage';
 import PortalOrdersAdminPage from './pages/PortalOrdersAdminPage';
 import ReturnsManagementPage from './pages/ReturnsManagementPage';
+import AddonStorePage from './pages/AddonStorePage';
 import KYCReviewPage from './pages/KYCReviewPage';
 import SupportMessagesPage from './pages/SupportMessagesPage';
 import ReviewsPage from './pages/ReviewsPage';
 import CouponsPage from './pages/CouponsPage';
+import ReferralPage from './pages/ReferralPage';
+import RevenueAnalyticsPage from './pages/RevenueAnalyticsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 // Storefront Pages
 import StorefrontLayout from './storefront/StorefrontLayout';
@@ -86,6 +93,9 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+const isSystemSuperAdminUser = (user) =>
+  !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
+
 // Admin Route wrapper - Only for Admin users
 function AdminRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -99,6 +109,13 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function SuperAdminRoute({ children }) {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isSystemSuperAdminUser(user)) return <Navigate to="/" replace />;
+  return children;
+}
+
 import BranchDashboardPage from './pages/BranchDashboardPage';
 
 // ... (other imports)
@@ -109,6 +126,7 @@ function MainLayout() {
   const { dark } = useThemeStore();
   const location = useLocation();
   const { user } = useAuthStore();
+  const isSystemSuperAdmin = isSystemSuperAdminUser(user);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -117,7 +135,7 @@ function MainLayout() {
 
   // Dashboard Component Selection based on role
   const getDashboardComponent = () => {
-    if (user?.role === 'admin' || user?.isSuperAdmin) {
+    if (user?.role === 'admin' || isSystemSuperAdmin) {
       return <DashboardPage />;
     }
     return <BranchDashboardPage />;
@@ -132,6 +150,12 @@ function MainLayout() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <Header onMenuClick={() => setSidebarOpen(true)} />
+
+          {isSystemSuperAdmin && (
+            <div className="px-4 md:px-6 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200/60 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-sm font-semibold">
+              وضع Super Admin مفعل - لديك صلاحيات إدارة النظام بالكامل.
+            </div>
+          )}
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6">
             <ErrorBoundary>
@@ -163,20 +187,25 @@ function MainLayout() {
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/invoices" element={<InvoicesPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/expenses" element={<ExpensesPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/business-reports" element={<BusinessReportsPage />} />
                 <Route path="/aging-report" element={<AgingReportPage />} />
+                <Route path="/addon-store" element={<AddonStorePage />} />
+                <Route path="/referrals" element={<ReferralPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route
+                  path="/subscriptions"
+                  element={isSystemSuperAdmin ? <Navigate to="/super-admin/plans" replace /> : <SubscriptionPage />}
+                />
                 <Route path="/cameras" element={<CamerasPage />} />
                 <Route path="/branches" element={<BranchManagement />} />
                 {/* Super Admin Routes */}
-                {user?.isSuperAdmin && (
-                  <>
-                    <Route path="/super-admin" element={<SuperAdminDashboard />} />
-                    <Route path="/tenant-management" element={<TenantManagementPage />} />
-                  </>
-                )}
+                <Route path="/super-admin/plans" element={<SuperAdminRoute><SuperAdminPlansPage /></SuperAdminRoute>} />
+                <Route path="/super-admin/requests" element={<SuperAdminRoute><SubscriptionRequestsPage /></SuperAdminRoute>} />
+                <Route path="/super-admin/analytics" element={<SuperAdminRoute><RevenueAnalyticsPage /></SuperAdminRoute>} />
+                <Route path="/tenant-management" element={<SuperAdminRoute><TenantManagementPage /></SuperAdminRoute>} />
                 <Route path="/cash-drawer" element={<CashDrawerPage />} />
                 <Route path="/roles" element={<RolesPage />} />
                 <Route path="/activity-logs" element={<ActivityLogsPage />} />
@@ -201,7 +230,7 @@ function MainLayout() {
 
 export default function App() {
   const { dark } = useThemeStore();
-  const { isAuthenticated, getMe } = useAuthStore();
+  const { isAuthenticated, getMe, user } = useAuthStore();
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -209,6 +238,17 @@ export default function App() {
       getMe().catch(() => { });
     }
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    if (!isSystemSuperAdminUser(user)) return;
+
+    const key = `super-login-toast:${user.email?.toLowerCase()}`;
+    if (sessionStorage.getItem(key)) return;
+
+    toast.success('تم تسجيل الدخول بحساب Super Admin');
+    sessionStorage.setItem(key, '1');
+  }, [isAuthenticated, user]);
 
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;

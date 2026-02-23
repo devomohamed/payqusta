@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema(
     tenant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tenant',
-      required: true,
+      required: false, // optional — super admin notifications have no tenant
       index: true,
     },
     // Who should see this notification (vendor/admin user)
@@ -44,6 +44,10 @@ const notificationSchema = new mongoose.Schema(
         'order',                 // طلب جديد
         'order_status',          // تحديث حالة طلب
         'support_reply',         // رد على رسالة دعم
+        'expense_created',
+        'branch_created',
+        'subscription_approved',
+        'subscription_rejected',
       ],
     },
     // Display info
@@ -96,6 +100,7 @@ const notificationSchema = new mongoose.Schema(
 // Indexes
 notificationSchema.index({ tenant: 1, recipient: 1, isRead: 1, createdAt: -1 });
 notificationSchema.index({ tenant: 1, customerRecipient: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 }); // For super admin (no tenant)
 notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 }); // Auto-delete after 90 days
 
 // Static: Create a notification
@@ -112,15 +117,16 @@ notificationSchema.statics.notify = async function ({
 
 // Static: Get unread count
 notificationSchema.statics.getUnreadCount = function (tenantId, userId) {
-  return this.countDocuments({ tenant: tenantId, recipient: userId, isRead: false });
+  const filter = { recipient: userId, isRead: false };
+  if (tenantId) filter.tenant = tenantId;
+  return this.countDocuments(filter);
 };
 
 // Static: Mark all as read
 notificationSchema.statics.markAllRead = function (tenantId, userId) {
-  return this.updateMany(
-    { tenant: tenantId, recipient: userId, isRead: false },
-    { isRead: true, readAt: new Date() }
-  );
+  const filter = { recipient: userId, isRead: false };
+  if (tenantId) filter.tenant = tenantId;
+  return this.updateMany(filter, { isRead: true, readAt: new Date() });
 };
 
 // Helper: Default icon by type
@@ -137,6 +143,10 @@ function getDefaultIcon(type) {
     new_customer: 'user-plus',
     customer_vip: 'star',
     system: 'bell',
+    expense_created: 'credit-card',
+    branch_created: 'store',
+    subscription_approved: 'check-circle',
+    subscription_rejected: 'alert-circle',
   };
   return icons[type] || 'bell';
 }
@@ -155,6 +165,10 @@ function getDefaultColor(type) {
     new_customer: 'success',
     customer_vip: 'warning',
     system: 'gray',
+    expense_created: 'gray',
+    branch_created: 'success',
+    subscription_approved: 'success',
+    subscription_rejected: 'danger',
   };
   return colors[type] || 'primary';
 }

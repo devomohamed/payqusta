@@ -89,23 +89,45 @@ const tenantSchema = new mongoose.Schema(
         lowStockAlert: { type: Boolean, default: true },
         supplierPaymentDue: { type: Boolean, default: true },
       },
+      // Quota management for WhatsApp messages
+      quota: {
+        limit: { type: Number, default: 0 }, // Total allowed messages
+        used: { type: Number, default: 0 },  // Messages sent so far
+      },
+      // Billing and pricing information
+      billing: {
+        pricePerMessage: { type: Number, default: 1.5 }, // e.g. 1.5 EGP per message (including markup)
+        alertThreshold: { type: Number, default: 20 },   // Alert when only 20 messages are left
+      }
     },
     subscription: {
       plan: {
-        type: String,
-        enum: ['free', 'basic', 'pro', 'professional', 'enterprise'],
-        default: 'free',
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Plan',
+        default: null
       },
       status: {
         type: String,
-        enum: ['active', 'trial', 'suspended', 'cancelled'],
+        enum: ['active', 'trial', 'past_due', 'suspended', 'cancelled'],
         default: 'trial',
       },
       trialEndsAt: { type: Date },
+      currentPeriodStart: { type: Date },
       currentPeriodEnd: { type: Date },
+      // Billing gateway info
+      gateway: {
+        type: String,
+        enum: ['stripe', 'paymob', 'instapay', 'vodafone_cash', 'manual', null],
+        default: null
+      },
+      stripeCustomerId: { type: String, default: null },
+      stripeSubscriptionId: { type: String, default: null },
+      paymobOrderId: { type: String, default: null }, // for latest payment
+      // Stored snapshot of limits (in case plan changes but tenant keeps grandfathered limits)
       maxProducts: { type: Number, default: 50 },
       maxCustomers: { type: Number, default: 100 },
       maxUsers: { type: Number, default: 3 },
+      maxBranches: { type: Number, default: 1 }
     },
     // Dashboard widget configuration
     dashboardWidgets: [
@@ -124,6 +146,10 @@ const tenantSchema = new mongoose.Schema(
         branch: { type: String }, // Optional: link to specific branch
       }
     ],
+    // Purchased Add-ons (Premium Features)
+    addons: [{
+      type: String // We will store the Addon 'key' here
+    }],
     isActive: { type: Boolean, default: true },
   },
   {
@@ -137,10 +163,24 @@ const tenantSchema = new mongoose.Schema(
 tenantSchema.index({ owner: 1 });
 tenantSchema.index({ 'subscription.status': 1 });
 
-// Pre-save Migration: Handle legacy whatsapp string
+// Pre-save Migration: Handle legacy data
 tenantSchema.pre('save', function (next) {
   if (typeof this.whatsapp === 'string') {
     this.whatsapp = undefined;
+  }
+
+  // Fix legacy plan values stored as strings (e.g. "pro") instead of ObjectId
+  if (this.subscription?.plan && !mongoose.isValidObjectId(this.subscription.plan)) {
+    this.subscription.plan = null;
+  }
+
+  // Set trial if new tenant (14 days freemium)
+  if (this.isNew && !this.subscription.trialEndsAt) {
+    const trialDays = 14;
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + trialDays);
+    this.subscription.trialEndsAt = trialEnd;
+    this.subscription.status = 'trial';
   }
 
   // Generate slug

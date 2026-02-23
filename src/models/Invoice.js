@@ -163,6 +163,16 @@ const invoiceSchema = new mongoose.Schema(
       amount: { type: Number, default: 0 },
       isPaid: { type: Boolean, default: false },
     },
+    // Quick Collection & Gateways
+    paymentLink: { type: String },
+    gatewayFees: { type: Number, default: 0 },
+    paymentAttempts: [{
+      date: { type: Date, default: Date.now },
+      gateway: { type: String },
+      status: { type: String },
+      transactionId: { type: String },
+      errorMessage: { type: String }
+    }],
   },
   {
     timestamps: true,

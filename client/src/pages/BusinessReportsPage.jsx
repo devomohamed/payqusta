@@ -13,9 +13,11 @@ import {
   Printer,
   ChevronRight,
   ChevronLeft,
+  Lock
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { notify } from '../components/AnimatedNotification';
-import { reportsApi, useThemeStore } from '../store';
+import { reportsApi, useThemeStore, useAuthStore } from '../store';
 import { subDays, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 // Safe number conversion - handles strings, NaN, undefined, null
@@ -45,6 +47,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function BusinessReportsPage() {
   const { dark } = useThemeStore();
+  const { tenant } = useAuthStore();
   const [selectedReport, setSelectedReport] = useState('sales');
   const [selectedRange, setSelectedRange] = useState('month');
   const [customStart, setCustomStart] = useState('');
@@ -59,9 +62,17 @@ export default function BusinessReportsPage() {
   const [lowStockOnly, setLowStockOnly] = useState(false);
   const [minPurchases, setMinPurchases] = useState(0);
 
+  const isAdvancedReport = selectedReport !== 'sales';
+  const hasAdvancedReports = tenant?.addons?.includes('advanced_reports');
+  const showPaywall = isAdvancedReport && !hasAdvancedReports;
+
   useEffect(() => {
-    loadReport();
-  }, [selectedReport, selectedRange]);
+    if (!showPaywall) {
+      loadReport();
+    } else {
+      setReportData(null);
+    }
+  }, [selectedReport, selectedRange, showPaywall]);
 
   const getDateRange = () => {
     if (selectedRange === 'custom') {
@@ -79,6 +90,11 @@ export default function BusinessReportsPage() {
 
       if (!dates && selectedRange === 'custom') {
         setReportData(null);
+        setLoading(false);
+        return;
+      }
+
+      if (showPaywall) {
         setLoading(false);
         return;
       }
@@ -257,9 +273,8 @@ export default function BusinessReportsPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition ${
-              dark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition ${dark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
           >
             <Filter className="w-4 h-4" />
             الفلاتر
@@ -267,9 +282,8 @@ export default function BusinessReportsPage() {
           <button
             onClick={handlePrint}
             disabled={!reportData || loading}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${
-              dark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${dark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
           >
             <Printer className="w-4 h-4" />
             طباعة / PDF
@@ -295,13 +309,12 @@ export default function BusinessReportsPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedReport(report.id)}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                selectedReport === report.id
-                  ? `${report.color} border-transparent text-white shadow-lg`
-                  : dark
-                    ? 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
-                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
-              }`}
+              className={`p-4 rounded-xl border-2 transition-all ${selectedReport === report.id
+                ? `${report.color} border-transparent text-white shadow-lg`
+                : dark
+                  ? 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+                }`}
             >
               <ReportIcon className="w-6 h-6 mx-auto mb-2" />
               <p className="text-sm font-medium">{report.name}</p>
@@ -321,13 +334,12 @@ export default function BusinessReportsPage() {
             <button
               key={range.id}
               onClick={() => setSelectedRange(range.id)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedRange === range.id
-                  ? 'bg-blue-600 text-white shadow'
-                  : dark
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedRange === range.id
+                ? 'bg-blue-600 text-white shadow'
+                : dark
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               {range.name}
             </button>
@@ -340,17 +352,15 @@ export default function BusinessReportsPage() {
               type="date"
               value={customStart}
               onChange={e => setCustomStart(e.target.value)}
-              className={`px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-              }`}
+              className={`px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
+                }`}
             />
             <input
               type="date"
               value={customEnd}
               onChange={e => setCustomEnd(e.target.value)}
-              className={`px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-              }`}
+              className={`px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
+                }`}
             />
             <button
               onClick={loadReport}
@@ -380,9 +390,8 @@ export default function BusinessReportsPage() {
                     setGroupBy(e.target.value);
                     setTimeout(loadReport, 100);
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
+                    }`}
                 >
                   <option value="day">يوم</option>
                   <option value="week">أسبوع</option>
@@ -416,9 +425,8 @@ export default function BusinessReportsPage() {
                   value={minPurchases}
                   onChange={e => setMinPurchases(parseInt(e.target.value) || 0)}
                   onBlur={loadReport}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
+                    }`}
                 />
               </div>
             )}
@@ -427,7 +435,31 @@ export default function BusinessReportsPage() {
       )}
 
       {/* Report Content */}
-      {loading ? (
+      {showPaywall ? (
+        <div className={`rounded-2xl p-8 md:p-12 border text-center relative overflow-hidden ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500 rounded-bl-full opacity-10"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500 rounded-tr-full opacity-10"></div>
+
+          <div className="relative z-10 max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h2 className={`text-2xl font-bold mb-3 ${dark ? 'text-white' : 'text-gray-900'}`}>
+              ميزة التقارير المتقدمة مقفلة
+            </h2>
+            <p className={`mb-8 ${dark ? 'text-gray-400' : 'text-gray-600'} leading-relaxed`}>
+              هذا التقرير هو جزء من حزمة "التقارير المتقدمة". يرجى ترقية حسابك أو شراء الإضافة من متجر الإضافات للاستمتاع بتحليلات معمقة وفلاتر متقدمة لعملك.
+            </p>
+            <Link
+              to="/addon-store"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <Package className="w-5 h-5" />
+              الذهاب لمتجر الإضافات (Add-ons)
+            </Link>
+          </div>
+        </div>
+      ) : loading ? (
         <div className={`rounded-xl p-12 border text-center ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className={dark ? 'text-gray-400' : 'text-gray-500'}>جاري تحميل التقرير...</p>
@@ -468,9 +500,8 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className={`p-2 rounded-lg transition disabled:opacity-30 ${
-          dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
-        }`}
+        className={`p-2 rounded-lg transition disabled:opacity-30 ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+          }`}
       >
         <ChevronRight className="w-4 h-4" />
       </button>
@@ -486,11 +517,10 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
         <button
           key={p}
           onClick={() => onPageChange(p)}
-          className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
-            p === currentPage
-              ? 'bg-blue-600 text-white shadow'
-              : dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
-          }`}
+          className={`w-8 h-8 rounded-lg text-sm font-medium transition ${p === currentPage
+            ? 'bg-blue-600 text-white shadow'
+            : dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+            }`}
         >
           {p}
         </button>
@@ -506,9 +536,8 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className={`p-2 rounded-lg transition disabled:opacity-30 ${
-          dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
-        }`}
+        className={`p-2 rounded-lg transition disabled:opacity-30 ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+          }`}
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -719,10 +748,9 @@ function InventoryReportView({ data }) {
             </thead>
             <tbody>
               {paginatedItems.map((item, idx) => (
-                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} ${
-                  item.status === 'outOfStock' ? (dark ? 'bg-red-900/20' : 'bg-red-50') :
+                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} ${item.status === 'outOfStock' ? (dark ? 'bg-red-900/20' : 'bg-red-50') :
                   item.status === 'lowStock' ? (dark ? 'bg-yellow-900/20' : 'bg-yellow-50') : ''
-                }`}>
+                  }`}>
                   <td className={`py-3 px-4 font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>{item?.name || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{item?.sku || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-900'}`}>{item?.category || '-'}</td>
@@ -730,11 +758,10 @@ function InventoryReportView({ data }) {
                   <td className={`py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-900'}`}>{item?.minQuantity || 0}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-900'}`}>{safeNum(item?.value)} جنيه</td>
                   <td className="py-3 px-4">
-                    <span className={`badge px-2 py-1 rounded text-xs font-medium ${
-                      item.status === 'outOfStock' ? 'badge-red bg-red-100 text-red-800' :
+                    <span className={`badge px-2 py-1 rounded text-xs font-medium ${item.status === 'outOfStock' ? 'badge-red bg-red-100 text-red-800' :
                       item.status === 'lowStock' ? 'badge-yellow bg-yellow-100 text-yellow-800' :
-                      'badge-green bg-green-100 text-green-800'
-                    }`}>
+                        'badge-green bg-green-100 text-green-800'
+                      }`}>
                       {item.status === 'outOfStock' ? 'نفذ' : item.status === 'lowStock' ? 'منخفض' : 'طبيعي'}
                     </span>
                   </td>

@@ -61,6 +61,13 @@ export default function SuperAdminDashboard() {
 
         {/* Quick Actions */}
         <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            icon={<Crown className="w-4 h-4" />}
+            onClick={() => navigate('/super-admin/plans')}
+          >
+            إدارة الباقات
+          </Button>
           <Button 
             variant="primary" 
             icon={<Plus className="w-4 h-4" />}
@@ -235,6 +242,22 @@ export default function SuperAdminDashboard() {
             <div className="flex-1">
               <h4 className="font-bold">إدارة المتاجر</h4>
               <p className="text-xs text-gray-500">عرض وإدارة جميع المتاجر</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
+          </div>
+        </Card>
+
+        <Card
+          className="p-5 cursor-pointer hover:shadow-lg transition-all group"
+          onClick={() => navigate('/super-admin/plans')}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Crown className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold">إدارة الباقات والأسعار</h4>
+              <p className="text-xs text-gray-500">إنشاء وتعديل وإيقاف الباقات</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </div>

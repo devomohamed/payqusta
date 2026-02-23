@@ -229,12 +229,24 @@ class ProductController {
    * Get all unique categories for the tenant
    */
   getCategories = catchAsync(async (req, res, next) => {
-    const categories = await Product.distinct('category', {
+    const productCategories = await Product.distinct('category', {
       ...req.tenantFilter,
       isActive: true,
     });
 
-    ApiResponse.success(res, categories);
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findById(req.tenantId);
+
+    let tenantCategories = [];
+    if (tenant && tenant.settings && Array.isArray(tenant.settings.categories)) {
+      tenantCategories = tenant.settings.categories
+        .filter(c => c.isVisible !== false)
+        .map(c => c.name || c);
+    }
+
+    const allCategories = [...new Set([...tenantCategories, ...productCategories])];
+
+    ApiResponse.success(res, allCategories);
   });
 
   /**
@@ -404,7 +416,7 @@ class ProductController {
     // Process all files
     for (const file of files) {
       const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1000)}.webp`;
-      const imagePath = await processImage(file.buffer, filename, 'products');
+      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype);
       uploadedImages.push(imagePath);
     }
 

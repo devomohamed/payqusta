@@ -27,17 +27,29 @@ class InvoiceService {
       notes, sendWhatsApp, source
     } = data;
 
-    // Start MongoDB session for atomic transaction
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    // Check if MongoDB topology supports transactions (ReplicaSet or Sharded)
+    let session = undefined;
+    let supportsTransactions = false;
+    try {
+      const topologyType = mongoose.connection.client?.topology?.description?.type;
+      supportsTransactions = topologyType === 'ReplicaSetWithPrimary' || topologyType === 'Sharded';
+    } catch (e) { }
+
+    if (supportsTransactions) {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    }
 
     try {
       // Validate customer
-      const customer = await Customer.findOne({
+      const customerQuery = Customer.findOne({
         _id: customerId,
         tenant: tenantId,
         isActive: true
-      }).session(session);
+      });
+      if (session) customerQuery.session(session);
+      const customer = await customerQuery;
+
       if (!customer) throw AppError.notFound('العميل غير موجود');
 
       // Check if sales blocked for this customer
@@ -52,11 +64,13 @@ class InvoiceService {
       const productsToUpdate = []; // collect products, update stock after invoice is created
 
       for (const item of items) {
-        const product = await Product.findOne({
+        const productQuery = Product.findOne({
           _id: item.productId,
           tenant: tenantId,
           isActive: true
-        }).session(session);
+        });
+        if (session) productQuery.session(session);
+        const product = await productQuery;
 
         if (!product) {
           throw AppError.notFound(`المنتج غير موجود: ${item.productId}`);
@@ -157,7 +171,10 @@ class InvoiceService {
 
       // Load user to check commission rate
       const User = require('../models/User');
-      const user = await User.findById(userId).session(session);
+      const userQuery = User.findById(userId);
+      if (session) userQuery.session(session);
+      const user = await userQuery;
+
       if (user && user.commissionRate > 0) {
         // Calculate commission from total profit minus any discounts spread proportionally, 
         // or simply from raw profit for simplicity 
@@ -171,12 +188,13 @@ class InvoiceService {
       }
 
       // Create Invoice FIRST (inside transaction)
-      const [invoice] = await Invoice.create([invoiceData], { session });
+      const createOptions = session ? { session } : undefined;
+      const [invoice] = await Invoice.create([invoiceData], createOptions);
 
       // NOW deduct stock (after invoice is created successfully)
       for (const { product, quantity } of productsToUpdate) {
         product.stock.quantity -= quantity;
-        await product.save({ session });
+        await product.save(createOptions);
 
         // Trigger low stock / out of stock notifications (non-blocking, outside transaction)
         if (product.stock.quantity <= 0 && !product.outOfStockAlertSent) {
@@ -188,11 +206,13 @@ class InvoiceService {
 
       // Update customer financials (inside transaction)
       customer.recordPurchase(totalAmount, invoiceData.paidAmount);
-      await customer.save({ session });
+      await customer.save(session ? { session } : undefined);
 
       // Commit transaction - all operations succeeded
-      await session.commitTransaction();
-      session.endSession();
+      if (session) {
+        await session.commitTransaction();
+        session.endSession();
+      }
 
       // Post-transaction: Gamification (non-critical)
       if (userId) {
@@ -231,8 +251,10 @@ class InvoiceService {
 
     } catch (err) {
       // Rollback all changes if anything failed
-      await session.abortTransaction();
-      session.endSession();
+      if (session) {
+        await session.abortTransaction();
+        session.endSession();
+      }
       throw err;
     }
   }

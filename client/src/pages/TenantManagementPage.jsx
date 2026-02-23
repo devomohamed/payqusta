@@ -4,7 +4,7 @@ import {
   Calendar, ChevronDown, ChevronUp, Store, Mail, Package, ShoppingCart, X, Key, Eye, EyeOff, Copy
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminApi } from '../store';
+import { adminApi, superAdminApi } from '../store';
 import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
 
 export default function TenantManagementPage() {
@@ -24,6 +24,13 @@ export default function TenantManagementPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
+  // Subscription Edit States
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [selectedTenantForSub, setSelectedTenantForSub] = useState(null);
+  const [subForm, setSubForm] = useState({ plan: '', status: '', endDate: '' });
+  const [plans, setPlans] = useState([]);
+  const [updatingSub, setUpdatingSub] = useState(false);
+
   const fetchTenants = async () => {
     setLoading(true);
     try {
@@ -36,8 +43,21 @@ export default function TenantManagementPage() {
     }
   };
 
+  const fetchPlans = async () => {
+    try {
+      // Use superAdminApi if the user is a super admin
+      const res = await adminApi.getDashboard(); // just to check, or we can just fetch plans directly
+      // Actually we have superAdminApi in store.js
+      const plansRes = await superAdminApi.getPlans().catch(() => ({ data: { data: [] } }));
+      setPlans(plansRes.data?.data || []);
+    } catch (e) {
+      console.log('Error fetching plans', e);
+    }
+  };
+
   useEffect(() => {
     fetchTenants();
+    fetchPlans();
   }, []);
 
   const handleDeleteTenant = (tenantId, tenantName) => {
@@ -83,7 +103,7 @@ export default function TenantManagementPage() {
     setExpandedTenant(expandedTenant === tenantId ? null : tenantId);
   };
 
-  const filteredTenants = tenants.filter(t => 
+  const filteredTenants = tenants.filter(t =>
     t.name?.toLowerCase().includes(search.toLowerCase()) ||
     t.email?.toLowerCase().includes(search.toLowerCase())
   );
@@ -277,33 +297,53 @@ export default function TenantManagementPage() {
 
                   {/* Subscription Information */}
                   <div>
-                    <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      معلومات الاشتراك
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        معلومات الاشتراك
+                      </h4>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedTenantForSub(tenant);
+                          setSubForm({
+                            plan: typeof tenant.subscription?.plan === 'object' ? tenant.subscription?.plan?._id : (tenant.subscription?.plan || ''),
+                            status: tenant.subscription?.status || 'trial',
+                            endDate: tenant.subscription?.trialEndsAt
+                              ? new Date(tenant.subscription.trialEndsAt).toISOString().split('T')[0]
+                              : ''
+                          });
+                          setShowSubscriptionModal(true);
+                        }}
+                        icon={<Edit2 className="w-3.5 h-3.5" />}
+                      >
+                        تعديل وتفعيل
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-500 mb-1">الخطة</p>
                         <Badge variant={
-                          tenant.subscription?.plan === 'pro' ? 'success' : 
-                          tenant.subscription?.plan === 'basic' ? 'info' : 'default'
+                          tenant.subscription?.plan === 'pro' ? 'success' :
+                            tenant.subscription?.plan === 'basic' ? 'info' : 'default'
                         }>
-                          {tenant.subscription?.plan === 'free' ? 'مجاني' : 
-                           tenant.subscription?.plan === 'basic' ? 'أساسي' : 
-                           tenant.subscription?.plan === 'pro' ? 'احترافي' : 'مجاني'}
+                          {tenant.subscription?.plan === 'free' ? 'مجاني' :
+                            tenant.subscription?.plan === 'basic' ? 'أساسي' :
+                              tenant.subscription?.plan === 'pro' ? 'احترافي' : 'مجاني'}
                         </Badge>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-500 mb-1">الحالة</p>
                         <Badge variant={tenant.subscription?.status === 'active' ? 'success' : 'warning'}>
-                          {tenant.subscription?.status === 'active' ? 'نشط' : 
-                           tenant.subscription?.status === 'trial' ? 'تجريبي' : 'معلق'}
+                          {tenant.subscription?.status === 'active' ? 'نشط' :
+                            tenant.subscription?.status === 'trial' ? 'تجريبي' : 'معلق'}
                         </Badge>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-500 mb-1">تاريخ الانتهاء</p>
                         <p className="font-bold text-sm">
-                          {tenant.subscription?.trialEndsAt 
+                          {tenant.subscription?.trialEndsAt
                             ? new Date(tenant.subscription.trialEndsAt).toLocaleDateString('ar-EG')
                             : 'غير محدد'}
                         </p>
@@ -373,12 +413,12 @@ export default function TenantManagementPage() {
       )}
 
       {/* Create Tenant Modal */}
-      <Modal 
-        open={showCreateTenantModal} 
-        onClose={() => setShowCreateTenantModal(false)} 
+      <Modal
+        open={showCreateTenantModal}
+        onClose={() => setShowCreateTenantModal(false)}
         title="إنشاء متجر جديد"
       >
-        <form 
+        <form
           onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
@@ -416,7 +456,7 @@ export default function TenantManagementPage() {
             <h3 className="text-sm font-bold mb-3 text-gray-700 dark:text-gray-300">
               بيانات المالك (Owner)
             </h3>
-            
+
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">اسم المالك *</label>
@@ -461,46 +501,46 @@ export default function TenantManagementPage() {
       </Modal>
 
       {/* Add Branch Modal */}
-      <Modal 
-        open={showAddBranchModal} 
+      <Modal
+        open={showAddBranchModal}
         onClose={() => {
           setShowAddBranchModal(false);
           setBranchForm({ name: '', address: '', phone: '' });
-        }} 
+        }}
         title={`إضافة فرع جديد - ${selectedTenantForBranch?.name}`}
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold mb-2">اسم الفرع *</label>
-            <Input 
+            <Input
               value={branchForm.name}
               onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
-              placeholder="فرع القاهرة" 
+              placeholder="فرع القاهرة"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">العنوان</label>
-            <Input 
+            <Input
               value={branchForm.address}
               onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
-              placeholder="شارع الهرم، الجيزة" 
+              placeholder="شارع الهرم، الجيزة"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">رقم الهاتف</label>
-            <Input 
+            <Input
               value={branchForm.phone}
               onChange={(e) => setBranchForm({ ...branchForm, phone: e.target.value })}
-              placeholder="01234567890" 
+              placeholder="01234567890"
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => {
                 setShowAddBranchModal(false);
                 setBranchForm({ name: '', address: '', phone: '' });
@@ -516,12 +556,12 @@ export default function TenantManagementPage() {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal 
-        open={showDeleteConfirmModal} 
+      <Modal
+        open={showDeleteConfirmModal}
         onClose={() => {
           setShowDeleteConfirmModal(false);
           setTenantToDelete(null);
-        }} 
+        }}
         title="تأكيد حذف المتجر"
       >
         <div className="space-y-4">
@@ -576,9 +616,9 @@ export default function TenantManagementPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => {
                 setShowDeleteConfirmModal(false);
                 setTenantToDelete(null);
@@ -587,7 +627,7 @@ export default function TenantManagementPage() {
             >
               إلغاء
             </Button>
-            <Button 
+            <Button
               onClick={confirmDelete}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white"
             >
@@ -598,14 +638,14 @@ export default function TenantManagementPage() {
       </Modal>
 
       {/* Owner Details Modal */}
-      <Modal 
-        open={showOwnerDetailsModal} 
+      <Modal
+        open={showOwnerDetailsModal}
         onClose={() => {
           setShowOwnerDetailsModal(false);
           setSelectedOwner(null);
           setNewPassword('');
           setShowPassword(false);
-        }} 
+        }}
         title="تفاصيل المالك"
         size="md"
       >
@@ -649,7 +689,7 @@ export default function TenantManagementPage() {
                 <Key className="w-4 h-4" />
                 إعادة تعيين كلمة المرور
               </h3>
-              
+
               <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3 border border-amber-200 dark:border-amber-500/20 mb-4">
                 <p className="text-xs text-amber-700 dark:text-amber-400">
                   ⚠️ سيتم تغيير كلمة المرور فوراً. تأكد من مشاركة كلمة المرور الجديدة مع المالك.
@@ -689,7 +729,7 @@ export default function TenantManagementPage() {
                       try {
                         await adminApi.resetTenantPassword(selectedOwner.tenantId, { password: newPassword });
                         toast.success('تم إعادة تعيين كلمة المرور بنجاح');
-                        
+
                         // Show success message with credentials
                         toast((t) => (
                           <div className="space-y-2">
@@ -743,6 +783,92 @@ export default function TenantManagementPage() {
           </div>
         )}
       </Modal>
+      {/* Subscription Manual Edit Modal */}
+      <Modal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        title={`إدارة تفعيل الاشتراك - ${selectedTenantForSub?.name}`}
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
+            يمكنك من هنا تأكيد التحويلات اليدوية (إنستاباي/فودافون كاش) وتفعيل الخطط يدوياً للمتاجر.
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">خطة الاشتراك</label>
+            <select
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+              value={subForm.plan}
+              onChange={(e) => setSubForm({ ...subForm, plan: e.target.value })}
+            >
+              <option value="">-- كود الخطة القديم أو غير محدد --</option>
+              {plans.map((p) => (
+                <option key={p._id} value={p._id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">الحالة الفورية</label>
+            <select
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+              value={subForm.status}
+              onChange={(e) => setSubForm({ ...subForm, status: e.target.value })}
+            >
+              <option value="active">نشط (فعال)</option>
+              <option value="trial">تجريبي (Trial)</option>
+              <option value="cancelled">ملغى / منتهي</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2">تاريخ انتهاء الاشتراك</label>
+            <Input
+              type="date"
+              value={subForm.endDate}
+              onChange={(e) => setSubForm({ ...subForm, endDate: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowSubscriptionModal(false)}
+            >
+              إلغاء
+            </Button>
+            <Button
+              loading={updatingSub}
+              onClick={async () => {
+                setUpdatingSub(true);
+                try {
+                  const updatedSubscription = {
+                    ...selectedTenantForSub.subscription,
+                    plan: subForm.plan || selectedTenantForSub.subscription?.plan,
+                    status: subForm.status,
+                    trialEndsAt: subForm.endDate ? new Date(subForm.endDate) : null
+                  };
+
+                  await superAdminApi.updateTenant(selectedTenantForSub._id, {
+                    subscription: updatedSubscription
+                  });
+                  toast.success('تم تفعيل وتحديث الاشتراك بنجاح!');
+                  setShowSubscriptionModal(false);
+                  fetchTenants();
+                } catch (error) {
+                  toast.error(error.response?.data?.message || 'فشل تحديث الاشتراك');
+                } finally {
+                  setUpdatingSub(false);
+                }
+              }}
+            >
+              حفظ وتفعيل
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }

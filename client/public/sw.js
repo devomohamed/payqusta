@@ -111,22 +111,22 @@ async function networkFirstStrategy(request, cacheName) {
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     // Return offline fallback for API requests
     if (request.url.includes('/api/')) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           message: 'أنت غير متصل بالإنترنت',
-          offline: true 
+          offline: true
         }),
-        { 
+        {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
         }
       );
     }
-    
+
     return new Response('Offline', { status: 503 });
   }
 }
@@ -134,32 +134,34 @@ async function networkFirstStrategy(request, cacheName) {
 // Background Sync - for offline actions
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync:', event.tag);
-  
+
   if (event.tag === 'sync-invoices') {
-    event.waitUntil(syncInvoices());
+    event.waitUntil(syncOfflineData('pendingInvoices', '/api/v1/invoices'));
+  }
+  if (event.tag === 'sync-installments') {
+    event.waitUntil(syncOfflineData('pendingInstallments', '/api/v1/installments'));
   }
 });
 
-async function syncInvoices() {
+async function syncOfflineData(storeName, apiEndpoint) {
   try {
-    // Get pending invoices from IndexedDB
     const db = await openDB();
-    const pendingInvoices = await getAllPendingInvoices(db);
-    
-    for (const invoice of pendingInvoices) {
+    const items = await getAllFromStore(db, storeName);
+
+    for (const item of items) {
       try {
-        const response = await fetch('/api/v1/invoices', {
+        const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invoice.data)
+          body: JSON.stringify(item.data)
         });
-        
+
         if (response.ok) {
-          await deletePendingInvoice(db, invoice.id);
-          console.log('[SW] Synced invoice:', invoice.id);
+          await deleteFromStore(db, storeName, item.id);
+          console.log(`[SW] Synced ${storeName} item:`, item.id);
         }
       } catch (error) {
-        console.error('[SW] Failed to sync invoice:', error);
+        console.error(`[SW] Failed to sync ${storeName} item:`, error);
       }
     }
   } catch (error) {
@@ -170,37 +172,40 @@ async function syncInvoices() {
 // IndexedDB helpers
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('PayQustaOffline', 1);
-    
+    const request = indexedDB.open('PayQustaOffline', 2);
+
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-    
+
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       if (!db.objectStoreNames.contains('pendingInvoices')) {
         db.createObjectStore('pendingInvoices', { keyPath: 'id', autoIncrement: true });
       }
+      if (!db.objectStoreNames.contains('pendingInstallments')) {
+        db.createObjectStore('pendingInstallments', { keyPath: 'id', autoIncrement: true });
+      }
     };
   });
 }
 
-function getAllPendingInvoices(db) {
+function getAllFromStore(db, storeName) {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingInvoices'], 'readonly');
-    const store = transaction.objectStore('pendingInvoices');
+    const transaction = db.transaction([storeName], 'readonly');
+    const store = transaction.objectStore(storeName);
     const request = store.getAll();
-    
+
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-function deletePendingInvoice(db, id) {
+function deleteFromStore(db, storeName, id) {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingInvoices'], 'readwrite');
-    const store = transaction.objectStore('pendingInvoices');
+    const transaction = db.transaction([storeName], 'readwrite');
+    const store = transaction.objectStore(storeName);
     const request = store.delete(id);
-    
+
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
@@ -216,7 +221,7 @@ self.addEventListener('push', (event) => {
     badge: '/icon-192.png',
     data: data.url
   };
-  
+
   event.waitUntil(
     self.registration.showNotification(title, options)
   );
@@ -224,7 +229,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
+
   if (event.notification.data) {
     event.waitUntil(
       clients.openWindow(event.notification.data)

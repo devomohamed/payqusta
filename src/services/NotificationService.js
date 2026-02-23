@@ -117,6 +117,36 @@ class NotificationService {
   }
 
   /**
+   * Notify all super admin users (no tenant scope)
+   */
+  async notifySuperAdmins(payload) {
+    try {
+      const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
+      const superAdmins = await User.find({
+        $or: [
+          { isSuperAdmin: true },
+          { email: superAdminEmail },
+        ],
+        isActive: true,
+      }).select('_id');
+
+      if (!superAdmins.length) return;
+
+      await Promise.all(
+        superAdmins.map((admin) =>
+          this.send({
+            tenant: null, // super admin notifications are tenant-free
+            recipient: admin._id,
+            ...payload,
+          })
+        )
+      );
+    } catch (err) {
+      logger.error(`notifySuperAdmins error: ${err.message}`);
+    }
+  }
+
+  /**
    * Legacy wrapper for backward compatibility
    */
   async notifyVendor(tenantId, payload, options = {}) {
@@ -292,6 +322,72 @@ class NotificationService {
       color: 'success',
       link: '/settings', // Or dashboard
     }, { roles: ['admin'] });
+  }
+
+  /**
+   * Subscription request approved
+   * Notifies the tenant admins AND the super admin
+   */
+  async onSubscriptionApproved(tenantId, planName, tenantName = '') {
+    // Notify tenant owner
+    await this.notifyTenantAdmins(tenantId, {
+      type: 'subscription_approved',
+      title: 'تم تفعيل اشتراكك بنجاح! 🎉',
+      message: `تم الموافقة على إيصال الدفع وتفعيل باقة "الباقة". شكراً لثقتكم.`.replace('الباقة', planName),
+      icon: 'check-circle',
+      color: 'success',
+      link: '/subscriptions',
+    }, { roles: ['admin'] });
+
+    // Notify super admin
+    await this.notifySuperAdmins({
+      type: 'subscription_approved',
+      title: `تم تفعيل اشتراك ${tenantName || ''} ✅`,
+      message: `تم قبول إيصال الدفع وتفعيل باقة "الباقة" للمتجر ${tenantName}`.replace('الباقة', planName).replace('${tenantName}', tenantName),
+      icon: 'check-circle',
+      color: 'success',
+      link: '/super-admin/requests',
+    });
+  }
+
+  /**
+   * Subscription request rejected
+   * Notifies the tenant admins AND the super admin
+   */
+  async onSubscriptionRejected(tenantId, reason, tenantName = '') {
+    // Notify tenant owner
+    await this.notifyTenantAdmins(tenantId, {
+      type: 'subscription_rejected',
+      title: 'تم رفض إيصال الدفع ❌',
+      message: `عذراً، لم يتم قبول إيصال الدفع الأخير. السبب: ${reason || 'يرجى مراجعة الدعم الفني.'}`,
+      icon: 'alert-circle',
+      color: 'danger',
+      link: '/subscriptions',
+    }, { roles: ['admin'] });
+
+    // Notify super admin
+    await this.notifySuperAdmins({
+      type: 'subscription_rejected',
+      title: `تم رفض اشتراك ${tenantName}`,
+      message: `تم رفض إيصال الدفع للمتجر ${tenantName}. السبب: ${reason || 'غير محدد'}`,
+      icon: 'alert-circle',
+      color: 'danger',
+      link: '/super-admin/requests',
+    });
+  }
+
+  /**
+   * New subscription receipt submitted (super admin needs to review)
+   */
+  async onNewSubscriptionRequest(tenantId, tenantName, planName, amount) {
+    await this.notifySuperAdmins({
+      type: 'system',
+      title: `طلب اشتراك جديد تحتاج مراجعة 💳`,
+      message: `المتجر "${tenantName}" قدم إيصال دفع لباقة "${planName}" بمبلغ ${amount}. يرجى المراجعة والتأكيد.`,
+      icon: 'credit-card',
+      color: 'warning',
+      link: '/super-admin/requests',
+    });
   }
 }
 

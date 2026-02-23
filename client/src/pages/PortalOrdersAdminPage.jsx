@@ -44,7 +44,7 @@ export default function PortalOrdersAdminPage() {
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
     const { token } = useAuthStore();
-    const LIMIT = 15;
+    const LIMIT = 8;
 
     const load = useCallback(async () => {
         setLoading(true);
