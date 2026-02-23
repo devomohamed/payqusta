@@ -57,17 +57,31 @@
     </div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // Remove pre-loader when React mounts
-      const observer = new MutationObserver(() => {
+      // Remove pre-loader when React mounts (or after a short fallback timeout).
+      const rootEl = document.getElementById('root');
+      const hidePreLoader = () => {
         const preLoader = document.getElementById('pre-loader');
-        if (preLoader && document.getElementById('root').children.length > 1) {
-          preLoader.style.transition = 'opacity 0.3s';
-          preLoader.style.opacity = '0';
-          setTimeout(() => preLoader.remove(), 300);
-          observer.disconnect();
-        }
+        if (!preLoader) return true;
+
+        const hasReactContent = Array.from(rootEl.children).some((el) => el.id !== 'pre-loader');
+        if (!hasReactContent) return false;
+
+        preLoader.style.transition = 'opacity 0.3s';
+        preLoader.style.opacity = '0';
+        setTimeout(() => preLoader.remove(), 300);
+        return true;
+      };
+
+      const observer = new MutationObserver(() => {
+        if (hidePreLoader()) observer.disconnect();
       });
-      observer.observe(document.getElementById('root'), { childList: true });
+      observer.observe(rootEl, { childList: true });
+
+      // Fallback: never keep splash forever if mutation observer misses.
+      setTimeout(() => {
+        const preLoader = document.getElementById('pre-loader');
+        if (preLoader) preLoader.remove();
+      }, 8000);
     </script>
     <script>
       // Safe opt-in auto-select:
