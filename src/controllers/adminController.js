@@ -4,6 +4,7 @@
  * Only accessible by role='admin'
  */
 
+const mongoose = require('mongoose');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Branch = require('../models/Branch');
@@ -118,6 +119,7 @@ class AdminController {
    */
   createTenant = catchAsync(async (req, res, next) => {
     const { name, ownerName, ownerEmail, ownerPhone, ownerPassword, plan } = req.body;
+    const planId = plan && mongoose.Types.ObjectId.isValid(plan) ? plan : null;
 
     if (!ownerPassword || ownerPassword.length < 8) {
       return next(AppError.badRequest('كلمة مرور صاحب المتجر مطلوبة ويجب أن تكون 8 أحرف على الأقل'));
@@ -134,7 +136,8 @@ class AdminController {
       name,
       slug: name.toLowerCase().replace(/[^\w\u0621-\u064A\s-]/g, '').replace(/\s+/g, '-'),
       subscription: {
-        plan: plan || 'enterprise', // Default to enterprise for full permissions
+        // Accept only ObjectId plan references (legacy string values break Tenant validation)
+        plan: planId,
         status: 'active', // Active immediately
         maxProducts: 10000,
         maxCustomers: 10000,
