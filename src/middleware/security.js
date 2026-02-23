@@ -113,7 +113,6 @@ const helmetConfig = helmet({
       connectSrc: ["'self'"],
       fontSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
     },
   } : false, // Disable CSP in development
   crossOriginResourcePolicy: { policy: 'cross-origin' },
