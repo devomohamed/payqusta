@@ -21,7 +21,7 @@ const apiLimiter = rateLimit({
     if (isPortalRequest) {
       return process.env.NODE_ENV === 'production' ? 600 : 5000;
     }
-    return process.env.NODE_ENV === 'production' ? 100 : 1000;
+    return process.env.NODE_ENV === 'production' ? 1000 : 2000;
   },
   message: {
     success: false,
@@ -33,11 +33,11 @@ const apiLimiter = rateLimit({
 
 /**
  * Strict Rate Limiter for Auth endpoints
- * 5 login attempts per 15 minutes per IP
+ * 20 login attempts per 15 minutes per IP
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20,
   skipSuccessfulRequests: true,
   message: {
     success: false,
