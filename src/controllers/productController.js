@@ -383,6 +383,8 @@ class ProductController {
       $or: [
         { barcode: code },
         { sku: code },
+        { 'variants.barcode': code },
+        { 'variants.sku': code }
       ],
     }).populate('supplier', 'name contactPerson phone');
 
