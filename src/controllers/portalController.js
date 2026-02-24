@@ -1782,8 +1782,12 @@ class PortalController {
    */
   validateCoupon = catchAsync(async (req, res, next) => {
     const Coupon = require('../models/Coupon');
+    const Customer = require('../models/Customer');
     const { code, orderTotal } = req.body;
-    const customer = req.portalCustomer;
+
+    // Portal auth sets req.user.id
+    const customer = await Customer.findById(req.user.id);
+    if (!customer) return next(AppError.notFound('العميل غير موجود'));
 
     if (!code) return next(AppError.badRequest('يرجى إدخال كود الخصم'));
     if (!orderTotal || orderTotal <= 0) return next(AppError.badRequest('المبلغ غير صالح'));
@@ -1798,13 +1802,13 @@ class PortalController {
       return next(AppError.badRequest(`الحد الأدنى للطلب لاستخدام هذا الكوبون هو ${coupon.minOrderAmount} ج.م`));
     }
 
-    if (coupon.applicableCustomers.length > 0) {
+    if (coupon.applicableCustomers && coupon.applicableCustomers.length > 0) {
       if (!coupon.applicableCustomers.some(id => id.toString() === customer._id.toString())) {
         return next(AppError.badRequest('هذا الكوبون غير مخصص لك'));
       }
     }
 
-    const customerUsages = coupon.usages.filter(u => u.customer?.toString() === customer._id.toString()).length;
+    const customerUsages = (coupon.usages || []).filter(u => u.customer?.toString() === customer._id.toString()).length;
     if (customerUsages >= (coupon.usagePerCustomer || 1)) {
       return next(AppError.badRequest('لقد استخدمت هذا الكوبون بالحد الأقصى المسموح'));
     }
