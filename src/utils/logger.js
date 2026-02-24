@@ -19,18 +19,50 @@ const isProduction = process.env.NODE_ENV === 'production';
 const SENSITIVE_FIELDS = ['password', 'token', 'refreshToken', 'creditCard', 'cvv', 'secret'];
 
 const redactSensitive = winston.format((info) => {
-  const redact = (obj) => {
-    if (!obj || typeof obj !== 'object') return obj;
-    // Handle arrays
-    if (Array.isArray(obj)) return obj.map(redact);
+  const seen = new WeakSet();
 
-    // Handle objects
+  const redact = (obj, depth = 0) => {
+    if (!obj || typeof obj !== 'object') return obj;
+
+    // Prevent infinite recursion and extreme depth
+    if (depth > 7) return '[DEPTH_LIMIT]';
+
+    // Prevent circular references
+    if (seen.has(obj)) return '[CIRCULAR]';
+    seen.add(obj);
+
+    // Handle Mongoose documents and other classes that provide toJSON
+    if (typeof obj.toJSON === 'function') {
+      try {
+        obj = obj.toJSON();
+        if (!obj || typeof obj !== 'object') return obj;
+        if (seen.has(obj)) return '[CIRCULAR]';
+        seen.add(obj);
+      } catch (err) { }
+    }
+
+    // Handle arrays cleanly (Array.from avoids Mongoose .map overrides)
+    if (Array.isArray(obj)) {
+      return Array.from(obj).map(v => redact(v, depth + 1));
+    }
+
+    // Pass through native/non-plain objects unchanged
+    if (
+      obj instanceof Date ||
+      obj instanceof RegExp ||
+      obj instanceof Buffer ||
+      (obj.constructor && (obj.constructor.name === 'ObjectId' || obj.constructor.name === 'ObjectID'))
+    ) {
+      return obj;
+    }
+
+    // Handle plain objects
     const result = { ...obj };
     for (const key of Object.keys(result)) {
       if (SENSITIVE_FIELDS.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
         result[key] = '[REDACTED]';
       } else if (typeof result[key] === 'object') {
-        result[key] = redact(result[key]);
+        result[key] = redact(result[key], depth + 1);
       }
     }
     return result;
