@@ -5,6 +5,7 @@
 
 const Expense = require('../models/Expense');
 const { EXPENSE_CATEGORIES, EXPENSE_FREQUENCIES } = require('../models/Expense');
+const mongoose = require('mongoose');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
@@ -32,6 +33,9 @@ class ExpenseController {
     const filter = { ...req.tenantFilter, isActive: true };
 
     if (req.query.category) filter.category = req.query.category;
+    if (req.query.branch && mongoose.Types.ObjectId.isValid(req.query.branch)) {
+      filter.branch = req.query.branch;
+    }
     if (req.query.from || req.query.to) {
       filter.date = {};
       if (req.query.from) filter.date.$gte = new Date(req.query.from);
@@ -55,7 +59,10 @@ class ExpenseController {
     const startDate = from ? new Date(from) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const endDate = to ? new Date(to) : new Date();
 
-    const summary = await Expense.getSummary(req.tenantId, startDate, endDate);
+    const branchId = req.query.branch && mongoose.Types.ObjectId.isValid(req.query.branch)
+      ? req.query.branch
+      : null;
+    const summary = await Expense.getSummary(req.tenantId, startDate, endDate, branchId);
 
     ApiResponse.success(res, {
       ...summary,
@@ -95,10 +102,14 @@ class ExpenseController {
    * POST /api/v1/expenses
    */
   create = catchAsync(async (req, res, next) => {
-    const { title, description, category, amount, date, frequency, isRecurring, paymentMethod, reference } = req.body;
+    const { title, description, category, amount, date, frequency, isRecurring, paymentMethod, reference, branch } = req.body;
+    const branchId = branch && mongoose.Types.ObjectId.isValid(branch)
+      ? branch
+      : (req.user.branch || null);
 
     const expense = await Expense.create({
       tenant: req.tenantId,
+      branch: branchId,
       title,
       description,
       category: category || 'other',

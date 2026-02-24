@@ -55,6 +55,7 @@ const customerSchema = new mongoose.Schema(
         default: 'pending'
       },
       url: { type: String, required: true }, // base64 or external url
+      backUrl: { type: String }, // For the back side of National IDs
       rejectionReason: { type: String },
       uploadedAt: { type: Date, default: Date.now }
     }],

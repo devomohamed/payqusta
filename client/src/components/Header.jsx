@@ -1,30 +1,34 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Menu, Sun, Moon, Search } from 'lucide-react';
 import { useThemeStore, useAuthStore } from '../store';
 import NotificationDropdown from './NotificationDropdown';
 import GlobalSearch from './GlobalSearch';
 import BranchSwitcher from './BranchSwitcher';
-
-const pageTitles = {
-  '/': 'لوحة التحكم',
-  '/products': 'المنتجات',
-  '/customers': 'العملاء',
-  '/invoices': 'الفواتير',
-  '/suppliers': 'الموردين',
-  '/settings': 'الإعدادات',
-  '/super-admin/plans': 'إدارة الباقات والأسعار',
-  '/tenant-management': 'إدارة المتاجر والفروع',
-};
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header({ onMenuClick }) {
   const location = useLocation();
   const { dark, toggleTheme } = useThemeStore();
   const { tenant, user } = useAuthStore();
-  const title = pageTitles[location.pathname] || 'لوحة التحكم';
+  const { t } = useTranslation('admin');
   const [searchOpen, setSearchOpen] = useState(false);
   const isSystemSuperAdmin =
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
+
+  const pageTitles = {
+    '/': t('header.dashboard'),
+    '/products': t('header.products'),
+    '/customers': t('header.customers'),
+    '/invoices': t('header.invoices'),
+    '/suppliers': t('header.suppliers'),
+    '/settings': t('header.settings'),
+    '/super-admin/plans': t('header.plan_management'),
+    '/tenant-management': t('header.store_management'),
+  };
+
+  const title = pageTitles[location.pathname] || t('header.dashboard');
 
   React.useEffect(() => {
     const handleKeyDown = (e) => {
@@ -62,7 +66,7 @@ export default function Header({ onMenuClick }) {
                 </span>
               )}
               {isSystemSuperAdmin && (
-                <span className="mr-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                <span className="mx-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
                   SUPER
                 </span>
               )}
@@ -76,10 +80,10 @@ export default function Header({ onMenuClick }) {
           <button
             onClick={() => setSearchOpen(true)}
             className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
-            title="بحث سريع (Ctrl+K)"
+            title={t('header.search_quick')}
           >
             <Search className="w-4 h-4" />
-            <span className="text-sm">بحث...</span>
+            <span className="text-sm">{t('header.search_placeholder')}</span>
             <kbd className="hidden lg:inline-block px-2 py-0.5 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded">
               Ctrl+K
             </kbd>
@@ -88,12 +92,14 @@ export default function Header({ onMenuClick }) {
           <button
             onClick={() => setSearchOpen(true)}
             className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
-            title="بحث سريع"
+            title={t('header.search_quick_mobile')}
           >
             <Search className="w-5 h-5" />
           </button>
 
           <NotificationDropdown />
+
+          <LanguageSwitcher />
 
           <button
             onClick={toggleTheme}

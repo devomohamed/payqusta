@@ -32,6 +32,12 @@ const expenseSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
+      index: true,
+    },
     title: {
       type: String,
       required: [true, 'عنوان المصروف مطلوب'],
@@ -89,14 +95,18 @@ const expenseSchema = new mongoose.Schema(
 expenseSchema.index({ tenant: 1, date: -1 });
 expenseSchema.index({ tenant: 1, category: 1 });
 expenseSchema.index({ tenant: 1, isRecurring: 1, nextDueDate: 1 });
+expenseSchema.index({ tenant: 1, branch: 1, date: -1 });
 
 // Static: Get expenses summary for a period
-expenseSchema.statics.getSummary = async function (tenantId, startDate, endDate) {
+expenseSchema.statics.getSummary = async function (tenantId, startDate, endDate, branchId = null) {
   const matchStage = {
     tenant: new mongoose.Types.ObjectId(tenantId),
     isActive: true,
     date: { $gte: startDate, $lte: endDate },
   };
+  if (branchId) {
+    matchStage.branch = new mongoose.Types.ObjectId(branchId);
+  }
 
   const [byCategory, total, monthly] = await Promise.all([
     // By category

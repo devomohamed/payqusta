@@ -401,6 +401,8 @@ class PortalController {
         totalProducts,
         totalCustomers,
       },
+      categories,
+      products: recentProducts,
       upcomingInstallments: upcomingInstallments.slice(0, 5),
       recentOrders,
       salesBlocked: customer.salesBlocked || false,
@@ -612,10 +614,14 @@ class PortalController {
    * POST /api/v1/portal/documents
    */
   uploadDocument = catchAsync(async (req, res, next) => {
-    const { type, file } = req.body;
+    const { type, file, backFile } = req.body;
 
     if (!type || !file) {
       return next(AppError.badRequest('نوع المستند والملف مطلوبين'));
+    }
+
+    if (type === 'national_id' && !backFile) {
+      return next(AppError.badRequest('الوجه الخلفي للبطاقة مطلوب'));
     }
 
     const validTypes = ['national_id', 'passport', 'utility_bill', 'contract', 'other'];
@@ -627,9 +633,22 @@ class PortalController {
     if (!file.startsWith('data:')) {
       return next(AppError.badRequest('صيغة الملف غير صحيحة'));
     }
+    if (backFile && !backFile.startsWith('data:')) {
+      return next(AppError.badRequest('صيغة ملف الوجه الخلفي غير صحيحة'));
+    }
 
     const customer = await Customer.findById(req.user.id);
     if (!customer) return next(AppError.notFound('العميل غير موجود'));
+
+    // OCR Validation for National ID
+    if (type === 'national_id') {
+      const OcrService = require('../services/OcrService');
+      const isValidId = await OcrService.verifyNationalId(file);
+
+      if (!isValidId) {
+        return next(AppError.badRequest('الصورة المرفوعة لا تبدو كبطاقة رقم قومي صالحة. يرجى توفير صورة واضحة ومقروءة للوجه الأمامي.'));
+      }
+    }
 
     // Check if document of same type already exists and is pending or approved
     const existingDoc = customer.documents.find(d => d.type === type && d.status !== 'rejected');
@@ -640,6 +659,7 @@ class PortalController {
     customer.documents.push({
       type,
       url: file,
+      backUrl: backFile || undefined,
       status: 'pending',
       uploadedAt: new Date()
     });
@@ -1022,33 +1042,46 @@ class PortalController {
       finalTotalAmount = Math.max(0, totalAmount - discountAmount);
     }
 
-    // Check Credit Limit
-    const availableCredit = customer.financials.creditLimit - customer.financials.outstandingBalance;
-    if (finalTotalAmount > availableCredit) {
-      if (appliedCoupon) {
-        const Coupon = require('../models/Coupon');
-        await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usageCount: -1 } });
+    // Check Payment Method & Validate Limit / Documents
+    const paymentMethod = req.body.paymentMethod === 'cash' ? 'cash' : 'deferred';
+    const months = parseInt(req.body.months) || installmentSettings.defaultMonths || 6;
+
+    let installments = [];
+
+    if (paymentMethod === 'deferred') {
+      // 1. Check Credit Limit
+      const availableCredit = customer.financials.creditLimit - customer.financials.outstandingBalance;
+      if (finalTotalAmount > availableCredit) {
+        if (appliedCoupon) {
+          const Coupon = require('../models/Coupon');
+          await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usageCount: -1 } });
+        }
+        return next(AppError.badRequest(`الرصيد المتاح (${availableCredit.toLocaleString()}) لا يكفي لإتمام الطلب (${finalTotalAmount.toLocaleString()}) بطريقة الدفع الآجل`));
       }
-      return next(AppError.badRequest(`الرصيد المتاح (${availableCredit.toLocaleString()}) لا يكفي لإتمام الطلب (${finalTotalAmount.toLocaleString()})`));
-    }
 
-    // Installment plan
-    const installmentSettings = customer.tenant?.settings?.installments || {};
-    const months = installmentSettings.defaultMonths || 6;
+      // 2. Check Required Documents (Customer must have at least one uploaded document)
+      if (!customer.documents || customer.documents.length === 0) {
+        if (appliedCoupon) {
+          const Coupon = require('../models/Coupon');
+          await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usageCount: -1 } });
+        }
+        return next(AppError.badRequest(`غير مسموح بالشراء الآجل. يرجى رفع المستندات المطلوبة (مثل البطاقة الشخصية) أولاً من صفحة المستندات`));
+      }
 
-    const installments = [];
-    const monthlyAmount = Math.ceil(finalTotalAmount / months);
-    const today = new Date();
+      // 3. Create Installments
+      const monthlyAmount = Math.ceil(finalTotalAmount / months);
+      const today = new Date();
 
-    for (let i = 1; i <= months; i++) {
-      const date = new Date(today);
-      date.setMonth(date.getMonth() + i);
-      installments.push({
-        installmentNumber: i,
-        dueDate: date,
-        amount: i === months ? finalTotalAmount - (monthlyAmount * (months - 1)) : monthlyAmount,
-        status: 'pending'
-      });
+      for (let i = 1; i <= months; i++) {
+        const date = new Date(today);
+        date.setMonth(date.getMonth() + i);
+        installments.push({
+          installmentNumber: i,
+          dueDate: date,
+          amount: i === months ? finalTotalAmount - (monthlyAmount * (months - 1)) : monthlyAmount,
+          status: 'pending'
+        });
+      }
     }
 
     // Resolve branch — use customer's branch if available (optional for portal orders)
@@ -1067,8 +1100,8 @@ class PortalController {
       remainingAmount: finalTotalAmount,
       status: 'pending',
       orderStatus: 'pending',
-      paymentMethod: 'deferred',
-      installments,
+      paymentMethod: paymentMethod, // 'cash' or 'deferred'
+      installments: installments, // empty if cash
       createdBy: customer._id, // portal order — customer is the originator
       source: 'portal',
       shippingAddress: {
@@ -1333,6 +1366,41 @@ class PortalController {
 
     if (!invoice) return next(AppError.notFound('الطلب غير موجود'));
     ApiResponse.success(res, invoice);
+  });
+
+  /**
+   * POST /api/v1/portal/orders/:id/cancel
+   */
+  cancelOrder = catchAsync(async (req, res, next) => {
+    const Invoice = require('../models/Invoice');
+    const customerId = req.user.id;
+    const invoice = await Invoice.findOne({
+      _id: req.params.id,
+      customer: customerId
+    });
+
+    if (!invoice) return next(AppError.notFound('الطلب غير موجود'));
+
+    if (!['pending'].includes(invoice.orderStatus || invoice.status)) {
+      return next(AppError.badRequest('لا يمكن إلغاء الطلب في هذه المرحلة'));
+    }
+
+    if (invoice.orderStatus) {
+      invoice.orderStatus = 'cancelled';
+    }
+    invoice.status = 'cancelled';
+
+    // Also push historian
+    if (!invoice.orderStatusHistory) invoice.orderStatusHistory = [];
+    invoice.orderStatusHistory.push({
+      status: 'cancelled',
+      timestamp: new Date(),
+      note: 'إلغاء من قبل العميل'
+    });
+
+    await invoice.save();
+
+    ApiResponse.success(res, invoice, 'تم إلغاء الطلب بنجاح');
   });
 
   // ═══════════════════════════════════════════
@@ -1717,7 +1785,7 @@ class PortalController {
   submitReview = catchAsync(async (req, res, next) => {
     const Review = require('../models/Review');
     const { productId, invoiceId, type = 'store', rating, title, body } = req.body;
-    const customer = req.portalCustomer;
+    const customer = req.user;
 
     if (!rating || rating < 1 || rating > 5) {
       return next(AppError.badRequest('التقييم يجب أن يكون بين 1 و 5'));
@@ -1763,7 +1831,7 @@ class PortalController {
    */
   getMyReviews = catchAsync(async (req, res) => {
     const Review = require('../models/Review');
-    const customer = req.portalCustomer;
+    const customer = req.user;
 
     const reviews = await Review.find({ tenant: customer.tenant, customer: customer._id })
       .populate('product', 'name images')
@@ -1827,7 +1895,7 @@ class PortalController {
    */
   getStoreReviews = catchAsync(async (req, res) => {
     const Review = require('../models/Review');
-    const customer = req.portalCustomer;
+    const customer = req.user;
     const { page = 1, limit = 10 } = req.query;
 
     const filter = { tenant: customer.tenant, type: 'store', status: 'approved' };

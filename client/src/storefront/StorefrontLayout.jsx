@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
 import { api } from '../store';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function StorefrontLayout({ children }) {
   const [cartCount, setCartCount] = useState(0);
@@ -71,6 +72,8 @@ export default function StorefrontLayout({ children }) {
 
             {/* Actions */}
             <div className="flex items-center gap-4">
+              <LanguageSwitcher />
+
               <Link
                 to="/store/cart"
                 className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"

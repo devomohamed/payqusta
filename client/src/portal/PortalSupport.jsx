@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { MessageCircle, Phone, Mail, Send, HelpCircle, Package, CreditCard, AlertTriangle, FileText, Clock, CheckCircle2, ChevronLeft } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
@@ -6,15 +7,9 @@ import { Link } from 'react-router-dom';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
 
-const issueTypes = [
-    { value: 'inquiry', label: 'استفسار عام', icon: HelpCircle },
-    { value: 'order', label: 'مشكلة في طلب', icon: Package },
-    { value: 'payment', label: 'مشكلة في الدفع', icon: CreditCard },
-    { value: 'complaint', label: 'شكوى', icon: AlertTriangle },
-];
-
 export default function PortalSupport() {
     const { sendSupportMessage, fetchSupportMessages, loading } = usePortalStore();
+    const { t, i18n } = useTranslation('portal');
     const [activeTab, setActiveTab] = useState('new');
     const [selectedType, setSelectedType] = useState('inquiry');
     const [subject, setSubject] = useState('');
@@ -23,6 +18,13 @@ export default function PortalSupport() {
     const [storeContact, setStoreContact] = useState(null);
     const [tickets, setTickets] = useState([]);
     const [loadingTickets, setLoadingTickets] = useState(false);
+
+    const issueTypes = [
+        { value: 'inquiry', label: t('support.types.inquiry'), icon: HelpCircle },
+        { value: 'order', label: t('support.types.order'), icon: Package },
+        { value: 'payment', label: t('support.types.payment'), icon: CreditCard },
+        { value: 'complaint', label: t('support.types.complaint'), icon: AlertTriangle },
+    ];
 
     useEffect(() => {
         if (activeTab === 'tickets') {
@@ -40,7 +42,7 @@ export default function PortalSupport() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!subject.trim() || !message.trim()) {
-            notify.error('برجاء ملء جميع الحقول');
+            notify.error(t('support.form.fill_all'));
             return;
         }
         const res = await sendSupportMessage(subject, message, selectedType);
@@ -55,16 +57,16 @@ export default function PortalSupport() {
 
     if (sent) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6" dir="rtl">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6" dir={i18n.dir()}>
                 <div className="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
                     <Send className="w-10 h-10 text-green-500" />
                 </div>
-                <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">تم إرسال رسالتك!</h2>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">سيتم التواصل معك قريباً</p>
+                <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">{t('support.sent_title')}</h2>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">{t('support.sent_subtitle')}</p>
 
                 {storeContact && (storeContact.phone || storeContact.email) && (
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 w-full max-w-sm mb-6 space-y-3">
-                        <p className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">أو تواصل معنا مباشرة:</p>
+                        <p className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('support.contact_direct')}</p>
                         {storeContact.phone && (
                             <a href={`tel:${storeContact.phone}`} className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-primary-600">
                                 <Phone className="w-5 h-5 text-primary-500" />
@@ -84,7 +86,7 @@ export default function PortalSupport() {
                     onClick={() => { setSent(false); setSubject(''); setMessage(''); }}
                     className="px-6 py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition"
                 >
-                    إرسال رسالة أخرى
+                    {t('support.send_another')}
                 </button>
             </div>
         );
@@ -92,20 +94,20 @@ export default function PortalSupport() {
 
     const getStatusInfo = (status) => {
         switch (status) {
-            case 'replied': return { label: 'تم الرد', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 };
-            case 'closed': return { label: 'مغلقة', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: CheckCircle2 };
-            default: return { label: 'مفتوحة', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock };
+            case 'replied': return { label: t('support.ticket_statuses.replied'), color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 };
+            case 'closed': return { label: t('support.ticket_statuses.closed'), color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: CheckCircle2 };
+            default: return { label: t('support.ticket_statuses.open'), color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock };
         }
     };
 
     return (
-        <div className="space-y-5 pb-20" dir="rtl">
+        <div className="space-y-5 pb-20" dir={i18n.dir()}>
             <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <MessageCircle className="w-6 h-6 text-primary-500" />
-                    الدعم الفني
+                    {t('support.title')}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">كيف يمكننا مساعدتك اليوم؟</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('support.subtitle')}</p>
             </div>
 
             {/* Tabs */}
@@ -117,7 +119,7 @@ export default function PortalSupport() {
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                 >
-                    رسالة جديدة
+                    {t('support.tabs.new')}
                 </button>
                 <button
                     onClick={() => setActiveTab('tickets')}
@@ -126,7 +128,7 @@ export default function PortalSupport() {
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                 >
-                    تذاكري السابقة
+                    {t('support.tabs.tickets')}
                 </button>
             </div>
 
@@ -157,23 +159,23 @@ export default function PortalSupport() {
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">الموضوع *</label>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('support.form.subject')}</label>
                             <input
                                 type="text"
                                 value={subject}
                                 onChange={e => setSubject(e.target.value)}
-                                placeholder="موضوع رسالتك..."
+                                placeholder={t('support.form.subject_placeholder')}
                                 required
                                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">رسالتك *</label>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('support.form.message')}</label>
                             <textarea
                                 value={message}
                                 onChange={e => setMessage(e.target.value)}
-                                placeholder="اكتب رسالتك هنا بأكبر قدر من التفاصيل..."
+                                placeholder={t('support.form.message_placeholder')}
                                 required
                                 rows={5}
                                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
@@ -188,7 +190,7 @@ export default function PortalSupport() {
                         >
                             {loading
                                 ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                : <><Send className="w-5 h-5" />إرسال الرسالة</>}
+                                : <><Send className="w-5 h-5" />{t('support.form.send')}</>}
                         </button>
                     </form>
                 </>
@@ -201,8 +203,8 @@ export default function PortalSupport() {
                     ) : tickets.length === 0 ? (
                         <PortalEmptyState
                             icon={FileText}
-                            title="لا توجد رسائل سابقة"
-                            message="أي رسالة ترسلها للدعم الفني ستظهر هنا لتتمكن من متابعة الردود عليها."
+                            title={t('support.empty_title')}
+                            message={t('support.empty_message')}
                             className="my-8"
                         />
                     ) : (
@@ -223,7 +225,7 @@ export default function PortalSupport() {
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{ticket.subject}</h3>
-                                                <p className="text-xs text-gray-500 mt-1">{new Date(ticket.createdAt).toLocaleDateString('ar-EG')}</p>
+                                                <p className="text-xs text-gray-500 mt-1">{new Date(ticket.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US')}</p>
                                             </div>
                                         </div>
                                         <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${StatusInfo.color}`}>
@@ -236,7 +238,7 @@ export default function PortalSupport() {
                                     </p>
                                     <div className="mt-4 text-left">
                                         <span className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700">
-                                            عرض المحادثة <ChevronLeft className="w-4 h-4" />
+                                            {t('support.view_chat')} <ChevronLeft className="w-4 h-4" />
                                         </span>
                                     </div>
                                 </Link>

@@ -55,6 +55,7 @@ router.post('/cart/checkout', portalController.checkout);
 // Orders
 router.get('/orders', portalController.getOrders);
 router.get('/orders/:id', portalController.getOrderDetails);
+router.post('/orders/:id/cancel', portalController.cancelOrder);
 router.post('/orders/:id/reorder', portalController.reorder);
 
 // Notifications

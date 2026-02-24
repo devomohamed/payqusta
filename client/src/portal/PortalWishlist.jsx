@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { Heart, ShoppingBag, Package, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +9,7 @@ import PortalSkeleton from './components/PortalSkeleton';
 
 export default function PortalWishlist() {
     const { fetchWishlist, toggleWishlist, addToCart } = usePortalStore();
+    const { t, i18n } = useTranslation('portal');
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,24 +31,26 @@ export default function PortalWishlist() {
         const res = await toggleWishlist(productId);
         if (res.success) {
             setProducts(prev => prev.filter(p => p._id !== productId));
-            notify.success('تمت الإزالة من المفضلة');
+            notify.success(t('wishlist.removed'));
         }
         setRemovingId(null);
     };
 
     const handleAddToCart = (product) => {
         addToCart(product, 1);
-        notify.success('تمت الإضافة للسلة');
+        notify.success(t('wishlist.added_to_cart'));
     };
 
+    const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+
     return (
-        <div className="space-y-4 pb-20" dir="rtl">
+        <div className="space-y-4 pb-20" dir={i18n.dir()}>
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Heart className="w-6 h-6 text-red-500 fill-red-500" />
-                    المفضلة
+                    {t('wishlist.title')}
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{products.length} منتج</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('wishlist.product_count', { count: products.length })}</span>
             </div>
 
             {loading ? (
@@ -54,9 +58,9 @@ export default function PortalWishlist() {
             ) : products.length === 0 ? (
                 <PortalEmptyState
                     icon={Heart}
-                    title="قائمة المفضلة فارغة"
-                    message="احفظ المنتجات التي تعجبك هنا"
-                    actionText="تصفح المنتجات"
+                    title={t('wishlist.empty_title')}
+                    message={t('wishlist.empty_message')}
+                    actionText={t('wishlist.browse')}
                     onAction={() => navigate('/portal/products')}
                     className="my-8"
                 />
@@ -85,7 +89,7 @@ export default function PortalWishlist() {
                                 )}
                                 {product.stock?.quantity === 0 && (
                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                        <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-bold">نفذت الكمية</span>
+                                        <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-bold">{t('wishlist.out_of_stock')}</span>
                                     </div>
                                 )}
                                 {/* Remove Button */}
@@ -108,14 +112,14 @@ export default function PortalWishlist() {
                                 >
                                     {product.name}
                                 </h4>
-                                <p className="text-base font-black text-primary-600 mb-3">{product.price?.toLocaleString()} <span className="text-xs text-gray-400 font-normal">ج.م</span></p>
+                                <p className="text-base font-black text-primary-600 mb-3">{product.price?.toLocaleString()} <span className="text-xs text-gray-400 font-normal">{currency}</span></p>
                                 <button
                                     onClick={() => handleAddToCart(product)}
                                     disabled={product.stock?.quantity === 0}
                                     className="w-full py-2 rounded-xl bg-primary-500 text-white text-xs font-bold hover:bg-primary-600 transition flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <ShoppingBag className="w-3.5 h-3.5" />
-                                    أضف للسلة
+                                    {t('wishlist.add_to_cart')}
                                 </button>
                             </div>
                         </div>

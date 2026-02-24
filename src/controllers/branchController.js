@@ -3,6 +3,9 @@
  */
 
 const Branch = require('../models/Branch');
+const User = require('../models/User');
+const mongoose = require('mongoose');
+const { ROLES } = require('../config/constants');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 
@@ -14,21 +17,41 @@ class BranchController {
   async getBranches(req, res, next) {
     try {
       const filter = { ...req.tenantFilter };
+      const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+      const skip = (page - 1) * limit;
       
       // For Super Admin, allow seeing all branches across tenants
       if (req.user?.isSuperAdmin && !req.tenantFilter) {
         delete filter.tenant;
       }
+      if (req.query.isActive === 'true' || req.query.isActive === 'false') {
+        filter.isActive = req.query.isActive === 'true';
+      }
+      if (req.query.search) {
+        const searchRegex = new RegExp(req.query.search.trim(), 'i');
+        filter.$or = [{ name: searchRegex }, { phone: searchRegex }, { address: searchRegex }];
+      }
 
-      const branches = await Branch.find(filter)
-        .populate('manager', 'name email phone role')
-        .populate('tenant', 'name email phone')
-        .sort({ createdAt: -1 })
-        .lean();
+      const [branches, total, activeCount] = await Promise.all([
+        Branch.find(filter)
+          .populate('manager', 'name email phone role')
+          .populate('tenant', 'name email phone')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Branch.countDocuments(filter),
+        Branch.countDocuments({ ...(filter.tenant ? { tenant: filter.tenant } : {}), isActive: true }),
+      ]);
 
       res.json({
         success: true,
-        data: { branches }
+        data: {
+          branches,
+          pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+          counters: { active: activeCount, inactive: Math.max(total - activeCount, 0) },
+        }
       });
     } catch (error) {
       next(error);
@@ -41,6 +64,7 @@ class BranchController {
    * Also creates a Branch Manager user
    */
   async createBranch(req, res, next) {
+    const session = await mongoose.startSession();
     try {
       const { name, address, phone, managerName, managerEmail, managerPassword, managerPhone, cameras, tenantId } = req.body;
 
@@ -59,53 +83,56 @@ class BranchController {
       if (!targetTenantId) {
         return next(AppError.badRequest('لم يتم تحديد المتجر'));
       }
-
-      // 1. Validate Manager Details if provided
-      if (managerEmail || managerPassword || managerName) {
-        if (!managerEmail || !managerPassword || !managerName || !managerPhone) {
-          return next(AppError.badRequest('يرجى إدخال جميع بيانات مدير الفرع (الاسم، البريد، الهاتف، الرمز السري)'));
-        }
-        // Check if email exists
-        const User = require('../models/User');
-        const existingUser = await User.findOne({ email: managerEmail });
-        if (existingUser) {
-          return next(AppError.badRequest('البريد الإلكتروني للمدير مستخدم بالفعل'));
-        }
-      }
-
-      // 2. Create Branch
-      const branch = await Branch.create({
-        name,
-        address,
-        phone,
-        cameras,
-        tenant: targetTenantId,
-      });
-
-      // 3. Create Manager User if details provided
+      let branch;
       let managerUser = null;
-      if (managerEmail) {
-        const User = require('../models/User');
-        const { ROLES } = require('../config/constants');
-        
-        managerUser = await User.create({
-          name: managerName,
-          email: managerEmail,
-          password: managerPassword,
-          phone: managerPhone,
-          role: ROLES.COORDINATOR, // Branch Manager Role
-          tenant: targetTenantId,
-          branch: branch._id,
-        });
 
-        // Link manager to branch
-        branch.manager = managerUser._id;
-        await branch.save();
-      }
+      await session.withTransaction(async () => {
+        // 1. Validate Manager Details if provided
+        if (managerEmail || managerPassword || managerName) {
+          if (!managerEmail || !managerPassword || !managerName || !managerPhone) {
+            throw AppError.badRequest('يرجى إدخال جميع بيانات مدير الفرع (الاسم، البريد، الهاتف، الرمز السري)');
+          }
+          const existingUser = await User.findOne({ email: managerEmail }).session(session);
+          if (existingUser) {
+            throw AppError.badRequest('البريد الإلكتروني للمدير مستخدم بالفعل');
+          }
+        }
+
+        // 2. Create Branch
+        [branch] = await Branch.create([{
+          name,
+          address,
+          phone,
+          cameras,
+          tenant: targetTenantId,
+        }], { session });
+
+        // 3. Create Manager User if details provided
+        if (managerEmail) {
+          [managerUser] = await User.create([{
+            name: managerName,
+            email: managerEmail,
+            password: managerPassword,
+            phone: managerPhone,
+            role: ROLES.COORDINATOR, // Branch Manager Role
+            tenant: targetTenantId,
+            branch: branch._id,
+          }], { session });
+
+          // Link manager to branch
+          branch.manager = managerUser._id;
+          await branch.save({ session });
+        }
+      });
 
       ApiResponse.success(res, { branch, manager: managerUser }, 'تم إنشاء الفرع وحساب المدير بنجاح', 201);
     } catch (error) {
+      if (error?.code === 11000) {
+        return next(AppError.badRequest('اسم الفرع مستخدم بالفعل داخل نفس المتجر'));
+      }
       next(error);
+    } finally {
+      await session.endSession();
     }
   }
 
@@ -141,13 +168,14 @@ class BranchController {
       // Update Manager Details
       const { managerName, managerEmail, managerPassword, managerPhone } = req.body;
       if (managerName || managerEmail || managerPhone || managerPassword) {
-        const User = require('../models/User');
-        const { ROLES } = require('../config/constants');
-
         if (branch.manager) {
           // Update existing manager
           const managerUser = await User.findById(branch.manager);
           if (managerUser) {
+            if (managerEmail) {
+              const existing = await User.findOne({ email: managerEmail, _id: { $ne: managerUser._id } });
+              if (existing) return next(AppError.badRequest('البريد الإلكتروني للمدير مستخدم بالفعل'));
+            }
             if (managerName) managerUser.name = managerName;
             if (managerEmail) managerUser.email = managerEmail;
             if (managerPhone) managerUser.phone = managerPhone;
@@ -157,6 +185,8 @@ class BranchController {
         } else {
           // Create new manager if none exists (rare case but good to handle)
           if (managerEmail && managerPassword && managerName && managerPhone) {
+             const existing = await User.findOne({ email: managerEmail });
+             if (existing) return next(AppError.badRequest('البريد الإلكتروني للمدير مستخدم بالفعل'));
              const managerUser = await User.create({
               name: managerName,
               email: managerEmail,
@@ -190,6 +220,15 @@ class BranchController {
       // Check ownership
       if (!req.user.isSuperAdmin && branch.tenant.toString() !== req.tenantId) {
         return next(AppError.forbidden('ليس لديك صلاحية لحذف هذا الفرع'));
+      }
+
+      if (branch.currentShift?.startTime && !branch.currentShift?.endTime) {
+        return next(AppError.badRequest('لا يمكن حذف الفرع أثناء وجود وردية نشطة'));
+      }
+
+      const activeUsersInBranch = await User.countDocuments({ branch: branch._id, isActive: true });
+      if (activeUsersInBranch > 0) {
+        return next(AppError.badRequest('لا يمكن حذف الفرع قبل تعطيل/نقل مستخدمي الفرع المرتبطين'));
       }
 
       branch.isActive = false;

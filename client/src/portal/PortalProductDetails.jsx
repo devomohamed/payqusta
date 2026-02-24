@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import {
     ArrowRight, Heart, ShoppingBag, Share2, Star,
@@ -7,10 +8,12 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/UI';
 import PortalSkeleton from './components/PortalSkeleton';
+import ProductCard from './components/product/ProductCard';
 
 export default function PortalProductDetails() {
-    const { id } = useParams(); // can be slug or ID
+    const { id } = useParams();
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation('portal');
     const { fetchProductDetails, addToCart, toggleWishlist, wishlistIds } = usePortalStore();
 
     const [product, setProduct] = useState(null);
@@ -19,6 +22,8 @@ export default function PortalProductDetails() {
     const [activeImage, setActiveImage] = useState(0);
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [quantity, setQuantity] = useState(1);
+
+    const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
 
     useEffect(() => {
         loadProduct();
@@ -32,8 +37,6 @@ export default function PortalProductDetails() {
             if (data.hasVariants && data.variants?.length > 0) {
                 setSelectedVariant(data.variants[0]);
             }
-
-            // Fetch related products
             if (data.category) {
                 const { fetchProducts } = usePortalStore.getState();
                 const related = await fetchProducts(1, '', data.category);
@@ -47,18 +50,14 @@ export default function PortalProductDetails() {
 
     const handleAddToCart = () => {
         if (!product || (product.hasVariants && !selectedVariant)) return;
-
-        // Check stock
         const availableStock = product.hasVariants ? selectedVariant?.stock : product.stock?.quantity;
-        if (availableStock < quantity) return; // Or show error toast
-
+        if (availableStock < quantity) return;
         addToCart(product, quantity, selectedVariant);
-        // Optional: show mini cart or toast
     };
 
     if (loading) {
         return (
-            <div className="pb-24 animate-fade-in space-y-6" dir="rtl">
+            <div className="pb-24 animate-fade-in space-y-6" dir={i18n.dir()}>
                 <div className="sticky top-0 z-20 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-md pt-4 pb-4 px-4 flex items-center justify-between">
                     <PortalSkeleton className="w-10 h-10 rounded-full" />
                 </div>
@@ -74,32 +73,30 @@ export default function PortalProductDetails() {
 
     if (!product) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center" dir={i18n.dir()}>
                 <Package className="w-16 h-16 text-gray-300 dark:text-gray-700" />
-                <h2 className="text-xl font-bold dark:text-white">المنتج غير موجود</h2>
-                <p className="text-sm text-gray-500">عذراً، لم نتمكن من العثور على المنتج المطلوب. ربما تم حذفه أو الرابط غير صحيح.</p>
+                <h2 className="text-xl font-bold dark:text-white">{t('productDetails.not_found')}</h2>
+                <p className="text-sm text-gray-500">{t('productDetails.not_found_desc')}</p>
                 <button
                     onClick={() => navigate('/portal/products')}
                     className="mt-4 bg-primary-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-700"
                 >
-                    العودة للتسوق
+                    {t('productDetails.back_to_shop')}
                 </button>
             </div>
         );
     }
 
-    // Calculate current display price/stock based on selected variant
     const currentPrice = product.hasVariants && selectedVariant ? selectedVariant.price : product.price;
-    const oldPrice = currentPrice * 1.25; // Mock discount display
+    const oldPrice = currentPrice * 1.25;
     const currentStock = product.hasVariants && selectedVariant ? selectedVariant.stock : product.stock?.quantity;
     const isOutOfStock = currentStock === 0;
 
-    // Gather all images: primary images + variant images if any
     const allImages = [...(product.images || [])];
     if (allImages.length === 0 && product.thumbnail) allImages.push(product.thumbnail);
 
     return (
-        <div className="pb-32 animate-fade-in" dir="rtl">
+        <div className="pb-32 animate-fade-in" dir={i18n.dir()}>
             {/* Header */}
             <div className="absolute top-0 left-0 w-full z-20 flex items-center justify-between p-4 px-6">
                 <button
@@ -125,27 +122,20 @@ export default function PortalProductDetails() {
             <div className="relative w-full bg-gray-100 dark:bg-gray-800 rounded-b-[3rem] overflow-hidden shadow-sm">
                 <div className="aspect-square md:aspect-[4/3] w-full relative">
                     {allImages.length > 0 ? (
-                        <img
-                            src={allImages[activeImage]}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                        />
+                        <img src={allImages[activeImage]} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
                         <div className="flex items-center justify-center h-full text-gray-300 dark:text-gray-600">
                             <Package className="w-20 h-20" />
                         </div>
                     )}
                 </div>
-
-                {/* Thumbnails */}
                 {allImages.length > 1 && (
                     <div className="absolute bottom-6 left-0 w-full flex justify-center gap-2 px-4">
                         {allImages.map((img, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => setActiveImage(idx)}
-                                className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all shadow-md ${activeImage === idx ? 'border-primary-500 scale-110' : 'border-white/50 opacity-70 hover:opacity-100'
-                                    }`}
+                                className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all shadow-md ${activeImage === idx ? 'border-primary-500 scale-110' : 'border-white/50 opacity-70 hover:opacity-100'}`}
                             >
                                 <img src={img} alt="" className="w-full h-full object-cover" />
                             </button>
@@ -160,7 +150,7 @@ export default function PortalProductDetails() {
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-[10px] font-bold px-2 py-1 bg-black text-white dark:bg-white dark:text-black rounded-md">
-                            {product.category || 'عام'}
+                            {product.category || t('productDetails.general')}
                         </span>
                         <div className="flex items-center gap-1 text-yellow-500 text-xs font-bold">
                             <Star className="w-3 h-3 fill-yellow-500" />
@@ -174,46 +164,44 @@ export default function PortalProductDetails() {
 
                     <div className="flex items-end gap-3">
                         <h2 className="text-3xl font-black text-primary-600 dark:text-primary-400">
-                            {currentPrice?.toLocaleString()} <span className="text-base text-gray-500">ج.م</span>
+                            {currentPrice?.toLocaleString()} <span className="text-base text-gray-500">{currency}</span>
                         </h2>
                         <span className="text-sm text-gray-400 line-through decoration-red-400 mb-1">
-                            {oldPrice?.toLocaleString()} ج.م
+                            {oldPrice?.toLocaleString()} {currency}
                         </span>
                         <span className="text-xs font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-md mb-1 border border-green-100 dark:border-green-800">
-                            وفر 25%
+                            {t('productDetails.save_25')}
                         </span>
                     </div>
                 </div>
 
                 {/* Guarantee / Perks */}
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 flex justify-between border border-gray-100 dark:border-gray-700">
-                    <div className="flex flex-col items-center gap-2 flex-1 border-l border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col items-center gap-2 flex-1 rtl:border-l ltr:border-r border-gray-200 dark:border-gray-700">
                         <ShieldCheck className="w-5 h-5 text-green-500" />
-                        <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">ضمان الوكيل</span>
+                        <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">{t('productDetails.warranty')}</span>
                     </div>
-                    <div className="flex flex-col items-center gap-2 flex-1 border-l border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col items-center gap-2 flex-1 rtl:border-l ltr:border-r border-gray-200 dark:border-gray-700">
                         <Truck className="w-5 h-5 text-blue-500" />
-                        <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">شحن سريع</span>
+                        <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">{t('productDetails.fast_shipping')}</span>
                     </div>
                     <div className="flex flex-col items-center gap-2 flex-1">
                         <RotateCcw className="w-5 h-5 text-orange-500" />
-                        <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">استرجاع 14 يوم</span>
+                        <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">{t('productDetails.return_14')}</span>
                     </div>
                 </div>
 
                 {/* Variants */}
                 {product.hasVariants && product.variants?.length > 0 && (
                     <div className="space-y-3">
-                        <h3 className="font-bold text-gray-900 dark:text-white">اختر المواصفات:</h3>
+                        <h3 className="font-bold text-gray-900 dark:text-white">{t('productDetails.choose_specs')}</h3>
                         <div className="flex flex-wrap gap-2">
                             {product.variants.map((variant, idx) => {
-                                // Determine label from attributes map
                                 let label = variant.sku;
                                 if (variant.attributes) {
                                     const values = Object.values(variant.attributes);
                                     if (values.length > 0) label = values.join(' - ');
                                 }
-
                                 return (
                                     <button
                                         key={idx}
@@ -236,12 +224,12 @@ export default function PortalProductDetails() {
 
                 {/* Description */}
                 <div className="space-y-3">
-                    <h3 className="font-bold text-gray-900 dark:text-white">الوصف</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-white">{t('productDetails.description')}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {product.description || 'لا يوجد وصف متاح لهذا المنتج.'}
+                        {product.description || t('productDetails.no_description')}
                     </p>
                     <button className="text-primary-600 dark:text-primary-400 text-xs font-bold flex items-center gap-1 group">
-                        قراءة المزيد <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        {t('productDetails.read_more')} <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
 
@@ -249,34 +237,24 @@ export default function PortalProductDetails() {
                 {relatedProducts.length > 0 && (
                     <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg text-gray-900 dark:text-white">منتجات قد تعجبك</h3>
+                            <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t('productDetails.related')}</h3>
                             <button
                                 onClick={() => navigate(`/portal/products?category=${product.category}`)}
                                 className="text-xs font-bold text-primary-600 dark:text-primary-400"
                             >
-                                عرض الكل
+                                {t('productDetails.view_all')}
                             </button>
                         </div>
 
-                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory pr-2" style={{ scrollPaddingInlineStart: '0.5rem' }}>
+                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory rtl:pr-2 ltr:pl-2" style={{ scrollPaddingInlineStart: '0.5rem' }}>
                             {relatedProducts.map((relProd, i) => (
-                                <div
-                                    key={i}
-                                    className="min-w-[140px] max-w-[140px] snap-start bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm cursor-pointer border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow"
-                                    onClick={() => {
-                                        navigate(`/portal/products/${relProd.slug || relProd._id}`);
-                                        window.scrollTo(0, 0);
-                                    }}
-                                >
-                                    <div className="aspect-square bg-gray-50 dark:bg-gray-900 rounded-xl mb-2 overflow-hidden">
-                                        {relProd.thumbnail || relProd.images?.[0] ? (
-                                            <img src={relProd.thumbnail || relProd.images[0]} alt={relProd.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="flex justify-center items-center h-full text-gray-300"><Package className="w-6 h-6" /></div>
-                                        )}
-                                    </div>
-                                    <h4 className="text-xs font-bold text-gray-900 dark:text-white line-clamp-2 h-8 leading-tight mb-1">{relProd.name}</h4>
-                                    <p className="text-sm font-black text-primary-600">{relProd.price?.toLocaleString()} <span className="text-[10px] font-normal text-gray-500">ج.م</span></p>
+                                <div key={i} className="min-w-[160px] max-w-[160px] snap-start">
+                                    <ProductCard
+                                        product={relProd}
+                                        addToCart={addToCart}
+                                        toggleWishlist={toggleWishlist}
+                                        isWishlisted={wishlistIds?.includes(relProd._id)}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -284,29 +262,15 @@ export default function PortalProductDetails() {
                 )}
             </div>
 
-            {/* Floating Action Bar (Bottom Checkout) */}
+            {/* Floating Action Bar */}
             <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 px-6 pb-safe z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center gap-4">
-
-                {/* Quantity Selector */}
                 {!isOutOfStock && (
                     <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-1 w-28 h-12">
-                        <button
-                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            className="w-8 h-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
-                        >
-                            -
-                        </button>
+                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">-</button>
                         <span className="font-bold text-gray-900 dark:text-white">{quantity}</span>
-                        <button
-                            onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                            className="w-8 h-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
-                        >
-                            +
-                        </button>
+                        <button onClick={() => setQuantity(Math.min(currentStock, quantity + 1))} className="w-8 h-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">+</button>
                     </div>
                 )}
-
-                {/* Add To Cart BTN */}
                 <button
                     onClick={handleAddToCart}
                     disabled={isOutOfStock}
@@ -315,16 +279,13 @@ export default function PortalProductDetails() {
                         : 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-black/20 dark:shadow-white/10'
                         }`}
                 >
-                    {isOutOfStock ? (
-                        'نفذت الكمية'
-                    ) : (
+                    {isOutOfStock ? t('productDetails.out_of_stock') : (
                         <>
-                            <ShoppingBag className="w-5 h-5" /> أضف للسلة ({(currentPrice * quantity).toLocaleString()})
+                            <ShoppingBag className="w-5 h-5" /> {t('productDetails.add_to_cart', { total: (currentPrice * quantity).toLocaleString() })}
                         </>
                     )}
                 </button>
             </div>
-
         </div>
     );
 }

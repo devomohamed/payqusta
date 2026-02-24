@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { Bell, CheckCircle, Clock, ShoppingBag, CreditCard, AlertTriangle, MessageCircle, Star, Check, CheckCheck } from 'lucide-react';
@@ -29,6 +30,7 @@ export default function PortalNotifications() {
   const navigate = useNavigate();
   const { fetchNotifications, markNotificationRead, markAllNotificationsRead, unreadCount } = usePortalStore();
   const { dark } = useThemeStore();
+  const { t, i18n } = useTranslation('portal');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
@@ -57,7 +59,11 @@ export default function PortalNotifications() {
       handleMarkRead(notif._id);
     }
     if (notif.link) {
-      navigate(notif.link);
+      let targetLink = notif.link;
+      if (!targetLink.startsWith('/portal/')) {
+        targetLink = `/portal${targetLink.startsWith('/') ? targetLink : '/' + targetLink}`;
+      }
+      navigate(targetLink);
     }
   };
 
@@ -68,23 +74,23 @@ export default function PortalNotifications() {
 
   const timeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 60) return 'الآن';
+    if (seconds < 60) return t('notifications.time_now');
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `منذ ${minutes} دقيقة`;
+    if (minutes < 60) return t('notifications.time_minutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `منذ ${hours} ساعة`;
+    if (hours < 24) return t('notifications.time_hours', { count: hours });
     const days = Math.floor(hours / 24);
-    if (days < 7) return `منذ ${days} يوم`;
-    return new Date(date).toLocaleDateString('ar-EG');
+    if (days < 7) return t('notifications.time_days', { count: days });
+    return new Date(date).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US');
   };
 
   return (
-    <div className="space-y-4 pb-20" dir="rtl">
+    <div className="space-y-4 pb-20" dir={i18n.dir()}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Bell className="w-6 h-6 text-primary-500" />
-          الإشعارات
+          {t('notifications.title')}
           {unreadCount > 0 && (
             <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>
           )}
@@ -95,7 +101,7 @@ export default function PortalNotifications() {
             className="text-sm font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1 hover:underline"
           >
             <CheckCheck className="w-4 h-4" />
-            قراءة الكل
+            {t('notifications.mark_all_read')}
           </button>
         )}
       </div>
@@ -106,8 +112,8 @@ export default function PortalNotifications() {
       ) : notifications.length === 0 ? (
         <PortalEmptyState
           icon={Bell}
-          title="لا توجد إشعارات"
-          message="سيتم إعلامك بأي تحديثات جديدة"
+          title={t('notifications.empty_title')}
+          message={t('notifications.empty_message')}
           className="my-8"
         />
       ) : (

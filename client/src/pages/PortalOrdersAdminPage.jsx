@@ -100,7 +100,7 @@ export default function PortalOrdersAdminPage() {
     };
 
     return (
-        <div className="space-y-5 animate-fade-in" dir="rtl">
+        <div className="space-y-5 animate-fade-in">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div>
@@ -253,7 +253,7 @@ export default function PortalOrdersAdminPage() {
             {/* Order Detail Modal */}
             <Modal open={!!selected} onClose={() => setSelected(null)} title={`تفاصيل الطلب #${selected?.invoiceNumber}`} size="lg">
                 {selected && (
-                    <div className="space-y-5" dir="rtl">
+                    <div className="space-y-5">
                         {/* Status */}
                         <div className="flex items-center gap-3">
                             <StatusBadge status={selected.orderStatus || 'pending'} />

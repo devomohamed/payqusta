@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bell, Check, CheckCheck, Clock, AlertTriangle, CreditCard,
   FileText, Package, Truck, UserPlus, Star, X, Trash2, ChevronDown,
@@ -38,6 +39,9 @@ export default function NotificationDropdown() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('admin');
+
+  const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
 
   // Fetch unread count periodically
   const fetchUnreadCount = useCallback(async () => {
@@ -67,7 +71,7 @@ export default function NotificationDropdown() {
     let retryCount = 0;
 
     const connect = () => {
-      if (document.hidden) return; // Don't connect if hidden
+      if (document.hidden) return;
 
       try {
         eventSource = new EventSource(`${API_URL}/notifications/stream?token=${token}`);
@@ -92,7 +96,6 @@ export default function NotificationDropdown() {
 
         eventSource.onerror = () => {
           eventSource.close();
-          // Exponential backoff
           const delay = Math.min(3000 * Math.pow(2, retryCount), 30000);
           retryCount++;
           retryTimeout = setTimeout(connect, delay);
@@ -100,10 +103,8 @@ export default function NotificationDropdown() {
       } catch (e) { }
     };
 
-    // Initial connect if visible
     if (!document.hidden) connect();
 
-    // Handle visibility change
     const handleVisibilityChange = () => {
       if (document.hidden) {
         eventSource?.close();
@@ -122,7 +123,6 @@ export default function NotificationDropdown() {
     };
   }, []);
 
-  // Poll unread count every 30s
   // Poll unread count periodically (every 60s), only if visible
   useEffect(() => {
     let interval;
@@ -213,11 +213,11 @@ export default function NotificationDropdown() {
     const now = new Date();
     const d = new Date(date);
     const diff = Math.floor((now - d) / 1000);
-    if (diff < 60) return 'الآن';
-    if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
-    if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`;
-    if (diff < 604800) return `منذ ${Math.floor(diff / 86400)} يوم`;
-    return d.toLocaleDateString('ar-EG');
+    if (diff < 60) return t('notifications.just_now');
+    if (diff < 3600) return t('notifications.minutes_ago', { count: Math.floor(diff / 60) });
+    if (diff < 86400) return t('notifications.hours_ago', { count: Math.floor(diff / 3600) });
+    if (diff < 604800) return t('notifications.days_ago', { count: Math.floor(diff / 86400) });
+    return d.toLocaleDateString(locale);
   };
 
   return (
@@ -237,17 +237,17 @@ export default function NotificationDropdown() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50 animate-slide-up">
+        <div className={`absolute ${i18n.dir() === 'rtl' ? 'left-0' : 'right-0'} top-full mt-2 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50 animate-slide-up`}>
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800">
-            <h4 className="font-bold text-base">الإشعارات</h4>
+            <h4 className="font-bold text-base">{t('notifications.title')}</h4>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
                   className="text-xs text-primary-500 font-semibold hover:text-primary-600 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors"
                 >
-                  <CheckCheck className="w-3.5 h-3.5" /> قراءة الكل
+                  <CheckCheck className="w-3.5 h-3.5" /> {t('notifications.mark_all_read')}
                 </button>
               )}
               <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
@@ -261,13 +261,12 @@ export default function NotificationDropdown() {
             {loading && notifications.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="w-8 h-8 border-3 border-primary-200 border-t-primary-500 rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-xs text-gray-400">جاري التحميل...</p>
+                <p className="text-xs text-gray-400">{t('common:loading')}</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 font-medium">لا توجد إشعارات</p>
-                <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">ستظهر الإشعارات هنا عند حدوث أي حدث</p>
+                <p className="text-sm text-gray-400 font-medium">{t('notifications.no_notifications')}</p>
               </div>
             ) : (
               notifications.map((n) => {
@@ -316,7 +315,7 @@ export default function NotificationDropdown() {
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="px-5 py-2.5 border-t border-gray-100 dark:border-gray-800 text-center">
-              <span className="text-xs text-gray-400">{notifications.length} إشعار</span>
+              <span className="text-xs text-gray-400">{notifications.length} {t('notifications.title').toLowerCase()}</span>
             </div>
           )}
         </div>

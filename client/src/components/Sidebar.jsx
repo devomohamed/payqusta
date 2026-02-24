@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, Users, FileText, Truck,
   Settings, LogOut, X, Zap, BarChart3, Target, Receipt,
@@ -13,6 +14,8 @@ import { useAuthStore } from '../store';
 export default function Sidebar({ open, onClose }) {
   const { user, tenant, logout } = useAuthStore();
   const location = useLocation();
+  const { t, i18n } = useTranslation('admin');
+  const isRTL = i18n.dir() === 'rtl';
   const isSystemSuperAdmin =
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
 
@@ -73,7 +76,7 @@ export default function Sidebar({ open, onClose }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-2.5 pr-12 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+        `flex items-center gap-3 px-4 py-2.5 ${isRTL ? 'pr-12' : 'pl-12'} rounded-lg text-sm font-medium transition-all duration-200 ${isActive
           ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400'
           : 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-600 dark:hover:text-gray-300'
         }`
@@ -120,7 +123,7 @@ export default function Sidebar({ open, onClose }) {
             <h1 className="text-lg font-extrabold tracking-tight truncate max-w-[150px]">
               {user?.branch?.name || tenant?.name || 'PayQusta'}
             </h1>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-0.5">لوحة التحكم</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-0.5">{t('sidebar.control_panel')}</p>
           </div>
         </div>
       </div>
@@ -133,12 +136,12 @@ export default function Sidebar({ open, onClose }) {
             <div className="px-2 py-2">
               <div className="flex items-center gap-2 text-xs font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
                 <Crown className="w-3 h-3" />
-                <span>Super Admin</span>
+                <span>{t('sidebar.super_admin')}</span>
               </div>
             </div>
-            <NavItem to="/super-admin/plans" icon={Crown} label="إدارة الباقات والأسعار" />
-            <NavItem to="/super-admin/requests" icon={FileText} label="طلبات الاشتراك والإيصالات" />
-            <NavItem to="/tenant-management" icon={Building2} label="إدارة المتاجر والفروع" />
+            <NavItem to="/super-admin/plans" icon={Crown} label={t('sidebar.plan_management')} />
+            <NavItem to="/super-admin/requests" icon={FileText} label={t('sidebar.subscription_requests')} />
+            <NavItem to="/tenant-management" icon={Building2} label={t('sidebar.store_management')} />
             <div className="my-3 border-t border-gray-200 dark:border-gray-700"></div>
           </>
         )}
@@ -149,12 +152,12 @@ export default function Sidebar({ open, onClose }) {
             <div className="px-2 py-2">
               <div className="flex items-center gap-2 text-xs font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
                 <Crown className="w-3 h-3" />
-                <span>الإدارة</span>
+                <span>{t('sidebar.admin_section')}</span>
               </div>
             </div>
 
-            <NavItem to="/admin/users" icon={Shield} label={isSystemSuperAdmin ? "مديري النظام" : "الموظفين"} />
-            <NavItem to="/roles" icon={Shield} label="الصلاحيات والأدوار" />
+            <NavItem to="/admin/users" icon={Shield} label={isSystemSuperAdmin ? t('sidebar.system_admins') : t('sidebar.employees')} />
+            <NavItem to="/roles" icon={Shield} label={t('sidebar.roles_permissions')} />
 
             <div className="my-3 border-t border-gray-200 dark:border-gray-700" />
           </>
@@ -162,7 +165,7 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Staff Tools - Cash Drawer (Shift Management) */}
         {!isSystemSuperAdmin && (
-          <NavItem to="/cash-drawer" icon={DollarSign} label="إدارة الخزينة (الوردية)" />
+          <NavItem to="/cash-drawer" icon={DollarSign} label={t('sidebar.cash_drawer')} />
         )}
 
         {/* Dashboard Dropdown */}
@@ -172,20 +175,20 @@ export default function Sidebar({ open, onClose }) {
             isActive={isDashboardActive}
             onClick={() => setDashboardOpen(!dashboardOpen)}
             icon={LayoutDashboard}
-            label="الرئيسية"
+            label={t('sidebar.dashboard')}
           />
           <div className={`overflow-hidden transition-all duration-200 ${dashboardOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
-              <SubNavItem to="/" icon={LayoutDashboard} label="نظرة عامة" />
+              <SubNavItem to="/" icon={LayoutDashboard} label={t('sidebar.overview')} />
               {!isSystemSuperAdmin && (
-                <SubNavItem to="/command-center" icon={Target} label="مركز القيادة" />
+                <SubNavItem to="/command-center" icon={Target} label={t('sidebar.command_center')} />
               )}
             </div>
           </div>
         </div>
 
         {!isSystemSuperAdmin && (
-          <NavItem to="/quick-sale" icon={Zap} label="بيع سريع ⚡" />
+          <NavItem to="/quick-sale" icon={Zap} label={t('sidebar.quick_sale')} />
         )}
 
         {/* Products Dropdown */}
@@ -196,13 +199,13 @@ export default function Sidebar({ open, onClose }) {
               isActive={isProductsActive}
               onClick={() => setProductsOpen(!productsOpen)}
               icon={Package}
-              label="المنتجات"
+              label={t('sidebar.products')}
             />
             <div className={`overflow-hidden transition-all duration-200 ${productsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
-                <SubNavItem to="/products" icon={Boxes} label="كل المنتجات" />
-                <SubNavItem to="/stock-adjustments" icon={Archive} label="تسوية المخزون" />
-                <SubNavItem to="/low-stock" icon={AlertTriangle} label="نقص المخزون" />
+                <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} />
+                <SubNavItem to="/stock-adjustments" icon={Archive} label={t('sidebar.stock_adjustments')} />
+                <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} />
               </div>
             </div>
           </div>
@@ -210,29 +213,29 @@ export default function Sidebar({ open, onClose }) {
 
         {!isSystemSuperAdmin && (
           <>
-            <NavItem to="/customers" icon={Users} label="العملاء" />
-            <NavItem to="/invoices" icon={FileText} label="الفواتير" />
+            <NavItem to="/customers" icon={Users} label={t('sidebar.customers')} />
+            <NavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} />
           </>
         )}
 
         {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/portal-orders" icon={ShoppingBag} label="طلبات البوابة" />
+          <NavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} />
         )}
 
         {!isSystemSuperAdmin && (user?.role === 'admin' || user?.role === 'vendor') && (
           <>
-            <NavItem to="/returns-management" icon={RefreshCcw} label="المرتجعات" />
-            <NavItem to="/kyc-review" icon={FileCheck} label="مستندات العملاء" />
-            <NavItem to="/support-messages" icon={MessageCircle} label="رسائل الدعم" />
-            <NavItem to="/reviews" icon={Star} label="التقييمات" />
-            <NavItem to="/coupons" icon={Tag} label="كوبونات الخصم" />
+            <NavItem to="/returns-management" icon={RefreshCcw} label={t('sidebar.returns')} />
+            <NavItem to="/kyc-review" icon={FileCheck} label={t('sidebar.kyc_documents')} />
+            <NavItem to="/support-messages" icon={MessageCircle} label={t('sidebar.support_messages')} />
+            <NavItem to="/reviews" icon={Star} label={t('sidebar.reviews')} />
+            <NavItem to="/coupons" icon={Tag} label={t('sidebar.coupons')} />
           </>
         )}
 
         {!isSystemSuperAdmin && (
           <>
-            <NavItem to="/suppliers" icon={Truck} label="الموردين" />
-            <NavItem to="/expenses" icon={Receipt} label="المصروفات" />
+            <NavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} />
+            <NavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} />
           </>
         )}
 
@@ -243,20 +246,20 @@ export default function Sidebar({ open, onClose }) {
             isActive={isReportsActive}
             onClick={() => setReportsOpen(!reportsOpen)}
             icon={BarChart3}
-            label={isSystemSuperAdmin ? "تحليلات النظام" : "التقارير"}
+            label={isSystemSuperAdmin ? t('sidebar.system_analytics') : t('sidebar.reports')}
           />
           <div className={`overflow-hidden transition-all duration-200 ${reportsOpen ? 'max-h-60 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
               {isSystemSuperAdmin ? (
                 <>
-                  <SubNavItem to="/super-admin/analytics" icon={PieChart} label="إيرادات المتاجر" />
-                  <SubNavItem to="/admin/statistics" icon={TrendingUp} label="إحصائيات النظام" />
+                  <SubNavItem to="/super-admin/analytics" icon={PieChart} label={t('sidebar.store_revenue')} />
+                  <SubNavItem to="/admin/statistics" icon={TrendingUp} label={t('sidebar.system_stats')} />
                 </>
               ) : (
                 <>
-                  <SubNavItem to="/reports" icon={PieChart} label="التقارير العامة" />
-                  <SubNavItem to="/business-reports" icon={TrendingUp} label="التقارير التجارية" />
-                  <SubNavItem to="/aging-report" icon={Clock} label="أعمار الديون" />
+                  <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} />
+                  <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} />
+                  <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} />
                 </>
               )}
             </div>
@@ -272,13 +275,13 @@ export default function Sidebar({ open, onClose }) {
               isActive={isToolsActive}
               onClick={() => setToolsOpen(!toolsOpen)}
               icon={Database}
-              label="الأدوات"
+              label={t('sidebar.tools')}
             />
             <div className={`overflow-hidden transition-all duration-200 ${toolsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
-                <SubNavItem to="/cash-drawer" icon={DollarSign} label="إدارة الخزينة" />
-                <SubNavItem to="/import" icon={Upload} label="استيراد البيانات" />
-                <SubNavItem to="/backup" icon={Database} label="النسخ الاحتياطي" />
+                <SubNavItem to="/cash-drawer" icon={DollarSign} label={t('sidebar.cash_management')} />
+                <SubNavItem to="/import" icon={Upload} label={t('sidebar.import_data')} />
+                <SubNavItem to="/backup" icon={Database} label={t('sidebar.backup')} />
               </div>
             </div>
           </div>
@@ -286,17 +289,17 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Branches - Only for regular Admin */}
         {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/branches" icon={Building2} label="الفروع" />
+          <NavItem to="/branches" icon={Building2} label={t('sidebar.branches')} />
         )}
 
         {/* Cameras - Only for regular Admin */}
         {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/cameras" icon={Video} label="المراقبة الحية" />
+          <NavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} />
         )}
 
         {/* Subscriptions - Only for regular Admin */}
         {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/subscriptions" icon={Crown} label="الاشتراك والباقات" />
+          <NavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} />
         )}
 
         {/* Settings Dropdown */}
@@ -306,13 +309,13 @@ export default function Sidebar({ open, onClose }) {
             isActive={isSettingsActive}
             onClick={() => setSettingsOpen(!settingsOpen)}
             icon={Settings}
-            label="الإعدادات"
+            label={t('sidebar.settings')}
           />
           <div className={`overflow-hidden transition-all duration-200 ${settingsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
-              <SubNavItem to="/settings" icon={Settings} label="الإعدادات العامة" />
+              <SubNavItem to="/settings" icon={Settings} label={t('sidebar.general_settings')} />
               {(user?.role === 'admin' || isSystemSuperAdmin) && (
-                <SubNavItem to="/admin/audit-logs" icon={Activity} label="سجل النشاطات" />
+                <SubNavItem to="/admin/audit-logs" icon={Activity} label={t('sidebar.activity_log')} />
               )}
             </div>
           </div>
@@ -323,16 +326,16 @@ export default function Sidebar({ open, onClose }) {
       <div className="p-3 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            {user?.name?.charAt(0) || 'م'}
+            {user?.name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{tenant?.name || 'متجري'}</p>
+            <p className="text-sm font-bold truncate">{tenant?.name || t('sidebar.my_store')}</p>
             <p className="text-[11px] text-gray-400 truncate">{user?.email || ''}</p>
           </div>
           <button
             onClick={handleLogout}
             className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-            title="تسجيل الخروج"
+            title={t('sidebar.logout')}
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -344,7 +347,7 @@ export default function Sidebar({ open, onClose }) {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-shrink-0 border-l border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col">
+      <aside className={`hidden md:flex w-64 flex-shrink-0 ${isRTL ? 'border-l' : 'border-r'} border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col`}>
         <SidebarContent />
       </aside>
 
@@ -352,10 +355,10 @@ export default function Sidebar({ open, onClose }) {
       {open && (
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-          <aside className="absolute right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 shadow-2xl animate-slide-right flex flex-col">
+          <aside className={`absolute ${isRTL ? 'right-0' : 'left-0'} top-0 bottom-0 w-72 bg-white dark:bg-gray-900 shadow-2xl ${isRTL ? 'animate-slide-right' : 'animate-slide-left'} flex flex-col`}>
             <button
               onClick={onClose}
-              className="absolute left-3 top-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+              className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400`}
             >
               <X className="w-5 h-5" />
             </button>

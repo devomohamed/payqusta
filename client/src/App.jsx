@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
@@ -126,6 +127,7 @@ function MainLayout() {
   const { dark } = useThemeStore();
   const location = useLocation();
   const { user } = useAuthStore();
+  const { t } = useTranslation('admin');
   const isSystemSuperAdmin = isSystemSuperAdminUser(user);
 
   // Close sidebar on route change (mobile)
@@ -153,7 +155,7 @@ function MainLayout() {
 
           {isSystemSuperAdmin && (
             <div className="px-4 md:px-6 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200/60 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-sm font-semibold">
-              وضع Super Admin مفعل - لديك صلاحيات إدارة النظام بالكامل.
+              {t('header.super_admin_banner')}
             </div>
           )}
 

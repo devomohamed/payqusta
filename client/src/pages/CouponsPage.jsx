@@ -60,11 +60,10 @@ function CouponForm({ coupon, onSave, onCancel }) {
     setLoading(false);
   };
 
-  const inputClass = `w-full px-3 py-2.5 rounded-xl border text-sm ${
-    dark
+  const inputClass = `w-full px-3 py-2.5 rounded-xl border text-sm ${dark
       ? 'bg-gray-800 border-gray-700 text-white focus:border-primary-500'
       : 'bg-white border-gray-200 text-gray-900 focus:border-primary-500'
-  } focus:outline-none transition`;
+    } focus:outline-none transition`;
 
   const labelClass = 'block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1';
 
@@ -250,7 +249,7 @@ export default function CouponsPage() {
           },
           style: 'danger',
         },
-        { label: 'إلغاء', onClick: () => {}, style: 'secondary' },
+        { label: 'إلغاء', onClick: () => { }, style: 'secondary' },
       ],
     });
   };
@@ -264,7 +263,7 @@ export default function CouponsPage() {
   const isActive = (coupon) => coupon.isActive && !isExpired(coupon);
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -339,10 +338,9 @@ export default function CouponsPage() {
               <Card key={coupon._id} className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      active ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                             : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${active ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                      }`}>
                       <TypeIcon className="w-5 h-5" />
                     </div>
                     <div>
@@ -359,13 +357,12 @@ export default function CouponsPage() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">{coupon.description || typeLabels[coupon.type]}</p>
                     </div>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                    active
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${active
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                       : expired
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
-                  }`}>
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                    }`}>
                     {active ? <><CheckCircle className="w-3 h-3" /> نشط</> : expired ? <><XCircle className="w-3 h-3" /> منتهي</> : <><XCircle className="w-3 h-3" /> معطل</>}
                   </span>
                 </div>
@@ -416,11 +413,10 @@ export default function CouponsPage() {
                         loadData();
                       } catch { notify.error('فشل التحديث'); }
                     }}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                      coupon.isActive
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${coupon.isActive
                         ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-200'
                         : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200'
-                    }`}
+                      }`}
                   >
                     {coupon.isActive ? <><XCircle className="w-3.5 h-3.5" /> تعطيل</> : <><CheckCircle className="w-3.5 h-3.5" /> تفعيل</>}
                   </button>

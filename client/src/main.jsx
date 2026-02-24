@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import './index.css';
+import './i18n'; // Import i18n initialization
 import syncService from './services/SyncService';
 
 // Initialize Sync Service only for authenticated backoffice users.
@@ -39,6 +40,8 @@ if (import.meta.env.PROD && window.isSecureContext) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-gray-50 dark:bg-gray-900"><div className="w-8 h-8 rounded-full border-4 border-primary-200 border-t-primary-600 animate-spin"></div></div>}>
+      <App />
+    </Suspense>
   </React.StrictMode>
 );

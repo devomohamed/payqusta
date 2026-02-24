@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import {
@@ -8,8 +9,10 @@ import {
   ChevronRight, ArrowRight, Tag, Zap, ShieldCheck, Package, MessageCircle, X, Gift
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/UI';
+import ProductCard from './components/product/ProductCard';
 
 export default function PortalHome() {
+  const { t } = useTranslation('portal');
   const { fetchDashboard, loading, customer, addToCart, toggleWishlist, wishlistIds, claimDailyReward } = usePortalStore();
   const { dark } = useThemeStore();
   const [data, setData] = useState(null);
@@ -42,7 +45,7 @@ export default function PortalHome() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <LoadingSpinner size="lg" />
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">جاري تجهيز المتجر...</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('home.loading_store')}</p>
       </div>
     );
   }
@@ -60,40 +63,46 @@ export default function PortalHome() {
       {/* ═══════════════ SEARCH & HERO ═══════════════ */}
       <div className="space-y-4">
         {/* Search Bar */}
-        <div className="relative cursor-text" onClick={() => setIsSearchOpen(true)}>
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <div className="w-full bg-white dark:bg-gray-800 border-none rounded-2xl py-4 pr-12 pl-4 shadow-sm text-sm text-gray-400 text-right">
-            عن ماذا تبحث اليوم؟
+        <div className="relative cursor-text group" onClick={() => setIsSearchOpen(true)}>
+          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
+          <div className="w-full bg-white dark:bg-gray-800 border-none rounded-2xl py-4 pr-12 pl-4 shadow-sm group-hover:shadow-md transition-shadow text-sm text-gray-400 text-right">
+            {t('home.search_placeholder')}
           </div>
         </div>
 
-        {/* Hero Banner */}
-        <div className="relative rounded-[2rem] overflow-hidden shadow-xl h-56 md:h-80 group">
+        {/* Hero Banner (Premium Redesign) */}
+        <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl h-60 md:h-80 group">
           <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] ease-out group-hover:scale-105"
             style={{
-              backgroundImage: `url(${store?.coverImage || 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&q=80'})`,
+              backgroundImage: `url(${store?.coverImage || 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&q=80'})`,
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
+          {/* Enhanced Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent dark:from-black/95 dark:via-black/60" />
 
-          <div className="absolute inset-0 p-8 flex flex-col justify-center items-start text-white max-w-lg">
-            <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full mb-4 border border-white/10">
-              عروض حصرية
-            </span>
-            <h1 className="text-3xl md:text-5xl font-black mb-4 leading-tight">
-              موسم <br />
-              <span style={{ color: secondaryColor }}>التخفيضات</span> الكبرى
-            </h1>
-            <p className="text-white/80 mb-6 text-sm font-medium line-clamp-2 max-w-xs hidden md:block">
-              استخدم رصيدك المتاح وتمتع بتقسيط مريح على جميع المنتجات الجديدة.
-            </p>
-            <button
-              onClick={() => navigate('/portal/products')}
-              className="bg-white text-black px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-100 transition-colors shadow-lg shadow-white/10 flex items-center gap-2"
-            >
-              تسوق الآن <ArrowLeft className="w-4 h-4" />
-            </button>
+          {/* Glassmorphic Content Container */}
+          <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-center items-start text-white">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-3xl max-w-sm md:max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] transform transition-all duration-700 hover:-translate-y-1">
+              <span className="inline-block bg-gradient-to-r from-primary-500 to-indigo-500 text-white text-xs font-black px-4 py-1.5 rounded-full mb-4 shadow-lg">
+                {t('home.exclusive_offers')}
+              </span>
+              <h1 className="text-3xl md:text-5xl font-black mb-3 leading-tight tracking-tight">
+                {t('home.mega_sales')}
+              </h1>
+              <p className="text-white/80 mb-6 text-sm font-medium line-clamp-2 leading-relaxed">
+                {t('home.hero_subtitle')}
+              </p>
+              <button
+                onClick={() => navigate('/portal/products')}
+                className="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:scale-105 flex items-center gap-2 group/btn"
+              >
+                {t('home.shop_now')}
+                <div className="bg-gray-100 rounded-full p-1 group-hover/btn:bg-gray-200 transition-colors">
+                  <ArrowLeft className="w-4 h-4" />
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -102,90 +111,117 @@ export default function PortalHome() {
       {(customer?.creditLimit > 0 || customer?.points > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          {/* Purchasing Power */}
+          {/* Purchasing Power (Virtual Credit Card) */}
           {customer?.creditLimit > 0 && (
-            <div className="bg-gradient-to-br from-primary-600 to-indigo-800 text-white rounded-3xl p-5 shadow-lg relative overflow-hidden">
-              {/* Background Shapes */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/20 rounded-full blur-xl -ml-5 -mb-5" />
+            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white rounded-3xl p-6 shadow-2xl relative overflow-hidden group border border-gray-700/50">
+              {/* Card Texture & Glows */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover:scale-110" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary-500/20 rounded-full blur-2xl -ml-20 -mb-20 transition-transform duration-1000 group-hover:scale-110" />
 
-              <div className="relative z-10 flex justify-between items-start mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-white" />
+              {/* NFC / Chip Icon overlay pattern */}
+              <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent bg-[length:20px_20px]" />
+
+              <div className="relative z-10 flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="font-bold text-gray-300 text-sm tracking-wide">{t('home.purchasing_power')}</h3>
+                  <div className="w-8 h-6 bg-yellow-400/20 rounded border border-yellow-500/30 flex items-center justify-center mt-2">
+                    <div className="w-4 h-3 border border-yellow-500/50 rounded-sm opacity-80" />
                   </div>
-                  <h3 className="font-bold">القوة الشرائية المتاحة</h3>
                 </div>
-                <div className="text-left px-2 py-1 bg-black/20 rounded-lg backdrop-blur-sm">
-                  <span className="text-[10px] font-bold text-white/80">الحد الائتماني</span>
-                  <p className="text-xs font-black">{customer.creditLimit.toLocaleString()} {currencyLabel}</p>
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-800/50 px-2 py-1 rounded-lg backdrop-blur-sm border border-gray-700">
+                    PayQusta Pay
+                  </span>
                 </div>
               </div>
 
-              <div className="relative z-10">
-                <h2 className="text-3xl font-black mb-1">
-                  {customer.balance?.toLocaleString() || 0} <span className="text-sm font-normal text-white/80">{currencyLabel}</span>
+              <div className="relative z-10 mb-6">
+                <h2 className="text-4xl font-black tracking-tight flex items-baseline gap-2 drop-shadow-md">
+                  {customer.balance?.toLocaleString() || 0}
+                  <span className="text-lg font-medium text-gray-400">{currencyLabel}</span>
                 </h2>
+              </div>
 
-                {/* Progress Bar */}
-                <div className="mt-4">
-                  <div className="flex justify-between text-[10px] font-bold text-white/80 mb-1.5">
-                    <span>الرصيد المستخدم: {(customer.outstanding || 0).toLocaleString()}</span>
-                    <span>المتاح: {(customer.balance || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="w-full bg-black/30 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-green-400 rounded-full transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.min(100, ((customer.balance || 0) / customer.creditLimit) * 100)}%` }}
-                    />
+              {/* Progress & Limit details */}
+              <div className="relative z-10">
+                <div className="flex justify-between text-[11px] font-bold text-gray-400 mb-2">
+                  <span className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                    {t('home.used')} {(customer.outstanding || 0).toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-400" />
+                    {t('home.total_limit')} {customer.creditLimit.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Refined Progress Bar */}
+                <div className="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden shadow-inner border border-gray-700/50 p-0.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary-600 to-primary-400 rounded-full transition-all duration-1000 ease-out relative"
+                    style={{ width: `${Math.min(100, ((customer.balance || 0) / customer.creditLimit) * 100)}%` }}
+                  >
+                    <div className="absolute right-0 top-0 bottom-0 w-4 bg-white/20 rounded-full blur-[2px]" />
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Gamification / Loyalty Points */}
+          {/* Gamification / Loyalty Points (Premium) */}
           {customer?.points >= 0 && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-center">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden flex flex-col justify-center group hover:border-yellow-500/30 transition-colors">
+
+              {/* Subtle ambient background glow */}
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/10 dark:bg-yellow-500/5 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150" />
+
+              <div className="flex items-center justify-between mb-5 relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl flex items-center justify-center shadow-inner">
-                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-2xl flex items-center justify-center shadow-[0_4px_15px_rgba(234,179,8,0.3)]">
+                    <Star className="w-6 h-6 text-white fill-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">نقاط الولاء</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      مستواك الحالي: <span className="font-black text-primary-600">{customer.tier === 'vip' ? 'VIP' : customer.tier === 'gold' ? 'ذهبي' : customer.tier === 'silver' ? 'فضي' : 'عادي'}</span>
+                    <h3 className="font-bold text-gray-900 dark:text-white tracking-tight">{t('home.loyalty_points')}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {t('home.tier')} <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-yellow-400">{customer.tier === 'vip' ? t('home.tier_vip') : customer.tier === 'gold' ? t('home.tier_gold') : customer.tier === 'silver' ? t('home.tier_silver') : t('home.tier_classic')}</span>
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleClaimReward}
                   disabled={isClaiming}
-                  className="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 p-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-1 shadow-sm"
-                  title="مكافأة الدخول اليومي"
+                  className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 dark:text-yellow-500 py-2 px-3 rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-sm hover:shadow-md border border-yellow-200 dark:border-yellow-700/30"
+                  title={t('home.daily_reward')}
                 >
                   {isClaiming ? (
                     <div className="w-4 h-4 border-2 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin" />
                   ) : (
                     <>
                       <Gift className="w-4 h-4" />
-                      <span className="text-[10px] font-bold">مكافأة اليوم</span>
+                      <span className="text-[10px] font-bold">{t('home.daily_reward_short')}</span>
                     </>
                   )}
                 </button>
               </div>
 
-              <div>
-                <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
-                  {customer.points.toLocaleString()} <span className="text-sm font-normal text-gray-500">نقطة</span>
+              <div className="relative z-10">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3 tracking-tight">
+                  {customer.points.toLocaleString()} <span className="text-sm font-bold text-gray-400">{t('home.points_label')}</span>
                 </h2>
-                <div className="w-full bg-gray-100 dark:bg-gray-700 h-2 rounded-full overflow-hidden mb-1">
-                  <div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full" style={{ width: `${Math.min(100, (customer.points / 1000) * 100)}%` }}></div>
+
+                <div className="w-full bg-gray-100 dark:bg-gray-700/50 h-2.5 rounded-full overflow-hidden mb-2 shadow-inner">
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 rounded-full relative"
+                    style={{ width: `${Math.min(100, (customer.points / 1000) * 100)}%` }}
+                  >
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[shimmer_2s_linear_infinite]" />
+                  </div>
                 </div>
-                <p className="text-[10px] text-gray-500 text-left">
-                  {customer.points >= 1000 ? 'تم بلوغ الحد الأقصى' : `باقي ${1000 - customer.points} نقطة للمستوى التالي`}
-                </p>
+
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-500">
+                  <span>{customer.points >= 1000 ? t('home.max_tier') : t('home.points_to_upgrade', { points: 1000 - customer.points })}</span>
+                  <span>1000 {t('home.points_label')}</span>
+                </div>
               </div>
             </div>
           )}
@@ -193,181 +229,167 @@ export default function PortalHome() {
       )
       }
 
-      {/* ═══════════════ CATEGORIES ═══════════════ */}
+      {/* ═══════════════ CATEGORIES (Pill style) ═══════════════ */}
       <div>
         <div className="flex items-center justify-between px-2 mb-4">
-          <h3 className="font-bold text-lg dark:text-white">تصفح الأقسام</h3>
-          <Link to="/portal/products" className="text-xs font-bold text-primary-600">عرض الكل</Link>
+          <h3 className="font-black text-xl dark:text-white tracking-tight">{t('home.browse_categories')}</h3>
+          <Link to="/portal/products" className="text-xs font-bold text-primary-600 hover:text-primary-700 transition flex items-center gap-1">
+            {t('home.view_all')} <ArrowLeft className="w-3 h-3" />
+          </Link>
         </div>
-        {/* Added pr-2 and snap scroll, adjusted width to show half-cards */}
-        <div className="flex gap-4 overflow-x-auto px-2 pb-4 no-scrollbar snap-x snap-mandatory pr-2" style={{ scrollPaddingInlineStart: '0.5rem' }}>
+
+        <div className="flex gap-3 overflow-x-auto px-2 pb-4 no-scrollbar snap-x snap-mandatory">
           {categories?.length > 0 ? categories.map((cat, i) => (
-            <Link key={i} to={`/portal/products?category=${cat.slug}`} className="flex flex-col items-center gap-2 group min-w-[85px] max-w-[85px] snap-start">
-              <div className="w-20 h-20 rounded-2xl bg-white dark:bg-gray-800 p-1 group-hover:bg-primary-50 transition-colors border border-gray-100 dark:border-gray-700 group-hover:border-primary-200 shadow-sm flex items-center justify-center">
-                {/* Since we don't have real category images yet, use a nice icon/placeholder */}
-                <div className="w-full h-full rounded-xl bg-gray-50 dark:bg-gray-700/50 flex items-center justify-center text-primary-500 overflow-hidden">
-                  {/* If we had images: <img ... /> */}
-                  <Tag className="w-8 h-8 opacity-70 group-hover:scale-110 transition-transform" />
-                </div>
+            <Link
+              key={i}
+              to={`/portal/products?category=${cat.slug}`}
+              className="group flex items-center gap-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 px-4 py-3 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-200 transition-all snap-start whitespace-nowrap"
+            >
+              <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-primary-500 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 group-hover:scale-110 transition-all">
+                <Tag className="w-5 h-5" />
               </div>
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 group-hover:text-primary-600 text-center line-clamp-1 w-full px-1">{cat.name}</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-200 group-hover:text-primary-600 transition-colors">
+                {cat.name}
+              </span>
             </Link>
           )) : (
-            <div className="w-full text-center py-4 text-gray-400 text-xs">لا توجد أقسام متاحة</div>
+            <div className="w-full text-center py-4 text-gray-400 text-xs">{t('home.no_categories')}</div>
           )}
         </div>
       </div>
 
-      {/* ═══════════════ FEATURED PRODUCTS GRID ═══════════════ */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 -mx-4 px-4 py-8 rounded-t-[2.5rem]">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-black text-xl dark:text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-            منتجات مختارة لك
-          </h3>
-          <Link to="/portal/products" className="text-xs font-bold text-primary-600 dark:text-primary-400">عرض الكل</Link>
+      {/* ═══════════════ FEATURED PRODUCTS & QUICK ACTIONS ═══════════════ */}
+      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200/50 dark:border-gray-800 -mx-4 px-4 py-8 rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+
+        {/* Quick Actions Grid (Refined) */}
+        <div className="grid grid-cols-4 gap-3 mb-10 px-1">
+          <button onClick={() => navigate('/portal/orders')} className="flex flex-col items-center gap-2 group">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+              <Package className="w-6 h-6 text-blue-500" />
+            </div>
+            <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.my_orders')}</span>
+          </button>
+
+          <button onClick={() => navigate('/portal/wishlist')} className="flex flex-col items-center gap-2 group">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+              <Heart className="w-6 h-6 text-red-500" />
+            </div>
+            <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.wishlist')}</span>
+          </button>
+
+          <button onClick={() => navigate('/portal/statement')} className="flex flex-col items-center gap-2 group">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+              <FileText className="w-6 h-6 text-indigo-500" />
+            </div>
+            <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.statement')}</span>
+          </button>
+
+          <button onClick={() => navigate('/portal/support')} className="flex flex-col items-center gap-2 group">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+              <MessageCircle className="w-6 h-6 text-green-500" />
+            </div>
+            <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.support')}</span>
+          </button>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => navigate('/portal/orders')} className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-1.5 hover:border-primary-300 transition group">
-            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Package className="w-5 h-5 text-blue-500" />
+        <div className="flex items-center justify-between mb-6 px-1">
+          <h3 className="font-black text-2xl dark:text-white tracking-tight flex items-center gap-2">
+            {t('home.featured_products')}
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-1.5 rounded-xl">
+              <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
             </div>
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">طلباتي</span>
-          </button>
-          <button onClick={() => navigate('/portal/wishlist')} className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-1.5 hover:border-red-300 transition group">
-            <div className="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Heart className="w-5 h-5 text-red-500" />
-            </div>
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">المفضلة</span>
-          </button>
-          <button onClick={() => navigate('/portal/statement')} className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-1.5 hover:border-blue-300 transition group">
-            <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <FileText className="w-5 h-5 text-indigo-500" />
-            </div>
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">كشف الحساب</span>
-          </button>
-          <button onClick={() => navigate('/portal/support')} className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-1.5 hover:border-green-300 transition group">
-            <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <MessageCircle className="w-5 h-5 text-green-500" />
-            </div>
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">تواصل معنا</span>
-          </button>
+          </h3>
+          <Link to="/portal/products" className="text-sm font-bold text-primary-600 hover:text-primary-700 transition">{t('home.view_more')}</Link>
         </div>
 
         {!products?.length ? (
           <div className="text-center py-10 opacity-60">
             <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-medium">لا توجد منتجات متاحة حالياً</p>
+            <p className="text-sm font-medium">{t('home.no_products')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {products.map((product, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-3xl p-3 shadow-sm hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 group">
-                {/* Image */}
-                <div className="aspect-[4/5] bg-gray-100 dark:bg-gray-700 rounded-2xl mb-3 relative overflow-hidden cursor-pointer" onClick={() => navigate(`/portal/products/${product.slug}`)}>
-                  {product.images?.[0] ? (
-                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-300">
-                      <Package className="w-10 h-10" />
-                    </div>
-                  )}
-
-                  {/* Floating Add Btn */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToCart(product);
-                    }}
-                    className="absolute bottom-3 right-3 w-10 h-10 bg-white dark:bg-gray-900 rounded-full shadow-lg flex items-center justify-center text-gray-900 dark:text-white hover:bg-primary-600 hover:text-white transition-all md:translate-y-12 md:group-hover:translate-y-0 duration-300 z-10"
-                  >
-                    <ShoppingBag className="w-5 h-5" />
-                  </button>
-
-                  {/* Wishlist */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleWishlist(product._id).catch(() => { }); }}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center transition-all md:opacity-0 md:group-hover:opacity-100 hover:scale-110"
-                  >
-                    <Heart className={`w-4 h-4 transition-colors ${wishlistIds?.includes(product._id) ? 'text-red-500 fill-red-500' : 'text-gray-600 dark:text-gray-300'}`} />
-                  </button>
-                </div>
-
-                {/* Details */}
-                <div className="px-1">
-                  <div className="flex justify-between items-start mb-1 h-10">
-                    <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 leading-snug cursor-pointer" onClick={() => navigate(`/portal/products/${product.slug}`)}>{product.name}</h4>
-                  </div>
-                  <div className="flex items-end justify-between mt-2">
-                    <div>
-                      <p className="text-[10px] text-gray-400 line-through decoration-red-400">{(product.price * 1.2).toLocaleString()}</p>
-                      <p className="text-lg font-black text-gray-900 dark:text-white">{product.price.toLocaleString()} <span className="text-[10px] text-gray-500 font-normal">{currencyLabel}</span></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProductCard
+                key={product._id || i}
+                product={product}
+                currencyLabel={currencyLabel}
+                addToCart={addToCart}
+                toggleWishlist={toggleWishlist}
+                isWishlisted={wishlistIds?.includes(product._id)}
+              />
             ))}
           </div>
         )}
 
         <div className="mt-8 text-center">
           <Link to="/portal/products" className="inline-flex items-center gap-2 text-sm font-bold text-white bg-black dark:bg-gray-700 px-8 py-4 rounded-2xl hover:bg-gray-800 transition-colors">
-            عرض كل المنتجات <ArrowRight className="w-4 h-4" />
+            {t('home.view_all_products')} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
 
-      {/* ═══════════════ UPCOMING PAYMENTS (Mini) ═══════════════ */}
-      {
-        upcomingInstallments?.length > 0 && (
-          <div className="px-1">
-            {(() => {
-              const hasOverdue = upcomingInstallments.some(inst => new Date(inst.dueDate) < new Date());
-              const bgColor = hasOverdue ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30' : 'bg-orange-50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800/30';
-              const iconBg = hasOverdue ? 'bg-red-100 dark:bg-red-800/20 text-red-600' : 'bg-orange-100 dark:bg-orange-800/20 text-orange-600';
+      {/* ═══════════════ UPCOMING PAYMENTS ALERTS ═══════════════ */}
+      {upcomingInstallments?.length > 0 && (
+        <div className="px-1 transform transition-all hover:-translate-y-1">
+          {(() => {
+            const hasOverdue = upcomingInstallments.some(inst => new Date(inst.dueDate) < new Date());
 
-              return (
-                <div className={`rounded-3xl p-6 border ${bgColor}`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className={`font-bold ${hasOverdue ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
-                        {hasOverdue ? 'أقساط متأخرة الدفع!' : 'تذكير بالدفع'}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {hasOverdue ? 'يرجى سداد الأقساط المتأخرة لتجنب غرامات التأخير' : 'لديك أقساط مستحقة قريباً'}
-                      </p>
-                    </div>
+            return (
+              <div className={`rounded-3xl p-6 border shadow-xl relative overflow-hidden ${hasOverdue
+                ? 'bg-gradient-to-br from-red-50 to-white dark:from-red-900/20 dark:to-gray-900 border-red-200 dark:border-red-800/50 shadow-red-500/10'
+                : 'bg-gradient-to-br from-orange-50 to-white dark:from-orange-900/20 dark:to-gray-900 border-orange-200 dark:border-orange-800/50 shadow-orange-500/10'
+                }`}>
+
+                {/* Alert pulse dot */}
+                <div className="absolute top-6 left-6 flex h-3 w-3">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${hasOverdue ? 'bg-red-400' : 'bg-orange-400'}`}></span>
+                  <span className={`relative inline-flex rounded-full h-3 w-3 ${hasOverdue ? 'bg-red-500' : 'bg-orange-500'}`}></span>
+                </div>
+
+                <div className="flex items-center gap-4 mb-5">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${hasOverdue ? 'bg-red-500 text-white' : 'bg-gradient-to-br from-orange-400 to-orange-500 text-white'
+                    }`}>
+                    <Calendar className="w-6 h-6" />
                   </div>
-
-                  <div className="space-y-3">
-                    {upcomingInstallments.slice(0, 2).map((inst, i) => (
-                      <div key={i} className="bg-white dark:bg-gray-800 p-3 rounded-2xl flex items-center justify-between shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-lg text-gray-900 dark:text-white">{new Date(inst.dueDate).getDate()}</span>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold">قسط مستحق</span>
-                            <span className="text-[10px] text-gray-500">{new Date(inst.dueDate).toLocaleDateString('ar-EG')}</span>
-                          </div>
-                        </div>
-                        <span className="font-black text-orange-600">{inst.amount.toLocaleString()} {currencyLabel}</span>
-                      </div>
-                    ))}
-
-                    <Link to="/portal/invoices" className="block text-center text-xs font-bold text-orange-600 mt-2 hover:underline">
-                      عرض كل الأقساط
-                    </Link>
+                  <div>
+                    <h3 className={`font-black tracking-tight text-lg ${hasOverdue ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-white'
+                      }`}>
+                      {hasOverdue ? t('home.alerts.overdue_installments') : t('home.alerts.payment_reminder')}
+                    </h3>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                      {hasOverdue ? t('home.alerts.overdue_desc') : t('home.alerts.reminder_desc')}
+                    </p>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
-        )
-      }
+
+                <div className="space-y-3">
+                  {upcomingInstallments.slice(0, 2).map((inst, i) => (
+                    <div key={i} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100/50 dark:border-gray-700/50 p-4 rounded-2xl flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                      <div className="flex items-center gap-4">
+                        <span className="font-black text-2xl text-gray-900 dark:text-white w-8 text-center">{new Date(inst.dueDate).getDate()}</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-black text-gray-700 dark:text-gray-300">{t('home.alerts.installment_due')}</span>
+                          <span className="text-[10px] font-bold text-gray-400">{new Date(inst.dueDate).toLocaleDateString(t('common:locale') || 'ar-EG', { month: 'long', year: 'numeric' })}</span>
+                        </div>
+                      </div>
+                      <span className={`font-black text-lg ${hasOverdue ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                        {inst.amount.toLocaleString()} {currencyLabel}
+                      </span>
+                    </div>
+                  ))}
+
+                  <Link to="/portal/invoices" className={`block w-full py-3 text-center text-sm font-bold rounded-xl transition-colors mt-2 ${hasOverdue ? 'bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400'
+                    : 'bg-orange-100 hover:bg-orange-200 text-orange-700 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 dark:text-orange-400'
+                    }`}>
+                    {t('home.alerts.pay_installments_now')}
+                  </Link>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* ═══════════════ SEARCH MODAL ═══════════════ */}
       {
@@ -405,9 +427,9 @@ export default function PortalHome() {
               {!searchQuery ? (
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 mb-3 px-1">عمليات بحث شائعة</h4>
+                    <h4 className="text-xs font-bold text-gray-400 mb-3 px-1">{t('home.popular_searches')}</h4>
                     <div className="flex flex-wrap gap-2">
-                      {['عروض', 'جديد', ...categories?.slice(0, 3).map(c => c.name) || []].map((term, i) => (
+                      {[t('home.offers'), t('home.new_items'), ...categories?.slice(0, 3).map(c => c.name) || []].map((term, i) => (
                         <button
                           key={i}
                           onClick={() => {
@@ -424,7 +446,7 @@ export default function PortalHome() {
 
                   {/* Visual Category Suggestions */}
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 mb-3 px-1">تصفح حسب القسم</h4>
+                    <h4 className="text-xs font-bold text-gray-400 mb-3 px-1">{t('home.browse_by_category')}</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {categories?.slice(0, 4).map((cat, i) => (
                         <button
@@ -447,7 +469,7 @@ export default function PortalHome() {
               ) : (
                 <div className="text-center py-10 opacity-60">
                   <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm font-medium">اضغط Enter للبحث عن "{searchQuery}"</p>
+                  <p className="text-sm font-medium">{t('home.press_enter_to_search')} "{searchQuery}"</p>
                 </div>
               )}
             </div>

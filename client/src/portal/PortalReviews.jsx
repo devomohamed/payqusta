@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { Star, MessageSquare, CheckCircle, Clock, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
@@ -30,7 +31,7 @@ function StarRating({ value, onChange, size = 'md' }) {
   );
 }
 
-function ReviewCard({ review }) {
+function ReviewCard({ review, t }) {
   const [showReply, setShowReply] = useState(false);
 
   return (
@@ -43,23 +44,23 @@ function ReviewCard({ review }) {
         <div className="flex items-center gap-1.5">
           {review.isVerifiedPurchase && (
             <span className="flex items-center gap-1 text-[10px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
-              <CheckCircle className="w-3 h-3" /> شراء موثق
+              <CheckCircle className="w-3 h-3" /> {t('reviews.verified')}
             </span>
           )}
           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${review.status === 'approved'
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-              : review.status === 'rejected'
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+            : review.status === 'rejected'
+              ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+              : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
             }`}>
-            {review.status === 'approved' ? 'منشور' : review.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
+            {review.status === 'approved' ? t('reviews.status_approved') : review.status === 'rejected' ? t('reviews.status_rejected') : t('reviews.status_pending')}
           </span>
         </div>
       </div>
 
       {review.body && <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{review.body}</p>}
       {review.product && (
-        <p className="text-xs text-primary-500 mt-2">المنتج: {review.product.name}</p>
+        <p className="text-xs text-primary-500 mt-2">{t('reviews.product_label', { name: review.product.name })}</p>
       )}
 
       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
@@ -71,7 +72,7 @@ function ReviewCard({ review }) {
         <div className="mt-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
           <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
             <MessageSquare className="w-3.5 h-3.5 text-primary-500" />
-            رد المتجر
+            {t('reviews.store_reply')}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">{review.reply.body}</p>
         </div>
@@ -83,6 +84,7 @@ function ReviewCard({ review }) {
 export default function PortalReviews() {
   const { fetchMyReviews, submitReview } = usePortalStore();
   const { dark } = useThemeStore();
+  const { t, i18n } = useTranslation('portal');
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -94,6 +96,15 @@ export default function PortalReviews() {
     title: '',
     body: '',
   });
+
+  const ratingLabels = {
+    0: t('reviews.rating_select'),
+    1: t('reviews.rating_1'),
+    2: t('reviews.rating_2'),
+    3: t('reviews.rating_3'),
+    4: t('reviews.rating_4'),
+    5: t('reviews.rating_5'),
+  };
 
   useEffect(() => {
     loadReviews();
@@ -108,11 +119,11 @@ export default function PortalReviews() {
 
   const handleSubmit = async () => {
     if (form.rating === 0) {
-      notify.error('يرجى اختيار التقييم');
+      notify.error(t('reviews.rating_required'));
       return;
     }
     if (!form.body.trim()) {
-      notify.error('يرجى كتابة تقييمك');
+      notify.error(t('reviews.body_required'));
       return;
     }
 
@@ -126,7 +137,7 @@ export default function PortalReviews() {
     setSubmitting(false);
 
     if (res.success) {
-      notify.success(res.message || 'تم إرسال تقييمك بنجاح');
+      notify.success(res.message || t('reviews.submit_success'));
       setShowForm(false);
       setForm({ type: 'store', rating: 0, title: '', body: '' });
       loadReviews();
@@ -136,63 +147,63 @@ export default function PortalReviews() {
   };
 
   return (
-    <div className="space-y-4 pb-20" dir="rtl">
+    <div className="space-y-4 pb-20" dir={i18n.dir()}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Star className="w-6 h-6 text-yellow-500" />
-          تقييماتي
+          {t('reviews.title')}
         </h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-1.5 px-4 py-2 bg-primary-500 text-white rounded-xl text-sm font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20"
         >
           {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showForm ? 'إلغاء' : 'تقييم جديد'}
+          {showForm ? t('reviews.cancel') : t('reviews.new_review')}
         </button>
       </div>
 
       {/* New Review Form */}
       {showForm && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
-          <h3 className="font-bold text-gray-900 dark:text-white">أضف تقييمك</h3>
+          <h3 className="font-bold text-gray-900 dark:text-white">{t('reviews.add_review')}</h3>
 
           {/* Type */}
           <div className="flex gap-2">
             {[
-              { value: 'store', label: 'تقييم المتجر' },
-              { value: 'service', label: 'جودة الخدمة' },
-            ].map((t) => (
+              { value: 'store', label: t('reviews.type_store') },
+              { value: 'service', label: t('reviews.type_service') },
+            ].map((tp) => (
               <button
-                key={t.value}
-                onClick={() => setForm({ ...form, type: t.value })}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition ${form.type === t.value
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                key={tp.value}
+                onClick={() => setForm({ ...form, type: tp.value })}
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition ${form.type === tp.value
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                   }`}
               >
-                {t.label}
+                {tp.label}
               </button>
             ))}
           </div>
 
           {/* Rating */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">التقييم *</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('reviews.rating_label')}</label>
             <StarRating value={form.rating} onChange={(r) => setForm({ ...form, rating: r })} size="lg" />
             <p className="text-xs text-gray-400 mt-1">
-              {form.rating === 1 ? 'سيء جداً' : form.rating === 2 ? 'سيء' : form.rating === 3 ? 'مقبول' : form.rating === 4 ? 'جيد' : form.rating === 5 ? 'ممتاز' : 'اختر تقييمك'}
+              {ratingLabels[form.rating]}
             </p>
           </div>
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">عنوان التقييم (اختياري)</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('reviews.review_title')}</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="مثال: تجربة رائعة..."
+              placeholder={t('reviews.title_placeholder')}
               maxLength={100}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
             />
@@ -200,12 +211,12 @@ export default function PortalReviews() {
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">تفاصيل التقييم *</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('reviews.review_body')}</label>
             <textarea
               rows={3}
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
-              placeholder="شاركنا تجربتك مع المتجر..."
+              placeholder={t('reviews.body_placeholder')}
               maxLength={2000}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
             />
@@ -217,7 +228,7 @@ export default function PortalReviews() {
             disabled={submitting}
             className="w-full py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20 disabled:opacity-50"
           >
-            {submitting ? 'جاري الإرسال...' : 'إرسال التقييم'}
+            {submitting ? t('reviews.submitting') : t('reviews.submit')}
           </button>
         </div>
       )}
@@ -228,14 +239,14 @@ export default function PortalReviews() {
       ) : reviews.length === 0 ? (
         <PortalEmptyState
           icon={Star}
-          title="لم تقم بأي تقييم بعد"
-          message="شاركنا تجربتك مع المتجر"
+          title={t('reviews.empty_title')}
+          message={t('reviews.empty_message')}
           className="my-8"
         />
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <ReviewCard key={review._id} review={review} />
+            <ReviewCard key={review._id} review={review} t={t} />
           ))}
         </div>
       )}

@@ -91,7 +91,7 @@ export default function ReviewsPage() {
           },
           style: 'danger',
         },
-        { label: 'إلغاء', onClick: () => {}, style: 'secondary' },
+        { label: 'إلغاء', onClick: () => { }, style: 'secondary' },
       ],
     });
   };
@@ -104,7 +104,7 @@ export default function ReviewsPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in" dir="rtl">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -174,11 +174,10 @@ export default function ReviewsPage() {
           <button
             key={f.value}
             onClick={() => setStatusFilter(f.value)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition ${
-              statusFilter === f.value
+            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition ${statusFilter === f.value
                 ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
                 : `bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700`
-            }`}
+              }`}
           >
             {f.label}
           </button>
@@ -212,13 +211,12 @@ export default function ReviewsPage() {
                   <StarDisplay value={review.rating} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                    review.status === 'approved'
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${review.status === 'approved'
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                       : review.status === 'rejected'
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                  }`}>
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                    }`}>
                     {review.status === 'approved' ? 'منشور' : review.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}
                   </span>
                 </div>

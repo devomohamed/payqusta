@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Save, Award, Star, ShoppingBag, Crown, Shield, FileText, ChevronLeft, Bell } from 'lucide-react';
@@ -15,6 +16,7 @@ const tierConfig = {
 export default function PortalProfile() {
   const { customer, updateProfile, changePassword, fetchPoints, loading } = usePortalStore();
   const { dark } = useThemeStore();
+  const { t, i18n } = useTranslation('portal');
 
   const [activeSection, setActiveSection] = useState('info'); // info | password | points
   const [name, setName] = useState(customer?.name || '');
@@ -52,7 +54,7 @@ export default function PortalProfile() {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        notify.error('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+        notify.error(t('profile.messages.image_size'));
         return;
       }
       const reader = new FileReader();
@@ -67,7 +69,7 @@ export default function PortalProfile() {
     e.preventDefault();
     const result = await updateProfile({ name, email, address, profilePhoto, dateOfBirth, gender, whatsapp, bio });
     if (result.success) {
-      notify.success(result.message || 'تم تحديث البيانات بنجاح');
+      notify.success(result.message || t('profile.messages.update_success'));
     } else {
       notify.error(result.message);
     }
@@ -76,16 +78,16 @@ export default function PortalProfile() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      notify.error('كلمة المرور الجديدة غير متطابقة');
+      notify.error(t('profile.password.mismatch'));
       return;
     }
     if (newPassword.length < 6) {
-      notify.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      notify.error(t('profile.password.length_error'));
       return;
     }
     const result = await changePassword(currentPassword, newPassword, confirmPassword);
     if (result.success) {
-      notify.success(result.message || 'تم تغيير كلمة المرور بنجاح');
+      notify.success(result.message || t('profile.password.success'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -100,15 +102,15 @@ export default function PortalProfile() {
   const inputClass = `w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none transition-all text-gray-900 dark:text-white`;
 
   const sections = [
-    { id: 'info', label: 'بياناتي', icon: User },
-    { id: 'addresses', label: 'عناويني', icon: MapPin },
-    { id: 'password', label: 'الأمان', icon: Lock },
-    { id: 'points', label: 'النقاط', icon: Star },
-    { id: 'settings', label: 'الإعدادات', icon: Bell }
+    { id: 'info', label: t('profile.sections.info'), icon: User },
+    { id: 'addresses', label: t('profile.sections.addresses'), icon: MapPin },
+    { id: 'password', label: t('profile.sections.password'), icon: Lock },
+    { id: 'points', label: t('profile.sections.points'), icon: Star },
+    { id: 'settings', label: t('profile.sections.settings'), icon: Bell }
   ];
 
   return (
-    <div className="space-y-4 pb-20" dir="rtl">
+    <div className="space-y-4 pb-20" dir={i18n.dir()}>
       {/* Profile Card */}
       <div className={`bg-gradient-to-br ${tier.color} rounded-3xl p-6 text-white shadow-xl relative overflow-hidden`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
@@ -133,11 +135,11 @@ export default function PortalProfile() {
             <div className="flex items-center gap-2 mt-2">
               <span className="bg-white/20 backdrop-blur-sm px-3 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
                 <TierIcon className="w-3.5 h-3.5" />
-                عميل {tier.label}
+                {t('profile.tiers.customer', { tier: t(`profile.tiers.${customer?.tier || 'bronze'}`) })}
               </span>
               {customer?.points > 0 && (
                 <span className="bg-white/20 backdrop-blur-sm px-3 py-0.5 rounded-full text-xs font-bold">
-                  {customer.points} نقطة
+                  {customer.points} {t('home.points_label')}
                 </span>
               )}
             </div>
@@ -155,8 +157,8 @@ export default function PortalProfile() {
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-bold text-sm">كشف الحساب</p>
-            <p className="text-white/70 text-xs">عرض سجل معاملاتك</p>
+            <p className="font-bold text-sm">{t('profile.statement_link')}</p>
+            <p className="text-white/70 text-xs">{t('profile.statement_desc')}</p>
           </div>
         </div>
         <ChevronLeft className="w-5 h-5 text-white/70 group-hover:translate-x-[-4px] transition-transform" />
@@ -183,66 +185,66 @@ export default function PortalProfile() {
       {activeSection === 'info' && (
         <form onSubmit={handleUpdateProfile} className="bg-white dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">الاسم</label>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.name')}</label>
             <div className="relative">
-              <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <User className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} required />
             </div>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400">رقم الهاتف</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400">{t('profile.form.phone')}</label>
               {/* Note: This is a UI UX placeholder for a real OTP modal if implemented */}
-              <button type="button" onClick={() => notify.info('سيتم إرسال كود OTP لتأكيد تغيير الرقم قريباً.')} className="text-xs text-primary-500 hover:underline">
-                تغيير الرقم
+              <button type="button" onClick={() => notify.info(t('profile.form.phone_otp'))} className="text-xs text-primary-500 hover:underline">
+                {t('profile.form.change_phone')}
               </button>
             </div>
             <div className="relative">
-              <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Phone className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input type="text" value={customer?.phone || ''} className={`${inputClass} opacity-60 cursor-not-allowed`} disabled />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">البريد الإلكتروني</label>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.email')}</label>
             <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="example@email.com" />
+              <Mail className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder={t('profile.form.email_placeholder')} />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">تاريخ الميلاد</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.dob')}</label>
               <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">النوع</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.gender')}</label>
               <select value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass}>
-                <option value="">غير محدد</option>
-                <option value="male">ذكر</option>
-                <option value="female">أنثى</option>
+                <option value="">{t('profile.form.gender_unset')}</option>
+                <option value="male">{t('profile.form.gender_male')}</option>
+                <option value="female">{t('profile.form.gender_female')}</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">رقم واتساب (اختياري)</label>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.whatsapp')}</label>
             <div className="relative">
-              <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inputClass} placeholder="إذا كان مختلفاً عن الهاتف الأساسي" />
+              <Phone className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inputClass} placeholder={t('profile.form.whatsapp_placeholder')} />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">نبذة عني</label>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} rows="3" placeholder="اكتب نبذة مختصرة عن نفسك..." style={{ minHeight: '80px' }} />
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.bio')}</label>
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} rows="3" placeholder={t('profile.form.bio_placeholder')} style={{ minHeight: '80px' }} />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">صورة الملف الشخصي</label>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.profile_photo')}</label>
             <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900/20 dark:file:text-primary-400" />
-            <p className="text-[10px] text-gray-400 mt-1">PNG, JPG, GIF حتى 2 ميجابايت</p>
+            <p className="text-[10px] text-gray-400 mt-1">{t('profile.form.photo_hint')}</p>
           </div>
 
           <button
@@ -255,7 +257,7 @@ export default function PortalProfile() {
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                حفظ التغييرات
+                {t('profile.form.save')}
               </>
             )}
           </button>
@@ -267,37 +269,37 @@ export default function PortalProfile() {
         activeSection === 'password' && (
           <form onSubmit={handleChangePassword} className="bg-white dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">كلمة المرور الحالية</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.current')}</label>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showCurrentPass ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className={`${inputClass} pl-11`}
+                  className={`${inputClass} ltr:pl-11 rtl:pr-11`}
                   placeholder="••••••"
                   required
                 />
-                <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   {showCurrentPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">كلمة المرور الجديدة</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.new')}</label>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showNewPass ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className={`${inputClass} pl-11`}
-                  placeholder="6 أحرف على الأقل"
+                  className={`${inputClass} ltr:pl-11 rtl:pr-11`}
+                  placeholder={t('profile.password.min_chars')}
                   required
                   minLength={6}
                 />
-                <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   {showNewPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
@@ -312,15 +314,15 @@ export default function PortalProfile() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">تأكيد كلمة المرور الجديدة</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.confirm')}</label>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={inputClass}
-                  placeholder="أعد كتابة كلمة المرور"
+                  placeholder={t('profile.password.confirm_placeholder')}
                   required
                   minLength={6}
                 />
@@ -337,7 +339,7 @@ export default function PortalProfile() {
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  تغيير كلمة المرور
+                  {t('profile.password.change')}
                 </>
               )}
             </button>
@@ -356,7 +358,7 @@ export default function PortalProfile() {
             ) : !pointsData ? (
               <div className="text-center py-16">
                 <Star className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">لم يتم تحميل بيانات النقاط</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('profile.points.no_data')}</p>
               </div>
             ) : (
               <>
@@ -365,23 +367,23 @@ export default function PortalProfile() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
                   <div className="relative z-10 text-center">
                     <Star className="w-10 h-10 mx-auto mb-2 fill-current" />
-                    <p className="text-white/80 text-sm mb-1">رصيد النقاط</p>
+                    <p className="text-white/80 text-sm mb-1">{t('profile.points.balance')}</p>
                     <p className="text-5xl font-black">{pointsData.currentPoints || 0}</p>
-                    <p className="text-white/70 text-xs mt-2">نقطة متاحة</p>
+                    <p className="text-white/70 text-xs mt-2">{t('profile.points.available')}</p>
                   </div>
                 </div>
 
                 {/* Tier Info */}
                 <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">مستوى العضوية</h3>
+                  <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('profile.points.tier_level')}</h3>
                   <div className="flex items-center gap-3">
                     <div className={`w-12 h-12 bg-gradient-to-br ${tier.color} rounded-xl flex items-center justify-center text-white`}>
                       <TierIcon className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 dark:text-white">عميل {tier.label}</p>
+                      <p className="font-bold text-gray-900 dark:text-white">{t('profile.tiers.customer', { tier: t(`profile.tiers.${customer?.tier || 'bronze'}`) })}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        إجمالي المشتريات: {pointsData.totalPurchases?.toLocaleString() || 0} ج.م
+                        {t('profile.points.total_purchases', { amount: pointsData.totalPurchases?.toLocaleString() || 0 })}
                       </p>
                     </div>
                   </div>
@@ -400,7 +402,7 @@ export default function PortalProfile() {
                         />
                       </div>
                       <p className="text-[11px] text-gray-400 mt-1">
-                        متبقي {pointsData.nextTier.remaining?.toLocaleString()} ج.م للترقية
+                        {t('profile.points.remaining_upgrade', { amount: pointsData.nextTier.remaining?.toLocaleString() })}
                       </p>
                     </div>
                   )}
@@ -410,12 +412,12 @@ export default function PortalProfile() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 text-center">
                     <ShoppingBag className="w-6 h-6 text-primary-500 mx-auto mb-2" />
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">عدد الفواتير</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.invoices_count')}</p>
                     <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalInvoices || 0}</p>
                   </div>
                   <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 text-center">
                     <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">نقاط مكتسبة</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.earned_points')}</p>
                     <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalPointsEarned || 0}</p>
                   </div>
                 </div>
@@ -425,7 +427,7 @@ export default function PortalProfile() {
                   <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
                     <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                       <Award className="w-4 h-4 text-primary-500" />
-                      الشارات
+                      {t('profile.points.badges')}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {pointsData.badges.map((badge, idx) => (
@@ -450,10 +452,10 @@ export default function PortalProfile() {
         activeSection === 'addresses' && (
           <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
             <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">إدارة العناوين</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">إضافة وتعديل عناوين التوصيل الخاصة بك لسهولة الشراء.</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('profile.addresses_page.title')}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{t('profile.addresses_page.desc')}</p>
             <Link to="/portal/addresses" className="inline-flex items-center gap-2 bg-primary-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all">
-              الانتقال لصفحة العناوين
+              {t('profile.addresses_page.go_to')}
             </Link>
           </div>
         )
@@ -464,8 +466,8 @@ export default function PortalProfile() {
           <div className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
             <div className="p-4 flex items-center justify-between">
               <div>
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm">تنبيهات العروض</h4>
-                <p className="text-xs text-gray-500 mt-1">استلام إشعارات بالخصومات والعروض الجديدة</p>
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.offers_title')}</h4>
+                <p className="text-xs text-gray-500 mt-1">{t('profile.settings.offers_desc')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -474,8 +476,8 @@ export default function PortalProfile() {
             </div>
             <div className="p-4 flex items-center justify-between">
               <div>
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm">تنبيهات الطلبات</h4>
-                <p className="text-xs text-gray-500 mt-1">إشعارات بتحديث حالات الطلب والشحن</p>
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.orders_title')}</h4>
+                <p className="text-xs text-gray-500 mt-1">{t('profile.settings.orders_desc')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />

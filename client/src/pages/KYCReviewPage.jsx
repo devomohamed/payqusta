@@ -81,7 +81,7 @@ export default function KYCReviewPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in" dir="rtl">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div>
@@ -204,7 +204,7 @@ export default function KYCReviewPage() {
       {/* View Document Modal */}
       <Modal open={!!viewDoc} onClose={() => setViewDoc(null)} title="عرض المستند" size="lg">
         {viewDoc && (
-          <div className="space-y-4" dir="rtl">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
@@ -219,19 +219,43 @@ export default function KYCReviewPage() {
             </div>
 
             {/* Document Image */}
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden flex items-center justify-center min-h-[300px]">
-              {viewDoc.url?.startsWith('data:image') ? (
-                <img src={viewDoc.url} alt="Document" className="max-w-full max-h-[500px] object-contain" />
-              ) : viewDoc.url?.startsWith('data:application/pdf') ? (
-                <div className="text-center p-8">
+            <div className={`bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden flex ${viewDoc.backUrl ? 'flex-col lg:flex-row' : 'items-center'} justify-center min-h-[300px] gap-4 p-4`}>
+              {viewDoc.url?.startsWith('data:image') || viewDoc.url?.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                <div className="flex-1 flex flex-col items-center">
+                  {viewDoc.backUrl && <span className="text-xs font-bold text-gray-500 mb-2">الوجه الأمامي</span>}
+                  <img src={viewDoc.url} alt="Front Document" className="max-w-full max-h-[400px] object-contain rounded-xl shadow-sm border border-gray-200" />
+                </div>
+              ) : viewDoc.url?.startsWith('data:application/pdf') || viewDoc.url?.endsWith('.pdf') ? (
+                <div className="flex-1 flex flex-col items-center p-8">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">ملف PDF</p>
+                  <a href={viewDoc.url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline text-sm font-bold">عرض مستند PDF الأمامي</a>
                 </div>
               ) : (
-                <div className="text-center p-8">
+                <div className="flex-1 text-center p-8">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">مستند</p>
+                  <p className="text-sm text-gray-500">تم رفع المستند</p>
                 </div>
+              )}
+
+              {viewDoc.backUrl && (
+                <>
+                  {/* Vertical Divider for lg screens */}
+                  <div className="hidden lg:block w-px bg-gray-200 dark:bg-gray-700 self-stretch" />
+                  {/* Horizontal Divider for smaller screens */}
+                  <div className="block lg:hidden h-px bg-gray-200 dark:bg-gray-700 w-full" />
+
+                  {viewDoc.backUrl?.startsWith('data:image') || viewDoc.backUrl?.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                    <div className="flex-1 flex flex-col items-center">
+                      <span className="text-xs font-bold text-gray-500 mb-2">الوجه الخلفي</span>
+                      <img src={viewDoc.backUrl} alt="Back Document" className="max-w-full max-h-[400px] object-contain rounded-xl shadow-sm border border-gray-200" />
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center p-8">
+                      <FileText className="w-16 h-16 text-gray-400 mx-auto mb-3" />
+                      <a href={viewDoc.backUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline text-sm font-bold">عرض المستند الخلفي</a>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -263,7 +287,7 @@ export default function KYCReviewPage() {
 
       {/* Reject Modal */}
       <Modal open={!!showRejectModal} onClose={() => { setShowRejectModal(null); setRejectReason(''); }} title="رفض المستند" size="sm">
-        <div className="space-y-4" dir="rtl">
+        <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">يرجى كتابة سبب الرفض ليتم إبلاغ العميل</p>
           <textarea
             value={rejectReason}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { Package, Clock, CheckCircle, Truck, XCircle, RotateCcw, ChevronLeft, X, ShoppingBag } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
@@ -6,32 +7,20 @@ import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
 
 const orderStatusConfig = {
-    pending: { label: 'قيد المراجعة', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
-    confirmed: { label: 'تم التأكيد', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: CheckCircle },
-    processing: { label: 'جاري التجهيز', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', icon: Package },
-    shipped: { label: 'في الشحن', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400', icon: Truck },
-    delivered: { label: 'تم التوصيل', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
-    cancelled: { label: 'ملغي', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
+    pending: { key: 'pending', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+    confirmed: { key: 'confirmed', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: CheckCircle },
+    processing: { key: 'processing', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', icon: Package },
+    shipped: { key: 'shipped', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400', icon: Truck },
+    delivered: { key: 'delivered', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
+    cancelled: { key: 'cancelled', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
 };
 
-const paymentStatusConfig = {
-    paid: { label: 'مدفوعة', color: 'text-green-600 dark:text-green-400' },
-    partial: { label: 'جزئية', color: 'text-yellow-600 dark:text-yellow-400' },
-    pending: { label: 'معلق', color: 'text-blue-600 dark:text-blue-400' },
-    overdue: { label: 'متأخر', color: 'text-red-600 dark:text-red-400' },
-};
-
-const trackingSteps = [
-    { key: 'pending', label: 'استلام الطلب' },
-    { key: 'confirmed', label: 'تأكيد الطلب' },
-    { key: 'processing', label: 'تجهيز الطلب' },
-    { key: 'shipped', label: 'الشحن' },
-    { key: 'delivered', label: 'التوصيل' },
-];
-const stepOrder = trackingSteps.map(s => s.key);
+const trackingStepKeys = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
+const trackingLabelKeys = ['receive', 'confirm', 'prepare', 'ship', 'deliver'];
 
 export default function PortalOrders() {
     const { fetchOrders, fetchOrderDetails, reorder, cancelOrder } = usePortalStore();
+    const { t, i18n } = useTranslation('portal');
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('all');
@@ -67,11 +56,11 @@ export default function PortalOrders() {
     };
 
     const handleCancel = async (id) => {
-        if (!window.confirm('هل أنت متأكد من رغبتك في إلغاء هذا الطلب؟')) return;
+        if (!window.confirm(t('orders.cancel_confirm'))) return;
         setCancelling(id);
         const res = await cancelOrder(id);
         if (res.success) {
-            notify.success('تم إلغاء الطلب بنجاح');
+            notify.success(t('orders.cancel_success'));
             loadOrders();
         } else {
             notify.error(res.message);
@@ -80,24 +69,24 @@ export default function PortalOrders() {
     };
 
     const filters = [
-        { value: 'all', label: 'الكل' },
-        { value: 'pending', label: 'قيد المراجعة' },
-        { value: 'confirmed', label: 'مؤكدة' },
-        { value: 'shipped', label: 'في الشحن' },
-        { value: 'delivered', label: 'مُسلَّمة' },
-        { value: 'cancelled', label: 'ملغية' },
+        { value: 'all', label: t('orders.filters.all') },
+        { value: 'pending', label: t('orders.statuses.pending') },
+        { value: 'confirmed', label: t('orders.filters.confirmed') },
+        { value: 'shipped', label: t('orders.filters.shipped') },
+        { value: 'delivered', label: t('orders.filters.delivered') },
+        { value: 'cancelled', label: t('orders.filters.cancelled') },
     ];
 
-    const getStepIndex = (status) => stepOrder.indexOf(status);
+    const getStepIndex = (status) => trackingStepKeys.indexOf(status);
 
     return (
-        <div className="space-y-4 pb-20" dir="rtl">
+        <div className="space-y-4 pb-20" dir={i18n.dir()}>
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="w-6 h-6 text-primary-500" />
-                    طلباتي
+                    {t('orders.title')}
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{orders.length} طلب</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('orders.order_count', { count: orders.length })}</span>
             </div>
 
             {/* Filters */}
@@ -122,8 +111,8 @@ export default function PortalOrders() {
             ) : orders.length === 0 ? (
                 <PortalEmptyState
                     icon={ShoppingBag}
-                    title="لا توجد طلبات"
-                    message="لم تقم بإجراء أي طلبات حتى الآن."
+                    title={t('orders.empty_title')}
+                    message={t('orders.empty_message')}
                     className="my-8"
                 />
             ) : (
@@ -141,22 +130,22 @@ export default function PortalOrders() {
                                 {/* Header */}
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
-                                        <p className="font-bold text-gray-900 dark:text-white">طلب #{order.invoiceNumber}</p>
+                                        <p className="font-bold text-gray-900 dark:text-white">{t('orders.order_num', { num: order.invoiceNumber })}</p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                            {new Date(order.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            {new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                         </p>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${ostatus.color}`}>
                                         <OIcon className="w-3.5 h-3.5" />
-                                        {ostatus.label}
+                                        {t(`orders.statuses.${ostatus.key}`)}
                                     </span>
                                 </div>
 
                                 {/* Tracking Timeline (mini) */}
                                 {order.orderStatus !== 'cancelled' && (
                                     <div className="flex items-center gap-1 mb-3 overflow-x-auto pb-1">
-                                        {trackingSteps.map((step, idx) => (
-                                            <React.Fragment key={step.key}>
+                                        {trackingStepKeys.map((stepKey, idx) => (
+                                            <React.Fragment key={stepKey}>
                                                 <div className="flex flex-col items-center min-w-0">
                                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${idx <= currentStepIdx
                                                         ? 'bg-primary-500 text-white'
@@ -165,10 +154,10 @@ export default function PortalOrders() {
                                                         {idx < currentStepIdx ? '✓' : idx + 1}
                                                     </div>
                                                     <span className={`text-[9px] mt-0.5 whitespace-nowrap ${idx <= currentStepIdx ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-gray-400'}`}>
-                                                        {step.label}
+                                                        {t(`orders.tracking.${trackingLabelKeys[idx]}`)}
                                                     </span>
                                                 </div>
-                                                {idx < trackingSteps.length - 1 && (
+                                                {idx < trackingStepKeys.length - 1 && (
                                                     <div className={`flex-1 h-0.5 mb-3 ${idx < currentStepIdx ? 'bg-primary-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
                                                 )}
                                             </React.Fragment>
@@ -179,15 +168,15 @@ export default function PortalOrders() {
                                 {/* Price */}
                                 <div className="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 text-center text-xs mb-3">
                                     <div>
-                                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">الإجمالي</p>
+                                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.total')}</p>
                                         <p className="font-bold text-gray-900 dark:text-white">{order.totalAmount?.toLocaleString()}</p>
                                     </div>
                                     <div className="border-x border-gray-200 dark:border-gray-700">
-                                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">المدفوع</p>
+                                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.paid')}</p>
                                         <p className="font-bold text-green-600 dark:text-green-400">{order.paidAmount?.toLocaleString()}</p>
                                     </div>
                                     <div>
-                                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">المتبقي</p>
+                                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.remaining')}</p>
                                         <p className="font-bold text-red-600 dark:text-red-400">{order.remainingAmount?.toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -198,7 +187,7 @@ export default function PortalOrders() {
                                         onClick={() => openDetails(order._id)}
                                         className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition flex items-center justify-center gap-1"
                                     >
-                                        التفاصيل <ChevronLeft className="w-4 h-4" />
+                                        {t('orders.details')} <ChevronLeft className="w-4 h-4" />
                                     </button>
                                     {(order.orderStatus === 'delivered' || order.status === 'paid') && (
                                         <button
@@ -209,7 +198,7 @@ export default function PortalOrders() {
                                             {reordering === order._id ? (
                                                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                             ) : (
-                                                <><RotateCcw className="w-4 h-4" /> إعادة الطلب</>
+                                                <><RotateCcw className="w-4 h-4" /> {t('orders.reorder')}</>
                                             )}
                                         </button>
                                     )}
@@ -222,7 +211,7 @@ export default function PortalOrders() {
                                             {cancelling === order._id ? (
                                                 <span className="w-4 h-4 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
                                             ) : (
-                                                <><XCircle className="w-4 h-4" /> إلغاء الطلب</>
+                                                <><XCircle className="w-4 h-4" /> {t('orders.cancel_order')}</>
                                             )}
                                         </button>
                                     )}
@@ -247,7 +236,7 @@ export default function PortalOrders() {
                         ) : selectedOrder && (
                             <>
                                 <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-4 flex justify-between items-center z-10">
-                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">طلب #{selectedOrder.invoiceNumber}</h3>
+                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t('orders.order_num', { num: selectedOrder.invoiceNumber })}</h3>
                                     <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
                                         <X className="w-5 h-5 text-gray-500" />
                                     </button>
@@ -256,21 +245,21 @@ export default function PortalOrders() {
                                     {/* Full Timeline */}
                                     {selectedOrder.orderStatus !== 'cancelled' && (
                                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
-                                            <h4 className="font-bold text-sm mb-3 text-gray-700 dark:text-gray-300">تتبع الطلب</h4>
+                                            <h4 className="font-bold text-sm mb-3 text-gray-700 dark:text-gray-300">{t('orders.tracking.title')}</h4>
                                             <div className="space-y-0 relative">
                                                 <div className="absolute top-4 bottom-4 right-4 w-0.5 bg-gray-200 dark:bg-gray-700 z-0"></div>
-                                                {trackingSteps.map((step, idx) => {
+                                                {trackingStepKeys.map((stepKey, idx) => {
                                                     const currentIdx = getStepIndex(selectedOrder.orderStatus);
                                                     const isDone = idx <= currentIdx;
-                                                    const isLast = idx === trackingSteps.length - 1;
+                                                    const isLast = idx === trackingStepKeys.length - 1;
                                                     return (
-                                                        <div key={step.key} className={`flex items-start gap-4 relative z-10 ${isLast ? '' : 'pb-6'}`}>
+                                                        <div key={stepKey} className={`flex items-start gap-4 relative z-10 ${isLast ? '' : 'pb-6'}`}>
                                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ring-4 ring-gray-50 dark:ring-gray-800 ${isDone ? 'bg-primary-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
                                                                 {isDone ? '✓' : idx + 1}
                                                             </div>
                                                             <div className="mt-1">
-                                                                <p className={`text-sm font-bold ${isDone ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{step.label}</p>
-                                                                {isDone && <p className="text-[10px] text-gray-500 mt-1">تمت العملية بنجاح</p>}
+                                                                <p className={`text-sm font-bold ${isDone ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{t(`orders.tracking.${trackingLabelKeys[idx]}`)}</p>
+                                                                {isDone && <p className="text-[10px] text-gray-500 mt-1">{t('orders.tracking.step_done')}</p>}
                                                             </div>
                                                         </div>
                                                     );
@@ -281,7 +270,7 @@ export default function PortalOrders() {
 
                                     {/* Items */}
                                     <div>
-                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2">المنتجات</h4>
+                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2">{t('orders.products')}</h4>
                                         <div className="space-y-2">
                                             {selectedOrder.items?.map((item, idx) => (
                                                 <div key={idx} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
@@ -290,9 +279,9 @@ export default function PortalOrders() {
                                                     )}
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{item.product?.name || item.productName}</p>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">الكمية: {item.quantity} × {item.price?.toLocaleString()} ج.م</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('orders.qty', { qty: item.quantity, price: item.price?.toLocaleString() })}</p>
                                                     </div>
-                                                    <p className="font-bold text-sm text-primary-600">{item.total?.toLocaleString()} ج.م</p>
+                                                    <p className="font-bold text-sm text-primary-600">{item.total?.toLocaleString()} {i18n.language === 'ar' ? 'ج.م' : 'EGP'}</p>
                                                 </div>
                                             ))}
                                         </div>

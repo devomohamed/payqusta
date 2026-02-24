@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { MapPin, Plus, Edit2, Trash2, X, Check, Home, Briefcase } from 'lucide-react';
@@ -7,13 +8,14 @@ import { notify } from '../components/AnimatedNotification';
 export default function PortalAddresses() {
     const { fetchAddresses, addAddress, updateAddress, deleteAddress } = usePortalStore();
     const { dark } = useThemeStore();
+    const { t, i18n } = useTranslation('portal');
 
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({
-        label: 'المنزل',
+        label: '',
         street: '',
         city: '',
         state: '',
@@ -45,7 +47,7 @@ export default function PortalAddresses() {
         }
 
         if (res.success) {
-            notify.success(editngId ? 'تم تحديث العنوان بنجاح' : 'تم إضافة العنوان بنجاح');
+            notify.success(editingId ? t('addresses.update_success') : t('addresses.add_success'));
             setAddresses(res.addresses);
             setModalOpen(false);
             resetForm();
@@ -56,10 +58,10 @@ export default function PortalAddresses() {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('هل أنت متأكد من حذف هذا العنوان؟')) {
+        if (window.confirm(t('addresses.delete_confirm'))) {
             const res = await deleteAddress(id);
             if (res.success) {
-                notify.success('تم حذف العنوان');
+                notify.success(t('addresses.delete_success'));
                 setAddresses(res.addresses);
             } else {
                 notify.error(res.message);
@@ -70,7 +72,7 @@ export default function PortalAddresses() {
     const resetForm = () => {
         setEditingId(null);
         setFormData({
-            label: 'المنزل',
+            label: '',
             street: '',
             city: '',
             state: '',
@@ -82,7 +84,7 @@ export default function PortalAddresses() {
     const openEdit = (addr) => {
         setEditingId(addr._id);
         setFormData({
-            label: addr.label || 'المنزل',
+            label: addr.label || '',
             street: addr.street,
             city: addr.city,
             state: addr.state || '',
@@ -93,16 +95,16 @@ export default function PortalAddresses() {
     };
 
     return (
-        <div className="space-y-6 pb-20" dir="rtl">
+        <div className="space-y-6 pb-20" dir={i18n.dir()}>
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <MapPin className="w-6 h-6 text-primary-500" />
-                        دفتر العناوين
+                        {t('addresses.title')}
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        إدارة عناوين التوصيل الخاصة بك.
+                        {t('addresses.subtitle')}
                     </p>
                 </div>
                 <button
@@ -110,7 +112,7 @@ export default function PortalAddresses() {
                     className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-xl font-bold text-sm hover:bg-primary-600 transition shadow-lg shadow-primary-500/20"
                 >
                     <Plus className="w-4 h-4" />
-                    إضافة عنوان
+                    {t('addresses.add')}
                 </button>
             </div>
 
@@ -123,12 +125,12 @@ export default function PortalAddresses() {
                     <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                         <MapPin className="w-8 h-8 text-gray-400" />
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">لا توجد عناوين محفوظة</p>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">{t('addresses.empty')}</p>
                     <button
                         onClick={() => { resetForm(); setModalOpen(true); }}
                         className="inline-block mt-4 px-6 py-2 bg-primary-500 text-white rounded-xl font-bold text-sm hover:bg-primary-600 transition"
                     >
-                        إضافة عنوان جديد
+                        {t('addresses.add_new')}
                     </button>
                 </div>
             ) : (
@@ -138,13 +140,13 @@ export default function PortalAddresses() {
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
                                     <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center">
-                                        {addr.label === 'العمل' ? <Briefcase className="w-5 h-5 text-gray-400" /> : <Home className="w-5 h-5 text-gray-400" />}
+                                        {addr.label === 'العمل' || addr.label === 'Work' ? <Briefcase className="w-5 h-5 text-gray-400" /> : <Home className="w-5 h-5 text-gray-400" />}
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 dark:text-white text-sm">{addr.label}</h4>
                                         {addr.isDefault && (
                                             <span className="text-[10px] bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-0.5 rounded-full font-bold">
-                                                افتراضي
+                                                {t('addresses.default')}
                                             </span>
                                         )}
                                     </div>
@@ -159,10 +161,10 @@ export default function PortalAddresses() {
                                 </div>
                             </div>
 
-                            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400 pr-12">
+                            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400 rtl:pr-12 ltr:pl-12">
                                 <p>{addr.street}</p>
-                                <p>{addr.city} {addr.state && `، ${addr.state}`}</p>
-                                {addr.zipCode && <p className="text-gray-400 text-xs">الرمز البريدي: {addr.zipCode}</p>}
+                                <p>{addr.city} {addr.state && `, ${addr.state}`}</p>
+                                {addr.zipCode && <p className="text-gray-400 text-xs">{t('addresses.zip', { code: addr.zipCode })}</p>}
                             </div>
                         </div>
                     ))}
@@ -176,7 +178,7 @@ export default function PortalAddresses() {
                         <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                             <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                                 <MapPin className="w-5 h-5 text-primary-500" />
-                                {editingId ? 'تعديل عنوان' : 'إضافة عنوان جديد'}
+                                {editingId ? t('addresses.edit') : t('addresses.add_new')}
                             </h3>
                             <button onClick={() => setModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                                 <X className="w-5 h-5 text-gray-500" />
@@ -185,24 +187,24 @@ export default function PortalAddresses() {
 
                         <form onSubmit={handleSubmit} className="p-5 space-y-4">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">تسمية العنوان</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.label_field')}</label>
                                 <input
                                     type="text"
                                     value={formData.label}
                                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                                    placeholder="المنزل، العمل..."
+                                    placeholder={t('addresses.label_placeholder')}
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">العنوان بالتفصيل</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.street_field')}</label>
                                 <input
                                     type="text"
                                     value={formData.street}
                                     onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                                    placeholder="اسم الشارع، رقم المبنى..."
+                                    placeholder={t('addresses.street_placeholder')}
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
                                     required
                                 />
@@ -210,7 +212,7 @@ export default function PortalAddresses() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">المدينة</label>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.city_field')}</label>
                                     <input
                                         type="text"
                                         value={formData.city}
@@ -220,7 +222,7 @@ export default function PortalAddresses() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">المحافظة / المنطقة</label>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.state_field')}</label>
                                     <input
                                         type="text"
                                         value={formData.state}
@@ -238,7 +240,7 @@ export default function PortalAddresses() {
                                         onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
                                         className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
                                     />
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">تعيين كعنوان افتراضي</span>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('addresses.set_default')}</span>
                                 </label>
                             </div>
 
@@ -248,7 +250,7 @@ export default function PortalAddresses() {
                                     disabled={submitLoading}
                                     className="w-full py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20 disabled:opacity-50"
                                 >
-                                    {submitLoading ? 'جاري الحفظ...' : (editingId ? 'تحديث العنوان' : 'إضافة العنوان')}
+                                    {submitLoading ? t('addresses.saving') : (editingId ? t('addresses.update') : t('addresses.save'))}
                                 </button>
                             </div>
                         </form>

@@ -119,7 +119,7 @@ export default function SupportMessagesPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in" dir="rtl">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div>
@@ -216,7 +216,7 @@ export default function SupportMessagesPage() {
       {/* Message Detail Modal */}
       <Modal open={!!selected} onClose={() => { setSelected(null); setReplyText(''); }} title={selected?.subject || 'تفاصيل الرسالة'} size="lg">
         {selected && (
-          <div className="flex flex-col h-[70vh]" dir="rtl">
+          <div className="flex flex-col h-[70vh]">
             {/* Customer Info */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
               <div className="flex items-center gap-3">

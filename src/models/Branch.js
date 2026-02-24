@@ -79,5 +79,6 @@ const branchSchema = new mongoose.Schema(
 
 // Indexes
 branchSchema.index({ tenant: 1, isActive: 1 });
+branchSchema.index({ tenant: 1, name: 1 }, { unique: true });
 
 module.exports = mongoose.model('Branch', branchSchema);

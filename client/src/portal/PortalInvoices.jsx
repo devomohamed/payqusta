@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { Receipt, Eye, X, Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Filter, Download, RefreshCcw, DollarSign } from 'lucide-react';
@@ -8,15 +9,15 @@ import PortalSkeleton from './components/PortalSkeleton';
 
 
 const statusConfig = {
-  paid: { label: 'مدفوعة', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
-  partial: { label: 'جزئية', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
-  pending: { label: 'معلقة', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: Clock },
-  overdue: { label: 'متأخرة', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: AlertTriangle },
+  paid: { key: 'paid', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
+  partial: { key: 'partial', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock },
+  pending: { key: 'pending', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: Clock },
+  overdue: { key: 'overdue', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: AlertTriangle },
 };
 
 export default function PortalInvoices() {
   const { fetchInvoices, fetchInvoiceDetails, downloadInvoicePDF, createReturnRequest, payInvoice } = usePortalStore();
-
+  const { t, i18n } = useTranslation('portal');
   const { dark } = useThemeStore();
   const [invoices, setInvoices] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
@@ -61,22 +62,25 @@ export default function PortalInvoices() {
   };
 
   const filters = [
-    { value: 'all', label: 'الكل' },
-    { value: 'paid', label: 'مدفوعة' },
-    { value: 'partial', label: 'جزئية' },
-    { value: 'pending', label: 'معلقة' },
-    { value: 'overdue', label: 'متأخرة' },
+    { value: 'all', label: t('invoices.filters.all') },
+    { value: 'paid', label: t('invoices.filters.paid') },
+    { value: 'partial', label: t('invoices.filters.partial') },
+    { value: 'pending', label: t('invoices.filters.pending') },
+    { value: 'overdue', label: t('invoices.filters.overdue') },
   ];
 
+  const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
+  const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+
   return (
-    <div className="space-y-4 pb-20" dir="rtl">
+    <div className="space-y-4 pb-20" dir={i18n.dir()}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Receipt className="w-6 h-6 text-primary-500" />
-          فواتيري
+          {t('invoices.title')}
         </h2>
-        <span className="text-sm text-gray-500 dark:text-gray-400">{pagination.total} فاتورة</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.invoice_count', { count: pagination.total })}</span>
       </div>
 
       {/* Filters */}
@@ -101,8 +105,8 @@ export default function PortalInvoices() {
       ) : invoices.length === 0 ? (
         <PortalEmptyState
           icon={Receipt}
-          title="لا توجد فواتير"
-          message="لم تقم بإجراء أي عمليات شراء حتى الآن."
+          title={t('invoices.empty_title')}
+          message={t('invoices.empty_message')}
           className="my-8"
         />
       ) : (
@@ -118,37 +122,37 @@ export default function PortalInvoices() {
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white">فاتورة #{inv.invoiceNumber}</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{t('invoices.invoice_num', { num: inv.invoiceNumber })}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {new Date(inv.date).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      {new Date(inv.date).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${status.color}`}>
                     <StatusIcon className="w-3.5 h-3.5" />
-                    {status.label}
+                    {t(`invoices.statuses.${status.key}`)}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
                   <div className="text-center">
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">الإجمالي</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.total')}</p>
                     <p className="font-bold text-sm text-gray-900 dark:text-white">{inv.totalAmount?.toLocaleString()}</p>
                   </div>
                   <div className="text-center border-x border-gray-200 dark:border-gray-700">
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">المدفوع</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.paid_amount')}</p>
                     <p className="font-bold text-sm text-green-600 dark:text-green-400">{inv.paidAmount?.toLocaleString()}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">المتبقي</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.remaining')}</p>
                     <p className="font-bold text-sm text-red-600 dark:text-red-400">{inv.remainingAmount?.toLocaleString()}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400">
-                  <span>{inv.items?.length || 0} منتج</span>
+                  <span>{t('invoices.product_count', { count: inv.items?.length || 0 })}</span>
                   <span className="flex items-center gap-1 text-primary-500">
-                    عرض التفاصيل <ChevronLeft className="w-4 h-4" />
+                    {t('invoices.view_details')} <ChevronLeft className="w-4 h-4" />
                   </span>
                 </div>
               </div>
@@ -196,13 +200,13 @@ export default function PortalInvoices() {
                 {/* Modal Header */}
                 <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-4 flex justify-between items-center z-10">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                    فاتورة #{selectedInvoice.invoiceNumber}
+                    {t('invoices.invoice_num', { num: selectedInvoice.invoiceNumber })}
                   </h3>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={async () => {
                         const res = await downloadInvoicePDF(selectedInvoice._id);
-                        if (!res.success) notify.error('فشل تحميل الفاتورة');
+                        if (!res.success) notify.error(t('invoices.download_fail'));
                       }}
                       className="p-2 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-200 transition flex items-center gap-1 text-xs font-bold"
                     >
@@ -219,27 +223,27 @@ export default function PortalInvoices() {
                   {/* Summary */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">التاريخ</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.date')}</p>
                       <p className="font-bold text-gray-900 dark:text-white text-sm mt-1">
-                        {new Date(selectedInvoice.date).toLocaleDateString('ar-EG')}
+                        {new Date(selectedInvoice.date).toLocaleDateString(locale)}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">الحالة</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.status')}</p>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold mt-1 ${(statusConfig[selectedInvoice.status] || statusConfig.pending).color}`}>
-                        {(statusConfig[selectedInvoice.status] || statusConfig.pending).label}
+                        {t(`invoices.statuses.${(statusConfig[selectedInvoice.status] || statusConfig.pending).key}`)}
                       </span>
                     </div>
                     <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">المدفوع</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.paid_amount')}</p>
                       <p className="font-bold text-green-600 dark:text-green-400 text-sm mt-1">
-                        {selectedInvoice.paidAmount?.toLocaleString()} ج.م
+                        {selectedInvoice.paidAmount?.toLocaleString()} {currency}
                       </p>
                     </div>
                     <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">المتبقي</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.remaining')}</p>
                       <p className="font-bold text-red-600 dark:text-red-400 text-sm mt-1">
-                        {selectedInvoice.remainingAmount?.toLocaleString()} ج.م
+                        {selectedInvoice.remainingAmount?.toLocaleString()} {currency}
                       </p>
                     </div>
                   </div>
@@ -256,21 +260,21 @@ export default function PortalInvoices() {
                       className="w-full py-3 bg-primary-500 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary-600 transition shadow-lg shadow-primary-500/20"
                     >
                       <DollarSign className="w-5 h-5" />
-                      سداد المبلغ ({selectedInvoice.remainingAmount?.toLocaleString()} ج.م)
+                      {t('invoices.pay_now', { amount: selectedInvoice.remainingAmount?.toLocaleString() })}
                     </button>
                   )}
 
                   {/* Items Table */}
                   <div>
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm">المنتجات</h4>
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm">{t('invoices.products')}</h4>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-right p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">المنتج</th>
-                            <th className="text-center p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">الكمية</th>
-                            <th className="text-center p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">السعر</th>
-                            <th className="text-left p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">الإجمالي</th>
+                            <th className="text-right p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.product')}</th>
+                            <th className="text-center p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.quantity')}</th>
+                            <th className="text-center p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.price')}</th>
+                            <th className="text-left p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.total')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -289,7 +293,7 @@ export default function PortalInvoices() {
                                     setReturnDesc('');
                                   }}
                                   className="p-1.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition"
-                                  title="طلب إرجاع"
+                                  title={t('invoices.return_title')}
                                 >
                                   <RefreshCcw className="w-4 h-4" />
                                 </button>
@@ -299,8 +303,8 @@ export default function PortalInvoices() {
                         </tbody>
                         <tfoot>
                           <tr className="bg-gray-100 dark:bg-gray-700/50">
-                            <td colSpan="3" className="p-3 font-bold text-gray-900 dark:text-white">الإجمالي</td>
-                            <td className="p-3 text-left font-black text-primary-600 dark:text-primary-400">{selectedInvoice.totalAmount?.toLocaleString()} ج.م</td>
+                            <td colSpan="3" className="p-3 font-bold text-gray-900 dark:text-white">{t('invoices.total')}</td>
+                            <td className="p-3 text-left font-black text-primary-600 dark:text-primary-400">{selectedInvoice.totalAmount?.toLocaleString()} {currency}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -312,7 +316,7 @@ export default function PortalInvoices() {
                     <div>
                       <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm flex items-center gap-2">
                         <CreditCard className="w-4 h-4 text-primary-500" />
-                        جدول الأقساط
+                        {t('invoices.installments')}
                       </h4>
                       <div className="space-y-2">
                         {selectedInvoice.installments.map((inst, idx) => (
@@ -326,20 +330,20 @@ export default function PortalInvoices() {
                               }`}
                           >
                             <div>
-                              <p className="font-bold text-sm text-gray-900 dark:text-white">قسط {idx + 1}</p>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white">{t('invoices.installment_num', { num: idx + 1 })}</p>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                {new Date(inst.dueDate).toLocaleDateString('ar-EG')}
+                                {new Date(inst.dueDate).toLocaleDateString(locale)}
                               </p>
                             </div>
                             <div className="text-left">
-                              <p className="font-bold text-sm text-gray-900 dark:text-white">{inst.amount?.toLocaleString()} ج.م</p>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white">{inst.amount?.toLocaleString()} {currency}</p>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${inst.status === 'paid'
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                 : inst.status === 'overdue'
                                   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                                 }`}>
-                                {inst.status === 'paid' ? 'مدفوع' : inst.status === 'overdue' ? 'متأخر' : 'قادم'}
+                                {inst.status === 'paid' ? t('invoices.installment_paid') : inst.status === 'overdue' ? t('invoices.installment_overdue') : t('invoices.installment_upcoming')}
                               </span>
                             </div>
                           </div>
@@ -351,7 +355,7 @@ export default function PortalInvoices() {
                   {/* Notes */}
                   {selectedInvoice.notes && (
                     <div className="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl p-3 border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">ملاحظات</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('invoices.notes')}</p>
                       <p className="text-sm text-gray-700 dark:text-gray-300">{selectedInvoice.notes}</p>
                     </div>
                   )}
@@ -369,7 +373,7 @@ export default function PortalInvoices() {
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-primary-500" />
-                سداد الفاتورة #{selectedInvoice.invoiceNumber}
+                {t('invoices.pay_invoice', { num: selectedInvoice.invoiceNumber })}
               </h3>
               <button onClick={() => setPayModalOpen(false)} disabled={payLoading} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                 <X className="w-5 h-5 text-gray-500" />
@@ -378,12 +382,12 @@ export default function PortalInvoices() {
 
             <div className="p-5 space-y-4">
               <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي</p>
-                <p className="text-2xl font-black text-primary-600 dark:text-primary-400">{selectedInvoice.remainingAmount?.toLocaleString()} ج.م</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.remaining_amount')}</p>
+                <p className="text-2xl font-black text-primary-600 dark:text-primary-400">{selectedInvoice.remainingAmount?.toLocaleString()} {currency}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">المبلغ المراد سداده</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.pay_amount_label')}</label>
                 <input
                   type="number"
                   min="1"
@@ -395,12 +399,12 @@ export default function PortalInvoices() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">طريقة الدفع</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.payment_method')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'cash', label: 'كاش' },
-                    { value: 'card', label: 'بطاقة' },
-                    { value: 'transfer', label: 'تحويل' },
+                    { value: 'cash', label: t('invoices.cash') },
+                    { value: 'card', label: t('invoices.card') },
+                    { value: 'transfer', label: t('invoices.transfer') },
                   ].map((m) => (
                     <button
                       key={m.value}
@@ -417,12 +421,12 @@ export default function PortalInvoices() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">ملاحظات (اختياري)</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.notes_optional')}</label>
                 <input
                   type="text"
                   value={payNotes}
                   onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="أي ملاحظات..."
+                  placeholder={t('invoices.notes_placeholder')}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
                 />
               </div>
@@ -431,25 +435,25 @@ export default function PortalInvoices() {
                 onClick={async () => {
                   const amount = parseFloat(payAmount);
                   if (!amount || amount <= 0 || amount > selectedInvoice.remainingAmount) {
-                    notify.error('يرجى إدخال مبلغ صحيح');
+                    notify.error(t('invoices.invalid_amount'));
                     return;
                   }
                   setPayLoading(true);
                   const res = await payInvoice(selectedInvoice._id, amount, payMethod, payNotes);
                   setPayLoading(false);
                   if (res.success) {
-                    notify.success('تم السداد بنجاح!');
+                    notify.success(t('invoices.pay_success'));
                     setPayModalOpen(false);
                     setSelectedInvoice(null);
                     loadInvoices(pagination.page, statusFilter);
                   } else {
-                    notify.error(res.message || 'فشل السداد');
+                    notify.error(res.message || t('invoices.pay_fail'));
                   }
                 }}
                 disabled={payLoading}
                 className="w-full py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20 disabled:opacity-50"
               >
-                {payLoading ? 'جاري السداد...' : `تأكيد السداد (${parseFloat(payAmount || 0).toLocaleString()} ج.م)`}
+                {payLoading ? t('invoices.paying') : t('invoices.confirm_pay', { amount: parseFloat(payAmount || 0).toLocaleString() })}
               </button>
             </div>
           </div>
@@ -463,7 +467,7 @@ export default function PortalInvoices() {
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                 <RefreshCcw className="w-5 h-5 text-primary-500" />
-                طلب إرجاع منتج
+                {t('invoices.return_request')}
               </h3>
               <button
                 onClick={() => setReturnItem(null)}
@@ -477,11 +481,11 @@ export default function PortalInvoices() {
             <div className="p-5 space-y-4">
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
                 <p className="font-bold text-gray-900 dark:text-white text-sm">{returnItem.productName || returnItem.product?.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">الكمية المشتراة: {returnItem.quantity}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('invoices.purchased_qty', { qty: returnItem.quantity })}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">الكمية المراد إرجاعها</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.return_qty')}</label>
                 <input
                   type="number"
                   min="1"
@@ -493,26 +497,26 @@ export default function PortalInvoices() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">سبب الإرجاع</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.return_reason')}</label>
                 <select
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
                 >
-                  <option value="defective">عيوب صناعة</option>
-                  <option value="wrong_item">منتج خاطئ</option>
-                  <option value="changed_mind">غيرت رأيي</option>
-                  <option value="other">أخرى</option>
+                  <option value="defective">{t('invoices.reason_defective')}</option>
+                  <option value="wrong_item">{t('invoices.reason_wrong')}</option>
+                  <option value="changed_mind">{t('invoices.reason_changed_mind')}</option>
+                  <option value="other">{t('invoices.reason_other')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">ملاحظات إضافية</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.additional_notes')}</label>
                 <textarea
                   rows="2"
                   value={returnDesc}
                   onChange={(e) => setReturnDesc(e.target.value)}
-                  placeholder="اشرح المشكلة بالتفصيل..."
+                  placeholder={t('invoices.explain_issue')}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
                 />
               </div>
@@ -530,7 +534,7 @@ export default function PortalInvoices() {
                     });
 
                     if (res.success) {
-                      notify.success('تم إرسال طلب الإرجاع بنجاح');
+                      notify.success(t('invoices.return_success'));
                       setReturnItem(null);
                     } else {
                       notify.error(res.message);
@@ -540,7 +544,7 @@ export default function PortalInvoices() {
                   disabled={returnLoading}
                   className="w-full py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20 disabled:opacity-50"
                 >
-                  {returnLoading ? 'جاري الإرسال...' : 'تأكيد طلب الإرجاع'}
+                  {returnLoading ? t('invoices.sending') : t('invoices.confirm_return')}
                 </button>
               </div>
             </div>

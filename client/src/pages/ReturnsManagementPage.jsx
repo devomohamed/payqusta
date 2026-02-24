@@ -82,7 +82,7 @@ export default function ReturnsManagementPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in" dir="rtl">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div>
@@ -210,7 +210,7 @@ export default function ReturnsManagementPage() {
       {/* Detail Modal */}
       <Modal open={!!selected} onClose={() => setSelected(null)} title="تفاصيل طلب المرتجع" size="md">
         {selected && (
-          <div className="space-y-4" dir="rtl">
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
               <StatusBadge status={selected.status} />
               {selected.status === 'pending' && (
@@ -263,7 +263,7 @@ export default function ReturnsManagementPage() {
 
       {/* Reject Modal */}
       <Modal open={!!showRejectModal} onClose={() => { setShowRejectModal(null); setRejectNotes(''); }} title="رفض المرتجع" size="sm">
-        <div className="space-y-4" dir="rtl">
+        <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">يرجى كتابة سبب الرفض (اختياري)</p>
           <textarea
             value={rejectNotes}

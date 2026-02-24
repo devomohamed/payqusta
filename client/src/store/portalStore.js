@@ -402,9 +402,9 @@ export const usePortalStore = create((set, get) => ({
   },
 
   // Checkout (place order with shipping details)
-  checkout: async (items, shippingAddress, notes, signature, couponCode) => {
+  checkout: async (items, shippingAddress, notes, signature, couponCode, paymentMethod, months) => {
     try {
-      const body = { items, shippingAddress, notes, signature };
+      const body = { items, shippingAddress, notes, signature, paymentMethod, months };
       if (couponCode) body.couponCode = couponCode;
       const res = await portalApi.post('/portal/cart/checkout', body);
       return { success: true, data: res.data.data, message: res.data.message };
@@ -565,10 +565,13 @@ export const usePortalStore = create((set, get) => ({
     }
   },
 
-  uploadDocument: async (type, file) => {
+  uploadDocument: async (type, file, backFile) => {
     set({ loading: true });
     try {
-      const res = await portalApi.post('/portal/documents', { type, file });
+      const payload = { type, file };
+      if (backFile) payload.backFile = backFile;
+
+      const res = await portalApi.post('/portal/documents', payload);
       set({ loading: false });
       return { success: true, message: res.data.message, documents: res.data.data };
     } catch (err) {
