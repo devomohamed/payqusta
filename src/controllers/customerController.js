@@ -385,10 +385,6 @@ class CustomerController {
     }
   });
 
-  /**
-   * POST /api/v1/customers/:id/send-statement-pdf
-   * Generate PDF and send via WhatsApp
-   */
   sendStatementPDF = catchAsync(async (req, res, next) => {
     const customer = await Customer.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!customer) return next(AppError.notFound('العميل غير موجود'));
@@ -406,25 +402,74 @@ class CustomerController {
       .select('invoiceNumber totalAmount paidAmount remainingAmount status paymentMethod createdAt')
       .lean();
 
-    // First, try to send using Template (works outside 24h window)
-    const templateResult = await WhatsAppService.sendStatementTemplate(customer.phone, customer, tenant?.whatsapp);
-
-    if (templateResult.success) {
-      logger.info(`[Statement] Template sent successfully: ${templateResult.messageId}`);
-    } else {
-      logger.warn(`[Statement] Template failed: ${templateResult.error?.message || 'Unknown error'}`);
-    }
-
-    // Try sending PDF document (works if customer replied within 24h)
-    logger.info(`[Statement] Attempting to send PDF document...`);
-
-    // Generate PDF
+    // Generate PDF First
     const pdfResult = await PDFService.generateCustomerStatement(customer, invoices, tenant?.name);
     if (!pdfResult.success) {
       return next(AppError.internal('فشل إنشاء PDF'));
     }
 
-    // Send PDF via WhatsApp
+    // First, try to upload the PDF to get a mediaId for the template header
+    let uploadResult = { success: false };
+    try {
+      uploadResult = await WhatsAppService.uploadMedia(pdfResult.filepath, 'application/pdf', tenant?.whatsapp);
+    } catch (e) {
+      logger.warn(`Failed to upload media for template: ${e.message}`);
+    }
+
+    // Prepare template parameters
+    const params = [
+      customer.name,
+      Helpers.formatCurrency(customer.financials?.totalPurchases || 0),
+      Helpers.formatCurrency(customer.financials?.totalPaid || 0),
+      Helpers.formatCurrency(customer.financials?.outstandingBalance || 0),
+    ];
+
+    let headerParams = [];
+    if (uploadResult.success && uploadResult.mediaId) {
+      headerParams = [{
+        type: 'document',
+        document: {
+          id: uploadResult.mediaId,
+          filename: `كشف_حساب_${customer.name}.pdf`
+        }
+      }];
+    }
+
+    const templateName = WhatsAppService.getTemplateName('statement', tenant?.whatsapp);
+    const lang = WhatsAppService.getTemplateLanguage('statement', tenant?.whatsapp);
+
+    // Send the template with the document header (if uploaded successfully)
+    const templateResult = await WhatsAppService.sendTemplate(
+      customer.phone,
+      templateName,
+      lang,
+      params,
+      headerParams,
+      [],
+      tenant?.whatsapp
+    );
+
+    if (templateResult.success) {
+      logger.info(`[Statement] Template sent successfully: ${templateResult.messageId}`);
+
+      // If template succeeds and had a document header, we don't need to send another separate document message
+      if (headerParams.length > 0) {
+        return ApiResponse.success(res, {
+          pdfUrl: pdfResult.url,
+          whatsappSent: true,
+          method: 'template_with_document',
+          pdfSent: true,
+          templateSent: true,
+        }, 'تم إرسال كشف الحساب (PDF) بنجاح 📄✅');
+      }
+    } else {
+      logger.warn(`[Statement] Template failed: ${templateResult.error?.message || JSON.stringify(templateResult.error) || 'Unknown error'}`);
+    }
+
+    // Try sending PDF document via regular message (works if customer replied within 24h)
+    logger.info(`[Statement] Attempting to send separate PDF document (regular message)...`);
+
+    // Send PDF via WhatsApp regular document message
     const whatsappResult = await WhatsAppService.sendDocument(
       customer.phone,
       pdfResult.filepath,
@@ -433,7 +478,7 @@ class CustomerController {
       tenant?.whatsapp
     );
 
-    // If PDF sending also failed (24h window issue), try text message
+    // If PDF sending failed (24h window issue), try text message
     if (!whatsappResult.success) {
       const outstanding = customer.financials?.outstandingBalance || 0;
       let message = `📊 *كشف حساب — ${customer.name}*\n`;
@@ -462,7 +507,7 @@ class CustomerController {
           whatsappSent: false,
           needsTemplate: true,
           hint: '⚠️ العميل لم يراسلك خلال 24 ساعة. أنشئ Message Template في Meta للإرسال.',
-        }, '⚠️ تم إنشاء PDF لكن فشل الإرسال — العميل خارج نافذة 24 ساعة');
+        }, '⚠️ تم إنشاء PDF لكن فشل الإرسال — العميل خارج نافذة 24 ساعة وللأسف فشل إرسال قالب الرسالة أيضاً.');
       }
     }
 
@@ -473,8 +518,8 @@ class CustomerController {
       pdfSent: whatsappResult.success,
       templateSent: templateResult.success,
     }, whatsappResult.success
-      ? 'تم إرسال كشف الحساب وهناك رسالة PDF في الطريق ✅'
-      : 'تم إرسال الملخص. لإرسال الـ PDF يجب أن يرد العميل أولاً (نافذة 24 ساعة) ⚠️');
+      ? 'تم إرسال كشف الحساب (PDF) بنجاح ✅'
+      : 'تم إرسال الملخص كنص. لإرسال الـ PDF يجب أن يرد العميل أولاً (نافذة 24 ساعة) ⚠️');
   });
 
   /**

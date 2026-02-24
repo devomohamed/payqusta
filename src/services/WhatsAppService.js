@@ -267,7 +267,12 @@ class WhatsAppService {
       if (headerParams.length > 0) {
         components.push({
           type: 'header',
-          parameters: headerParams.map(p => ({ type: 'text', text: String(p) })),
+          parameters: headerParams.map(p => {
+            if (typeof p === 'object' && p !== null && p.type) {
+              return p; // Already formatted as a valid parameter (e.g. { type: 'document', document: { ... } })
+            }
+            return { type: 'text', text: String(p) };
+          }),
         });
       }
 
