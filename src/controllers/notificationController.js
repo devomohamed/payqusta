@@ -107,17 +107,21 @@ class NotificationController {
    */
   async stream(req, res, next) {
     try {
-      // SSE headers
+      // SSE headers - Need specific headers to bypass Nginx/Render buffering
       res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'X-Accel-Buffering': 'no',
+        'X-Accel-Buffering': 'no', // For Nginx
       });
 
-      // Send initial ping
+      // Send initial connection event
       res.write(`data: ${JSON.stringify({ type: 'connected', message: 'متصل بنظام الإشعارات' })}\n\n`);
+
+      // Flush response headers/body if express compression allows it
+      if (res.flush) {
+        res.flush();
+      }
 
       // Register this client for SSE
       NotificationService.addSSEClient(req.user._id.toString(), res);
@@ -125,16 +129,28 @@ class NotificationController {
       // Keep alive every 30 seconds
       const keepAlive = setInterval(() => {
         try {
-          res.write(`: keepalive\n\n`);
+          if (!res.writableEnded) {
+            res.write(`:\n\n`); // Standard SSE comment ping
+            if (res.flush) res.flush();
+          } else {
+            clearInterval(keepAlive);
+          }
         } catch (e) {
           clearInterval(keepAlive);
         }
       }, 30000);
 
-      // Cleanup on close
-      req.on('close', () => {
+      // Cleanup on close, error or finish
+      const cleanup = () => {
         clearInterval(keepAlive);
-      });
+        // Assuming NotificationService has a way to remove disconnected clients if needed
+        // Some implementations just rely on the next write failing to clean them up.
+      };
+
+      req.on('close', cleanup);
+      req.on('error', cleanup);
+      res.on('finish', cleanup);
+      res.on('error', cleanup);
     } catch (error) {
       next(error);
     }
