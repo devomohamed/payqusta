@@ -179,9 +179,10 @@ class PayQustaServer {
 
     // Serve frontend in production
     if (process.env.NODE_ENV === 'production') {
-      this.app.use(express.static(path.join(__dirname, 'client/dist')));
+      const frontendDistPath = path.join(__dirname, '../frontend/dist');
+      this.app.use(express.static(frontendDistPath));
       this.app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+        res.sendFile(path.join(frontendDistPath, 'index.html'));
       });
     }
   }
