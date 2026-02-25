@@ -1,0 +1,242 @@
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { usePortalStore } from '../store/portalStore';
+import { useThemeStore } from '../store';
+import { TrendingUp, TrendingDown, Gift, ShoppingCart, Award, Calendar, Filter } from 'lucide-react';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
+import PortalEmptyState from './components/PortalEmptyState';
+import PortalSkeleton from './components/PortalSkeleton';
+
+export default function PortalPointsHistory() {
+  const { fetchPointsHistory, fetchPoints, customer } = usePortalStore();
+  const { dark } = useThemeStore();
+  const { t, i18n } = useTranslation('portal');
+  const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [filter, setFilter] = useState('all');
+
+  const dateLocale = i18n.language === 'ar' ? ar : enUS;
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [historyData, pointsData] = await Promise.all([
+        fetchPointsHistory(),
+        fetchPoints()
+      ]);
+
+      if (historyData) {
+        setHistory(historyData.history || []);
+        setStats(historyData.summary || null);
+      } else if (pointsData) {
+        setStats(pointsData);
+      }
+    } catch (err) {
+      console.error('Error loading points data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredHistory = history.filter(item => {
+    if (filter === 'earned') return item.type === 'earn';
+    if (filter === 'redeemed') return item.type === 'redeem';
+    return true;
+  });
+
+  const getIcon = (type) => {
+    switch (type) {
+      case 'earn': return <TrendingUp className="w-5 h-5 text-green-500" />;
+      case 'redeem': return <Gift className="w-5 h-5 text-purple-500" />;
+      default: return <Award className="w-5 h-5 text-blue-500" />;
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case 'earn': return t('pointsHistory.type_earn');
+      case 'redeem': return t('pointsHistory.type_redeem');
+      default: return t('pointsHistory.type_activity');
+    }
+  };
+
+  const getReasonLabel = (reason) => {
+    return t(`pointsHistory.reasons.${reason}`, { defaultValue: reason });
+  };
+
+  return (
+    <div className={`min-h-screen ${dark ? 'dark' : ''}`}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-6 space-y-6" dir={i18n.dir()}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <Award className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-extrabold">{t('pointsHistory.title')}</h1>
+                <p className="text-purple-100">{t('pointsHistory.subtitle')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                <p className="text-purple-100 text-sm mb-1">{t('pointsHistory.current_balance')}</p>
+                <p className="text-4xl font-black">{customer?.points?.toLocaleString() || 0}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                <p className="text-purple-100 text-sm mb-1">{t('pointsHistory.total_earned')}</p>
+                <p className="text-3xl font-bold">{stats?.totalEarned?.toLocaleString() || 0}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                <p className="text-purple-100 text-sm mb-1">{t('pointsHistory.total_redeemed')}</p>
+                <p className="text-3xl font-bold">{stats?.totalRedeemed?.toLocaleString() || 0}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <Filter className="w-5 h-5" />
+            <span className="text-sm font-bold">{t('pointsHistory.filter')}</span>
+          </div>
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === 'all'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            {t('pointsHistory.filter_all')}
+          </button>
+          <button
+            onClick={() => setFilter('earned')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === 'earned'
+              ? 'bg-green-600 text-white shadow-lg shadow-green-500/30'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            {t('pointsHistory.filter_earned')}
+          </button>
+          <button
+            onClick={() => setFilter('redeemed')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === 'redeemed'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            {t('pointsHistory.filter_redeemed')}
+          </button>
+        </div>
+
+        {/* History List */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          {loading ? (
+            <div className="p-4">
+              <PortalSkeleton count={4} type="list" />
+            </div>
+          ) : filteredHistory.length > 0 ? (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {filteredHistory.map((item, index) => (
+                <div
+                  key={item._id || index}
+                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${item.type === 'earn'
+                      ? 'bg-green-50 dark:bg-green-900/20'
+                      : 'bg-purple-50 dark:bg-purple-900/20'
+                      }`}>
+                      {getIcon(item.type)}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div>
+                          <h3 className="font-bold text-gray-900 dark:text-white">
+                            {getReasonLabel(item.reason)}
+                          </h3>
+                          {item.description && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className={`text-xl font-black shrink-0 ${item.type === 'earn'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-purple-600 dark:text-purple-400'
+                          }`}>
+                          {item.type === 'earn' ? '+' : '-'}{item.points}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {item.createdAt && !isNaN(new Date(item.createdAt).valueOf())
+                            ? format(new Date(item.createdAt), 'dd MMM yyyy, hh:mm a', { locale: dateLocale })
+                            : t('pointsHistory.date_unavailable')}
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full ${item.type === 'earn'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                          }`}>
+                          {getTypeLabel(item.type)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <PortalEmptyState
+              icon={Award}
+              title={t('pointsHistory.empty_title')}
+              message={
+                filter === 'all'
+                  ? t('pointsHistory.empty_all')
+                  : filter === 'earned'
+                    ? t('pointsHistory.empty_earned')
+                    : t('pointsHistory.empty_redeemed')
+              }
+              className="my-8 border-none"
+            />
+          )}
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+          <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+            <Award className="w-5 h-5" />
+            {t('pointsHistory.how_to_earn')}
+          </h3>
+          <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+            <li className="flex items-start gap-2">
+              <ShoppingCart className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{t('pointsHistory.tip_purchase')}</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <TrendingUp className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{t('pointsHistory.tip_events')}</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Gift className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{t('pointsHistory.tip_redeem')}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Disabled static favicon link for HTTP-only hosting to avoid redirect loops -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="description" content="PayQusta — نظام إدارة المبيعات والأقساط المتكامل" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PayQusta — نظام إدارة المبيعات والأقساط</title>
+    
+    <!-- PWA manifest/icons disabled on HTTP-only hosting -->
+  </head>
+  <body>
+    <div id="root">
+      <!-- Pre-React Loading Screen (shows while JS bundles load) -->
+      <div id="pre-loader" style="
+        position: fixed; inset: 0; z-index: 99999;
+        display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px;
+        background: linear-gradient(135deg, #0a0a0f 0%, #111827 50%, #0a0a0f 100%);
+      ">
+        <div style="
+          width: 80px; height: 80px; border-radius: 16px;
+          background: linear-gradient(135deg, #6366f1, #7c3aed);
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 20px 40px rgba(99,102,241,0.3);
+          animation: pulse-logo 2s ease-in-out infinite;
+        ">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div style="text-align: center;">
+          <h1 style="
+            font-family: 'Cairo', sans-serif; font-size: 36px; font-weight: 900;
+            color: white; margin: 0; letter-spacing: -0.5px;
+          ">Pay<span style="background: linear-gradient(90deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Qusta</span></h1>
+          <p style="font-family: 'Cairo', sans-serif; color: #6b7280; font-size: 12px; margin-top: 4px;">Smart Sales & Inventory Management</p>
+        </div>
+        <div style="width: 160px; height: 3px; border-radius: 4px; background: #1f2937; overflow: hidden;">
+          <div style="
+            width: 50%; height: 100%; border-radius: 4px;
+            background: linear-gradient(90deg, #6366f1, #a78bfa, #6366f1);
+            animation: loading-bar 1.2s ease-in-out infinite;
+          "></div>
+        </div>
+        <style>
+          @keyframes pulse-logo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+          @keyframes loading-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+        </style>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Remove pre-loader when React mounts (or after a short fallback timeout).
+      const rootEl = document.getElementById('root');
+      const hidePreLoader = () => {
+        const preLoader = document.getElementById('pre-loader');
+        if (!preLoader) return true;
+
+        const hasReactContent = Array.from(rootEl.children).some((el) => el.id !== 'pre-loader');
+        if (!hasReactContent) return false;
+
+        preLoader.style.transition = 'opacity 0.3s';
+        preLoader.style.opacity = '0';
+        setTimeout(() => preLoader.remove(), 300);
+        return true;
+      };
+
+      const observer = new MutationObserver(() => {
+        if (hidePreLoader()) observer.disconnect();
+      });
+      observer.observe(rootEl, { childList: true });
+
+      // Fallback: never keep splash forever if mutation observer misses.
+      setTimeout(() => {
+        const preLoader = document.getElementById('pre-loader');
+        if (preLoader) preLoader.remove();
+      }, 8000);
+    </script>
+    <script>
+      // Safe opt-in auto-select:
+      // use only on fields that explicitly have data-select-on-focus="true"
+      document.addEventListener('focusin', function (e) {
+        const el = e.target;
+        if (!el) return;
+        if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') return;
+        if (el.getAttribute('data-select-on-focus') !== 'true') return;
+
+        const type = (el.type || '').toLowerCase();
+        if (['password', 'email'].includes(type)) return;
+
+        requestAnimationFrame(() => {
+          try { el.select(); } catch (_) {}
+        });
+      });
+    </script>
+    <!-- Service Worker Registration -->
+    <!-- Service Worker handled by vite-plugin-pwa -->
+  </body>
+</html>
