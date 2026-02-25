@@ -1,0 +1,10 @@
+{
+  "name": "payqusta-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root package for Evennode deployment",
+  "scripts": {
+    "start": "node backend/server.js",
+    "postinstall": "npm --prefix backend install"
+  }
+}
