@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Plus, Edit2, Trash2, Save, X, Users, ArrowLeft } from 'lucide-react';
 import { api } from '../store';
 import { Button, Card, Input, Modal, Badge, LoadingSpinner, EmptyState } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
@@ -25,12 +26,13 @@ const ACTIONS = [
 ];
 
 export default function RolesPage() {
+  const navigate = useNavigate();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  
+
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -105,7 +107,7 @@ export default function RolesPage() {
   const togglePermission = (resource, action) => {
     const permissions = [...form.permissions];
     const permIndex = permissions.findIndex(p => p.resource === resource);
-    
+
     if (permIndex === -1) {
       permissions.push({ resource, actions: [action] });
     } else {
@@ -119,7 +121,7 @@ export default function RolesPage() {
         permissions[permIndex].actions.push(action);
       }
     }
-    
+
     setForm({ ...form, permissions });
   };
 
@@ -138,16 +140,38 @@ export default function RolesPage() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">تخصيص صلاحيات المستخدمين حسب الدور</p>
         </div>
-        <Button onClick={handleOpenAdd} icon={<Plus className="w-4 h-4" />}>دور جديد</Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate('/admin/users')} icon={<Users className="w-4 h-4" />}>
+            إدارة الموظفين
+          </Button>
+          <Button onClick={handleOpenAdd} icon={<Plus className="w-4 h-4" />}>دور جديد</Button>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex items-start gap-4">
+        <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-300 shrink-0">
+          <Shield className="w-5 h-5" />
+        </div>
+        <div>
+          <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-1">كيف تعمل الصلاحيات؟</h3>
+          <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
+            1. قم بإنشاء <strong>دور جديد</strong> (مثال: بائع، محاسب، مدير مخزن).<br />
+            2. حدد <strong>الصلاحيات</strong> المناسبة لهذا الدور (عرض، إضافة، تعديل، حذف).<br />
+            3. اذهب إلى صفحة <strong>إدارة الموظفين</strong> وقم بتعيين هذا الدور للموظف المطلوب.
+          </p>
+          <Button size="sm" onClick={() => navigate('/admin/users')} icon={<ArrowLeft className="w-4 h-4" />} className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+            الذهاب لتعيين الأدوار للموظفين
+          </Button>
+        </div>
       </div>
 
       {loading ? (
         <LoadingSpinner />
       ) : roles.length === 0 ? (
-        <EmptyState 
-          icon={<Shield className="w-12 h-12" />} 
-          title="لا توجد أدوار مخصصة" 
-          description="قم بإنشاء أدوار مخصصة لتحديد صلاحيات دقيقة للمستخدمين" 
+        <EmptyState
+          icon={<Shield className="w-12 h-12" />}
+          title="لا توجد أدوار مخصصة"
+          description="قم بإنشاء أدوار مخصصة لتحديد صلاحيات دقيقة للمستخدمين"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -170,7 +194,7 @@ export default function RolesPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="space-y-1 text-xs">
                 <p className="font-semibold text-gray-500">الصلاحيات:</p>
                 {role.permissions.slice(0, 3).map(perm => (
@@ -190,26 +214,26 @@ export default function RolesPage() {
         </div>
       )}
 
-      <Modal 
-        open={showModal} 
-        onClose={() => setShowModal(false)} 
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
         title={editId ? 'تعديل الدور' : 'إنشاء دور جديد'}
         size="lg"
       >
         <div className="space-y-4">
-          <Input 
-            label="اسم الدور" 
-            value={form.name} 
-            onChange={e => setForm({...form, name: e.target.value})} 
+          <Input
+            label="اسم الدور"
+            value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })}
             placeholder="مثال: مدير المخزون"
           />
-          <Input 
-            label="الوصف (اختياري)" 
-            value={form.description} 
-            onChange={e => setForm({...form, description: e.target.value})} 
+          <Input
+            label="الوصف (اختياري)"
+            value={form.description}
+            onChange={e => setForm({ ...form, description: e.target.value })}
             placeholder="وصف مختصر للدور"
           />
-          
+
           <div>
             <label className="block text-sm font-bold mb-3">الصلاحيات</label>
             <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -228,7 +252,7 @@ export default function RolesPage() {
                       <td className="p-3 font-medium">{resource.label}</td>
                       {ACTIONS.map(action => (
                         <td key={action.id} className="p-3 text-center">
-                          <input 
+                          <input
                             type="checkbox"
                             checked={hasPermission(resource.id, action.id)}
                             onChange={() => togglePermission(resource.id, action.id)}

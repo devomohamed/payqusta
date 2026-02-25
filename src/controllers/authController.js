@@ -5,6 +5,7 @@
 
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
+const Plan = require('../models/Plan');
 const AuditLog = require('../models/AuditLog');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
@@ -29,6 +30,9 @@ class AuthController {
       return next(AppError.conflict('البريد الإلكتروني مسجل بالفعل'));
     }
 
+    // Fetch the free plan if it exists
+    const freePlan = await Plan.findOne({ price: 0 });
+
     // Create Tenant first
     const tenant = await Tenant.create({
       name: storeName || `متجر ${name}`,
@@ -38,12 +42,12 @@ class AuthController {
         address: storeAddress || '',
       },
       subscription: {
-        plan: 'trial',
-        status: 'trial',
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
-        maxProducts: 50,
-        maxCustomers: 100,
-        maxUsers: 3,
+        plan: freePlan ? freePlan._id : null,
+        status: 'active',
+        trialEndsAt: null,
+        maxProducts: freePlan ? freePlan.limits.maxProducts : 50,
+        maxCustomers: freePlan ? freePlan.limits.maxCustomers : 100,
+        maxUsers: freePlan ? freePlan.limits.maxUsers : 3,
       },
     });
 
@@ -120,7 +124,7 @@ class AuthController {
         details: { ip: req.ip },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     // Get user permissions
@@ -316,10 +320,9 @@ class AuthController {
   addUser = catchAsync(async (req, res, next) => {
     const { name, email, phone, password, role } = req.body;
 
-    // Validate role
-    const allowedRoles = ['vendor', 'coordinator', 'supplier', 'customer'];
-    if (!allowedRoles.includes(role)) {
-      return next(AppError.badRequest('الدور غير مسموح به'));
+    // Basic role string validation
+    if (!role || typeof role !== 'string') {
+      return next(AppError.badRequest('يرجى تحديد الدور'));
     }
 
     if (!password || password.length < 8) {
@@ -352,7 +355,7 @@ class AuthController {
    */
   getTenantUsers = catchAsync(async (req, res, next) => {
     const { page, limit, skip } = Helpers.getPaginationParams(req.query);
-    const filter = { 
+    const filter = {
       tenant: req.tenantId,
       _id: { $ne: req.user._id } // Exclude current user
     };

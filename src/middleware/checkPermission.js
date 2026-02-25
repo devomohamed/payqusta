@@ -23,17 +23,22 @@ const checkPermission = (resource, action) => {
       }
 
       // If user has custom role, check its permissions
+      let roleDoc = null;
       if (user.customRole) {
-        const role = await Role.findById(user.customRole);
-        if (!role) {
-          return next(AppError.forbidden('الدور غير موجود'));
+        roleDoc = await Role.findById(user.customRole);
+      } else {
+        const { ROLES } = require('../config/constants');
+        const standardRoles = Object.values(ROLES);
+        if (!standardRoles.includes(user.role)) {
+          roleDoc = await Role.findOne({ name: user.role, tenant: user.tenant });
         }
+      }
 
-        const permission = role.permissions.find(p => p.resource === resource);
+      if (roleDoc) {
+        const permission = roleDoc.permissions.find(p => p.resource === resource);
         if (!permission || !permission.actions.includes(action)) {
           return next(AppError.forbidden('ليس لديك صلاحية لهذا الإجراء'));
         }
-
         return next();
       }
 
@@ -67,9 +72,19 @@ const getUserPermissions = async (user) => {
     }));
   }
 
+  let roleDoc = null;
   if (user.customRole) {
-    const role = await Role.findById(user.customRole);
-    return role ? role.permissions : [];
+    roleDoc = await Role.findById(user.customRole);
+  } else {
+    const { ROLES } = require('../config/constants');
+    const standardRoles = Object.values(ROLES);
+    if (!standardRoles.includes(user.role)) {
+      roleDoc = await Role.findOne({ name: user.role, tenant: user.tenant });
+    }
+  }
+
+  if (roleDoc) {
+    return roleDoc.permissions;
   }
 
   const defaultRole = DEFAULT_ROLES[user.role.toUpperCase()];

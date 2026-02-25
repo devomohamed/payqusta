@@ -72,12 +72,22 @@ const protect = async (req, res, next) => {
  */
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return next(
-        AppError.forbidden(`الدور "${req.user.role}" غير مصرح له بالوصول`)
-      );
+    if (roles.includes(req.user.role)) {
+      return next();
     }
-    next();
+
+    // Check if this is a custom role (not in standard predefined roles)
+    const { ROLES } = require('../config/constants');
+    const standardRoles = Object.values(ROLES);
+
+    if (!standardRoles.includes(req.user.role)) {
+      // It's a custom dynamic role, we let the `checkPermission` middleware handle it
+      return next();
+    }
+
+    return next(
+      AppError.forbidden(`الدور "${req.user.role}" غير مصرح له بالوصول`)
+    );
   };
 };
 

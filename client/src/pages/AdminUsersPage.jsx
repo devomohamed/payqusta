@@ -5,8 +5,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
-import { adminApi } from '../store';
+import { adminApi, api } from '../store';
 import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
+import { Link } from 'react-router-dom';
 import Pagination from '../components/Pagination';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -19,6 +20,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -79,8 +81,18 @@ export default function AdminUsersPage() {
     }
   };
 
+  const loadRoles = async () => {
+    try {
+      const res = await api.get('/roles');
+      setRoles(res.data.data || []);
+    } catch (err) {
+      console.error('Error loading roles:', err);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadRoles();
     if (isSuperAdmin) {
       loadTenants();
     } else {
@@ -422,7 +434,12 @@ export default function AdminUsersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">الدور</label>
+                  <div className="flex justify-between mb-2">
+                    <label className="block text-sm font-bold">الدور</label>
+                    <Link to="/roles" className="text-xs text-primary-500 hover:text-primary-600 font-medium">
+                      إدارة الأدوار
+                    </Link>
+                  </div>
                   <select
                     value={form.role}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
@@ -430,6 +447,9 @@ export default function AdminUsersPage() {
                   >
                     <option value="vendor">Vendor</option>
                     <option value="coordinator">Coordinator</option>
+                    {roles.map(r => (
+                      <option key={r._id} value={r.name}>{r.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -527,7 +547,12 @@ export default function AdminUsersPage() {
                   <p className="text-xs text-gray-400 mt-1">مطلوب · 8 أحرف على الأقل</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">الدور</label>
+                  <div className="flex justify-between mb-2">
+                    <label className="block text-sm font-bold">الدور</label>
+                    <Link to="/roles" className="text-xs text-primary-500 hover:text-primary-600 font-medium">
+                      إدارة الأدوار
+                    </Link>
+                  </div>
                   <select
                     value={form.role}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
@@ -535,6 +560,9 @@ export default function AdminUsersPage() {
                   >
                     <option value="vendor">Vendor</option>
                     <option value="coordinator">Coordinator</option>
+                    {roles.map(r => (
+                      <option key={r._id} value={r.name}>{r.name}</option>
+                    ))}
                   </select>
                 </div>
               </>

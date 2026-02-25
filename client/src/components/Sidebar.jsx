@@ -12,7 +12,7 @@ import {
 import { useAuthStore } from '../store';
 
 export default function Sidebar({ open, onClose }) {
-  const { user, tenant, logout } = useAuthStore();
+  const { user, tenant, logout, permissions } = useAuthStore();
   const location = useLocation();
   const { t, i18n } = useTranslation('admin');
   const isRTL = i18n.dir() === 'rtl';
@@ -41,6 +41,11 @@ export default function Sidebar({ open, onClose }) {
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const hasPermission = (resource) => {
+    if (user?.role === 'admin' || !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com') return true;
+    return permissions?.some(p => p.resource === resource && p.actions.includes('read'));
   };
 
   // Check if paths are active
@@ -163,10 +168,7 @@ export default function Sidebar({ open, onClose }) {
           </>
         )}
 
-        {/* Staff Tools - Cash Drawer (Shift Management) */}
-        {!isSystemSuperAdmin && (
-          <NavItem to="/cash-drawer" icon={DollarSign} label={t('sidebar.cash_drawer')} />
-        )}
+        {/* Staff Tools */}
 
         {/* Dashboard Dropdown */}
         <div>
@@ -187,12 +189,12 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
 
-        {!isSystemSuperAdmin && (
+        {!isSystemSuperAdmin && hasPermission('invoices') && (
           <NavItem to="/quick-sale" icon={Zap} label={t('sidebar.quick_sale')} />
         )}
 
         {/* Products Dropdown */}
-        {!isSystemSuperAdmin && (
+        {!isSystemSuperAdmin && (hasPermission('products') || hasPermission('stock_adjustments')) && (
           <div>
             <DropdownButton
               isOpen={productsOpen}
@@ -203,9 +205,15 @@ export default function Sidebar({ open, onClose }) {
             />
             <div className={`overflow-hidden transition-all duration-200 ${productsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
-                <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} />
-                <SubNavItem to="/stock-adjustments" icon={Archive} label={t('sidebar.stock_adjustments')} />
-                <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} />
+                {hasPermission('products') && (
+                  <>
+                    <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} />
+                    <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} />
+                  </>
+                )}
+                {hasPermission('stock_adjustments') && (
+                  <SubNavItem to="/stock-adjustments" icon={Archive} label={t('sidebar.stock_adjustments')} />
+                )}
               </div>
             </div>
           </div>
@@ -213,8 +221,8 @@ export default function Sidebar({ open, onClose }) {
 
         {!isSystemSuperAdmin && (
           <>
-            <NavItem to="/customers" icon={Users} label={t('sidebar.customers')} />
-            <NavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} />
+            {hasPermission('customers') && <NavItem to="/customers" icon={Users} label={t('sidebar.customers')} />}
+            {hasPermission('invoices') && <NavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} />}
           </>
         )}
 
@@ -222,7 +230,7 @@ export default function Sidebar({ open, onClose }) {
           <NavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} />
         )}
 
-        {!isSystemSuperAdmin && (user?.role === 'admin' || user?.role === 'vendor') && (
+        {!isSystemSuperAdmin && (user?.role === 'admin' || user?.role === 'vendor' || hasPermission('settings')) && (
           <>
             <NavItem to="/returns-management" icon={RefreshCcw} label={t('sidebar.returns')} />
             <NavItem to="/kyc-review" icon={FileCheck} label={t('sidebar.kyc_documents')} />
@@ -234,73 +242,82 @@ export default function Sidebar({ open, onClose }) {
 
         {!isSystemSuperAdmin && (
           <>
-            <NavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} />
-            <NavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} />
+            {hasPermission('suppliers') && <NavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} />}
+            {hasPermission('expenses') && <NavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} />}
           </>
         )}
 
         {/* Reports Dropdown */}
-        <div>
-          <DropdownButton
-            isOpen={reportsOpen}
-            isActive={isReportsActive}
-            onClick={() => setReportsOpen(!reportsOpen)}
-            icon={BarChart3}
-            label={isSystemSuperAdmin ? t('sidebar.system_analytics') : t('sidebar.reports')}
-          />
-          <div className={`overflow-hidden transition-all duration-200 ${reportsOpen ? 'max-h-60 mt-1' : 'max-h-0'}`}>
-            <div className="space-y-1 py-1">
-              {isSystemSuperAdmin ? (
-                <>
-                  <SubNavItem to="/super-admin/analytics" icon={PieChart} label={t('sidebar.store_revenue')} />
-                  <SubNavItem to="/admin/statistics" icon={TrendingUp} label={t('sidebar.system_stats')} />
-                </>
-              ) : (
-                <>
-                  <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} />
-                  <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} />
-                  <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} />
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-
-        {/* Tools Dropdown - Only for regular Admin */}
-        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
+        {(isSystemSuperAdmin || hasPermission('reports')) && (
           <div>
             <DropdownButton
-              isOpen={toolsOpen}
-              isActive={isToolsActive}
-              onClick={() => setToolsOpen(!toolsOpen)}
-              icon={Database}
-              label={t('sidebar.tools')}
+              isOpen={reportsOpen}
+              isActive={isReportsActive}
+              onClick={() => setReportsOpen(!reportsOpen)}
+              icon={BarChart3}
+              label={isSystemSuperAdmin ? t('sidebar.system_analytics') : t('sidebar.reports')}
             />
-            <div className={`overflow-hidden transition-all duration-200 ${toolsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
+            <div className={`overflow-hidden transition-all duration-200 ${reportsOpen ? 'max-h-60 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
-                <SubNavItem to="/cash-drawer" icon={DollarSign} label={t('sidebar.cash_management')} />
-                <SubNavItem to="/import" icon={Upload} label={t('sidebar.import_data')} />
-                <SubNavItem to="/backup" icon={Database} label={t('sidebar.backup')} />
+                {isSystemSuperAdmin ? (
+                  <>
+                    <SubNavItem to="/super-admin/analytics" icon={PieChart} label={t('sidebar.store_revenue')} />
+                    <SubNavItem to="/admin/statistics" icon={TrendingUp} label={t('sidebar.system_stats')} />
+                  </>
+                ) : (
+                  <>
+                    <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} />
+                    <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} />
+                    <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} />
+                  </>
+                )}
               </div>
             </div>
           </div>
         )}
 
+
+        {/* Tools Dropdown - Only for regular Admin */}
+        {
+          (user?.role === 'admin' && !isSystemSuperAdmin) && (
+            <div>
+              <DropdownButton
+                isOpen={toolsOpen}
+                isActive={isToolsActive}
+                onClick={() => setToolsOpen(!toolsOpen)}
+                icon={Database}
+                label={t('sidebar.tools')}
+              />
+              <div className={`overflow-hidden transition-all duration-200 ${toolsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
+                <div className="space-y-1 py-1">
+                  <SubNavItem to="/import" icon={Upload} label={t('sidebar.import_data')} />
+                  <SubNavItem to="/backup" icon={Database} label={t('sidebar.backup')} />
+                </div>
+              </div>
+            </div>
+          )
+        }
+
         {/* Branches - Only for regular Admin */}
-        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/branches" icon={Building2} label={t('sidebar.branches')} />
-        )}
+        {
+          (user?.role === 'admin' && !isSystemSuperAdmin) && (
+            <NavItem to="/branches" icon={Building2} label={t('sidebar.branches')} />
+          )
+        }
 
         {/* Cameras - Only for regular Admin */}
-        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} />
-        )}
+        {
+          (user?.role === 'admin' && !isSystemSuperAdmin) && (
+            <NavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} />
+          )
+        }
 
         {/* Subscriptions - Only for regular Admin */}
-        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} />
-        )}
+        {
+          (user?.role === 'admin' && !isSystemSuperAdmin) && (
+            <NavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} />
+          )
+        }
 
         {/* Settings Dropdown */}
         <div>
@@ -320,10 +337,10 @@ export default function Sidebar({ open, onClose }) {
             </div>
           </div>
         </div>
-      </nav>
+      </nav >
 
       {/* User Card */}
-      <div className="p-3 border-t border-gray-100 dark:border-gray-800">
+      < div className="p-3 border-t border-gray-100 dark:border-gray-800" >
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {user?.name?.charAt(0) || 'U'}
@@ -340,8 +357,8 @@ export default function Sidebar({ open, onClose }) {
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 
   return (

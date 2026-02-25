@@ -49,6 +49,7 @@ api.interceptors.response.use(
 export const useAuthStore = create((set, get) => ({
   user: null,
   tenant: null,
+  permissions: [],
   token: localStorage.getItem('payqusta_token'),
   isAuthenticated: !!localStorage.getItem('payqusta_token'),
   loading: false,
@@ -62,6 +63,7 @@ export const useAuthStore = create((set, get) => ({
       set({
         user: data.data.user,
         tenant: data.data.tenant,
+        permissions: data.data.permissions || [],
         token: data.data.token,
         isAuthenticated: true,
         loading: false,
@@ -81,6 +83,7 @@ export const useAuthStore = create((set, get) => ({
       set({
         user: data.data.user,
         tenant: data.data.tenant,
+        permissions: data.data.permissions || [],
         token: data.data.token,
         isAuthenticated: true,
         loading: false,
@@ -99,7 +102,12 @@ export const useAuthStore = create((set, get) => ({
     set({ loadingUser: true });
     try {
       const { data } = await api.get('/auth/me');
-      set({ user: data.data.user, tenant: data.data.tenant, loadingUser: false });
+      set({
+        user: data.data.user,
+        tenant: data.data.tenant,
+        permissions: data.data.permissions || [],
+        loadingUser: false
+      });
     } catch (error) {
       set({ isAuthenticated: false, user: null, loadingUser: false });
     }
@@ -110,7 +118,7 @@ export const useAuthStore = create((set, get) => ({
     const token = get().token || localStorage.getItem('payqusta_token');
 
     // Clear client auth state immediately to avoid route bounce and double-click logout.
-    set({ user: null, tenant: null, token: null, isAuthenticated: false, loggingOut: true });
+    set({ user: null, tenant: null, permissions: [], token: null, isAuthenticated: false, loggingOut: true });
     localStorage.removeItem('payqusta_token');
 
     try {
@@ -134,7 +142,7 @@ export const useAuthStore = create((set, get) => ({
       console.error('Logout all API failed:', error);
     } finally {
       localStorage.removeItem('payqusta_token');
-      set({ user: null, tenant: null, token: null, isAuthenticated: false });
+      set({ user: null, tenant: null, permissions: [], token: null, isAuthenticated: false });
       window.location.href = '/login';
     }
   },
@@ -152,6 +160,7 @@ export const useAuthStore = create((set, get) => ({
         token: data.data.token,
         user: meRes.data.data.user,
         tenant: meRes.data.data.tenant,
+        permissions: meRes.data.data.permissions || [],
         loading: false
       });
       window.location.href = '/'; // Refresh to clear any stale state

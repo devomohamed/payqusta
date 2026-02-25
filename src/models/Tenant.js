@@ -174,8 +174,8 @@ tenantSchema.pre('save', function (next) {
     this.subscription.plan = null;
   }
 
-  // Set trial if new tenant (14 days freemium)
-  if (this.isNew && !this.subscription.trialEndsAt) {
+  // Set trial if new tenant (14 days freemium), unless already active (e.g., Free Plan)
+  if (this.isNew && !this.subscription.trialEndsAt && this.subscription.status !== 'active') {
     const trialDays = 14;
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + trialDays);

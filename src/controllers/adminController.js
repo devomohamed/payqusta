@@ -78,7 +78,7 @@ class AdminController {
    */
   getTenants = catchAsync(async (req, res, next) => {
     const { page, limit, skip, sort } = Helpers.getPaginationParams(req.query);
-    
+
     const filter = { isActive: true };
     if (req.query.search) {
       filter.$or = [
@@ -250,7 +250,7 @@ class AdminController {
       ];
     }
     if (req.query.role) filter.role = req.query.role;
-    
+
     // Filter by tenant (force if not super admin)
     if (req.user.isSuperAdmin) {
       if (req.query.tenant) filter.tenant = req.query.tenant;
@@ -280,9 +280,9 @@ class AdminController {
   createUser = catchAsync(async (req, res, next) => {
     const { name, email, phone, password, role, tenantId, branch } = req.body;
 
-    // Validate role
-    if (!['vendor', 'coordinator'].includes(role)) {
-      return next(AppError.badRequest('الدور يجب أن يكون vendor أو coordinator'));
+    // Basic role string validation
+    if (!role || typeof role !== 'string') {
+      return next(AppError.badRequest('يرجى تحديد الدور'));
     }
 
     // Ensure tenantId is correct for non-super admins
@@ -311,7 +311,7 @@ class AdminController {
       password,
       role,
       tenant: targetTenantId,
-      branch,
+      branch: branch || null,
     });
 
     ApiResponse.created(res, user, 'تم إنشاء المستخدم بنجاح');
@@ -375,7 +375,7 @@ class AdminController {
 
     if (req.query.search) {
       const searchRegex = { $regex: req.query.search, $options: 'i' };
-      
+
       // Find users matching search first
       const users = await User.find({
         $or: [
@@ -383,7 +383,7 @@ class AdminController {
           { email: searchRegex }
         ]
       }).select('_id');
-      
+
       const userIds = users.map(u => u._id);
 
       filter.$or = [
@@ -397,7 +397,7 @@ class AdminController {
 
     if (req.query.action) filter.action = req.query.action;
     if (req.query.resource) filter.resource = req.query.resource;
-    
+
     // Filter by tenant (force if not super admin)
     if (req.user.isSuperAdmin) {
       if (req.query.tenant) filter.tenant = req.query.tenant;
