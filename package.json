@@ -5,6 +5,9 @@
   "description": "Root package for Evennode deployment",
   "scripts": {
     "start": "node backend/server.js",
-    "postinstall": "npm --prefix backend install"
+    "postinstall": "npm --prefix backend install --no-package-lock"
   }
+
 }
+
+

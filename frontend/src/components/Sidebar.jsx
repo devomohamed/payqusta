@@ -4,16 +4,16 @@ import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, Users, FileText, Truck,
   Settings, LogOut, X, Zap, BarChart3, Target, Receipt,
-  AlertTriangle, ChevronDown, ChevronLeft, Boxes, Clock,
+  AlertTriangle, ChevronDown, ChevronLeft, Boxes, Clock, Search, FolderTree,
   PieChart, TrendingUp, Crown, Building2, Shield, Activity,
   Upload, Database, Archive, DollarSign, ShoppingCart, Video, Bell,
-  ShoppingBag, RefreshCcw, MessageCircle, FileCheck, Star, Tag,
+  ShoppingBag, RefreshCcw, MessageCircle, FileCheck, Star, Tag, CheckSquare, Award,
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import AnimatedBrandLogo from './AnimatedBrandLogo';
 
 export default function Sidebar({ open, onClose }) {
-  const { user, tenant, logout, permissions } = useAuthStore();
+  const { user, tenant, logout, permissions, can } = useAuthStore();
   const location = useLocation();
   const { t, i18n } = useTranslation('admin');
   const isRTL = i18n.dir() === 'rtl';
@@ -28,10 +28,28 @@ export default function Sidebar({ open, onClose }) {
     location.pathname.startsWith('/admin')
   );
   const [productsOpen, setProductsOpen] = useState(
-    location.pathname.startsWith('/products') || location.pathname === '/low-stock'
+    location.pathname.startsWith('/products') || location.pathname === '/low-stock' || location.pathname === '/stocktake'
+  );
+  const [salesOpen, setSalesOpen] = useState(
+    location.pathname === '/quick-sale' || location.pathname === '/customers' || location.pathname === '/invoices'
+  );
+  const [portalOpen, setPortalOpen] = useState(
+    location.pathname === '/portal-orders' ||
+    location.pathname === '/returns-management' ||
+    location.pathname === '/kyc-review' ||
+    location.pathname === '/support-messages' ||
+    location.pathname === '/reviews' ||
+    location.pathname === '/coupons'
+  );
+  const [storeOpen, setStoreOpen] = useState(
+    location.pathname === '/suppliers' ||
+    location.pathname === '/expenses' ||
+    location.pathname === '/branches' ||
+    location.pathname === '/cameras' ||
+    location.pathname === '/subscriptions'
   );
   const [reportsOpen, setReportsOpen] = useState(
-    location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/business-reports'
+    location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/business-reports' || location.pathname === '/financials'
   );
   const [toolsOpen, setToolsOpen] = useState(
     location.pathname === '/import' || location.pathname === '/backup'
@@ -44,15 +62,25 @@ export default function Sidebar({ open, onClose }) {
     await logout();
   };
 
-  const hasPermission = (resource) => {
-    if (user?.role === 'admin' || !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com') return true;
-    return permissions?.some(p => p.resource === resource && p.actions.includes('read'));
-  };
 
   // Check if paths are active
   const isDashboardActive = location.pathname === '/' || location.pathname === '/command-center';
   const isAdminActive = location.pathname.startsWith('/admin') && location.pathname !== '/admin/audit-logs';
-  const isProductsActive = location.pathname.startsWith('/products') || location.pathname === '/low-stock';
+  const isProductsActive = location.pathname.startsWith('/products') || location.pathname === '/low-stock' || location.pathname === '/stocktake';
+  const isSalesActive = location.pathname === '/quick-sale' || location.pathname === '/customers' || location.pathname === '/invoices';
+  const isPortalActive =
+    location.pathname === '/portal-orders' ||
+    location.pathname === '/returns-management' ||
+    location.pathname === '/kyc-review' ||
+    location.pathname === '/support-messages' ||
+    location.pathname === '/reviews' ||
+    location.pathname === '/coupons';
+  const isStoreActive =
+    location.pathname === '/suppliers' ||
+    location.pathname === '/expenses' ||
+    location.pathname === '/branches' ||
+    location.pathname === '/cameras' ||
+    location.pathname === '/subscriptions';
   const isReportsActive = location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/business-reports';
   const isToolsActive = location.pathname === '/import' || location.pathname === '/backup';
   const isSettingsActive = location.pathname.startsWith('/settings') || location.pathname === '/admin/audit-logs';
@@ -191,12 +219,33 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
 
-        {!isSystemSuperAdmin && hasPermission('invoices') && (
-          <NavItem to="/quick-sale" icon={Zap} label={t('sidebar.quick_sale')} />
+        {!isSystemSuperAdmin && (can('invoices', 'create') || can('customers', 'read') || can('invoices', 'read')) && (
+          <div>
+            <DropdownButton
+              isOpen={salesOpen}
+              isActive={isSalesActive}
+              onClick={() => setSalesOpen(!salesOpen)}
+              icon={Zap}
+              label="المبيعات"
+            />
+            <div className={`overflow-hidden transition-all duration-200 ${salesOpen ? 'max-h-52 mt-1' : 'max-h-0'}`}>
+              <div className="space-y-1 py-1">
+                {can('invoices', 'create') && (
+                  <SubNavItem to="/quick-sale" icon={Zap} label={t('sidebar.quick_sale')} />
+                )}
+                {can('customers', 'read') && (
+                  <SubNavItem to="/customers" icon={Users} label={t('sidebar.customers')} />
+                )}
+                {can('invoices', 'read') && (
+                  <SubNavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} />
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Products Dropdown */}
-        {!isSystemSuperAdmin && (hasPermission('products') || hasPermission('stock_adjustments')) && (
+        {!isSystemSuperAdmin && (can('products', 'read') || can('stock_adjustments', 'read')) && (
           <div>
             <DropdownButton
               isOpen={productsOpen}
@@ -205,15 +254,18 @@ export default function Sidebar({ open, onClose }) {
               icon={Package}
               label={t('sidebar.products')}
             />
-            <div className={`overflow-hidden transition-all duration-200 ${productsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
+            <div className={`overflow-y-auto transition-all duration-200 ${productsOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
-                {hasPermission('products') && (
+                {can('products', 'read') && (
                   <>
                     <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} />
+                    <SubNavItem to="/categories" icon={FolderTree} label="التصنيفات" />
+                    <SubNavItem to="/stock-search" icon={Search} label="بحث عن توفر منتج" />
                     <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} />
+                    <SubNavItem to="/stocktake" icon={CheckSquare} label="الجرد الشامل" />
                   </>
                 )}
-                {hasPermission('stock_adjustments') && (
+                {can('stock_adjustments', 'read') && (
                   <SubNavItem to="/stock-adjustments" icon={Archive} label={t('sidebar.stock_adjustments')} />
                 )}
               </div>
@@ -222,35 +274,64 @@ export default function Sidebar({ open, onClose }) {
         )}
 
         {!isSystemSuperAdmin && (
-          <>
-            {hasPermission('customers') && <NavItem to="/customers" icon={Users} label={t('sidebar.customers')} />}
-            {hasPermission('invoices') && <NavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} />}
-          </>
+          <div>
+            <DropdownButton
+              isOpen={portalOpen}
+              isActive={isPortalActive}
+              onClick={() => setPortalOpen(!portalOpen)}
+              icon={ShoppingBag}
+              label="البوابة"
+            />
+            <div className={`overflow-hidden transition-all duration-200 ${portalOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
+              <div className="space-y-1 py-1">
+                {user?.role === 'admin' && (
+                  <SubNavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} />
+                )}
+                {(user?.role === 'admin' || user?.role === 'vendor' || can('settings', 'read')) && (
+                  <>
+                    <SubNavItem to="/returns-management" icon={RefreshCcw} label={t('sidebar.returns')} />
+                    <SubNavItem to="/kyc-review" icon={FileCheck} label={t('sidebar.kyc_documents')} />
+                    <SubNavItem to="/support-messages" icon={MessageCircle} label={t('sidebar.support_messages')} />
+                    <SubNavItem to="/reviews" icon={Star} label={t('sidebar.reviews')} />
+                    <SubNavItem to="/coupons" icon={Tag} label={t('sidebar.coupons')} />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
-        {(user?.role === 'admin' && !isSystemSuperAdmin) && (
-          <NavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} />
-        )}
-
-        {!isSystemSuperAdmin && (user?.role === 'admin' || user?.role === 'vendor' || hasPermission('settings')) && (
-          <>
-            <NavItem to="/returns-management" icon={RefreshCcw} label={t('sidebar.returns')} />
-            <NavItem to="/kyc-review" icon={FileCheck} label={t('sidebar.kyc_documents')} />
-            <NavItem to="/support-messages" icon={MessageCircle} label={t('sidebar.support_messages')} />
-            <NavItem to="/reviews" icon={Star} label={t('sidebar.reviews')} />
-            <NavItem to="/coupons" icon={Tag} label={t('sidebar.coupons')} />
-          </>
-        )}
-
-        {!isSystemSuperAdmin && (
-          <>
-            {hasPermission('suppliers') && <NavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} />}
-            {hasPermission('expenses') && <NavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} />}
-          </>
+        {!isSystemSuperAdmin && (can('suppliers', 'read') || can('expenses', 'read') || user?.role === 'admin') && (
+          <div>
+            <DropdownButton
+              isOpen={storeOpen}
+              isActive={isStoreActive}
+              onClick={() => setStoreOpen(!storeOpen)}
+              icon={Building2}
+              label="إدارة المتجر"
+            />
+            <div className={`overflow-hidden transition-all duration-200 ${storeOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
+              <div className="space-y-1 py-1">
+                {can('suppliers', 'read') && (
+                  <SubNavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} />
+                )}
+                {can('expenses', 'read') && (
+                  <SubNavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} />
+                )}
+                {user?.role === 'admin' && (
+                  <>
+                    <SubNavItem to="/branches" icon={Building2} label={t('sidebar.branches')} />
+                    <SubNavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} />
+                    <SubNavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Reports Dropdown */}
-        {(isSystemSuperAdmin || hasPermission('reports')) && (
+        {(isSystemSuperAdmin || can('reports', 'read')) && (
           <div>
             <DropdownButton
               isOpen={reportsOpen}
@@ -259,7 +340,7 @@ export default function Sidebar({ open, onClose }) {
               icon={BarChart3}
               label={isSystemSuperAdmin ? t('sidebar.system_analytics') : t('sidebar.reports')}
             />
-            <div className={`overflow-hidden transition-all duration-200 ${reportsOpen ? 'max-h-60 mt-1' : 'max-h-0'}`}>
+            <div className={`overflow-y-auto transition-all duration-200 ${reportsOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
                 {isSystemSuperAdmin ? (
                   <>
@@ -269,8 +350,11 @@ export default function Sidebar({ open, onClose }) {
                 ) : (
                   <>
                     <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} />
+                    <SubNavItem to="/financials" icon={DollarSign} label="المالية والأرباح" />
+                    <SubNavItem to="/staff-performance" icon={Award} label="أداء الموظفين" />
                     <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} />
                     <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} />
+                    <SubNavItem to="/admin/audit-logs" icon={Shield} label="سجلات الأمان" />
                   </>
                 )}
               </div>
@@ -297,27 +381,6 @@ export default function Sidebar({ open, onClose }) {
                 </div>
               </div>
             </div>
-          )
-        }
-
-        {/* Branches - Only for regular Admin */}
-        {
-          (user?.role === 'admin' && !isSystemSuperAdmin) && (
-            <NavItem to="/branches" icon={Building2} label={t('sidebar.branches')} />
-          )
-        }
-
-        {/* Cameras - Only for regular Admin */}
-        {
-          (user?.role === 'admin' && !isSystemSuperAdmin) && (
-            <NavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} />
-          )
-        }
-
-        {/* Subscriptions - Only for regular Admin */}
-        {
-          (user?.role === 'admin' && !isSystemSuperAdmin) && (
-            <NavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} />
           )
         }
 

@@ -8,6 +8,7 @@ const { checkPermission } = require('../middleware/checkPermission');
 router.get('/', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getAll);
 router.get('/top', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getTopCustomers);
 router.get('/debtors', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getDebtors);
+router.get('/segments', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getSegments);
 router.get('/:id', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getById);
 router.get('/:id/transactions', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getTransactionHistory);
 router.get('/:id/statement-pdf', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'read'), customerController.getStatementPDF);
@@ -19,6 +20,8 @@ router.post('/:id/send-statement', authorize('vendor', 'admin'), checkPermission
 router.post('/:id/send-statement-pdf', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'update'), customerController.sendStatementPDF);
 router.post('/:id/block-sales', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.blockSales);
 router.post('/:id/unblock-sales', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.unblockSales);
+router.post('/:id/redeem-points', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.redeemPoints);
+router.post('/broadcast', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.sendBroadcast);
 router.put('/:id', authorize('vendor', 'admin'), checkPermission('customers', 'update'), auditLog('update', 'customer'), customerController.update);
 router.put('/:id/whatsapp-preferences', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.updateWhatsAppPreferences);
 router.delete('/:id', authorize('vendor', 'admin'), checkPermission('customers', 'delete'), auditLog('delete', 'customer'), customerController.delete);

@@ -11,6 +11,23 @@ const WhatsAppService = require('../services/WhatsAppService');
 const catchAsync = require('../utils/catchAsync');
 const logger = require('../utils/logger');
 
+const normalizeCustomDomain = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
+  const raw = String(value).trim().toLowerCase();
+  if (!raw) return null;
+
+  const withoutProtocol = raw.replace(/^https?:\/\//, '');
+  const hostOnly = withoutProtocol.split('/')[0].split(':')[0].trim();
+
+  if (!hostOnly || !hostOnly.includes('.')) {
+    throw AppError.badRequest('يرجى إدخال نطاق صحيح مثل shop.example.com');
+  }
+
+  return hostOnly;
+};
+
 class SettingsController {
 
   /**
@@ -35,6 +52,9 @@ class SettingsController {
         businessInfo: tenant.businessInfo,
         settings: tenant.settings,
         branding: tenant.branding,
+        customDomain: tenant.customDomain,
+        customDomainStatus: tenant.customDomainStatus,
+        customDomainLastCheckedAt: tenant.customDomainLastCheckedAt,
         subscription: tenant.subscription,
         whatsapp: req.user ? tenant.whatsapp : undefined, // Only show WhatsApp full config to logged in users
       },
@@ -55,10 +75,34 @@ class SettingsController {
   getStorefrontSettings = catchAsync(async (req, res, next) => {
     // Find the first active tenant or by slug if provided
     const tenantId = req.query.tenant || req.headers['x-tenant-id'];
+    const requestHost = (req.headers['x-forwarded-host'] || req.headers.host || '')
+      .split(',')[0]
+      .trim()
+      .split(':')[0]
+      .toLowerCase();
     let tenant;
 
     if (tenantId) {
       tenant = await Tenant.findById(tenantId);
+    } else if (
+      requestHost &&
+      requestHost !== 'localhost' &&
+      requestHost !== '127.0.0.1' &&
+      !requestHost.endsWith('.run.app') &&
+      !requestHost.endsWith('.a.run.app')
+    ) {
+      tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
+      if (tenant) {
+        Tenant.updateOne(
+          { _id: tenant._id },
+          {
+            $set: {
+              customDomainStatus: 'connected',
+              customDomainLastCheckedAt: new Date(),
+            },
+          }
+        ).catch(() => {});
+      }
     } else {
       tenant = await Tenant.findOne(); // Get default for now
     }
@@ -160,24 +204,38 @@ class SettingsController {
    * Update branding settings (colors, logo)
    */
   updateBranding = catchAsync(async (req, res, next) => {
-    const { primaryColor, secondaryColor, logo, darkMode } = req.body;
+    const { primaryColor, secondaryColor, logo, darkMode, customDomain } = req.body;
+    const normalizedCustomDomain = normalizeCustomDomain(customDomain);
 
-    const tenant = await Tenant.findByIdAndUpdate(
-      req.tenantId,
-      {
-        branding: {
-          primaryColor: primaryColor || '#6366f1',
-          secondaryColor: secondaryColor || '#10b981',
-          logo,
-          darkMode: darkMode || false,
-        },
-      },
-      { new: true, runValidators: true }
-    );
+    const tenant = await Tenant.findById(req.tenantId);
 
-    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+    if (!tenant) return next(AppError.notFound('Store not found'));
 
-    ApiResponse.success(res, { branding: tenant.branding }, 'تم تحديث الهوية البصرية بنجاح');
+    tenant.branding = {
+      primaryColor: primaryColor || '#6366f1',
+      secondaryColor: secondaryColor || '#10b981',
+      logo,
+      darkMode: darkMode || false,
+    };
+
+    if (normalizedCustomDomain !== undefined) {
+      tenant.customDomain = normalizedCustomDomain;
+      if (normalizedCustomDomain) {
+        tenant.customDomainStatus = 'pending';
+      } else {
+        tenant.customDomainStatus = 'not_configured';
+        tenant.customDomainLastCheckedAt = null;
+      }
+    }
+
+    await tenant.save();
+
+    ApiResponse.success(res, {
+      branding: tenant.branding,
+      customDomain: tenant.customDomain,
+      customDomainStatus: tenant.customDomainStatus,
+      customDomainLastCheckedAt: tenant.customDomainLastCheckedAt,
+    }, 'Branding settings updated successfully');
   });
 
   /**
@@ -514,7 +572,5 @@ class SettingsController {
 
 
 module.exports = new SettingsController();
-
-
 
 

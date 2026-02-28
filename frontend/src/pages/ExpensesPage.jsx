@@ -15,6 +15,7 @@ const CATEGORY_LABELS = {
   rent: '🏠 إيجار', salaries: '👥 رواتب', utilities: '💡 كهرباء/ماء', supplies: '📦 مستلزمات',
   marketing: '📢 تسويق', transport: '🚗 نقل', maintenance: '🔧 صيانة', other: '📋 أخرى',
 };
+import { format } from 'date-fns';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
@@ -25,7 +26,7 @@ export default function ExpensesPage() {
   const [editItem, setEditItem] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [filter, setFilter] = useState({ category: '' });
+  const [filter, setFilter] = useState({ category: '', from: format(new Date().setDate(1), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') });
   const [form, setForm] = useState({
     title: '', description: '', category: 'other', amount: '', date: new Date().toISOString().split('T')[0],
     frequency: 'once', isRecurring: false, paymentMethod: 'cash', reference: '',
@@ -48,16 +49,16 @@ export default function ExpensesPage() {
 
   const loadSummary = async () => {
     try {
-      const res = await expensesApi.getSummary({});
+      const res = await expensesApi.getSummary({ from: filter.from, to: filter.to });
       setSummary(res.data.data);
-    } catch {}
+    } catch { }
   };
 
   const loadCategories = async () => {
     try {
       const res = await expensesApi.getCategories();
       setCategories(res.data.data?.categories || []);
-    } catch {}
+    } catch { }
   };
 
   const handleSubmit = async (e) => {

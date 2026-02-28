@@ -1,0 +1,52 @@
+
+مرحباً، الحاج قهراوي 👋
+أنت تعمل الآن في: undefined         ايضا لما جيت   اضيف تصنيف فرعي التصنيف الأب
+
+  مل يعرض الاصناف المرتببطة               بة  
+
+  التصنيف الرئيسي *
+ 
+         في دروب داون دب واي
+         
+
+          ثنغ  لي اثناف تابعة لي   يتتعرض علي شكل سوب  لست بي شكل وانميشان وتثميم جميل  يكون فيها بخ ولما ابخس بي اي حاحة   يعرضال وايضا  لو   يبقا 
+
+          Failed to load resource: net::ERR_QUIC_PROTOCOL_ERROR.QUIC_TOO_MANY_RTOSUnderstand this error
+index-jf3lt6bc.js:1023 📤 Scanning uploaded image...
+index-jf3lt6bc.js:1023 ✅ Barcode from image: 6224001106972
+index-jf3lt6bc.js:1023 📋 Format: 7
+api/v1/products/barcode/6224001106972:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Uncaught (in promise) Error: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Error handling response: TypeError: Cannot read properties of undefined (reading 'options')
+    at A.<anonymous> (chrome-extension://mgijmajocgfcbeboacabfgobmjgjcoja/content.min.js:17:423)Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+products:1 Unchecked runtime.lastError: Could not establish connection. Receiving end does not exist.Understand this error
+api/v1/products:1  Failed to load resource: the server responded with a status of 422 ()Understand this error
+index-jf3lt6bc.js:262  POST https://payqusta-252009790975.us-central1.run.app/api/v1/products 422 (Unprocessable Content)
+(anonymous) @ index-jf3lt6bc.js:262
+xhr @ index-jf3lt6bc.js:262
+nS @ index-jf3lt6bc.js:264
+Promise.then
+_request @ index-jf3lt6bc.js:265
+request @ index-jf3lt6bc.js:264
+(anonymous) @ index-jf3lt6bc.js:265
+(anonymous) @ index-jf3lt6bc.js:260
+create @ index-jf3lt6bc.js:265
+ye @ index-jf3lt6bc.js:1091
+aL @ index-jf3lt6bc.js:38
+iL @ index-jf3lt6bc.js:38
+oL @ index-jf3lt6bc.js:38
+I4 @ index-jf3lt6bc.js:38
+YP @ index-jf3lt6bc.js:38
+(anonymous) @ index-jf3lt6bc.js:38
+vj @ index-jf3lt6bc.js:41
+bP @ index-jf3lt6bc.js:38
+By @ index-jf3lt6bc.js:38
+G2 @ index-jf3lt6bc.js:38
+NL @ index-jf3lt6bc.js:38Understand this error

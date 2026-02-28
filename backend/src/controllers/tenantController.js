@@ -8,8 +8,76 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const jwt = require('jsonwebtoken');
 const catchAsync = require('../utils/catchAsync');
+const mongoose = require('mongoose');
 
 class TenantController {
+  /**
+   * Create a new Tenant (Store) under the current User's account.
+   * POST /api/v1/auth/create-store
+   */
+  createMyTenant = catchAsync(async (req, res, next) => {
+    const { name, phone, address } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) return next(AppError.notFound('المستخدم غير موجود'));
+
+    // Only vendors/admins can create new stores
+    if (user.role !== 'admin' && user.role !== 'vendor' && !user.isSuperAdmin) {
+      return next(AppError.forbidden('غير مصرح لك بإنشاء متاجر جديدة'));
+    }
+
+    if (!name) {
+      return next(AppError.badRequest('اسم المتجر مطلوب'));
+    }
+
+    // Check if free plan exists, otherwise null
+    const freePlan = await mongoose.model('Plan').findOne({ price: 0 });
+
+    const tenant = await Tenant.create({
+      name,
+      slug: name.toLowerCase().replace(/[^\w\u0621-\u064A\s-]/g, '').replace(/\s+/g, '-'),
+      owner: user._id,
+      businessInfo: {
+        phone: phone || user.phone,
+        email: user.email,
+        address: address || '',
+      },
+      subscription: {
+        plan: freePlan ? freePlan._id : null,
+        status: 'active',
+        trialEndsAt: null,
+        maxProducts: freePlan ? freePlan.limits.maxProducts : 50,
+        maxCustomers: freePlan ? freePlan.limits.maxCustomers : 100,
+        maxUsers: freePlan ? freePlan.limits.maxUsers : 3,
+      },
+      settings: {
+        categories: [
+          { name: 'عام', isVisible: true },
+          { name: 'ملابس', isVisible: true },
+          { name: 'إلكترونيات', isVisible: true },
+          { name: 'مشروبات', isVisible: true },
+          { name: 'مأكولات', isVisible: true }
+        ],
+      }
+    });
+
+    // Add to user's tenants array if not already there
+    if (!user.tenants.includes(tenant._id)) {
+      user.tenants.push(tenant._id);
+      await user.save({ validateBeforeSave: false });
+    }
+
+    ApiResponse.created(res, {
+      tenant: {
+        _id: tenant._id,
+        name: tenant.name,
+        slug: tenant.slug,
+        subscription: tenant.subscription,
+        isActive: tenant.isActive
+      }
+    }, 'تم إنشاء المتجر بنجاح');
+  });
+
   /**
    * Legacy route kept for backward compatibility only.
    * Branches are now managed through /api/v1/branches.

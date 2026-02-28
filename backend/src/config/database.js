@@ -14,6 +14,7 @@ const connectDB = async () => {
       minPoolSize: 2,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      family: 4 // Force IPv4 to fix DNS resolution issues with MongoDB Atlas on some ISPs
     });
 
     logger.info(`✅ MongoDB Connected: ${conn.connection.host}`);

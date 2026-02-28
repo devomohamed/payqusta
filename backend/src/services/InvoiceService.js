@@ -76,24 +76,45 @@ class InvoiceService {
           throw AppError.notFound(`المنتج غير موجود: ${item.productId}`);
         }
 
-        if (product.stock.quantity < item.quantity) {
-          throw AppError.badRequest(`الكمية المطلوبة من "${product.name}" أكبر من المخزون (${product.stock.quantity})`);
+        // Check branch stock if branchId is provided
+        const branchId = data.branchId || user.branch;
+        const variant = item.variantId ? product.variants.id(item.variantId) : null;
+
+        if (branchId) {
+          if (variant) {
+            const branchStock = variant.inventory?.find(inv => inv.branch.toString() === branchId.toString());
+            if (!branchStock || branchStock.quantity < item.quantity) {
+              throw AppError.badRequest(`الكمية المطلوبة من "${product.name} - ${variant.sku}" غير متوفرة في هذا الفرع (المتاح: ${branchStock?.quantity || 0})`);
+            }
+          } else {
+            const branchStock = product.inventory?.find(inv => inv.branch.toString() === branchId.toString());
+            if (!branchStock || branchStock.quantity < item.quantity) {
+              throw AppError.badRequest(`الكمية المطلوبة من "${product.name}" غير متوفرة في هذا الفرع (المتاح: ${branchStock?.quantity || 0})`);
+            }
+          }
+          productsToUpdate.push({ product, quantity: item.quantity, branchId, variantId: item.variantId });
+        } else {
+          const availableQty = variant ? (variant.stock?.quantity || 0) : (product.stock.quantity || 0);
+          if (availableQty < item.quantity) {
+            throw AppError.badRequest(`الكمية المطلوبة من "${product.name}${variant ? ' (' + variant.sku + ')' : ''}" أكبر من المخزون (${availableQty})`);
+          }
+          productsToUpdate.push({ product, quantity: item.quantity, variantId: item.variantId });
         }
 
-        const totalPrice = product.price * item.quantity;
+        const itemPrice = (variant && variant.price) ? variant.price : product.price;
+        const totalPrice = itemPrice * item.quantity;
         subtotal += totalPrice;
-        totalProfit += (product.price - (product.cost || 0)) * item.quantity;
+        totalProfit += (itemPrice - (product.cost || 0)) * item.quantity;
 
         invoiceItems.push({
           product: product._id,
+          variant: item.variantId,
           productName: product.name,
-          sku: product.sku,
+          sku: variant ? variant.sku : product.sku,
           quantity: item.quantity,
-          unitPrice: product.price,
+          unitPrice: itemPrice,
           totalPrice,
         });
-
-        productsToUpdate.push({ product, quantity: item.quantity });
 
         // Trigger low stock / out of stock notifications
         if (product.stock.quantity <= 0 && !product.outOfStockAlertSent) {
@@ -192,8 +213,27 @@ class InvoiceService {
       const [invoice] = await Invoice.create([invoiceData], createOptions);
 
       // NOW deduct stock (after invoice is created successfully)
-      for (const { product, quantity } of productsToUpdate) {
-        product.stock.quantity -= quantity;
+      for (const { product, quantity, branchId, variantId } of productsToUpdate) {
+        const variant = variantId ? product.variants.id(variantId) : null;
+
+        if (branchId) {
+          if (variant) {
+            const branchStock = variant.inventory.find(inv => inv.branch.toString() === branchId.toString());
+            if (branchStock) branchStock.quantity -= quantity;
+          } else {
+            const branchStock = product.inventory.find(inv => inv.branch.toString() === branchId.toString());
+            if (branchStock) branchStock.quantity -= quantity;
+          }
+        } else {
+          if (variant) {
+            variant.stock.quantity -= quantity;
+          } else {
+            product.stock.quantity -= quantity;
+          }
+        }
+
+        // Product.pre('save') will automatically sync the global stock.quantity 
+        // if inventory is changed, and update stockStatus.
         await product.save(createOptions);
 
         // Trigger low stock / out of stock notifications (non-blocking, outside transaction)

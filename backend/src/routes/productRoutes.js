@@ -23,6 +23,9 @@ const { uploadMultiple } = require('../middleware/upload');
 router.post('/:id/upload-image', authorize('vendor', 'admin'), checkPermission('products', 'update'), uploadMultiple, productController.uploadImage);
 router.delete('/:id/images/:imageUrl', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.deleteImage);
 
+// Bulk Ops & Stocktake
+router.post('/stocktake', authorize('vendor', 'admin'), checkPermission('products', 'update'), auditLog('stocktake', 'product'), productController.stocktake);
+
 // Restock
 router.post('/:id/request-restock', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.requestRestock);
 router.post('/request-restock-bulk', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.requestRestockBulk);

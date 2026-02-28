@@ -43,6 +43,14 @@ class SupplierController {
           productNames: { $push: { name: '$name', sku: '$sku', stockQty: '$stock.quantity', stockStatus: '$stockStatus' } },
         }
       },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'categories',
+          foreignField: '_id',
+          as: 'categoryDetails'
+        }
+      }
     ]);
 
     const productMap = {};
@@ -51,7 +59,7 @@ class SupplierController {
     const enriched = suppliers.map((s) => ({
       ...s,
       productsCount: productMap[s._id.toString()]?.count || 0,
-      productCategories: productMap[s._id.toString()]?.categories || [],
+      productCategories: productMap[s._id.toString()]?.categoryDetails || [],
       totalStock: productMap[s._id.toString()]?.totalStock || 0,
       productNames: (productMap[s._id.toString()]?.productNames || []).slice(0, 10),
     }));

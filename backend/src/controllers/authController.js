@@ -97,7 +97,7 @@ class AuthController {
     }
 
     // Find user with password
-    const user = await User.findOne({ email }).select('+password').populate('tenant', 'name slug branding subscription');
+    const user = await User.findOne({ email }).select('+password').populate('tenant', 'name slug branding subscription customDomain customDomainStatus customDomainLastCheckedAt');
 
     if (!user || !(await user.comparePassword(password))) {
       return next(AppError.unauthorized('بيانات الدخول غير صحيحة'));
@@ -144,7 +144,7 @@ class AuthController {
    */
   getMe = catchAsync(async (req, res, next) => {
     const user = await User.findById(req.user._id)
-      .populate('tenant', 'name slug branding settings subscription')
+      .populate('tenant', 'name slug branding settings subscription customDomain customDomainStatus customDomainLastCheckedAt')
       .populate('branch', 'name')
       .populate('customRole');
 
@@ -427,15 +427,18 @@ class AuthController {
   logoutAll = catchAsync(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { $inc: { sessionVersion: 1 } });
 
-    await AuditLog.log({
-      tenant: req.user.tenant,
-      user: req.user._id,
-      action: 'logout_all',
-      resource: 'auth',
-      details: { ip: req.ip },
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-    });
+    // Audit log (non-blocking)
+    if (req.user) {
+      AuditLog.log({
+        tenant: req.user.tenant || req.tenantId, // Handle cases where tenant might be in different places
+        user: req.user._id,
+        action: 'logout_all',
+        resource: 'auth',
+        details: { ip: req.ip },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      }).catch((err) => logger.error(`Logout-all audit log failed: ${err.message}`));
+    }
 
     ApiResponse.success(res, null, 'تم تسجيل الخروج من جميع الأجهزة بنجاح');
   });
@@ -445,15 +448,15 @@ class AuthController {
    */
   logout = catchAsync(async (req, res, next) => {
     if (req.user) {
-      await AuditLog.log({
-        tenant: req.user.tenant,
+      AuditLog.log({
+        tenant: req.user.tenant || req.tenantId,
         user: req.user._id,
         action: 'logout',
         resource: 'auth',
         details: { ip: req.ip },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
-      });
+      }).catch((err) => logger.error(`Logout audit log failed: ${err.message}`));
     }
     ApiResponse.success(res, null, 'تم تسجيل الخروج بنجاح');
   });

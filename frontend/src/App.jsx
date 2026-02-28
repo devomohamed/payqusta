@@ -15,8 +15,13 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
+import CategoriesPage from './pages/CategoriesPage';
+import StocktakePage from './pages/StocktakePage';
 import StockAdjustmentsPage from './pages/StockAdjustmentsPage';
 import CustomersPage from './pages/CustomersPage';
+import MarketingPage from './pages/MarketingPage';
+import StaffPerformancePage from './pages/StaffPerformancePage';
+import FinancialsPage from './pages/FinancialsPage';
 import InvoicesPage from './pages/InvoicesPage';
 import SuppliersPage from './pages/SuppliersPage';
 import QuickSalePage from './pages/QuickSalePage';
@@ -54,6 +59,7 @@ import CouponsPage from './pages/CouponsPage';
 import ReferralPage from './pages/ReferralPage';
 import RevenueAnalyticsPage from './pages/RevenueAnalyticsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import StockSearchPage from './pages/StockSearchPage';
 
 // Storefront Pages
 import StorefrontLayout from './storefront/StorefrontLayout';
@@ -89,8 +95,18 @@ import PortalProductDetails from './portal/PortalProductDetails';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user, loadingUser } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (loadingUser || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+          <span className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
+          <span className="text-sm font-medium">جارٍ تحميل بيانات الحساب...</span>
+        </div>
+      </div>
+    );
+  }
   return children;
 }
 
@@ -184,9 +200,15 @@ function MainLayout() {
                 <Route path="/quick-sale" element={<QuickSalePage />} />
                 <Route path="/command-center" element={<CommandCenterPage />} />
                 <Route path="/products" element={<ProductsPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/stock-search" element={<StockSearchPage />} />
+                <Route path="/stocktake" element={<StocktakePage />} />
                 <Route path="/stock-adjustments" element={<StockAdjustmentsPage />} />
                 <Route path="/low-stock" element={<LowStockPage />} />
                 <Route path="/customers" element={<CustomersPage />} />
+                <Route path="/marketing" element={<MarketingPage />} />
+                <Route path="/financials" element={<FinancialsPage />} />
+                <Route path="/staff-performance" element={<StaffPerformancePage />} />
                 <Route path="/invoices" element={<InvoicesPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
@@ -232,13 +254,12 @@ function MainLayout() {
 
 export default function App() {
   const { dark } = useThemeStore();
-  const { isAuthenticated, getMe, user, globalLoading } = useAuthStore();
+  const { isAuthenticated, getMe, user, loadingUser, loggingOut } = useAuthStore();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      getMe().catch(() => { });
-    }
-  }, []);
+    if (!isAuthenticated || user || loadingUser) return;
+    getMe().catch(() => { });
+  }, [isAuthenticated, user, loadingUser, getMe]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -250,6 +271,35 @@ export default function App() {
     toast.success('تم تسجيل الدخول بحساب Super Admin');
     sessionStorage.setItem(key, '1');
   }, [isAuthenticated, user]);
+
+  if (loggingOut) {
+    return (
+      <div className={`fixed inset-0 z-[9999] flex items-center justify-center ${dark ? 'bg-gray-950' : 'bg-white'}`}>
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+        <div className="relative flex flex-col items-center gap-6">
+          <div className="relative w-24 h-24 mb-2">
+            <div className="absolute inset-0 bg-primary-500/10 rounded-3xl animate-pulse" />
+            <div className="absolute inset-0 border-2 border-primary-500/20 rounded-3xl animate-spin-slow" />
+            <div className="relative h-full flex items-center justify-center p-4">
+              <AnimatedBrandLogo src="/logo.png" alt="Logo" size="full" />
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <h2 className="text-xl font-black text-gray-900 dark:text-white">Pay<span className="text-primary-500">Qusta</span></h2>
+            <div className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
+              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm font-bold tracking-wide">جارٍ تسجيل الخروج بأمان...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={dark ? 'dark' : ''}>

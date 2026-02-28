@@ -24,7 +24,34 @@ const generateToken = (id) => {
   });
 };
 
-// Helper to resolve tenant from slug or header
+const getRequestHost = (req) => {
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const rawHost = forwardedHost || req.headers.host || '';
+  return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
+};
+
+const isPlatformHost = (host) => {
+  if (!host) return true;
+  return host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.run.app') ||
+    host.endsWith('.a.run.app');
+};
+
+const markCustomDomainConnected = (tenantId) => {
+  if (!tenantId) return;
+  Tenant.updateOne(
+    { _id: tenantId },
+    {
+      $set: {
+        customDomainStatus: 'connected',
+        customDomainLastCheckedAt: new Date(),
+      },
+    }
+  ).catch(() => {});
+};
+
+// Helper to resolve tenant from slug, header, or custom domain
 const resolveTenant = async (req) => {
   let tenantId = req.headers['x-tenant-id'];
   const slug = req.body.tenantSlug || req.body.storeCode;
@@ -33,6 +60,14 @@ const resolveTenant = async (req) => {
     const tenant = await Tenant.findOne({ slug, isActive: true });
     if (!tenant) return null;
     tenantId = tenant._id;
+  } else if (!tenantId) {
+    const requestHost = getRequestHost(req);
+    if (!isPlatformHost(requestHost)) {
+      const tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
+      if (!tenant) return null;
+      tenantId = tenant._id;
+      markCustomDomainConnected(tenantId);
+    }
   }
 
   return tenantId;
@@ -121,11 +156,12 @@ class PortalController {
     }
 
     const slug = tenantSlug || storeCode;
-    if (!slug) {
-      return next(AppError.badRequest('كود المتجر مطلوب'));
-    }
-
-    const tenant = await Tenant.findOne({ slug, isActive: true });
+    const requestHost = getRequestHost(req);
+    const tenant = slug
+      ? await Tenant.findOne({ slug, isActive: true })
+      : (!isPlatformHost(requestHost)
+        ? await Tenant.findOne({ customDomain: requestHost, isActive: true })
+        : null);
     if (!tenant) {
       return next(AppError.notFound('كود المتجر غير صحيح'));
     }
@@ -191,11 +227,12 @@ class PortalController {
     }
 
     const slug = tenantSlug || storeCode;
-    if (!slug) {
-      return next(AppError.badRequest('كود المتجر مطلوب'));
-    }
-
-    const tenant = await Tenant.findOne({ slug, isActive: true });
+    const requestHost = getRequestHost(req);
+    const tenant = slug
+      ? await Tenant.findOne({ slug, isActive: true })
+      : (!isPlatformHost(requestHost)
+        ? await Tenant.findOne({ customDomain: requestHost, isActive: true })
+        : null);
     if (!tenant) {
       return next(AppError.notFound('كود المتجر غير صحيح'));
     }
@@ -1975,3 +2012,6 @@ class PortalController {
 }
 
 module.exports = new PortalController();
+
+
+

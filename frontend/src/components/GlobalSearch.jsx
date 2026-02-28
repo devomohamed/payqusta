@@ -118,7 +118,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={handleClose}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
       />
 
       {/* Search Modal */}
@@ -126,7 +126,7 @@ export default function GlobalSearch({ isOpen, onClose }) {
         initial={{ opacity: 0, scale: 0.95, y: -20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: -20 }}
-        className={`fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl rounded-2xl shadow-2xl z-50 overflow-hidden ${dark ? 'bg-gray-800' : 'bg-white'
+        className={`fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl rounded-2xl shadow-2xl z-[100] overflow-hidden ${dark ? 'bg-gray-800' : 'bg-white'
           }`}
       >
         {/* Search Input */}
@@ -241,8 +241,8 @@ export default function GlobalSearch({ isOpen, onClose }) {
         {/* Footer */}
         {results && allResults.length > 0 && (
           <div className={`p-3 border-t flex items-center justify-between text-xs ${dark
-              ? 'bg-gray-900 border-gray-700 text-gray-400'
-              : 'bg-gray-50 border-gray-200 text-gray-500'
+            ? 'bg-gray-900 border-gray-700 text-gray-400'
+            : 'bg-gray-50 border-gray-200 text-gray-500'
             }`}>
             <div className="flex gap-4">
               <span className="flex items-center gap-1">
@@ -290,33 +290,33 @@ function ResultSection({ title, icon: Icon, results, selectedIndex, offset, onSe
               key={result._id}
               onClick={() => onSelect(result)}
               className={`w-full ${isRTL ? 'text-right' : 'text-left'} p-3 rounded-lg transition-colors ${isSelected
-                  ? dark
-                    ? 'bg-blue-900 border border-blue-700'
-                    : 'bg-blue-50 border border-blue-200'
-                  : dark
-                    ? 'hover:bg-gray-700 border border-transparent'
-                    : 'hover:bg-gray-50 border border-transparent'
+                ? dark
+                  ? 'bg-blue-900 border border-blue-700'
+                  : 'bg-blue-50 border border-blue-200'
+                : dark
+                  ? 'hover:bg-gray-700 border border-transparent'
+                  : 'hover:bg-gray-50 border border-transparent'
                 }`}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={`p-2 rounded-lg ${isSelected
-                      ? dark
-                        ? 'bg-blue-800'
-                        : 'bg-blue-100'
-                      : dark
-                        ? 'bg-gray-700'
-                        : 'bg-gray-100'
+                    ? dark
+                      ? 'bg-blue-800'
+                      : 'bg-blue-100'
+                    : dark
+                      ? 'bg-gray-700'
+                      : 'bg-gray-100'
                     }`}
                 >
                   <ResultIcon
                     className={`w-4 h-4 ${isSelected
-                        ? dark
-                          ? 'text-blue-300'
-                          : 'text-blue-600'
-                        : dark
-                          ? 'text-gray-300'
-                          : 'text-gray-600'
+                      ? dark
+                        ? 'text-blue-300'
+                        : 'text-blue-600'
+                      : dark
+                        ? 'text-gray-300'
+                        : 'text-gray-600'
                       }`}
                   />
                 </div>

@@ -318,7 +318,7 @@ class BusinessIntelligenceController {
       const branches = await Branch.find({ tenant: tenantId }).select('name').lean();
       const branchMap = {};
       branches.forEach(b => branchMap[b._id.toString()] = b.name);
-      
+
       lowStockProducts.forEach(item => {
         item.branchName = branchMap[item.branchId?.toString()] || 'الفرع الرئيسي';
       });
@@ -358,14 +358,14 @@ class BusinessIntelligenceController {
       ],
     }).select('name phone financials creditEngine').limit(10).lean();
 
-      // === 6. Branch Performance (Sales Today) ===
-      const salesTodayByBranch = await Invoice.aggregate([
-      { 
-        $match: { 
-          tenant: tenantId, 
+    // === 6. Branch Performance (Sales Today) ===
+    const salesTodayByBranch = await Invoice.aggregate([
+      {
+        $match: {
+          tenant: tenantId,
           createdAt: { $gte: today, $lt: tomorrow },
           status: { $ne: 'cancelled' }
-        } 
+        }
       },
       {
         $group: {
@@ -411,9 +411,9 @@ class BusinessIntelligenceController {
       });
     }
     if (lowStockProducts.filter(p => p.status === 'out_of_stock').length > 0) {
-        // Group by branch
-        const outStockCount = lowStockProducts.filter(p => p.status === 'out_of_stock').length;
-        suggestions.push({
+      // Group by branch
+      const outStockCount = lowStockProducts.filter(p => p.status === 'out_of_stock').length;
+      suggestions.push({
         priority: 'high',
         icon: '📦',
         text: `${outStockCount} منتج نفذ في الفروع — اطلب من الموردين`,
@@ -778,6 +778,113 @@ class BusinessIntelligenceController {
       insight: netProfit > 0
         ? `✅ ربحت ${Math.round(netProfit).toLocaleString()} ج.م صافي هذه الفترة`
         : `⚠️ خسارة ${Math.abs(Math.round(netProfit)).toLocaleString()} ج.م — راجع المصروفات`,
+    });
+  });
+
+  /**
+   * GET /api/v1/bi/staff-performance
+   * Detailed performance metrics for all staff
+   */
+  getStaffPerformance = catchAsync(async (req, res, next) => {
+    const tenantId = new mongoose.Types.ObjectId(req.tenantId);
+    const { from, to } = req.query;
+    const startDate = from ? new Date(from) : new Date(new Date().setDate(new Date().getDate() - 30));
+    const endDate = to ? new Date(to) : new Date();
+
+    const [staff, salesByUser, logsByUser] = await Promise.all([
+      User.find({ tenant: tenantId, isActive: true }).select('name email role commissionRate avatars gamification createdAt').lean(),
+      Invoice.aggregate([
+        {
+          $match: {
+            tenant: tenantId,
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: { $ne: 'cancelled' }
+          }
+        },
+        {
+          $group: {
+            _id: '$user',
+            totalSales: { $sum: '$totalAmount' },
+            totalCollected: { $sum: '$paidAmount' },
+            invoiceCount: { $sum: 1 },
+            avgInvoiceValue: { $avg: '$totalAmount' },
+            totalProfit: {
+              $sum: {
+                $reduce: {
+                  input: '$items',
+                  initialValue: 0,
+                  in: {
+                    $add: [
+                      '$$value',
+                      { $multiply: [{ $subtract: ['$$this.unitPrice', { $ifNull: ['$$this.cost', { $multiply: ['$$this.unitPrice', 0.7] }] }] }, '$$this.quantity'] }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]),
+      AuditLog.aggregate([
+        {
+          $match: {
+            tenant: tenantId,
+            createdAt: { $gte: startDate, $lte: endDate }
+          }
+        },
+        {
+          $group: {
+            _id: '$user',
+            actionCount: { $sum: 1 },
+            lastAction: { $max: '$createdAt' }
+          }
+        }
+      ])
+    ]);
+
+    // Merge results
+    const salesMap = {};
+    salesByUser.forEach(s => { if (s._id) salesMap[s._id.toString()] = s; });
+
+    const logsMap = {};
+    logsByUser.forEach(l => { if (l._id) logsMap[l._id.toString()] = l; });
+
+    const performance = staff.map(member => {
+      const sales = salesMap[member._id.toString()] || { totalSales: 0, totalCollected: 0, invoiceCount: 0, totalProfit: 0, avgInvoiceValue: 0 };
+      const logs = logsMap[member._id.toString()] || { actionCount: 0, lastAction: null };
+
+      const commission = Math.round(sales.totalProfit * ((member.commissionRate || 0) / 100));
+
+      return {
+        _id: member._id,
+        name: member.name,
+        role: member.role,
+        commissionRate: member.commissionRate || 0,
+        stats: {
+          sales: Math.round(sales.totalSales),
+          collected: Math.round(sales.totalCollected),
+          invoiceCount: sales.invoiceCount,
+          avgOrder: Math.round(sales.avgInvoiceValue),
+          profitGenerated: Math.round(sales.totalProfit),
+          commissionEarned: commission,
+          actionCount: logs.actionCount,
+          lastActive: logs.lastAction || member.createdAt
+        },
+        gamification: member.gamification
+      };
+    });
+
+    // Sort by sales descending
+    performance.sort((a, b) => b.stats.sales - a.stats.sales);
+
+    ApiResponse.success(res, {
+      period: { from: startDate, to: endDate },
+      performance,
+      summary: {
+        totalStaff: performance.length,
+        totalSales: performance.reduce((s, p) => s + p.stats.sales, 0),
+        totalCommission: performance.reduce((s, p) => s + p.stats.commissionEarned, 0)
+      }
     });
   });
 }

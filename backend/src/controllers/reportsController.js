@@ -1,4 +1,5 @@
 const ReportsService = require('../services/ReportsService');
+const FinancialService = require('../services/FinancialService');
 const ExcelService = require('../services/ExcelService');
 const Tenant = require('../models/Tenant');
 const ApiResponse = require('../utils/ApiResponse');
@@ -203,6 +204,48 @@ class ReportsController {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=product-performance-${Date.now()}.xlsx`);
     res.send(buffer);
+  });
+
+  /**
+   * GET /api/v1/reports/ledger
+   * Get General Ledger entries
+   */
+  getGeneralLedger = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
+    const { startDate, endDate, branch } = req.query;
+
+    const ledger = await FinancialService.getGeneralLedger(req.tenantId, {
+      startDate,
+      endDate,
+      branchId: branch
+    });
+
+    ApiResponse.success(res, ledger);
+  });
+
+  /**
+   * GET /api/v1/reports/pnl
+   * Get Profit & Loss statement
+   */
+  getProfitAndLoss = catchAsync(async (req, res, next) => {
+    await requireAddon(req.tenantId, 'advanced_reports');
+    const { startDate, endDate, branch } = req.query;
+
+    const pnl = await FinancialService.getProfitAndLoss(req.tenantId, {
+      startDate,
+      endDate,
+      branchId: branch
+    });
+
+    ApiResponse.success(res, pnl);
+  });
+
+  /**
+   * GET /api/v1/reports/cash-flow-forecast
+   */
+  getCashFlowForecast = catchAsync(async (req, res, next) => {
+    const forecast = await FinancialService.getCashFlowForecast(req.tenantId);
+    ApiResponse.success(res, forecast);
   });
 }
 

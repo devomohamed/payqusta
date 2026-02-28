@@ -9,7 +9,6 @@
 require('dotenv').config();
 
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
@@ -98,8 +97,8 @@ class PayQustaServer {
     // Security headers with Helmet
     this.app.use(security.helmetConfig);
 
-    // CORS configuration
-    this.app.use(security.corsMiddleware);
+    // Apply CORS to API routes only. Frontend assets/pages should not be blocked.
+    this.app.use('/api', security.corsMiddleware);
 
     // Rate limiting
     this.app.use('/api', security.apiLimiter);

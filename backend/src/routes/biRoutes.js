@@ -12,6 +12,7 @@ router.get('/achievements', authorize('vendor', 'admin', 'coordinator'), biContr
 router.get('/customer-lifetime-value', authorize('vendor', 'admin'), biController.getCustomerLifetimeValue);
 router.get('/aging-report', authorize('vendor', 'admin', 'coordinator'), biController.getAgingReport);
 router.get('/real-profit', authorize('vendor', 'admin'), biController.getRealProfit);
+router.get('/staff-performance', authorize('admin'), biController.getStaffPerformance);
 router.post('/what-if', authorize('vendor', 'admin'), biController.whatIfSimulator);
 
 module.exports = router;

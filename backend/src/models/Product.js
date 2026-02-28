@@ -27,8 +27,16 @@ const productSchema = new mongoose.Schema(
     },
     description: { type: String, maxlength: 10000 },
     category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: [true, 'تصنيف المنتج مطلوب'],
+    },
+    subcategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+    },
+    categoryName: {
       type: String,
-      required: [true, 'فئة المنتج مطلوبة'],
       trim: true,
     },
     // Pricing (no tax — as per BRD)
@@ -41,6 +49,17 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'سعر التكلفة مطلوب'],
       min: [0, 'التكلفة لا يمكن أن تكون سالبة'],
+    },
+    // Wholesale & Shipping pricing
+    wholesalePrice: {
+      type: Number,
+      min: [0, 'سعر الجملة لا يمكن أن يكون سالباً'],
+      default: 0,
+    },
+    shippingCost: {
+      type: Number,
+      min: [0, 'تكلفة الشحن لا يمكن أن تكون سالبة'],
+      default: 0,
     },
     // Tax
     taxable: { type: Boolean, default: true },
@@ -63,6 +82,13 @@ const productSchema = new mongoose.Schema(
         quantity: { type: Number, default: 0, min: 0 },
         minQuantity: { type: Number, default: 5, min: 0 },
         location: { type: String, trim: true }, // Aisle/Shelf
+        batches: [
+          {
+            batchNumber: { type: String, trim: true },
+            expiryDate: { type: Date },
+            quantity: { type: Number, default: 0, min: 0 }
+          }
+        ],
       }
     ],
     stockStatus: {
@@ -102,7 +128,14 @@ const productSchema = new mongoose.Schema(
           {
             branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
             quantity: { type: Number, default: 0 },
-            location: { type: String }
+            location: { type: String },
+            batches: [
+              {
+                batchNumber: { type: String, trim: true },
+                expiryDate: { type: Date },
+                quantity: { type: Number, default: 0, min: 0 }
+              }
+            ],
           }
         ],
         barcode: { type: String },

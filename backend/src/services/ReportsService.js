@@ -72,7 +72,14 @@ class ReportsService {
     };
     if (branchId) filter.branch = branchId;
 
-    const invoices = await Invoice.find(filter).populate('items.product', 'name sku category');
+    const invoices = await Invoice.find(filter).populate({
+      path: 'items.product',
+      select: 'name sku category subcategory categoryName cost',
+      populate: [
+        { path: 'category', select: 'name icon' },
+        { path: 'subcategory', select: 'name icon' }
+      ]
+    });
 
     // Calculate profit by category
     const profitByCategory = {};
@@ -84,7 +91,7 @@ class ReportsService {
         if (!product) return;
 
         const itemProfit = (item.unitPrice - (item.product?.cost || 0)) * item.quantity;
-        const category = product.category || 'غير مصنف';
+        const category = product.category?.name || product.categoryName || 'غير مصنف';
 
         // By category
         if (!profitByCategory[category]) {
@@ -166,6 +173,8 @@ class ReportsService {
 
     const products = await Product.find(filter)
       .populate('supplier', 'name phone')
+      .populate('category', 'name icon')
+      .populate('subcategory', 'name icon')
       .sort({ 'stock.quantity': 1 });
 
     // Calculate inventory value
@@ -196,7 +205,7 @@ class ReportsService {
       return {
         name: product.name,
         sku: product.sku,
-        category: product.category || 'غير مصنف',
+        category: product.category?.name || product.categoryName || 'غير مصنف',
         quantity,
         minQuantity: minQty,
         cost: product.cost,
@@ -283,10 +292,17 @@ class ReportsService {
     const end = endDate ? new Date(endDate) : new Date();
 
     const invoices = await Invoice.find({
-      tenantId,
+      tenant: tenantId, // Fixed field name to tenant (assuming schema uses tenant)
       createdAt: { $gte: start, $lte: end },
       status: { $ne: 'cancelled' },
-    }).populate('items.product', 'name sku category');
+    }).populate({
+      path: 'items.product',
+      select: 'name sku category subcategory categoryName cost',
+      populate: [
+        { path: 'category', select: 'name icon' },
+        { path: 'subcategory', select: 'name icon' }
+      ]
+    });
 
     const productStats = {};
 
@@ -300,7 +316,7 @@ class ReportsService {
           productStats[productKey] = {
             name: product.name,
             sku: product.sku,
-            category: product.category || 'غير مصنف',
+            category: product.category?.name || product.categoryName || 'غير مصنف',
             quantitySold: 0,
             revenue: 0,
             profit: 0,

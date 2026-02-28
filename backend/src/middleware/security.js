@@ -12,20 +12,23 @@ const cors = require('cors');
 
 /**
  * General API Rate Limiter
- * 100 requests per 15 minutes per IP
+ * 10 requests per minute per IP for EACH specific API route
  */
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: (req) => {
-    const isPortalRequest = req.originalUrl?.startsWith('/api/v1/portal');
-    if (isPortalRequest) {
-      return process.env.NODE_ENV === 'production' ? 600 : 5000;
-    }
-    return process.env.NODE_ENV === 'production' ? 1000 : 2000;
+  windowMs: 1 * 60 * 1000, // 1 minute
+
+  // Custom key generator: rate limit per IP AND per specific route path (ignoring query params)
+  keyGenerator: (req) => {
+    const routePath = (req.originalUrl || req.url).split('?')[0];
+    return `${req.ip}_${routePath}`;
   },
+
+  // Exactly 10 requests per route per minute
+  max: 10,
+
   message: {
     success: false,
-    message: 'تم تجاوز الحد المسموح من الطلبات. يرجى المحاولة لاحقاً',
+    message: 'تم تجاوز الحد المسموح من الطلبات لنفس الرابط (10 طلبات/دقيقة). يرجى الانتظار دقيقة والمحاولة لاحقاً',
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
@@ -83,17 +86,10 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-
-    const origins = [...allowedOrigins];
-    if (process.env.CLIENT_URL) {
-      origins.push(process.env.CLIENT_URL);
-    }
-
-    if (origins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    // Reflect the request origin for browser-based app domains.
+    // Auth is enforced by JWT; strict origin pinning breaks Cloud Run URLs,
+    // preview domains, and tenant custom domains.
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

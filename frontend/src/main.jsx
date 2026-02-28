@@ -20,6 +20,7 @@ if (hasBackofficeToken && !isPortalPath) {
   });
 }
 
+
 // Register PWA Service Worker only on secure contexts (HTTPS/localhost).
 if (import.meta.env.PROD && window.isSecureContext) {
   const updateSW = registerSW({

@@ -243,6 +243,26 @@ export default function CustomersPage() {
     }
   };
 
+  const handleRedeemPoints = async (points) => {
+    if (!points || points <= 0) return;
+    try {
+      const res = await api.post(`/customers/${selectedCustomer._id}/redeem-points`, { points });
+      toast.success(res.data.message);
+
+      // Update local state
+      setSelectedCustomer(prev => ({
+        ...prev,
+        gamification: { ...prev.gamification, points: res.data.data.remainingPoints },
+        financials: { ...prev.financials, outstandingBalance: res.data.data.outstandingBalance }
+      }));
+
+      // Refresh list
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'فشل استبدال النقاط');
+    }
+  };
+
   // Open Date Modal before action
   const preAction = (type) => {
     setActionType(type);
@@ -447,6 +467,13 @@ export default function CustomersPage() {
           className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           إعادة الفلاتر
+        </button>
+        <button
+          onClick={() => window.location.href = '/marketing'}
+          className="px-3 py-2.5 rounded-xl border-2 border-primary-100 bg-primary-50 text-primary-600 text-sm hover:bg-primary-100 transition-colors flex items-center gap-2"
+        >
+          <TrendingUp className="w-4 h-4" />
+          لوحة التسويق
         </button>
         <Button icon={<Plus className="w-4 h-4" />} onClick={openAdd}>إضافة عميل</Button>
       </div>
@@ -662,6 +689,29 @@ export default function CustomersPage() {
                         <p className="text-xs font-medium text-gray-400">الحد الائتماني</p>
                       </div>
                       <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(selectedCustomer.financials?.creditLimit || 10000)}</p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 shadow-sm col-span-2 lg:col-span-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+                            <Star className="w-4 h-4 text-amber-600" fill="currentColor" />
+                          </div>
+                          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">نقاط الولاء</p>
+                        </div>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-black text-amber-700 dark:text-amber-400">{fmt(selectedCustomer.gamification?.points)}</p>
+                        <span className="text-[10px] text-amber-600 font-bold">نقطة</span>
+                      </div>
+                      {selectedCustomer.gamification?.points >= 100 && (
+                        <button
+                          onClick={() => handleRedeemPoints(100)}
+                          className="mt-2 w-full py-1.5 text-[10px] bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition-colors"
+                        >
+                          استبدال 100 نقطة (10 ج.م رصيد)
+                        </button>
+                      )}
                     </div>
                   </div>
 

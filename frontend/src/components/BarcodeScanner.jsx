@@ -214,7 +214,7 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={onClose}>
       <div
         className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up"
         onClick={e => e.stopPropagation()}

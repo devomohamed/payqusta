@@ -11,6 +11,7 @@ const STATUS_COLORS = {
   draft: 'gray',
   pending: 'warning',
   approved: 'info',
+  partial: 'warning',
   received: 'success',
   cancelled: 'danger',
 };
@@ -19,6 +20,7 @@ const STATUS_LABELS = {
   draft: 'مسودة',
   pending: 'قيد الانتظار',
   approved: 'معتمد',
+  partial: 'مستلم جزئياً',
   received: 'مستلم',
   cancelled: 'ملغي',
 };
@@ -198,15 +200,24 @@ export default function PurchaseOrdersPage() {
                     </td>
                     <td className="p-4 font-bold">{order.totalAmount.toFixed(2)} ج.م</td>
                     <td className="p-4">
-                      {order.status === 'approved' && (
+                      <div className="flex gap-2">
+                        {(order.status === 'approved' || order.status === 'partial') && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenReceive(order)}
+                            icon={<Check className="w-4 h-4" />}
+                          >
+                            استلام
+                          </Button>
+                        )}
                         <Button
                           size="sm"
-                          onClick={() => handleOpenReceive(order)}
-                          icon={<Check className="w-4 h-4" />}
-                        >
-                          استلام
-                        </Button>
-                      )}
+                          variant="ghost"
+                          onClick={() => window.open(`${api.defaults.baseURL}/purchase-orders/${order._id}/pdf`, '_blank')}
+                          icon={<Package className="w-4 h-4" />}
+                          title="تحميل PDF"
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -314,20 +325,103 @@ export default function PurchaseOrdersPage() {
       </Modal>
 
       {/* Receive Modal */}
-      <Modal open={showReceiveModal} onClose={() => setShowReceiveModal(false)} title="استلام أمر الشراء">
+      <Modal open={showReceiveModal} onClose={() => setShowReceiveModal(false)} title="استلام بضاعة" size="lg">
         {selectedOrder && (
           <div className="space-y-4">
-            <p>هل تريد تأكيد استلام جميع المنتجات وتحديث المخزون؟</p>
-            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2">
-              {selectedOrder.items.map(item => (
-                <div key={item._id} className="flex justify-between text-sm">
-                  <span>{item.product?.name || 'منتج'}</span>
-                  <span className="font-bold">{item.quantity} قطعة</span>
-                </div>
-              ))}
+            <div className="bg-primary-50 dark:bg-primary-900/10 p-4 rounded-lg flex items-center gap-3">
+              <Package className="w-8 h-8 text-primary-500" />
+              <div>
+                <h3 className="font-bold">{selectedOrder.orderNumber}</h3>
+                <p className="text-sm text-gray-500">{selectedOrder.supplier?.name}</p>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <Button className="flex-1" onClick={handleReceive} icon={<Check className="w-4 h-4" />}>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b dark:border-gray-800">
+                    <th className="p-2 text-right">المنتج</th>
+                    <th className="p-2 text-center text-xs text-gray-400">المطلوب</th>
+                    <th className="p-2 text-center text-xs text-gray-400">تم استلامه</th>
+                    <th className="p-2 text-right">الكمية الحالية</th>
+                    <th className="p-2 text-right">رقم الدفعة</th>
+                    <th className="p-2 text-right">الصلاحية</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y dark:divide-gray-800">
+                  {selectedOrder.items.map((item, idx) => (
+                    <tr key={item._id} className="border-b dark:border-gray-800 last:border-0">
+                      <td className="p-2 font-medium">{item.product?.name || 'منتج'}</td>
+                      <td className="p-2 text-center">{item.quantity}</td>
+                      <td className="p-2 text-center text-success-600 font-bold">{item.receivedQuantity}</td>
+                      <td className="p-2">
+                        <Input
+                          type="number"
+                          size="sm"
+                          min="0"
+                          max={item.quantity - item.receivedQuantity}
+                          placeholder="الكمية"
+                          onChange={(e) => {
+                            const newItems = [...selectedOrder.items];
+                            newItems[idx].currentReceipt = Number(e.target.value);
+                            setSelectedOrder({ ...selectedOrder, items: newItems });
+                          }}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          size="sm"
+                          placeholder="Batch #"
+                          onChange={(e) => {
+                            const newItems = [...selectedOrder.items];
+                            newItems[idx].batchNumber = e.target.value;
+                            setSelectedOrder({ ...selectedOrder, items: newItems });
+                          }}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          type="date"
+                          size="sm"
+                          onChange={(e) => {
+                            const newItems = [...selectedOrder.items];
+                            newItems[idx].expiryDate = e.target.value;
+                            setSelectedOrder({ ...selectedOrder, items: newItems });
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                className="flex-1"
+                onClick={async () => {
+                  const receiptData = selectedOrder.items
+                    .filter(item => item.currentReceipt > 0)
+                    .map(item => ({
+                      itemId: item._id,
+                      receivedQuantity: item.currentReceipt,
+                      batchNumber: item.batchNumber,
+                      expiryDate: item.expiryDate
+                    }));
+
+                  if (receiptData.length === 0) return notify.warning('أدخل الكميات المستلمة أولاً');
+
+                  try {
+                    await api.post(`/purchase-orders/${selectedOrder._id}/receive`, { receivedItems: receiptData });
+                    notify.success('تم تحديث المخزون واستلام البضاعة');
+                    setShowReceiveModal(false);
+                    loadOrders();
+                  } catch (err) {
+                    notify.error(err.response?.data?.message || 'فشل الاستلام');
+                  }
+                }}
+                icon={<Check className="w-4 h-4" />}
+              >
                 تأكيد الاستلام
               </Button>
               <Button className="flex-1" variant="ghost" onClick={() => setShowReceiveModal(false)}>

@@ -9,7 +9,6 @@ import { LoadingSpinner } from '../components/UI';
 const SettingsStore = lazy(() => import('../components/settings/SettingsStore'));
 const SettingsProfile = lazy(() => import('../components/settings/SettingsProfile'));
 const SettingsWhatsApp = lazy(() => import('../components/settings/SettingsWhatsApp'));
-const SettingsCategories = lazy(() => import('../components/settings/SettingsCategories'));
 const SettingsInstallments = lazy(() => import('../components/settings/SettingsInstallments'));
 const SettingsUsers = lazy(() => import('../components/settings/SettingsUsers'));
 const SettingsWhiteLabel = lazy(() => import('../components/settings/SettingsWhiteLabel'));
@@ -20,7 +19,6 @@ const ALL_TABS = [
   { id: 'profile', label: 'حسابي', icon: User, color: 'emerald', adminOnly: false },
   { id: 'users', label: 'المستخدمين', icon: Users, color: 'blue', adminOnly: true }, // Only for admin
   { id: 'whatsapp', superOnly: true, label: 'واتساب', icon: MessageCircle, color: 'green', adminOnly: true }, // Changed to adminOnly
-  { id: 'categories', label: 'التصنيفات', icon: Tag, color: 'purple', adminOnly: true }, // Changed to adminOnly
   { id: 'installments', label: 'الأقساط', icon: CreditCard, color: 'blue', adminOnly: true },
   { id: 'whitelabel', label: 'المظهر والهوية البصرية', icon: Palette, color: 'violet', adminOnly: true },
 ];
@@ -43,7 +41,6 @@ export default function SettingsPage() {
       case 'profile': return <SettingsProfile />;
       case 'users': return <SettingsUsers />;
       case 'whatsapp': return <SettingsWhatsApp />;
-      case 'categories': return <SettingsCategories />;
       case 'installments': return <SettingsInstallments />;
       case 'whitelabel': return <SettingsWhiteLabel />;
       default: return null;

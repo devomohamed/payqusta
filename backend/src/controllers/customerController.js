@@ -550,6 +550,150 @@ class CustomerController {
       whatsapp: customer.whatsapp,
     }, 'تم تحديث إعدادات WhatsApp للعميل');
   });
+
+  /**
+   * GET /api/v1/customers/segments
+   * Get customer segments for marketing
+   */
+  getSegments = catchAsync(async (req, res, next) => {
+    const tenantId = req.tenantId;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const matchStage = { tenant: tenantId, isActive: true };
+
+    const [vip, inactive, debtors, loyal] = await Promise.all([
+      // VIP Customers
+      Customer.find({ ...matchStage, tier: 'vip' }).limit(50).select('name phone tier gamification.points'),
+
+      // Inactive Customers (last purchase > 30 days ago OR never purchased and created > 30 days ago)
+      Customer.find({
+        ...matchStage,
+        $or: [
+          { lastPurchaseDate: { $lt: thirtyDaysAgo } },
+          { lastPurchaseDate: { $exists: false }, createdAt: { $lt: thirtyDaysAgo } }
+        ]
+      }).limit(50).select('name phone lastPurchaseDate financials.totalPurchases'),
+
+      // Debtors (> 5000)
+      Customer.find({
+        ...matchStage,
+        'financials.outstandingBalance': { $gt: 5000 }
+      }).sort('-financials.outstandingBalance').limit(50).select('name phone financials.outstandingBalance'),
+
+      // Loyal (High points or many on-time payments)
+      Customer.find({
+        ...matchStage,
+        $or: [
+          { 'gamification.totalEarnedPoints': { $gt: 1000 } },
+          { 'paymentBehavior.onTimePayments': { $gt: 10 } }
+        ]
+      }).limit(50).select('name phone tier gamification.points')
+    ]);
+
+    const stats = {
+      vip: await Customer.countDocuments({ ...matchStage, tier: 'vip' }),
+      inactive: await Customer.countDocuments({
+        ...matchStage,
+        $or: [
+          { lastPurchaseDate: { $lt: thirtyDaysAgo } },
+          { lastPurchaseDate: { $exists: false }, createdAt: { $lt: thirtyDaysAgo } }
+        ]
+      }),
+      debtors: await Customer.countDocuments({ ...matchStage, 'financials.outstandingBalance': { $gt: 5000 } }),
+      loyal: await Customer.countDocuments({
+        ...matchStage,
+        $or: [
+          { 'gamification.totalEarnedPoints': { $gt: 1000 } },
+          { 'paymentBehavior.onTimePayments': { $gt: 10 } }
+        ]
+      })
+    };
+
+    ApiResponse.success(res, { segments: { vip, inactive, debtors, loyal }, stats });
+  });
+
+  /**
+   * POST /api/v1/customers/:id/redeem-points
+   * Redeem gamification points for credit
+   */
+  redeemPoints = catchAsync(async (req, res, next) => {
+    const { points } = req.body;
+    if (!points || points <= 0) return next(AppError.badRequest('يرجى تحديد عدد النقاط'));
+
+    const customer = await Customer.findOne({ _id: req.params.id, ...req.tenantFilter });
+    if (!customer) return next(AppError.notFound('العميل غير موجود'));
+
+    if (customer.gamification.points < points) {
+      return next(AppError.badRequest(`رصيد النقاط غير كافٍ. الرصيد الحالي: ${customer.gamification.points}`));
+    }
+
+    const { GAMIFICATION } = require('../config/constants');
+    const creditAmount = points * (GAMIFICATION.POINTS_REDEMPTION_RATE || 0.1);
+
+    // Update customer points
+    customer.gamification.points -= points;
+    customer.gamification.redeemedPoints += points;
+
+    // Apply credit to financials (simulating a payment)
+    customer.financials.totalPaid += creditAmount;
+    customer.financials.outstandingBalance = Math.max(0, customer.financials.totalPurchases - customer.financials.totalPaid);
+
+    await customer.save();
+
+    // Log the transaction or send notification if needed
+
+    ApiResponse.success(res, {
+      remainingPoints: customer.gamification.points,
+      creditApplied: creditAmount,
+      outstandingBalance: customer.financials.outstandingBalance
+    }, `تم استبدال ${points} نقطة بـ ${creditAmount} ج.م رصيد`);
+  });
+
+  /**
+   * POST /api/v1/customers/broadcast
+   * Send bulk WhatsApp message to a segment
+   */
+  sendBroadcast = catchAsync(async (req, res, next) => {
+    const { segment, message, customerIds } = req.body;
+    if (!message) return next(AppError.badRequest('محتوى الرسالة مطلوب'));
+
+    let customers = [];
+    const tenantId = req.tenantId;
+
+    if (customerIds && Array.isArray(customerIds)) {
+      customers = await Customer.find({ _id: { $in: customerIds }, tenant: tenantId, isActive: true }).select('phone');
+    } else if (segment) {
+      const matchStage = { tenant: tenantId, isActive: true };
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      if (segment === 'vip') {
+        customers = await Customer.find({ ...matchStage, tier: 'vip' }).select('phone');
+      } else if (segment === 'inactive') {
+        customers = await Customer.find({
+          ...matchStage,
+          $or: [
+            { lastPurchaseDate: { $lt: thirtyDaysAgo } },
+            { lastPurchaseDate: { $exists: false }, createdAt: { $lt: thirtyDaysAgo } }
+          ]
+        }).select('phone');
+      } else if (segment === 'debtors') {
+        customers = await Customer.find({ ...matchStage, 'financials.outstandingBalance': { $gt: 5000 } }).select('phone');
+      }
+    }
+
+    if (customers.length === 0) {
+      return next(AppError.badRequest('لا يوجد عملاء في هذه الشريحة'));
+    }
+
+    const recipientPhones = customers.map(c => c.phone);
+    const tenant = await Tenant.findById(tenantId);
+
+    const result = await WhatsAppService.sendBroadcast(recipientPhones, message, tenant?.whatsapp);
+
+    ApiResponse.success(res, result, `تم بدء حملة الواتساب لـ ${customers.length} عميل`);
+  });
 }
 
 module.exports = new CustomerController();

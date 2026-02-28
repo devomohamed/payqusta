@@ -86,6 +86,7 @@ router.put('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('use
 router.delete('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'delete'), authController.deleteTenantUser);
 router.post('/auth/add-user', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
 router.post('/auth/switch-tenant', tenantController.switchTenant);
+router.post('/auth/create-store', authorize('vendor', 'admin'), tenantController.createMyTenant);
 
 // --- Tenant / Branches ---
 // Note: /tenants/branch removed - use /branches instead (branchController is more complete)
@@ -107,6 +108,7 @@ router.get('/dashboard/customer-lifetime-value', authorize('vendor', 'admin'), d
 
 // ============ MODULAR ROUTES ============
 router.use('/products', require('./productRoutes'));
+router.use('/categories', require('./categoryRoutes'));
 router.use('/customers', require('./customerRoutes'));
 router.use('/invoices', require('./invoiceRoutes'));
 router.use('/bi', require('./biRoutes'));
@@ -199,6 +201,7 @@ router.delete('/roles/:id', authorize('vendor', 'admin'), roleController.delete)
 const purchaseOrderController = require('../controllers/purchaseOrderController');
 router.get('/purchase-orders', authorize('vendor', 'admin'), purchaseOrderController.getAll);
 router.get('/purchase-orders/:id', authorize('vendor', 'admin'), purchaseOrderController.getById);
+router.get('/purchase-orders/:id/pdf', authorize('vendor', 'admin'), purchaseOrderController.generatePDF);
 router.post('/purchase-orders', authorize('vendor', 'admin'), purchaseOrderController.create);
 router.put('/purchase-orders/:id', authorize('vendor', 'admin'), purchaseOrderController.update);
 router.post('/purchase-orders/:id/receive', authorize('vendor', 'admin'), purchaseOrderController.receive);
@@ -247,6 +250,9 @@ router.get('/reports/profit', authorize('vendor', 'admin'), reportsController.ge
 router.get('/reports/inventory', authorize('vendor', 'admin', 'coordinator'), reportsController.getInventoryReport);
 router.get('/reports/customers', authorize('vendor', 'admin', 'coordinator'), reportsController.getCustomerReport);
 router.get('/reports/products', authorize('vendor', 'admin', 'coordinator'), reportsController.getProductPerformanceReport);
+router.get('/reports/ledger', authorize('vendor', 'admin'), reportsController.getGeneralLedger);
+router.get('/reports/pnl', authorize('vendor', 'admin'), reportsController.getProfitAndLoss);
+router.get('/reports/cash-flow-forecast', authorize('vendor', 'admin'), reportsController.getCashFlowForecast);
 
 // Export Reports
 router.get('/reports/export/sales', authorize('vendor', 'admin', 'coordinator'), reportsController.exportSalesReport);

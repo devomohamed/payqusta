@@ -25,6 +25,23 @@ const tenantSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    customDomain: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      default: null,
+    },
+    customDomainStatus: {
+      type: String,
+      enum: ['not_configured', 'pending', 'connected'],
+      default: 'not_configured',
+    },
+    customDomainLastCheckedAt: {
+      type: Date,
+      default: null,
+    },
     // Branding customization
     branding: {
       logo: { type: String, default: null },
@@ -162,6 +179,7 @@ const tenantSchema = new mongoose.Schema(
 // Indexes
 tenantSchema.index({ owner: 1 });
 tenantSchema.index({ 'subscription.status': 1 });
+tenantSchema.index({ customDomain: 1 }, { unique: true, sparse: true });
 
 // Pre-save Migration: Handle legacy data
 tenantSchema.pre('save', function (next) {

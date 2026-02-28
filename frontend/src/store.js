@@ -35,6 +35,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // If we are currently logging out, don't trigger the interceptor redirect
+      // to avoid jumping to the login screen before the logout state is ready.
+      if (useAuthStore.getState().loggingOut) {
+        return Promise.reject(error);
+      }
+
       localStorage.removeItem('payqusta_token');
       // Only redirect to admin login if NOT in portal
       if (!window.location.pathname.startsWith('/portal')) {
@@ -53,6 +59,7 @@ export const useAuthStore = create((set, get) => ({
   token: localStorage.getItem('payqusta_token'),
   isAuthenticated: !!localStorage.getItem('payqusta_token'),
   loading: false,
+  loadingUser: false,
   loggingOut: false,
 
   login: async (email, password) => {
@@ -113,24 +120,46 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  can: (resource, action) => {
+    const { permissions, user } = get();
+    if (!user) return false;
+    // Admin and Super Admin have all permissions
+    if (user.role === 'admin' || !!user.isSuperAdmin || user.email?.toLowerCase() === 'super@payqusta.com') {
+      return true;
+    }
+    return permissions.some(p => p.resource === resource && p.actions.includes(action));
+  },
+
   logout: async () => {
     if (get().loggingOut) return;
     const token = get().token || localStorage.getItem('payqusta_token');
 
-    // Clear client auth state immediately to avoid route bounce and double-click logout.
-    set({ user: null, tenant: null, permissions: [], token: null, isAuthenticated: false, loggingOut: true });
-    localStorage.removeItem('payqusta_token');
+    // Show logging out state first, but KEEP user/isAuthenticated to prevent ProtectedRoute redirect flickering
+    set({ loggingOut: true });
 
     try {
       if (token) {
-        await api.post('/auth/logout', null, {
+        await api.post('/auth/logout', {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
     } catch (error) {
       console.error('Logout API failed:', error);
     } finally {
-      set({ loggingOut: false });
+      // Clear client auth state ONLY after API call completes
+      localStorage.removeItem('payqusta_token');
+
+      // Note: We keep loggingOut as TRUE here so the App continues to show 
+      // the loading screen until the window actually reloads to /login.
+      set({
+        user: null,
+        tenant: null,
+        permissions: [],
+        token: null,
+        isAuthenticated: false,
+        loggingOut: true
+      });
+
       window.location.href = '/login';
     }
   },
@@ -184,6 +213,27 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  createStore: async (data) => {
+    set({ loading: true });
+    try {
+      const res = await api.post('/auth/create-store', data);
+
+      // After successfully creating a store, refresh the user
+      const meRes = await api.get('/auth/me');
+      set({
+        user: meRes.data.data.user,
+        tenant: meRes.data.data.tenant,
+        permissions: meRes.data.data.permissions || [],
+        loading: false
+      });
+
+      return res.data;
+    } catch (error) {
+      set({ loading: false });
+      throw error.response?.data || error;
+    }
+  },
+
   createBranch: async (data) => {
     set({ loading: true });
     try {
@@ -230,6 +280,16 @@ export const productsApi = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   deleteImage: (id, imageUrl) => api.delete(`/products/${id}/images/${encodeURIComponent(imageUrl)}`),
+  stocktake: (items) => api.post('/products/stocktake', { items }),
+};
+
+// Categories API
+export const categoriesApi = {
+  getAll: () => api.get('/categories'),
+  getTree: () => api.get('/categories/tree'),
+  create: (data) => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  delete: (id) => api.delete(`/categories/${id}`),
 };
 
 // Customers API
@@ -276,6 +336,17 @@ export const suppliersApi = {
   requestRestock: (id) => api.post(`/suppliers/${id}/request-restock`),
   getLowStockProducts: (id) => api.get(`/suppliers/${id}/low-stock-products`),
   getUpcomingPayments: (days) => api.get('/suppliers/upcoming-payments', { params: { days } }),
+};
+
+// Purchase Orders API
+export const purchaseOrdersApi = {
+  getAll: (params) => api.get('/purchase-orders', { params }),
+  getById: (id) => api.get(`/purchase-orders/${id}`),
+  create: (data) => api.post('/purchase-orders', data),
+  update: (id, data) => api.put(`/purchase-orders/${id}`, data),
+  receive: (id, data) => api.post(`/purchase-orders/${id}/receive`, data),
+  delete: (id) => api.delete(`/purchase-orders/${id}`),
+  getPDF: (id) => api.get(`/purchase-orders/${id}/pdf`, { responseType: 'blob' }),
 };
 
 // Dashboard API

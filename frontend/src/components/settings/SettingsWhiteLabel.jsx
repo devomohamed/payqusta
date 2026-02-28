@@ -9,6 +9,7 @@ export default function SettingsWhiteLabel() {
     const { dark, toggleTheme } = useThemeStore();
     const [saving, setSaving] = useState(false);
     const [logoPreview, setLogoPreview] = useState(null);
+    const [domainError, setDomainError] = useState('');
     const fileInputRef = useRef(null);
 
     const [form, setForm] = useState({
@@ -27,8 +28,24 @@ export default function SettingsWhiteLabel() {
                 customDomain: tenant.customDomain || '',
             });
             if (tenant.branding?.logo) setLogoPreview(tenant.branding.logo);
+            setDomainError('');
         }
     }, [tenant]);
+
+    const normalizedDomain = form.customDomain.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+    const hasDomain = normalizedDomain.length > 0;
+    const isDomainValid = !hasDomain || /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(normalizedDomain);
+    const domainStatus = hasDomain ? (tenant?.customDomainStatus || 'pending') : 'not_configured';
+    const domainStatusLabel = {
+        not_configured: 'غير مفعّل',
+        pending: 'Pending DNS',
+        connected: 'Connected',
+    }[domainStatus] || 'Pending DNS';
+    const domainStatusClass = {
+        not_configured: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+        pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+        connected: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    }[domainStatus];
 
     const handleLogoChange = (e) => {
         const file = e.target.files?.[0];
@@ -46,12 +63,19 @@ export default function SettingsWhiteLabel() {
     };
 
     const handleSave = async () => {
+        if (!isDomainValid) {
+            setDomainError('Please enter a valid domain like shop.example.com');
+            notify.error('Please enter a valid domain like shop.example.com');
+            return;
+        }
+
         setSaving(true);
         try {
             await api.put('/settings/branding', {
                 logo: form.logo,
                 primaryColor: form.primaryColor,
                 secondaryColor: form.secondaryColor,
+                customDomain: normalizedDomain,
             });
             notify.success('تم حفظ إعدادات الهوية البصرية بنجاح');
             getMe();
@@ -180,17 +204,35 @@ export default function SettingsWhiteLabel() {
                 <h3 className="font-bold mb-2 flex items-center gap-2">
                     <Globe className="w-4 h-4 text-gray-500" /> النطاق المخصص (Custom Domain)
                 </h3>
+                <div className="mb-3">
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${domainStatusClass}`}>
+                        {domainStatusLabel}
+                    </span>
+                </div>
                 <p className="text-sm text-gray-400 mb-4">
                     يمكنك ربط نطاقك الخاص ليظهر متجرك باسم مخصص. هذه الميزة ستتطلب إعداد DNS يدوي (CNAME).
                 </p>
                 <Input
                     label="النطاق المخصص"
                     value={form.customDomain}
-                    onChange={(e) => setForm(prev => ({ ...prev, customDomain: e.target.value }))}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setForm(prev => ({ ...prev, customDomain: value }));
+                        const preview = value.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].split(':')[0];
+                        setDomainError(preview && !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(preview) ? 'Please enter a valid domain like shop.example.com' : '');
+                    }}
                     placeholder="shop.yourdomain.com"
-                    disabled
+
                 />
-                <p className="text-xs text-amber-500 mt-2">⚠️ ميزة قادمة — سيتم تفعيلها قريباً بعد إعداد البنية التحتية للنشر.</p>
+                {domainError && (
+                    <p className="text-xs text-red-500 mt-2">{domainError}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-2">Save the domain here, then point a CNAME from your DNS provider to this service. Once DNS is ready, the portal will load on that same domain.</p>
+                {tenant?.customDomainLastCheckedAt && (
+                    <p className="text-xs text-gray-400 mt-2">
+                        Last checked: {new Date(tenant.customDomainLastCheckedAt).toLocaleString()}
+                    </p>
+                )}
             </div>
 
             {/* Appearance Settings */}
@@ -316,3 +358,4 @@ function InstallAppButton() {
         </div>
     );
 }
+

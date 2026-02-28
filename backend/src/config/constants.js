@@ -25,6 +25,7 @@ module.exports = {
     CASH: 'cash',
     INSTALLMENT: 'installment',
     DEFERRED: 'deferred', // آجل
+    VISA: 'visa',
   },
 
   // Installment Frequencies
@@ -88,6 +89,7 @@ module.exports = {
     POINTS_PER_ON_TIME: 50,     // نقاط للسداد في الميعاد
     VIP_THRESHOLD: 2000,        // نقاط للوصول لـ VIP
     PREMIUM_THRESHOLD: 1000,    // نقاط للوصول لـ Premium
+    POINTS_REDEMPTION_RATE: 0.1, // 0.1 EGP لكل نقطة (أي 10 جنيه لكل 100 نقطة)
   },
 
   // Currencies

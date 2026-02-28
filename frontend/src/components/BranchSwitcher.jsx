@@ -6,7 +6,7 @@ import { notify } from './AnimatedNotification';
 import { Modal, Input, Button } from './UI';
 
 export default function BranchSwitcher() {
-  const { tenant, user, switchTenant, getBranches, createBranch } = useAuthStore();
+  const { tenant, user, switchTenant, getBranches, createStore } = useAuthStore();
   const { t, i18n } = useTranslation('admin');
   const isRTL = i18n.dir() === 'rtl';
   const [branches, setBranches] = useState([]);
@@ -15,8 +15,8 @@ export default function BranchSwitcher() {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // New Branch Form
-  const [newBranch, setNewBranch] = useState({ name: '', phone: '', address: '' });
+  // New Store Form
+  const [newStore, setNewStore] = useState({ name: '', phone: '', address: '' });
 
   useEffect(() => {
     if (isOpen) {
@@ -47,23 +47,25 @@ export default function BranchSwitcher() {
   };
 
   const handleCreate = async () => {
-    if (!newBranch.name) return notify.error(t('branch.branch_name_required'));
+    if (!newStore.name) return notify.error(t('store.store_name_required', 'اسم المتجر مطلوب'));
     setCreating(true);
     try {
-      await createBranch(newBranch);
-      notify.success(t('branch.create_success'));
+      await createStore(newStore);
+      notify.success(t('store.create_success', 'تم إنشاء المتجر بنجاح'));
       setShowCreateModal(false);
-      setNewBranch({ name: '', phone: '', address: '' });
-      loadBranches();
+      setNewStore({ name: '', phone: '', address: '' });
+      loadBranches(); // Reload stores list
     } catch (error) {
-      notify.error(error.message || t('branch.create_failed'));
+      notify.error(error.message || t('store.create_failed', 'فشل إنشاء المتجر'));
     } finally {
       setCreating(false);
     }
   };
 
-  if (!user || user.role !== 'admin' || user.isSuperAdmin === false && !user.tenant) return null;
-  if (user.role === 'vendor' && user.branch) return null;
+  // Show for admin/owner only, hide for branch-level vendor users
+  if (!user) return null;
+  if (user.isSuperAdmin) return null; // Super admin has a different UI
+  if (user.role !== 'admin') return null; // Only admins/owners see the store switcher
 
   return (
     <>
@@ -102,8 +104,8 @@ export default function BranchSwitcher() {
                       key={branch._id}
                       onClick={() => handleSwitch(branch._id)}
                       className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${tenant?._id === branch._id
-                          ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 border border-primary-100 dark:border-primary-500/20 shadow-sm'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                        ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 border border-primary-100 dark:border-primary-500/20 shadow-sm'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -123,7 +125,7 @@ export default function BranchSwitcher() {
               </div>
 
 
-              {/* Only Admin/Super Admin can add branches */}
+              {/* Only Admin/Super Admin can add stores */}
               {(user?.role === 'admin' || user?.isSuperAdmin) && (
                 <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
                   <button
@@ -133,7 +135,7 @@ export default function BranchSwitcher() {
                     <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/20 flex items-center justify-center transition-colors">
                       <Plus className="w-4 h-4" />
                     </div>
-                    {t('branch.add_branch')}
+                    {t('store.add_store', 'إنشاء متجر جديد')}
                   </button>
                 </div>
               )}
@@ -142,47 +144,47 @@ export default function BranchSwitcher() {
         )}
       </div>
 
-      {/* Create Branch Modal */}
+      {/* Create Store Modal */}
       {showCreateModal && (
         <Modal
-          title={t('branch.add_branch')}
+          title={t('store.add_store', 'إنشاء متجر إلكتروني جديد')}
           onClose={() => setShowCreateModal(false)}
           size="sm"
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">{t('branch.branch_name')}</label>
+              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">{t('store.store_name', 'اسم المتجر')}</label>
               <div className="relative">
                 <Store className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-3 w-5 h-5 text-gray-400`} />
                 <Input
                   className={isRTL ? 'pr-10' : 'pl-10'}
-                  placeholder={t('branch.branch_name_placeholder')}
-                  value={newBranch.name}
-                  onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
+                  placeholder={t('store.store_name_placeholder', 'أدخل اسم المتجر الجديد')}
+                  value={newStore.name}
+                  onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">{t('branch.phone')}</label>
+              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">{t('store.phone', 'رقم الهاتف')}</label>
               <div className="relative">
                 <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-3 w-5 h-5 text-gray-400`} />
                 <Input
                   className={isRTL ? 'pr-10' : 'pl-10'}
-                  placeholder={t('branch.phone_placeholder')}
-                  value={newBranch.phone}
-                  onChange={(e) => setNewBranch({ ...newBranch, phone: e.target.value })}
+                  placeholder={t('store.phone_placeholder', 'رقم الهاتف للتواصل')}
+                  value={newStore.phone}
+                  onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">{t('branch.address')}</label>
+              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">{t('store.address', 'العنوان')}</label>
               <div className="relative">
                 <MapPin className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-3 w-5 h-5 text-gray-400`} />
                 <Input
                   className={isRTL ? 'pr-10' : 'pl-10'}
-                  placeholder={t('branch.address_placeholder')}
-                  value={newBranch.address}
-                  onChange={(e) => setNewBranch({ ...newBranch, address: e.target.value })}
+                  placeholder={t('store.address_placeholder', 'عنوان المتجر')}
+                  value={newStore.address}
+                  onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
                 />
               </div>
             </div>
@@ -190,10 +192,10 @@ export default function BranchSwitcher() {
             <div className="flex gap-2 pt-4">
               <Button onClick={handleCreate} loading={creating} className="flex-1 py-3 text-base">
                 <Plus className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                {t('branch.create_branch')}
+                {t('store.create_store', 'إنشاء المتجر')}
               </Button>
               <Button variant="ghost" onClick={() => setShowCreateModal(false)} className="flex-1">
-                {t('branch.cancel')}
+                {t('store.cancel', 'إلغاء')}
               </Button>
             </div>
           </div>

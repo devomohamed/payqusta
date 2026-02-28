@@ -1028,6 +1028,39 @@ class WhatsAppService {
 
     return this.sendMessage(phone, message);
   }
+  /**
+   * Send bulk messages (broadcast)
+   * @param {Array} recipients - Array of phone numbers
+   * @param {string} message - Text message to send
+   * @param {object} config - Tenant config
+   */
+  async sendBroadcast(recipients, message, config = null) {
+    const results = {
+      total: recipients.length,
+      successCount: 0,
+      failCount: 0,
+      errors: [],
+    };
+
+    for (const phone of recipients) {
+      try {
+        const result = await this.sendMessage(phone, message, config);
+        if (result.success) {
+          results.successCount++;
+        } else {
+          results.failCount++;
+          results.errors.push({ phone, error: result.error });
+        }
+        // Small delay to prevent sudden spikes
+        await new Promise(r => setTimeout(r, 100));
+      } catch (err) {
+        results.failCount++;
+        results.errors.push({ phone, error: err.message });
+      }
+    }
+
+    return results;
+  }
 }
 
 module.exports = new WhatsAppService();

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Truck, MessageCircle, Check, CreditCard, Package, ChevronDown, ChevronUp, X, Edit, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
-import { suppliersApi, productsApi, api } from '../store';
+import { suppliersApi, productsApi, categoriesApi, api } from '../store';
 import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
 import Pagination from '../components/Pagination';
 
@@ -49,7 +49,7 @@ export default function SuppliersPage() {
 
   // Load categories
   useEffect(() => {
-    productsApi.getCategories().then((res) => setCategories(res.data.data || [])).catch(() => { });
+    categoriesApi.getTree().then((res) => setCategories(res.data.data || [])).catch(() => { });
   }, []);
 
   const openAdd = () => { setEditId(null); setForm({ name: '', contactPerson: '', phone: '', email: '', address: '', paymentTerms: 'cash', notes: '' }); setShowModal(true); };
@@ -113,7 +113,7 @@ export default function SuppliersPage() {
 
   // Filter suppliers by category if a filter is selected
   const filteredSuppliers = categoryFilter
-    ? suppliers.filter((s) => (s.productCategories || []).includes(categoryFilter))
+    ? suppliers.filter((s) => (s.productCategories || []).some(cat => cat._id === categoryFilter || cat.parent === categoryFilter))
     : suppliers;
 
   return (
@@ -130,7 +130,14 @@ export default function SuppliersPage() {
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
           className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
           <option value="">كل الفئات</option>
-          {categories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+          {categories.map((cat) => (
+            <React.Fragment key={cat._id}>
+              <option value={cat._id}>{cat.icon} {cat.name}</option>
+              {(cat.children || []).map(sub => (
+                <option key={sub._id} value={sub._id}>&nbsp;&nbsp;&nbsp;{sub.icon} {sub.name}</option>
+              ))}
+            </React.Fragment>
+          ))}
         </select>
 
         <Button icon={<Plus className="w-4 h-4" />} onClick={openAdd}>إضافة مورد</Button>
@@ -188,8 +195,8 @@ export default function SuppliersPage() {
                   {(s.productCategories || []).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {s.productCategories.map((cat) => (
-                        <span key={cat} className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-semibold text-gray-500">
-                          {cat === 'هواتف' ? '📱' : cat === 'لابتوب' ? '💻' : cat === 'تابلت' ? '📟' : cat === 'شاشات' ? '🖥️' : cat === 'إكسسوارات' ? '🎧' : '📦'} {cat}
+                        <span key={cat._id} className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-semibold text-gray-500">
+                          {cat.icon || '📦'} {cat.name}
                         </span>
                       ))}
                     </div>
@@ -204,14 +211,14 @@ export default function SuppliersPage() {
                       <div className="flex flex-wrap gap-1.5">
                         {s.productNames.map((p, i) => (
                           <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${p.stockStatus === 'out_of_stock'
-                              ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-                              : p.stockStatus === 'low_stock'
-                                ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
-                                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                            ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
+                            : p.stockStatus === 'low_stock'
+                              ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
                             }`}>
                             {p.name}
                             <span className={`text-[9px] ${p.stockStatus === 'out_of_stock' ? 'text-red-400' :
-                                p.stockStatus === 'low_stock' ? 'text-yellow-500' : 'text-gray-400'
+                              p.stockStatus === 'low_stock' ? 'text-yellow-500' : 'text-gray-400'
                               }`}>
                               ({p.stockQty || 0})
                             </span>
@@ -230,8 +237,8 @@ export default function SuppliersPage() {
                   <div className="flex gap-2">
                     <button onClick={() => toggleProducts(s._id)}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${expandedSupplier === s._id
-                          ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                          : 'border-2 border-gray-200 dark:border-gray-700 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10'
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                        : 'border-2 border-gray-200 dark:border-gray-700 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10'
                         }`}>
                       <Package className="w-3.5 h-3.5" />
                       {expandedSupplier === s._id ? 'إخفاء المنتجات' : `عرض المنتجات (${s.productsCount || 0})`}

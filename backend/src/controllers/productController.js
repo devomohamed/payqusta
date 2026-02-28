@@ -20,17 +20,38 @@ class ProductController {
 
     // Build filter
     const filter = { ...req.tenantFilter, isActive: true };
+    const queryConditions = [];
 
     // Search
     if (req.query.search) {
-      filter.$or = [
-        { name: { $regex: req.query.search, $options: 'i' } },
-        { sku: { $regex: req.query.search, $options: 'i' } },
-      ];
+      queryConditions.push({
+        $or: [
+          { name: { $regex: req.query.search, $options: 'i' } },
+          { sku: { $regex: req.query.search, $options: 'i' } },
+        ],
+      });
     }
 
-    // Category filter
-    if (req.query.category) filter.category = req.query.category;
+    // Category filter (support subcategories recursively)
+    if (req.query.category) {
+      const Category = require('../models/Category');
+      const subcategories = await Category.find({ 
+        $or: [{ _id: req.query.category }, { parent: req.query.category }],
+        tenant: req.tenantId 
+      }).select('_id');
+      
+      const categoryIds = subcategories.map(c => c._id);
+      queryConditions.push({
+        $or: [
+          { category: { $in: categoryIds } },
+          { subcategory: { $in: categoryIds } }
+        ]
+      });
+    }
+
+    if (queryConditions.length > 0) {
+      filter.$and = queryConditions;
+    }
 
     // Stock status filter
     if (req.query.stockStatus) filter.stockStatus = req.query.stockStatus;
@@ -41,6 +62,8 @@ class ProductController {
     const [products, total] = await Promise.all([
       Product.find(filter)
         .populate('supplier', 'name')
+        .populate('category', 'name icon')
+        .populate('subcategory', 'name icon')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -58,7 +81,9 @@ class ProductController {
     const product = await Product.findOne({
       _id: req.params.id,
       ...req.tenantFilter,
-    }).populate('supplier', 'name contactPerson phone');
+    }).populate('supplier', 'name contactPerson phone')
+      .populate('category', 'name icon')
+      .populate('subcategory', 'name icon');
 
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
 
@@ -98,6 +123,24 @@ class ProductController {
 
     const product = await Product.create(productData);
 
+    // Initialize inventory for all active branches if inventory not provided
+    if ((!req.body.inventory || req.body.inventory.length === 0) && req.body.stockQuantity > 0) {
+      const Branch = require('../models/Branch');
+      const branches = await Branch.find({ tenant: req.tenantId, isActive: true });
+
+      if (branches.length > 0) {
+        // If only one branch, put everything there. Otherwise, keep as global until distributed?
+        // BRD says "every branch has separate quantity". Let's default to assigning to the creator's branch.
+        const targetBranchId = req.user.branch || branches[0]._id;
+        product.inventory = [{
+          branch: targetBranchId,
+          quantity: req.body.stockQuantity,
+          minQuantity: req.body.minQuantity || 5
+        }];
+        await product.save();
+      }
+    }
+
     ApiResponse.created(res, product, 'تم إضافة المنتج بنجاح');
   });
 
@@ -115,6 +158,7 @@ class ProductController {
     // Update fields
     const allowedFields = [
       'name', 'sku', 'description', 'category', 'price', 'cost',
+      'wholesalePrice', 'shippingCost',
       'images', 'thumbnail', 'barcode', 'tags', 'isActive', 'supplier',
       'expiryDate',
     ];
@@ -122,6 +166,10 @@ class ProductController {
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) product[field] = req.body[field];
     });
+
+    // Handle hierarchical categories
+    if (req.body.category) product.category = req.body.category;
+    if (req.body.subcategory !== undefined) product.subcategory = req.body.subcategory;
 
     // Update stock separately
     if (req.body.stockQuantity !== undefined) product.stock.quantity = req.body.stockQuantity;
@@ -173,7 +221,7 @@ class ProductController {
    * Update stock quantity (add/subtract)
    */
   updateStock = catchAsync(async (req, res, next) => {
-    const { quantity, operation } = req.body; // operation: 'add' or 'subtract'
+    const { quantity, operation, branchId } = req.body; // operation: 'add', 'subtract', or 'set'
 
     const product = await Product.findOne({
       _id: req.params.id,
@@ -182,18 +230,45 @@ class ProductController {
 
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
 
-    if (operation === 'add') {
-      product.stock.quantity += quantity;
-    } else if (operation === 'subtract') {
-      if (product.stock.quantity < quantity) {
-        return next(AppError.badRequest('الكمية المطلوبة أكبر من المخزون المتاح'));
+    if (branchId) {
+      // Branch-specific update
+      if (!product.inventory) product.inventory = [];
+      let branchStock = product.inventory.find(inv => inv.branch.toString() === branchId.toString());
+
+      if (!branchStock) {
+        branchStock = { branch: branchId, quantity: 0, minQuantity: 5 };
+        product.inventory.push(branchStock);
+        // Need to re-find it after push to mutate it? No, push by reference in Mongoose? 
+        // Better to re-find or use the ref.
+        branchStock = product.inventory[product.inventory.length - 1];
       }
-      product.stock.quantity -= quantity;
+
+      const currentQty = branchStock.quantity;
+      if (operation === 'add') {
+        branchStock.quantity += quantity;
+      } else if (operation === 'subtract') {
+        if (currentQty < quantity) {
+          return next(AppError.badRequest('الكمية المطلوبة أكبر من المخزون المتاح في هذا الفرع'));
+        }
+        branchStock.quantity -= quantity;
+      } else {
+        branchStock.quantity = quantity;
+      }
     } else {
-      product.stock.quantity = quantity;
+      // Global update (legacy or fallback)
+      if (operation === 'add') {
+        product.stock.quantity += quantity;
+      } else if (operation === 'subtract') {
+        if (product.stock.quantity < quantity) {
+          return next(AppError.badRequest('الكمية المطلوبة أكبر من المخزون المتاح'));
+        }
+        product.stock.quantity -= quantity;
+      } else {
+        product.stock.quantity = quantity;
+      }
     }
 
-    // Reset alert flags if stock is restored
+    // Reset alert flags if stock is restored (global check)
     if (product.stock.quantity > product.stock.minQuantity) {
       product.lowStockAlertSent = false;
       product.outOfStockAlertSent = false;
@@ -469,6 +544,91 @@ class ProductController {
   });
 
 
+  /**
+   * POST /api/v1/products/stocktake
+   * Perform bulk stocktake updates
+   */
+  stocktake = catchAsync(async (req, res, next) => {
+    const { items, branchId } = req.body; // items: Array of { productId, actualQuantity }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return next(AppError.badRequest('يجب إرسال قائمة بالمنتجات والكميات الفعلية'));
+    }
+
+    const discrepancies = [];
+    const updatePromises = items.map(async (item) => {
+      const { productId, actualQuantity } = item;
+      if (!productId || actualQuantity === undefined || actualQuantity < 0) return null;
+
+      const product = await Product.findOne({ _id: productId, ...req.tenantFilter });
+      if (!product) return null;
+
+      let currentQuantity;
+
+      if (branchId) {
+        // Branch-specific stocktake
+        if (!product.inventory) product.inventory = [];
+        let branchStock = product.inventory.find(inv => inv.branch.toString() === branchId.toString());
+
+        if (!branchStock) {
+          branchStock = { branch: branchId, quantity: 0, minQuantity: 5 };
+          product.inventory.push(branchStock);
+          branchStock = product.inventory[product.inventory.length - 1];
+        }
+
+        currentQuantity = branchStock.quantity;
+        const diff = Number(actualQuantity) - currentQuantity;
+
+        if (diff !== 0) {
+          discrepancies.push({
+            productId: product._id,
+            name: product.name,
+            sku: product.sku,
+            expectedQuantity: currentQuantity,
+            actualQuantity: Number(actualQuantity),
+            difference: diff,
+            branchId
+          });
+
+          branchStock.quantity = Number(actualQuantity);
+          await product.save({ validateBeforeSave: false });
+        }
+      } else {
+        // Global stocktake (legacy)
+        currentQuantity = product.stock.quantity;
+        const diff = Number(actualQuantity) - currentQuantity;
+
+        if (diff !== 0) {
+          discrepancies.push({
+            productId: product._id,
+            name: product.name,
+            sku: product.sku,
+            expectedQuantity: currentQuantity,
+            actualQuantity: Number(actualQuantity),
+            difference: diff
+          });
+
+          product.stock.quantity = Number(actualQuantity);
+          await product.save({ validateBeforeSave: false });
+        }
+      }
+
+      return product;
+    });
+
+    await Promise.all(updatePromises);
+
+    ApiResponse.success(
+      res,
+      {
+        totalProcessed: items.length,
+        discrepanciesFound: discrepancies.length,
+        discrepancies,
+        branchId
+      },
+      'تم الانتهاء من الجرد بنجاح'
+    );
+  });
 }
 
 module.exports = new ProductController();

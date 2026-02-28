@@ -24,7 +24,7 @@ const purchaseOrderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['draft', 'pending', 'approved', 'received', 'cancelled'],
+      enum: ['draft', 'pending', 'approved', 'partial', 'received', 'cancelled'],
       default: 'draft',
     },
     items: [
@@ -71,10 +71,10 @@ purchaseOrderSchema.pre('save', async function (next) {
     const count = await this.constructor.countDocuments({ tenant: this.tenant });
     this.orderNumber = `PO-${Date.now()}-${count + 1}`;
   }
-  
+
   // Calculate total
   this.totalAmount = this.items.reduce((sum, item) => sum + item.totalCost, 0);
-  
+
   next();
 });
 

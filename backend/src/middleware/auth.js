@@ -8,6 +8,33 @@ const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
+const getRequestHost = (req) => {
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const rawHost = forwardedHost || req.headers.host || '';
+  return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
+};
+
+const isPlatformHost = (host) => {
+  if (!host) return true;
+  return host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.run.app') ||
+    host.endsWith('.a.run.app');
+};
+
+const markCustomDomainConnected = (Tenant, tenantId) => {
+  if (!tenantId) return;
+  Tenant.updateOne(
+    { _id: tenantId },
+    {
+      $set: {
+        customDomainStatus: 'connected',
+        customDomainLastCheckedAt: new Date(),
+      },
+    }
+  ).catch(() => {});
+};
+
 /**
  * Protect routes — verify JWT token
  */
@@ -121,17 +148,15 @@ const tenantScope = (req, res, next) => {
  */
 const publicTenantScope = async (req, res, next) => {
   try {
-    // If already has tenantId (e.g. from protect), move on
     if (req.tenantId) {
       req.tenantFilter = { tenant: req.tenantId };
       return next();
     }
 
-    // Try to get tenant from header, query or slug
     let tenantId = req.headers['x-tenant-id'] || req.query.tenant;
     const slug = req.query.slug || req.headers['x-tenant-slug'];
+    const requestHost = getRequestHost(req);
 
-    // If still missing, attempt to extract from Authorization header
     if (!tenantId && !slug && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {
         const token = req.headers.authorization.split(' ')[1];
@@ -140,24 +165,31 @@ const publicTenantScope = async (req, res, next) => {
           tenantId = decoded.tenant;
         }
       } catch (err) {
-        // Ignore token errors here, fallback below
+        // Ignore token errors here.
       }
     }
 
-    if (!tenantId && !slug) {
-      return next(AppError.badRequest('يرجى تحديد المتجر (x-tenant-id أو slug)'));
-    }
-
     const Tenant = require('../models/Tenant');
-    let tenant;
+    let tenant = null;
+
     if (tenantId) {
       tenant = await Tenant.findById(tenantId);
-    } else {
+    } else if (slug) {
       tenant = await Tenant.findOne({ slug });
+    } else if (!isPlatformHost(requestHost)) {
+      tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
+    }
+
+    if (!tenantId && !slug && !tenant) {
+      return next(AppError.badRequest('Please provide tenant identifier (x-tenant-id or slug)'));
     }
 
     if (!tenant) {
-      return next(AppError.notFound('المتجر غير موجود'));
+      return next(AppError.notFound('Store not found'));
+    }
+
+    if (!tenantId && !slug && !isPlatformHost(requestHost)) {
+      markCustomDomainConnected(Tenant, tenant._id);
     }
 
     req.tenantId = tenant._id;
@@ -214,3 +246,5 @@ const auditLog = (action, resource) => {
 };
 
 module.exports = { protect, authorize, tenantScope, publicTenantScope, auditLog };
+
+
