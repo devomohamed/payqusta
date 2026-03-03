@@ -3,6 +3,7 @@ import { Save, Globe, Paintbrush, Upload, Eye, X, Palette, Store } from 'lucide-
 import { useAuthStore, useThemeStore, api } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMapper';
 
 export default function SettingsWhiteLabel() {
     const { tenant, getMe } = useAuthStore();
@@ -50,8 +51,8 @@ export default function SettingsWhiteLabel() {
     const handleLogoChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-            notify.error('حجم الشعار يجب ألا يتجاوز 2MB');
+        if (file.size > 20 * 1024 * 1024) {
+            notify.error('حجم الشعار يجب ألا يتجاوز 20MB');
             return;
         }
         const reader = new FileReader();
@@ -80,7 +81,7 @@ export default function SettingsWhiteLabel() {
             notify.success('تم حفظ إعدادات الهوية البصرية بنجاح');
             getMe();
         } catch (err) {
-            notify.error(err.response?.data?.message || 'فشل حفظ الإعدادات');
+            notify.error(getUserFriendlyErrorMessage(err, 'فشل حفظ الإعدادات'));
         } finally {
             setSaving(false);
         }
@@ -131,7 +132,7 @@ export default function SettingsWhiteLabel() {
                         className="hidden"
                     />
                     <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-                        <p>• الحجم الأقصى: 2MB</p>
+                        <p>• الحجم الأقصى: 20MB</p>
                         <p>• الصيغ: PNG, JPG, SVG, WebP</p>
                         <p>• يُفضل صورة شفافة (بدون خلفية)</p>
                         {logoPreview && (
@@ -209,9 +210,14 @@ export default function SettingsWhiteLabel() {
                         {domainStatusLabel}
                     </span>
                 </div>
-                <p className="text-sm text-gray-400 mb-4">
-                    يمكنك ربط نطاقك الخاص ليظهر متجرك باسم مخصص. هذه الميزة ستتطلب إعداد DNS يدوي (CNAME).
-                </p>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-4 space-y-2 bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 text-right">
+                    <p className="font-bold text-gray-800 dark:text-gray-200">الفرق بين رابط المتجر والنطاق المخصص:</p>
+                    <ul className="list-disc list-inside pr-2 space-y-1 text-xs leading-relaxed">
+                        <li><strong className="text-primary-600 dark:text-primary-400">رابط المتجر الأساسي (Subdomain):</strong> يتم ضبطه من شاشة <strong className="text-gray-700 dark:text-gray-300">"إعدادات المتجر الأساسية"</strong>، ويكون مجانياً (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">shop.payqusta.com</span>).</li>
+                        <li><strong className="text-pink-600 dark:text-pink-400">النطاق المخصص (Custom Domain):</strong> مدفوع تشتريه من شركة خارجية (مثل GoDaddy) ليكون باسم شركتك (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">www.myshop.com</span>).</li>
+                    </ul>
+                    <p className="text-xs pt-2 mt-2 border-t border-gray-100 dark:border-gray-700">لربط نطاقك المخصص بنجاح، يجب توجيه <b>CNAME Record</b> من لوحة تحكم النطاق الخاص بك إلى هذا الخادم ثم حفظ رابط النطاق هنا بدون <span dir="ltr" className="font-mono ml-1">http://</span>.</p>
+                </div>
                 <Input
                     label="النطاق المخصص"
                     value={form.customDomain}
@@ -227,9 +233,8 @@ export default function SettingsWhiteLabel() {
                 {domainError && (
                     <p className="text-xs text-red-500 mt-2">{domainError}</p>
                 )}
-                <p className="text-xs text-gray-500 mt-2">Save the domain here, then point a CNAME from your DNS provider to this service. Once DNS is ready, the portal will load on that same domain.</p>
                 {tenant?.customDomainLastCheckedAt && (
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-gray-400 mt-2" dir="ltr">
                         Last checked: {new Date(tenant.customDomainLastCheckedAt).toLocaleString()}
                     </p>
                 )}

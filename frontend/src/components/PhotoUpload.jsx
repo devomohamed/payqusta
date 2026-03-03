@@ -24,9 +24,9 @@ const PhotoUpload = ({ onUpload, onClose }) => {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('حجم الصورة كبير جداً (الحد الأقصى 5 ميجا)');
+    // Validate file size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('حجم الصورة كبير جداً (الحد الأقصى 20 ميجا)');
       return;
     }
 
@@ -171,7 +171,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
 
             {/* Info */}
             <p className="text-sm text-gray-500 text-center mt-4">
-              حجم الصورة الأقصى: 5 ميجابايت
+              حجم الصورة الأقصى: 20 ميجابايت
             </p>
           </div>
         )}

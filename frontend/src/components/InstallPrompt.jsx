@@ -13,10 +13,26 @@ const InstallPrompt = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    let cancelled = false;
+
+    const markInstalled = () => {
+      if (cancelled) return;
       setIsInstalled(true);
-      return;
+      localStorage.setItem('pwa-installed', '1');
+    };
+
+    // Check if already installed (standalone or iOS standalone)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) {
+      markInstalled();
+      return () => { cancelled = true; };
+    }
+
+    // Check if we already know the app was installed on this origin
+    const locallyInstalled = localStorage.getItem('pwa-installed') === '1';
+    if (locallyInstalled) {
+      setIsInstalled(true);
+      return () => { cancelled = true; };
     }
 
     // Check if user dismissed before
@@ -45,14 +61,18 @@ const InstallPrompt = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Listen for successful installation
-    window.addEventListener('appinstalled', () => {
-      setIsInstalled(true);
+    const handleAppInstalled = () => {
+      markInstalled();
       setShowPrompt(false);
       console.log('✅ PWA was installed');
-    });
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      cancelled = true;
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -69,6 +89,7 @@ const InstallPrompt = () => {
 
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
+      localStorage.setItem('pwa-installed', '1');
     } else {
       console.log('User dismissed the install prompt');
     }

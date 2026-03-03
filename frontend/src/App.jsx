@@ -69,6 +69,7 @@ import ProductDetails from './storefront/ProductDetails';
 import ShoppingCart from './storefront/ShoppingCart';
 import Checkout from './storefront/Checkout';
 import OrderConfirmation from './storefront/OrderConfirmation';
+import OrderTracking from './storefront/OrderTracking';
 
 // Customer Portal Pages
 import PortalLogin from './portal/PortalLogin';
@@ -191,6 +192,7 @@ function MainLayout() {
                 <Route path="/store/cart" element={<StorefrontLayout><ShoppingCart /></StorefrontLayout>} />
                 <Route path="/store/checkout" element={<StorefrontLayout><Checkout /></StorefrontLayout>} />
                 <Route path="/store/order/:id" element={<StorefrontLayout><OrderConfirmation /></StorefrontLayout>} />
+                <Route path="/store/track-order" element={<StorefrontLayout><OrderTracking /></StorefrontLayout>} />
                 <Route path="/admin/tenants" element={<AdminRoute><AdminTenantsPage /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
                 <Route path="/admin/audit-logs" element={<AdminRoute><AdminAuditLogsPage /></AdminRoute>} />

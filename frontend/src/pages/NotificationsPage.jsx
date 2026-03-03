@@ -39,6 +39,7 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
 
   const fetchUnreadCount = useCallback(async () => {
+    if (!localStorage.getItem('payqusta_token')) return;
     try {
       const { data } = await api.get('/notifications/unread-count');
       setUnreadCount(data.data?.count || 0);
@@ -48,6 +49,10 @@ export default function NotificationsPage() {
   }, []);
 
   const fetchNotifications = useCallback(async () => {
+    if (!localStorage.getItem('payqusta_token')) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const params = filter === 'unread' ? { unread: true, limit: 50 } : { limit: 50 };
@@ -127,21 +132,19 @@ export default function NotificationsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-              filter === 'all'
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filter === 'all'
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
-            }`}
+              }`}
           >
             الكل
           </button>
           <button
             onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
-              filter === 'unread'
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filter === 'unread'
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
-            }`}
+              }`}
           >
             غير مقروء
           </button>
@@ -173,11 +176,10 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={notification._id}
-                  className={`flex items-start gap-4 p-4 cursor-pointer transition ${
-                    notification.isRead
+                  className={`flex items-start gap-4 p-4 cursor-pointer transition ${notification.isRead
                       ? 'bg-white dark:bg-gray-900'
                       : 'bg-primary-50/60 dark:bg-primary-500/10'
-                  }`}
+                    }`}
                   onClick={() => handleClick(notification)}
                 >
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${color.bg} ${color.text} ring-1 ${color.ring}`}>

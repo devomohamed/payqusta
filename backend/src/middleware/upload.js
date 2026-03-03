@@ -10,30 +10,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const AppError = require('../utils/AppError');
 
-// File signature validation (Magic Numbers)
-const FILE_SIGNATURES = {
-  'image/jpeg': [['ff', 'd8', 'ff']],
-  'image/png': [['89', '50', '4e', '47']],
-  'image/webp': [['52', '49', '46', '46']], // RIFF
-  'image/gif': [['47', '49', '46', '38']], // GIF8
-};
-
-/**
- * Validate file signature (Magic Number)
- * Prevents file type spoofing
- */
-const validateFileSignature = (buffer, mimetype) => {
-  if (!FILE_SIGNATURES[mimetype]) return false;
-
-  const signatures = FILE_SIGNATURES[mimetype];
-  const hex = buffer.toString('hex', 0, 8);
-
-  return signatures.some(sig => {
-    const sigHex = sig.join('');
-    return hex.startsWith(sigHex);
-  });
-};
-
 /**
  * Sanitize filename to prevent path traversal attacks
  */
@@ -52,28 +28,63 @@ const ensureDirectoryExists = (dirPath) => {
   }
 };
 
+let cachedBucket = null;
+
+const getCloudBucket = () => {
+  if (!process.env.GCS_BUCKET_NAME) return null;
+
+  if (!cachedBucket) {
+    const { Storage } = require('@google-cloud/storage');
+    const storageOptions = {};
+
+    if (process.env.GCS_PROJECT_ID) {
+      storageOptions.projectId = process.env.GCS_PROJECT_ID;
+    }
+
+    const storageClient = new Storage(storageOptions);
+    cachedBucket = storageClient.bucket(process.env.GCS_BUCKET_NAME);
+  }
+
+  return cachedBucket;
+};
+
+const getCloudPublicUrl = (folder, filename) => {
+  const baseUrl = process.env.GCS_PUBLIC_BASE_URL?.replace(/\/+$/, '');
+  if (baseUrl) {
+    return `${baseUrl}/${folder}/${filename}`;
+  }
+
+  return `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/${folder}/${filename}`;
+};
+
+const extractCloudObjectPath = (filepath) => {
+  if (!filepath || !process.env.GCS_BUCKET_NAME) return null;
+
+  const baseUrl = process.env.GCS_PUBLIC_BASE_URL?.replace(/\/+$/, '');
+  if (baseUrl && filepath.startsWith(`${baseUrl}/`)) {
+    return filepath.slice(baseUrl.length + 1);
+  }
+
+  const gcsPrefix = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/`;
+  if (filepath.startsWith(gcsPrefix)) {
+    return filepath.slice(gcsPrefix.length);
+  }
+
+  return null;
+};
+
 // Memory storage (we'll process with Sharp before saving)
 const storage = multer.memoryStorage();
 
 // File filter - enhanced security
 const fileFilter = (req, file, cb) => {
-  // Check extension
-  const allowedExtensions = /jpeg|jpg|png|webp|gif/;
-  const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
-
-  // Check mimetype
-  const allowedMimetypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  const validMimetype = allowedMimetypes.includes(file.mimetype);
-
-  // Sanitize filename
-  file.originalname = sanitizeFilename(file.originalname);
-
-  if (!extname || !validMimetype) {
-    return cb(AppError.badRequest('الصور فقط مسموحة (JPEG, PNG, WebP, GIF)'), false);
+  // Check if it's an image
+  if (file.mimetype.startsWith('image/')) {
+    file.originalname = sanitizeFilename(file.originalname);
+    cb(null, true);
+  } else {
+    return cb(AppError.badRequest('يرجى رفع ملفات صور فقط'), false);
   }
-
-  // Additional validation will be done in processImage with magic number check
-  cb(null, true);
 };
 
 // Multer configuration
@@ -81,7 +92,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 20 * 1024 * 1024, // 20MB max
   },
 });
 
@@ -91,33 +102,86 @@ const upload = multer({
  * @param {String} filename - Desired filename
  * @param {String} folder - Upload folder (products, avatars, etc.)
  * @param {String} mimetype - Original file mimetype for validation
+ * @param {Object} watermarkOptions - Tenant watermark settings
  * @returns {String} - Saved file path
  */
-const processImage = async (buffer, filename, folder = 'products', mimetype = 'image/jpeg') => {
-  // Validate file signature (magic number check)
-  if (!validateFileSignature(buffer, mimetype)) {
-    throw AppError.badRequest('ملف غير صالح - فشل التحقق من نوع الملف');
-  }
-
-  const uploadDir = path.join(__dirname, '../../uploads', folder);
-  ensureDirectoryExists(uploadDir);
-
+const processImage = async (buffer, filename, folder = 'products', mimetype = 'image/jpeg', watermarkOptions = null) => {
   // Generate secure random filename
   const randomName = crypto.randomBytes(16).toString('hex');
   const ext = '.webp'; // Always convert to webp for consistency and security
   const secureFilename = `${randomName}${ext}`;
-  const filepath = path.join(uploadDir, secureFilename);
 
   try {
-    // Process image with Sharp (resize, optimize, convert to webp)
-    // Sharp also acts as additional validation - will fail on corrupted/malicious files
-    await sharp(buffer)
-      .resize(800, 800, {
-        fit: 'inside',
-        withoutEnlargement: true,
+    let imageProcessor = sharp(buffer)
+      .resize({
+        width: 1080,
+        height: 1080,
+        fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 1 }
       })
+      .normalize()
+      .sharpen();
+
+    // Apply Watermark if enabled and text exists
+    if (watermarkOptions?.enabled && watermarkOptions?.text) {
+      const gravityMap = {
+        'center': 'center',
+        'northwest': 'northwest',
+        'northeast': 'northeast',
+        'southwest': 'southwest',
+        'southeast': 'southeast'
+      };
+
+      const gravity = gravityMap[watermarkOptions.position] || 'southeast';
+      const opacityText = Math.max(0.1, Math.min(1, (watermarkOptions.opacity || 50) / 100));
+
+      // Create SVG text buffer for watermark
+      const svgWatermark = `
+        <svg width="800" height="800">
+          <style>
+            .title { fill: rgba(255, 255, 255, ${opacityText}); font-size: 36px; font-weight: bold; font-family: sans-serif; }
+            .shadow { fill: rgba(0, 0, 0, ${opacityText}); font-size: 36px; font-weight: bold; font-family: sans-serif; }
+          </style>
+          <text x="50%" y="50%" text-anchor="middle" class="shadow" dx="2" dy="2">${watermarkOptions.text}</text>
+          <text x="50%" y="50%" text-anchor="middle" class="title">${watermarkOptions.text}</text>
+        </svg>
+      `;
+
+      imageProcessor = imageProcessor.composite([{
+        input: Buffer.from(svgWatermark),
+        gravity: gravity,
+      }]);
+    }
+
+    const processedBuffer = await imageProcessor
       .webp({ quality: 85 })
-      .toFile(filepath);
+      .toBuffer();
+
+    const cloudBucket = getCloudBucket();
+    if (cloudBucket) {
+      const objectPath = `${folder}/${secureFilename}`;
+      const cloudFile = cloudBucket.file(objectPath);
+
+      await cloudFile.save(processedBuffer, {
+        resumable: false,
+        metadata: {
+          contentType: 'image/webp',
+          cacheControl: 'public, max-age=31536000, immutable',
+        },
+      });
+
+      if (process.env.GCS_MAKE_UPLOADS_PUBLIC === 'true') {
+        await cloudFile.makePublic();
+      }
+
+      return getCloudPublicUrl(folder, secureFilename);
+    }
+
+    const uploadDir = path.join(__dirname, '../../uploads', folder);
+    ensureDirectoryExists(uploadDir);
+
+    const filepath = path.join(uploadDir, secureFilename);
+    await fs.promises.writeFile(filepath, processedBuffer);
 
     return `/uploads/${folder}/${secureFilename}`;
   } catch (error) {
@@ -129,11 +193,21 @@ const processImage = async (buffer, filename, folder = 'products', mimetype = 'i
 /**
  * Delete uploaded file
  */
-const deleteFile = (filepath) => {
+const deleteFile = async (filepath) => {
   try {
-    const fullPath = path.join(__dirname, '../..', filepath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
+    const cloudBucket = getCloudBucket();
+    const cloudObjectPath = extractCloudObjectPath(filepath);
+
+    if (cloudBucket && cloudObjectPath) {
+      await cloudBucket.file(cloudObjectPath).delete({ ignoreNotFound: true });
+      return;
+    }
+
+    if (typeof filepath === 'string' && filepath.startsWith('/uploads/')) {
+      const fullPath = path.join(__dirname, '../..', filepath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
     }
   } catch (error) {
     console.error('Error deleting file:', error);

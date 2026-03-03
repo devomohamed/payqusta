@@ -53,8 +53,8 @@ export default function PortalProfile() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        notify.error(t('profile.messages.image_size'));
+      if (file.size > 20 * 1024 * 1024) { // 20MB limit
+        notify.error(t('profile.messages.image_size') || 'حجم الصورة يجب ألا يتجاوز 20 ميجابايت');
         return;
       }
       const reader = new FileReader();

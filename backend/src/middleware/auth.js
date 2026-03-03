@@ -8,16 +8,42 @@ const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
+const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
+  .trim()
+  .toLowerCase();
+const RESERVED_PLATFORM_SUBDOMAINS = new Set(
+  (process.env.RESERVED_PLATFORM_SUBDOMAINS || 'www,api,admin,app,portal,mail')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 const getRequestHost = (req) => {
   const forwardedHost = req.headers['x-forwarded-host'];
   const rawHost = forwardedHost || req.headers.host || '';
   return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
 };
 
+const getPlatformSubdomain = (host) => {
+  if (!host || !PLATFORM_ROOT_DOMAIN) return null;
+  if (host === PLATFORM_ROOT_DOMAIN) return null;
+
+  const suffix = `.${PLATFORM_ROOT_DOMAIN}`;
+  if (!host.endsWith(suffix)) return null;
+
+  const candidate = host.slice(0, -suffix.length);
+  if (!candidate || candidate.includes('.')) return null;
+  if (RESERVED_PLATFORM_SUBDOMAINS.has(candidate)) return null;
+
+  return candidate;
+};
+
 const isPlatformHost = (host) => {
   if (!host) return true;
   return host === 'localhost' ||
     host === '127.0.0.1' ||
+    host === PLATFORM_ROOT_DOMAIN ||
+    !!getPlatformSubdomain(host) ||
     host.endsWith('.run.app') ||
     host.endsWith('.a.run.app');
 };
@@ -156,6 +182,7 @@ const publicTenantScope = async (req, res, next) => {
     let tenantId = req.headers['x-tenant-id'] || req.query.tenant;
     const slug = req.query.slug || req.headers['x-tenant-slug'];
     const requestHost = getRequestHost(req);
+    const hostSlug = getPlatformSubdomain(requestHost);
 
     if (!tenantId && !slug && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {
@@ -176,19 +203,21 @@ const publicTenantScope = async (req, res, next) => {
       tenant = await Tenant.findById(tenantId);
     } else if (slug) {
       tenant = await Tenant.findOne({ slug });
+    } else if (hostSlug) {
+      tenant = await Tenant.findOne({ slug: hostSlug, isActive: true });
     } else if (!isPlatformHost(requestHost)) {
       tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
     }
 
-    if (!tenantId && !slug && !tenant) {
-      return next(AppError.badRequest('Please provide tenant identifier (x-tenant-id or slug)'));
+    if (!tenantId && !slug && !hostSlug && !tenant) {
+      return next(AppError.badRequest('Please provide tenant identifier (x-tenant-id, slug, or store subdomain)'));
     }
 
     if (!tenant) {
       return next(AppError.notFound('Store not found'));
     }
 
-    if (!tenantId && !slug && !isPlatformHost(requestHost)) {
+    if (!tenantId && !slug && !hostSlug && !isPlatformHost(requestHost)) {
       markCustomDomainConnected(Tenant, tenant._id);
     }
 

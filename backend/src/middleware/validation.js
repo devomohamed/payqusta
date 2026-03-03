@@ -139,12 +139,14 @@ const authValidations = {
 const productValidations = {
   create: [
     commonValidations.name('name'),
-    body('sku').trim().notEmpty().withMessage('SKU مطلوب'),
+    body('sku').optional({ checkFalsy: true }).trim(),
     commonValidations.positiveNumber('cost'),
     commonValidations.positiveNumber('price'),
-    body('category').optional().trim().isLength({ max: 50 }),
-    commonValidations.positiveInt('stock.quantity'),
-    commonValidations.positiveInt('stock.minQuantity'),
+    body('category').optional({ checkFalsy: true }).isMongoId().withMessage('تصنيف غير صحيح'),
+    body('subcategory').optional({ checkFalsy: true }).isMongoId().withMessage('تصنيف فرعي غير صحيح'),
+    body('branchId').optional({ checkFalsy: true }).isMongoId().withMessage('فرع غير صحيح'),
+    commonValidations.positiveInt('stockQuantity').optional({ checkFalsy: true }),
+    commonValidations.positiveInt('minQuantity').optional({ checkFalsy: true }),
     handleValidationErrors,
   ],
 

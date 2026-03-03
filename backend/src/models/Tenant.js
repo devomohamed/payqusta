@@ -31,7 +31,6 @@ const tenantSchema = new mongoose.Schema(
       sparse: true,
       lowercase: true,
       trim: true,
-      default: null,
     },
     customDomainStatus: {
       type: String,
@@ -75,6 +74,12 @@ const tenantSchema = new mongoose.Schema(
           isVisible: { type: Boolean, default: true }
         }],
         default: []
+      },
+      watermark: {
+        enabled: { type: Boolean, default: false },
+        text: { type: String, default: '' },
+        position: { type: String, enum: ['center', 'northwest', 'northeast', 'southwest', 'southeast'], default: 'southeast' },
+        opacity: { type: Number, min: 0, max: 100, default: 50 },
       },
     },
     // WhatsApp configuration
@@ -210,6 +215,12 @@ tenantSchema.pre('save', function (next) {
       .replace(/-+/g, '-')
       .trim();
   }
+
+  // Unset empty custom domains so sparse index ignores them
+  if (!this.customDomain || this.customDomain.trim() === '') {
+    this.customDomain = undefined;
+  }
+
   next();
 });
 

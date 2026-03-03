@@ -40,7 +40,7 @@ export default function PortalProductDetails() {
             }
             if (data.category) {
                 const { fetchProducts } = usePortalStore.getState();
-                const related = await fetchProducts(1, '', data.category);
+                const related = await fetchProducts(1, '', typeof data.category === 'object' ? data.category._id : data.category);
                 if (related && related.products) {
                     setRelatedProducts(related.products.filter(p => p._id !== data._id).slice(0, 4));
                 }
@@ -94,6 +94,10 @@ export default function PortalProductDetails() {
     const isOutOfStock = currentStock === 0;
 
     const allImages = collectProductImages(product);
+
+    const catObj = typeof product?.category === 'object' ? product.category : null;
+    const categoryId = catObj?._id || product?.category || '';
+    const categoryName = catObj?.name || product?.category || '';
 
     return (
         <div className="pb-32 animate-fade-in" dir={i18n.dir()}>
@@ -150,7 +154,7 @@ export default function PortalProductDetails() {
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-[10px] font-bold px-2 py-1 bg-black text-white dark:bg-white dark:text-black rounded-md">
-                            {product.category || t('productDetails.general')}
+                            {categoryName || t('productDetails.general')}
                         </span>
                         <div className="flex items-center gap-1 text-yellow-500 text-xs font-bold">
                             <Star className="w-3 h-3 fill-yellow-500" />
@@ -239,7 +243,7 @@ export default function PortalProductDetails() {
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t('productDetails.related')}</h3>
                             <button
-                                onClick={() => navigate(`/portal/products?category=${product.category}`)}
+                                onClick={() => navigate(`/portal/products?category=${categoryId}`)}
                                 className="text-xs font-bold text-primary-600 dark:text-primary-400"
                             >
                                 {t('productDetails.view_all')}

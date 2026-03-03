@@ -11,6 +11,8 @@ import RichTextEditor from '../components/RichTextEditor';
 import ProductDetailModal from '../components/ProductDetailModal';
 import CategorySelector from '../components/CategorySelector';
 import ProductSearchModal from '../components/ProductSearchModal';
+import SeoAnalyzer from '../components/products/SeoAnalyzer';
+import ImageEditorModal from '../components/products/ImageEditorModal';
 
 const CategoriesPage = lazy(() => import('./CategoriesPage'));
 
@@ -217,45 +219,49 @@ export default function ProductsPage() {
     toast.success('تم استيراد بيانات المنتج بنجاح!');
   };
 
-  // Upload image
-  const handleImageUpload = async (e) => {
+  // Intercept Image Upload to show the Cropper First
+  const handleImageUpload = (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate files
     for (let i = 0; i < files.length; i++) {
       if (!files[i].type.startsWith('image/')) return toast.error('الملفات يجب أن تكون صور فقط');
-      if (files[i].size > 5 * 1024 * 1024) return toast.error('حجم الصورة يجب ألا يتجاوز 5MB');
+      if (files[i].size > 20 * 1024 * 1024) return toast.error('حجم الصورة يجب ألا يتجاوز 20MB');
     }
+
+    setEditorFiles(Array.from(files));
+    setShowImageEditor(true);
+    e.target.value = ''; // Reset input
+  };
+
+  // Called after images have been cropped/skipped in the ImageEditorModal
+  const handleEditorComplete = async (processedFiles) => {
+    setShowImageEditor(false);
+    setEditorFiles([]);
+
+    if (!processedFiles || processedFiles.length === 0) return;
 
     if (editId) {
       setUploadingImage(true);
       try {
         const formData = new FormData();
-        // Append all files to 'images' field
-        for (let i = 0; i < files.length; i++) {
-          formData.append('images', files[i]);
+        for (let i = 0; i < processedFiles.length; i++) {
+          formData.append('images', processedFiles[i]);
         }
         formData.append('setAsThumbnail', productImages.length === 0 ? 'true' : 'false');
 
         const res = await productsApi.uploadImage(editId, formData);
-
-        // Update state with new images (backend returns { images: [...] })
-        const newImages = res.data.data.images || [res.data.data.image]; // Fallback for single
+        const newImages = res.data.data.images || [res.data.data.image];
         setProductImages([...productImages, ...newImages]);
-
-        toast.success(`تم رفع ${files.length > 1 ? files.length + ' صور' : 'الصورة'} بنجاح ✅`);
+        toast.success("تم رفع الصور بنجاح ✅");
       } catch (err) {
-        toast.error(err.response?.data?.message || 'خطأ في رفع الصور');
+        toast.error("خطأ في رفع الصور");
       } finally {
         setUploadingImage(false);
-        e.target.value = '';
       }
     } else {
-      // Pending upload
-      setPendingImages([...pendingImages, ...Array.from(files)]);
-      toast.success(`تم اختيار ${files.length} صور (سيتم الرفع عند الحفظ)`);
-      e.target.value = '';
+      setPendingImages([...pendingImages, ...processedFiles]);
+      toast.success("تم إعداد الصور (سيتم الرفع عند الحفظ)");
     }
   };
 

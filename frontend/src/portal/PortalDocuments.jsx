@@ -32,8 +32,8 @@ export default function PortalDocuments() {
 
     const handleFileSelect = (type, side, file) => {
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            notify.error('حجم الملف يجب أن يكون أقل من 5 ميجابايت');
+        if (file.size > 20 * 1024 * 1024) { // 20MB limit
+            notify.error('حجم الملف يجب أن يكون أقل من 20 ميجابايت');
             return;
         }
 
@@ -145,7 +145,7 @@ export default function PortalDocuments() {
                             {side === 'front' ? <Camera className="w-7 h-7" /> : side === 'back' ? <ImageIcon className="w-7 h-7" /> : <Upload className="w-7 h-7" />}
                         </div>
                         <span className="text-sm font-bold">اسحب صورة {label} أو اضغط للرفع</span>
-                        <span className="text-[10px] text-gray-400 font-medium">PNG, JPG, PDF • بحد أقصى 5MB</span>
+                        <span className="text-[10px] text-gray-400 font-medium">PNG, JPG, PDF • بحد أقصى 20MB</span>
                     </div>
                 )}
             </div>

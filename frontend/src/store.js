@@ -8,6 +8,38 @@ import axios from 'axios';
 
 export const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
+const getSystemPrefersDark = () => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
+const getStoredThemeMode = () => {
+  if (typeof window === 'undefined') {
+    return 'system';
+  }
+
+  const storedMode = localStorage.getItem('payqusta_theme_mode');
+  if (storedMode === 'light' || storedMode === 'dark' || storedMode === 'system') {
+    return storedMode;
+  }
+
+  const legacyTheme = localStorage.getItem('payqusta_theme');
+  if (legacyTheme === 'light' || legacyTheme === 'dark') {
+    return legacyTheme;
+  }
+
+  return 'system';
+};
+
+const resolveDarkMode = (themeMode) => {
+  if (themeMode === 'system') {
+    return getSystemPrefersDark();
+  }
+  return themeMode === 'dark';
+};
+
 // Configure Axios defaults
 export const api = axios.create({
   baseURL: API_URL,
@@ -249,14 +281,58 @@ export const useAuthStore = create((set, get) => ({
 }));
 
 // ========== THEME STORE ==========
-export const useThemeStore = create((set) => ({
-  dark: localStorage.getItem('payqusta_theme') === 'dark',
-  toggleTheme: () =>
-    set((state) => {
-      const newDark = !state.dark;
-      localStorage.setItem('payqusta_theme', newDark ? 'dark' : 'light');
-      return { dark: newDark };
-    }),
+const initialThemeMode = getStoredThemeMode();
+
+export const useThemeStore = create((set, get) => ({
+  themeMode: initialThemeMode,
+  dark: resolveDarkMode(initialThemeMode),
+
+  setThemeMode: (themeMode) => {
+    const nextThemeMode = themeMode === 'light' || themeMode === 'dark' || themeMode === 'system'
+      ? themeMode
+      : 'system';
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('payqusta_theme_mode', nextThemeMode);
+      if (nextThemeMode === 'system') {
+        localStorage.removeItem('payqusta_theme');
+      } else {
+        localStorage.setItem('payqusta_theme', nextThemeMode);
+      }
+    }
+
+    set({
+      themeMode: nextThemeMode,
+      dark: resolveDarkMode(nextThemeMode),
+    });
+  },
+
+  toggleTheme: () => {
+    const nextThemeMode = get().dark ? 'light' : 'dark';
+    get().setThemeMode(nextThemeMode);
+  },
+
+  syncWithSystem: () => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return () => {};
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applySystemTheme = () => {
+      if (get().themeMode !== 'system') return;
+      set({ dark: mediaQuery.matches });
+    };
+
+    applySystemTheme();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', applySystemTheme);
+      return () => mediaQuery.removeEventListener('change', applySystemTheme);
+    }
+
+    mediaQuery.addListener(applySystemTheme);
+    return () => mediaQuery.removeListener(applySystemTheme);
+  },
 }));
 
 // ========== API HELPERS ==========

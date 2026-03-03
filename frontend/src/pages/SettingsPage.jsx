@@ -1,4 +1,5 @@
 import React, { useState, Suspense, lazy } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Store, User, MessageCircle, Tag, CreditCard, Palette, Users, Globe
 } from 'lucide-react';
@@ -26,7 +27,7 @@ const ALL_TABS = [
 export default function SettingsPage() {
   const { dark, toggleTheme } = useThemeStore();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('store');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter tabs based on user role
   const TABS = ALL_TABS.filter((tab) => {
@@ -34,6 +35,12 @@ export default function SettingsPage() {
     if (tab.adminOnly && !(user?.role === 'admin' || user?.isSuperAdmin)) return false;
     return true;
   });
+
+  const defaultTab = TABS.length > 0 ? TABS[0].id : 'profile';
+  const urlTab = searchParams.get('tab');
+  const activeTab = (urlTab && TABS.some(t => t.id === urlTab)) ? urlTab : defaultTab;
+
+  const setActiveTab = (id) => setSearchParams({ tab: id });
 
   const renderTabContent = () => {
     switch (activeTab) {

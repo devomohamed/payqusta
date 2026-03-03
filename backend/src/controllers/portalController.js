@@ -17,6 +17,16 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 
+const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
+  .trim()
+  .toLowerCase();
+const RESERVED_PLATFORM_SUBDOMAINS = new Set(
+  (process.env.RESERVED_PLATFORM_SUBDOMAINS || 'www,api,admin,app,portal,mail')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 // Helper to generate token for customer
 const generateToken = (id) => {
   return jwt.sign({ id, role: 'customer' }, process.env.JWT_SECRET, {
@@ -30,10 +40,26 @@ const getRequestHost = (req) => {
   return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
 };
 
+const getPlatformSubdomain = (host) => {
+  if (!host || !PLATFORM_ROOT_DOMAIN) return null;
+  if (host === PLATFORM_ROOT_DOMAIN) return null;
+
+  const suffix = `.${PLATFORM_ROOT_DOMAIN}`;
+  if (!host.endsWith(suffix)) return null;
+
+  const candidate = host.slice(0, -suffix.length);
+  if (!candidate || candidate.includes('.')) return null;
+  if (RESERVED_PLATFORM_SUBDOMAINS.has(candidate)) return null;
+
+  return candidate;
+};
+
 const isPlatformHost = (host) => {
   if (!host) return true;
   return host === 'localhost' ||
     host === '127.0.0.1' ||
+    host === PLATFORM_ROOT_DOMAIN ||
+    !!getPlatformSubdomain(host) ||
     host.endsWith('.run.app') ||
     host.endsWith('.a.run.app');
 };
@@ -51,26 +77,38 @@ const markCustomDomainConnected = (tenantId) => {
   ).catch(() => {});
 };
 
-// Helper to resolve tenant from slug, header, or custom domain
-const resolveTenant = async (req) => {
-  let tenantId = req.headers['x-tenant-id'];
-  const slug = req.body.tenantSlug || req.body.storeCode;
+// Helper to resolve tenant from slug, header, subdomain, or custom domain
+const resolveTenantContext = async (req) => {
+  const tenantId = req.headers['x-tenant-id'] || req.query.tenant;
+  const explicitSlug = req.body.tenantSlug ||
+    req.body.storeCode ||
+    req.query.tenantSlug ||
+    req.query.storeCode ||
+    req.headers['x-tenant-slug'];
+  const requestHost = getRequestHost(req);
+  const hostSlug = getPlatformSubdomain(requestHost);
 
-  if (!tenantId && slug) {
-    const tenant = await Tenant.findOne({ slug, isActive: true });
-    if (!tenant) return null;
-    tenantId = tenant._id;
-  } else if (!tenantId) {
-    const requestHost = getRequestHost(req);
-    if (!isPlatformHost(requestHost)) {
-      const tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
-      if (!tenant) return null;
-      tenantId = tenant._id;
-      markCustomDomainConnected(tenantId);
+  let tenant = null;
+  let attemptedScopedLookup = false;
+
+  if (tenantId) {
+    attemptedScopedLookup = true;
+    tenant = await Tenant.findOne({ _id: tenantId, isActive: true });
+  } else if (explicitSlug) {
+    attemptedScopedLookup = true;
+    tenant = await Tenant.findOne({ slug: explicitSlug.toLowerCase().trim(), isActive: true });
+  } else if (hostSlug) {
+    attemptedScopedLookup = true;
+    tenant = await Tenant.findOne({ slug: hostSlug, isActive: true });
+  } else if (!isPlatformHost(requestHost)) {
+    attemptedScopedLookup = true;
+    tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
+    if (tenant) {
+      markCustomDomainConnected(tenant._id);
     }
   }
 
-  return tenantId;
+  return { tenant, attemptedScopedLookup };
 };
 
 class PortalController {
@@ -82,15 +120,19 @@ class PortalController {
    * POST /api/v1/portal/login
    */
   login = catchAsync(async (req, res, next) => {
-    const { phone, password, tenantSlug, storeCode } = req.body;
+    const { phone, password } = req.body;
 
     if (!phone || !password) {
       return next(AppError.badRequest('رقم الهاتف وكلمة المرور مطلوبين'));
     }
 
-    const tenantId = await resolveTenant(req);
+    const { tenant, attemptedScopedLookup } = await resolveTenantContext(req);
+    if (attemptedScopedLookup && !tenant) {
+      return next(AppError.notFound('Store not found'));
+    }
+
     const query = { phone };
-    if (tenantId) query.tenant = tenantId;
+    if (tenant) query.tenant = tenant._id;
 
     const customer = await Customer.findOne(query).select('+password').populate('tenant', 'name slug branding');
 
@@ -141,7 +183,7 @@ class PortalController {
    * Register a brand new customer
    */
   register = catchAsync(async (req, res, next) => {
-    const { name, phone, password, confirmPassword, tenantSlug, storeCode } = req.body;
+    const { name, phone, password, confirmPassword } = req.body;
 
     if (!name || !phone || !password) {
       return next(AppError.badRequest('الاسم ورقم الهاتف وكلمة المرور مطلوبين'));
@@ -155,13 +197,7 @@ class PortalController {
       return next(AppError.badRequest('كلمة المرور يجب أن تكون 6 أحرف على الأقل'));
     }
 
-    const slug = tenantSlug || storeCode;
-    const requestHost = getRequestHost(req);
-    const tenant = slug
-      ? await Tenant.findOne({ slug, isActive: true })
-      : (!isPlatformHost(requestHost)
-        ? await Tenant.findOne({ customDomain: requestHost, isActive: true })
-        : null);
+    const { tenant } = await resolveTenantContext(req);
     if (!tenant) {
       return next(AppError.notFound('كود المتجر غير صحيح'));
     }
@@ -212,7 +248,7 @@ class PortalController {
    * Activate an existing customer account (added by vendor) by setting a password
    */
   activate = catchAsync(async (req, res, next) => {
-    const { phone, newPassword, confirmPassword, tenantSlug, storeCode } = req.body;
+    const { phone, newPassword, confirmPassword } = req.body;
 
     if (!phone || !newPassword) {
       return next(AppError.badRequest('رقم الهاتف وكلمة المرور الجديدة مطلوبين'));
@@ -226,13 +262,7 @@ class PortalController {
       return next(AppError.badRequest('كلمة المرور يجب أن تكون 6 أحرف على الأقل'));
     }
 
-    const slug = tenantSlug || storeCode;
-    const requestHost = getRequestHost(req);
-    const tenant = slug
-      ? await Tenant.findOne({ slug, isActive: true })
-      : (!isPlatformHost(requestHost)
-        ? await Tenant.findOne({ customDomain: requestHost, isActive: true })
-        : null);
+    const { tenant } = await resolveTenantContext(req);
     if (!tenant) {
       return next(AppError.notFound('كود المتجر غير صحيح'));
     }

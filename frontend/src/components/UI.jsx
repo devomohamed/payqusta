@@ -1,30 +1,61 @@
 import React from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Info } from 'lucide-react';
 
 // ========== MODAL ==========
-export function Modal({ open = true, onClose, title, children, size = 'md' }) {
+export function Modal({
+  open = true,
+  onClose,
+  title,
+  children,
+  size = 'md',
+  bodyClassName = '',
+  contentClassName = '',
+  headerClassName = '',
+  stickyFooter = false,
+  showCloseButton = true,
+}) {
   if (open === false) return null;
-  const widths = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' };
+
+  const widths = {
+    sm: 'max-w-md',
+    md: 'max-w-xl',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl',
+    '2xl': 'max-w-6xl',
+    fullscreen: 'max-w-none',
+  };
+  const isFullscreen = size === 'fullscreen';
+  const containerClass = isFullscreen
+    ? 'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5'
+    : 'fixed inset-0 z-50 flex items-start justify-center pt-20 p-4';
+  const panelSizeClass = isFullscreen
+    ? 'w-[min(96vw,1400px)] h-[92vh]'
+    : `w-full ${widths[size] || widths.md} max-h-[85vh]`;
+  const bodyBaseClass = isFullscreen
+    ? 'flex-1 min-h-0 overflow-y-auto'
+    : `overflow-y-auto ${stickyFooter ? 'flex-1 min-h-0' : 'max-h-[calc(85vh-130px)]'}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4" onClick={onClose}>
+    <div className={containerClass} onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
       <div
-        className={`relative w-full ${widths[size]} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden animate-slide-up`}
+        className={`relative ${panelSizeClass} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div className={`shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 ${headerClassName}`}>
           <h3 className="text-lg font-bold">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
         {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto max-h-[calc(85vh-130px)]">{children}</div>
+        <div className={`px-6 py-5 ${bodyBaseClass} ${bodyClassName}`}>{children}</div>
       </div>
     </div>
   );
@@ -80,11 +111,22 @@ export function Button({
 }
 
 // ========== INPUT ==========
-export function Input({ label, error, className = '', ...props }) {
+export function Input({ label, error, tooltip, className = '', ...props }) {
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400">{label}</label>
+          {tooltip && (
+            <div className="group relative z-10">
+              <Info className="w-4 h-4 text-gray-400 hover:text-primary-500 cursor-help transition-colors" />
+              <div className="absolute bottom-full mb-2 right-0 w-48 p-2.5 bg-gray-900 border border-gray-700 text-white text-xs leading-relaxed rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                {tooltip}
+                <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-900" />
+              </div>
+            </div>
+          )}
+        </div>
       )}
       <input
         className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${error
@@ -118,14 +160,18 @@ export function TextArea({ label, error, className = '', ...props }) {
 }
 
 // ========== SELECT ==========
-export function Select({ label, options = [], children, className = '', ...props }) {
+export function Select({ label, options = [], children, error, className = '', ...props }) {
   return (
     <div className={className}>
       {label && (
         <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
       )}
       <select
-        className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 focus:border-primary-500 appearance-none cursor-pointer"
+        className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 appearance-none cursor-pointer ${
+          error
+            ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
+            : 'border-gray-200 dark:border-gray-700 focus:border-primary-500'
+        }`}
         {...props}
       >
         {options.map((opt) => (
@@ -133,6 +179,7 @@ export function Select({ label, options = [], children, className = '', ...props
         ))}
         {children}
       </select>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }

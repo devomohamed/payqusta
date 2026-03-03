@@ -8,9 +8,11 @@ import {
   PieChart, TrendingUp, Crown, Building2, Shield, Activity,
   Upload, Database, Archive, DollarSign, ShoppingCart, Video, Bell,
   ShoppingBag, RefreshCcw, MessageCircle, FileCheck, Star, Tag, CheckSquare, Award,
+  Store, ExternalLink,
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import AnimatedBrandLogo from './AnimatedBrandLogo';
+import { storefrontPath } from '../utils/storefrontHost';
 
 export default function Sidebar({ open, onClose }) {
   const { user, tenant, logout, permissions, can } = useAuthStore();
@@ -198,8 +200,6 @@ export default function Sidebar({ open, onClose }) {
           </>
         )}
 
-        {/* Staff Tools */}
-
         {/* Dashboard Dropdown */}
         <div>
           <DropdownButton
@@ -299,6 +299,20 @@ export default function Sidebar({ open, onClose }) {
               </div>
             </div>
           </div>
+        )}
+
+        {/* My Store Quick Link - visible to tenant admins only */}
+        {!isSystemSuperAdmin && user?.role === 'admin' && (
+          <a
+            href={storefrontPath('/')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all duration-200 border border-emerald-200 dark:border-emerald-800/40"
+          >
+            <Store className="w-5 h-5 flex-shrink-0" />
+            <span className="flex-1">متجري</span>
+            <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+          </a>
         )}
 
         {!isSystemSuperAdmin && (can('suppliers', 'read') || can('expenses', 'read') || user?.role === 'admin') && (
@@ -402,10 +416,10 @@ export default function Sidebar({ open, onClose }) {
             </div>
           </div>
         </div>
-      </nav >
+      </nav>
 
       {/* User Card */}
-      < div className="p-3 border-t border-gray-100 dark:border-gray-800" >
+      <div className="p-3 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {user?.name?.charAt(0) || 'U'}
@@ -422,8 +436,8 @@ export default function Sidebar({ open, onClose }) {
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 
   return (

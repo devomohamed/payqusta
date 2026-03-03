@@ -11,6 +11,16 @@ const WhatsAppService = require('../services/WhatsAppService');
 const catchAsync = require('../utils/catchAsync');
 const logger = require('../utils/logger');
 
+const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
+  .trim()
+  .toLowerCase();
+const RESERVED_PLATFORM_SUBDOMAINS = new Set(
+  (process.env.RESERVED_PLATFORM_SUBDOMAINS || 'www,api,admin,app,portal,mail')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 const normalizeCustomDomain = (value) => {
   if (value === undefined) return undefined;
   if (value === null) return null;
@@ -26,6 +36,61 @@ const normalizeCustomDomain = (value) => {
   }
 
   return hostOnly;
+};
+
+const normalizeSubdomain = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
+  const normalized = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  if (!normalized) {
+    throw AppError.badRequest('Please enter a valid store subdomain');
+  }
+
+  if (!/^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/.test(normalized)) {
+    throw AppError.badRequest('Store subdomain must be 3-63 characters and use letters, numbers, or hyphens');
+  }
+
+  if (RESERVED_PLATFORM_SUBDOMAINS.has(normalized)) {
+    throw AppError.badRequest('This store subdomain is reserved');
+  }
+
+  return normalized;
+};
+
+const buildStoreUrl = (slug) => {
+  if (!slug || !PLATFORM_ROOT_DOMAIN) return null;
+  return `https://${slug}.${PLATFORM_ROOT_DOMAIN}`;
+};
+
+const extractRequestHost = (req) =>
+  (req.headers['x-forwarded-host'] || req.headers.host || '')
+    .split(',')[0]
+    .trim()
+    .split(':')[0]
+    .toLowerCase();
+
+const isLocalOrRunHost = (host) =>
+  !host ||
+  host === 'localhost' ||
+  host === '127.0.0.1' ||
+  host.endsWith('.run.app') ||
+  host.endsWith('.a.run.app');
+
+const getPlatformSubdomain = (host) => {
+  if (!host || !PLATFORM_ROOT_DOMAIN || host === PLATFORM_ROOT_DOMAIN) return null;
+  if (!host.endsWith(`.${PLATFORM_ROOT_DOMAIN}`)) return null;
+
+  const candidate = host.slice(0, -(PLATFORM_ROOT_DOMAIN.length + 1)).trim().toLowerCase();
+  if (!candidate || candidate.includes('.')) return null;
+  if (RESERVED_PLATFORM_SUBDOMAINS.has(candidate)) return null;
+  return candidate;
 };
 
 class SettingsController {
@@ -49,6 +114,8 @@ class SettingsController {
         _id: tenant._id,
         name: tenant.name,
         slug: tenant.slug,
+        storeUrl: buildStoreUrl(tenant.slug),
+        platformRootDomain: PLATFORM_ROOT_DOMAIN,
         businessInfo: tenant.businessInfo,
         settings: tenant.settings,
         branding: tenant.branding,
@@ -73,24 +140,16 @@ class SettingsController {
    * Get public settings for the storefront
    */
   getStorefrontSettings = catchAsync(async (req, res, next) => {
-    // Find the first active tenant or by slug if provided
     const tenantId = req.query.tenant || req.headers['x-tenant-id'];
-    const requestHost = (req.headers['x-forwarded-host'] || req.headers.host || '')
-      .split(',')[0]
-      .trim()
-      .split(':')[0]
-      .toLowerCase();
+    const requestHost = extractRequestHost(req);
+    const platformSubdomain = getPlatformSubdomain(requestHost);
     let tenant;
 
     if (tenantId) {
       tenant = await Tenant.findById(tenantId);
-    } else if (
-      requestHost &&
-      requestHost !== 'localhost' &&
-      requestHost !== '127.0.0.1' &&
-      !requestHost.endsWith('.run.app') &&
-      !requestHost.endsWith('.a.run.app')
-    ) {
+    } else if (platformSubdomain) {
+      tenant = await Tenant.findOne({ slug: platformSubdomain, isActive: true });
+    } else if (!isLocalOrRunHost(requestHost)) {
       tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
       if (tenant) {
         Tenant.updateOne(
@@ -101,15 +160,25 @@ class SettingsController {
               customDomainLastCheckedAt: new Date(),
             },
           }
-        ).catch(() => {});
+        ).catch(() => { });
       }
     } else {
-      tenant = await Tenant.findOne(); // Get default for now
+      // No identifier provided and host is not a platform subdomain or custom domain
+      return next(AppError.notFound('المتجر غير موجود'));
     }
 
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
     ApiResponse.success(res, {
+      tenantId: tenant._id,
+      slug: tenant.slug,
+      storeUrl: buildStoreUrl(tenant.slug),
+      store: {
+        name: tenant.name,
+        address: tenant.businessInfo?.address || '',
+        phone: tenant.businessInfo?.phone || '',
+        email: tenant.businessInfo?.email || '',
+      },
       name: tenant.name,
       businessInfo: tenant.businessInfo,
       branding: tenant.branding,
@@ -123,21 +192,82 @@ class SettingsController {
    * Update store/business info
    */
   updateStore = catchAsync(async (req, res, next) => {
-    const { name, businessInfo, cameras } = req.body;
+    const { name, businessInfo, cameras, settings } = req.body;
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (businessInfo) updateData.businessInfo = businessInfo;
+    if (cameras) updateData.cameras = cameras;
+
+    if (settings?.watermark) {
+      updateData['settings.watermark'] = {
+        enabled: settings.watermark.enabled,
+        text: settings.watermark.text,
+        position: settings.watermark.position,
+        opacity: settings.watermark.opacity
+      };
+    }
 
     const tenant = await Tenant.findByIdAndUpdate(
       req.tenantId,
-      {
-        ...(name && { name }),
-        ...(businessInfo && { businessInfo }),
-        ...(cameras && { cameras }),
-      },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
     ApiResponse.success(res, { tenant }, 'تم تحديث بيانات المتجر بنجاح');
+  });
+
+  /**
+   * GET /api/v1/settings/subdomain-availability
+   * Check whether a storefront subdomain is available
+   */
+  checkSubdomainAvailability = catchAsync(async (req, res) => {
+    const normalizedSubdomain = normalizeSubdomain(req.query.value);
+    const existing = await Tenant.findOne({
+      slug: normalizedSubdomain,
+      _id: { $ne: req.tenantId },
+    }).select('_id');
+
+    const available = !existing;
+
+    ApiResponse.success(res, {
+      available,
+      subdomain: normalizedSubdomain,
+      storeUrl: buildStoreUrl(normalizedSubdomain),
+    });
+  });
+
+  /**
+   * PUT /api/v1/settings/subdomain
+   * Update the tenant-owned storefront subdomain under the platform root domain
+   */
+  updateSubdomain = catchAsync(async (req, res, next) => {
+    const normalizedSubdomain = normalizeSubdomain(req.body?.subdomain);
+
+    const existing = await Tenant.findOne({
+      slug: normalizedSubdomain,
+      _id: { $ne: req.tenantId },
+    }).select('_id');
+
+    if (existing) {
+      return next(AppError.badRequest('This store subdomain is already taken'));
+    }
+
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) {
+      return next(AppError.notFound('Store not found'));
+    }
+
+    tenant.slug = normalizedSubdomain;
+    await tenant.save();
+
+    ApiResponse.success(res, {
+      slug: tenant.slug,
+      storeUrl: buildStoreUrl(tenant.slug),
+      platformRootDomain: PLATFORM_ROOT_DOMAIN,
+    }, 'Store subdomain updated successfully');
   });
 
   /**

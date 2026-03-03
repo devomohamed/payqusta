@@ -4,11 +4,40 @@
  */
 
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const catchAsync = require('../utils/catchAsync');
 const { STOCK_STATUS } = require('../config/constants');
+
+const UNCATEGORIZED_CATEGORY_NAME = '\u0628\u062f\u0648\u0646 \u062a\u0635\u0646\u064a\u0641';
+const UNCATEGORIZED_CATEGORY_SLUG = 'uncategorized';
+const UNCATEGORIZED_CATEGORY_ICON = '\u{1F4E6}';
+
+async function ensureDefaultCategory(tenantId) {
+  return Category.findOneAndUpdate(
+    {
+      tenant: tenantId,
+      name: UNCATEGORIZED_CATEGORY_NAME,
+      parent: null,
+    },
+    {
+      $setOnInsert: {
+        tenant: tenantId,
+        name: UNCATEGORIZED_CATEGORY_NAME,
+        slug: UNCATEGORIZED_CATEGORY_SLUG,
+        icon: UNCATEGORIZED_CATEGORY_ICON,
+        parent: null,
+      },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+}
 
 class ProductController {
   /**
@@ -34,19 +63,27 @@ class ProductController {
 
     // Category filter (support subcategories recursively)
     if (req.query.category) {
-      const Category = require('../models/Category');
-      const subcategories = await Category.find({ 
-        $or: [{ _id: req.query.category }, { parent: req.query.category }],
-        tenant: req.tenantId 
-      }).select('_id');
-      
-      const categoryIds = subcategories.map(c => c._id);
-      queryConditions.push({
-        $or: [
-          { category: { $in: categoryIds } },
-          { subcategory: { $in: categoryIds } }
-        ]
-      });
+      if (req.query.category === 'null') {
+        queryConditions.push({
+          $or: [
+            { category: { $in: [null, undefined] } },
+            { subcategory: { $in: [null, undefined] } }
+          ]
+        });
+      } else {
+        const subcategories = await Category.find({
+          $or: [{ _id: req.query.category }, { parent: req.query.category }],
+          tenant: req.tenantId
+        }).select('_id');
+
+        const categoryIds = subcategories.map(c => c._id);
+        queryConditions.push({
+          $or: [
+            { category: { $in: categoryIds } },
+            { subcategory: { $in: categoryIds } }
+          ]
+        });
+      }
     }
 
     if (queryConditions.length > 0) {
@@ -59,6 +96,8 @@ class ProductController {
     // Supplier filter
     if (req.query.supplier) filter.supplier = req.query.supplier;
 
+    const Review = require('../models/Review');
+
     const [products, total] = await Promise.all([
       Product.find(filter)
         .populate('supplier', 'name')
@@ -70,6 +109,22 @@ class ProductController {
         .lean(),
       Product.countDocuments(filter),
     ]);
+
+    // Enrich with review stats in one aggregate
+    if (products.length > 0) {
+      const productIds = products.map(p => p._id);
+      const reviewStats = await Review.aggregate([
+        { $match: { product: { $in: productIds }, tenant: req.tenantId, status: 'approved' } },
+        { $group: { _id: '$product', avgRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+      ]);
+      const statsMap = {};
+      reviewStats.forEach(s => { statsMap[s._id.toString()] = s; });
+      products.forEach(p => {
+        const s = statsMap[p._id.toString()];
+        p.avgRating = s ? parseFloat(s.avgRating.toFixed(1)) : 0;
+        p.reviewCount = s ? s.reviewCount : 0;
+      });
+    }
 
     ApiResponse.paginated(res, products, { page, limit, total });
   });
@@ -95,9 +150,13 @@ class ProductController {
    * Create a new product
    */
   create = catchAsync(async (req, res, next) => {
+    const hasSelectedCategory = Boolean(req.body.category);
+    const fallbackCategory = hasSelectedCategory ? null : await ensureDefaultCategory(req.tenantId);
     const productData = {
       ...req.body,
       tenant: req.tenantId,
+      category: hasSelectedCategory ? req.body.category : fallbackCategory._id,
+      subcategory: (hasSelectedCategory && req.body.subcategory) ? req.body.subcategory : undefined,
       stock: {
         quantity: req.body.stockQuantity || 0,
         minQuantity: req.body.minQuantity || 5,
@@ -129,9 +188,9 @@ class ProductController {
       const branches = await Branch.find({ tenant: req.tenantId, isActive: true });
 
       if (branches.length > 0) {
-        // If only one branch, put everything there. Otherwise, keep as global until distributed?
-        // BRD says "every branch has separate quantity". Let's default to assigning to the creator's branch.
-        const targetBranchId = req.user.branch || branches[0]._id;
+        // If branchId is provided in body, use it. Otherwise, use user's branch or first branch.
+        const targetBranchId = req.body.branchId || (req.user ? req.user.branch : null) || branches[0]._id;
+
         product.inventory = [{
           branch: targetBranchId,
           quantity: req.body.stockQuantity,
@@ -157,10 +216,10 @@ class ProductController {
 
     // Update fields
     const allowedFields = [
-      'name', 'sku', 'description', 'category', 'price', 'cost',
+      'name', 'sku', 'description', 'category', 'price', 'compareAtPrice', 'cost',
       'wholesalePrice', 'shippingCost',
       'images', 'thumbnail', 'barcode', 'tags', 'isActive', 'supplier',
-      'expiryDate',
+      'expiryDate', 'seoTitle', 'seoDescription'
     ];
 
     allowedFields.forEach((field) => {
@@ -168,8 +227,21 @@ class ProductController {
     });
 
     // Handle hierarchical categories
-    if (req.body.category) product.category = req.body.category;
-    if (req.body.subcategory !== undefined) product.subcategory = req.body.subcategory;
+    let categoryResetToDefault = false;
+    if (req.body.category !== undefined) {
+      if (req.body.category) {
+        product.category = req.body.category;
+      } else {
+        const fallbackCategory = await ensureDefaultCategory(req.tenantId);
+        product.category = fallbackCategory._id;
+        product.subcategory = undefined;
+        categoryResetToDefault = true;
+      }
+    }
+
+    if (req.body.subcategory !== undefined && !categoryResetToDefault) {
+      product.subcategory = req.body.subcategory || undefined;
+    }
 
     // Update stock separately
     if (req.body.stockQuantity !== undefined) product.stock.quantity = req.body.stockQuantity;
@@ -304,24 +376,21 @@ class ProductController {
    * Get all unique categories for the tenant
    */
   getCategories = catchAsync(async (req, res, next) => {
-    const productCategories = await Product.distinct('category', {
+    const Category = require('../models/Category');
+    const categories = await Category.find({
       ...req.tenantFilter,
+      parent: null,
       isActive: true,
-    });
+    }).populate({
+      path: 'children',
+      match: { isActive: true },
+      populate: {
+        path: 'children',
+        match: { isActive: true }
+      }
+    }).sort({ name: 1 });
 
-    const Tenant = require('../models/Tenant');
-    const tenant = await Tenant.findById(req.tenantId);
-
-    let tenantCategories = [];
-    if (tenant && tenant.settings && Array.isArray(tenant.settings.categories)) {
-      tenantCategories = tenant.settings.categories
-        .filter(c => c.isVisible !== false)
-        .map(c => c.name || c);
-    }
-
-    const allCategories = [...new Set([...tenantCategories, ...productCategories])];
-
-    ApiResponse.success(res, allCategories);
+    ApiResponse.success(res, categories);
   });
 
   /**
@@ -490,10 +559,15 @@ class ProductController {
     const { processImage } = require('../middleware/upload');
     const uploadedImages = [];
 
+    // Fetch tenant to get watermark settings
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findById(req.tenantId);
+    const watermarkOptions = tenant?.settings?.watermark || {};
+
     // Process all files
     for (const file of files) {
       const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1000)}.webp`;
-      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype);
+      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
       uploadedImages.push(imagePath);
     }
 
@@ -538,7 +612,7 @@ class ProductController {
 
     // Delete file from disk
     const { deleteFile } = require('../middleware/upload');
-    deleteFile(decodedUrl);
+    await deleteFile(decodedUrl);
 
     ApiResponse.success(res, product, 'تم حذف الصورة بنجاح');
   });
@@ -629,7 +703,20 @@ class ProductController {
       'تم الانتهاء من الجرد بنجاح'
     );
   });
+
+  /**
+   * POST /api/v1/products/upload-image
+   * Upload image for Rich Text Editor
+   */
+  uploadEditorImage = catchAsync(async (req, res, next) => {
+    if (!req.file) return next(AppError.badRequest('يرجى اختيار صورة'));
+
+    const { processImage } = require('../middleware/upload');
+    // Save inside a generic editor folder per tenant, pass mimetype for magic number check
+    const imageUrl = await processImage(req.file.buffer, req.file.originalname, `editor/${req.tenantId}`, req.file.mimetype);
+
+    ApiResponse.success(res, { url: imageUrl }, 'تم رفع الصورة بنجاح');
+  });
 }
 
 module.exports = new ProductController();
-

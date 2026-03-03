@@ -50,17 +50,24 @@ router.get('/storefront/settings', settingsController.getStorefrontSettings);
 router.get('/settings', publicTenantScope, settingsController.getSettings);
 router.use('/plans', require('./planRoutes'));
 
-// Product Public Routes - Move to /store or similar to avoid conflict with Admin API
-// router.get('/products', publicTenantScope, productController.getAll);
-// router.get('/products/categories', publicTenantScope, productController.getCategories);
-// router.get('/products/barcode/:code', publicTenantScope, productController.getByBarcode);
-// router.get('/products/:id([0-9a-fA-F]{24})', publicTenantScope, productController.getById);
+// Product Public Routes
+router.get('/products', publicTenantScope, productController.getAll);
+router.get('/products/categories', publicTenantScope, productController.getCategories);
+router.get('/products/barcode/:code', publicTenantScope, productController.getByBarcode);
+router.get('/products/:id([0-9a-fA-F]{24})', publicTenantScope, productController.getById);
 
 // Public Checkout Routes
+router.get('/customers', (req, res, next) => {
+  if (req.headers['x-source'] === 'online_store') return next();
+  protect(req, res, next);
+}, publicTenantScope, customerController.getAll);
+
 router.post('/customers', (req, res, next) => {
   if (req.headers['x-source'] === 'online_store') return next();
   protect(req, res, next);
 }, publicTenantScope, customerController.create);
+
+router.get('/invoices/:id([0-9a-fA-F]{24})', publicTenantScope, invoiceController.getById);
 
 router.post('/invoices', (req, res, next) => {
   if (req.body.source === 'online_store') return next();
@@ -159,6 +166,8 @@ router.post('/settings/whatsapp/create-templates', authorize('admin'), requireFe
 router.post('/settings/whatsapp/detect-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.detectTemplates);
 router.post('/settings/whatsapp/apply-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.applyTemplateMapping);
 router.put('/settings/branding', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateBranding);
+router.get('/settings/subdomain-availability', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.checkSubdomainAvailability);
+router.put('/settings/subdomain', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateSubdomain);
 router.put('/settings/user', settingsController.updateUser);
 router.put('/settings/password', settingsController.changePassword);
 router.put('/settings/categories', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateCategories);
@@ -320,4 +329,3 @@ const backupUpload = multer({
 router.post('/backup/restore-json', authorize('vendor', 'admin'), backupUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreJSON);
 
 module.exports = router;
-

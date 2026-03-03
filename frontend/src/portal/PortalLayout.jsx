@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
@@ -17,24 +17,25 @@ export default function PortalLayout() {
   const location = useLocation();
   const { t, i18n } = useTranslation('portal');
 
+  const accountBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
+  const loginPath = `${accountBasePath}/login`;
+
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/portal/login');
+      navigate(loginPath);
     } else if (!customer) {
       fetchDashboard();
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, customer, fetchDashboard, navigate, loginPath]);
 
-  // Poll unread notifications count
   useEffect(() => {
     if (isAuthenticated) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 60000); // every minute
+      const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchUnreadCount]);
 
-  // Dynamic Branding Injection
   useEffect(() => {
     if (customer?.tenant?.branding || usePortalStore.getState().tenant?.branding) {
       const branding = customer.tenant?.branding || usePortalStore.getState().tenant?.branding || {};
@@ -49,17 +50,17 @@ export default function PortalLayout() {
   if (!isAuthenticated || !customer) return null;
 
   const navItems = [
-    { icon: Home, label: t('nav.home'), path: '/portal/dashboard' },
-    { icon: Package, label: t('nav.orders'), path: '/portal/orders' },
-    { icon: Receipt, label: t('nav.invoices'), path: '/portal/invoices' },
-    { icon: RefreshCcw, label: t('nav.returns'), path: '/portal/returns' },
-    { icon: Award, label: t('nav.points'), path: '/portal/points' },
-    { icon: Star, label: t('nav.reviews'), path: '/portal/reviews' },
-    { icon: Calculator, label: t('nav.calculator'), path: '/portal/calculator' },
-    { icon: FileText, label: t('nav.documents'), path: '/portal/documents' },
-    { icon: MapPin, label: t('nav.addresses'), path: '/portal/addresses' },
-    { icon: ShoppingCart, label: t('nav.cart'), path: '/portal/cart', badge: cart.length, isCart: true },
-    { icon: User, label: t('nav.profile'), path: '/portal/profile' },
+    { icon: Home, label: t('nav.home'), path: `${accountBasePath}/dashboard` },
+    { icon: Package, label: t('nav.orders'), path: `${accountBasePath}/orders` },
+    { icon: Receipt, label: t('nav.invoices'), path: `${accountBasePath}/invoices` },
+    { icon: RefreshCcw, label: t('nav.returns'), path: `${accountBasePath}/returns` },
+    { icon: Award, label: t('nav.points'), path: `${accountBasePath}/points` },
+    { icon: Star, label: t('nav.reviews'), path: `${accountBasePath}/reviews` },
+    { icon: Calculator, label: t('nav.calculator'), path: `${accountBasePath}/calculator` },
+    { icon: FileText, label: t('nav.documents'), path: `${accountBasePath}/documents` },
+    { icon: MapPin, label: t('nav.addresses'), path: `${accountBasePath}/addresses` },
+    { icon: ShoppingCart, label: t('nav.cart'), path: `${accountBasePath}/cart`, badge: cart.length, isCart: true },
+    { icon: User, label: t('nav.profile'), path: `${accountBasePath}/profile` },
   ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -68,8 +69,6 @@ export default function PortalLayout() {
   return (
     <div className={`min-h-screen flex flex-col font-['Cairo'] pb-16 md:pb-0 ${dark ? 'dark' : ''}`} dir={i18n.dir()}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col">
-
-        {/* TOP HEADER */}
         <PortalHeader
           customer={customer}
           unreadCount={unreadCount}
@@ -80,22 +79,16 @@ export default function PortalLayout() {
           logout={logout}
         />
 
-        {/* MAIN CONTENT */}
         <div className="flex-1 w-full max-w-7xl mx-auto flex">
-
-          {/* Desktop Sidebar Navigation */}
           <PortalSidebar navItems={navItems} isActive={isActive} />
 
-          {/* Page Content */}
           <main className="flex-1 p-4 w-full min-w-0">
             <Outlet />
           </main>
         </div>
 
-        {/* MOBILE NAV */}
         <PortalMobileNav navItems={navItems} isActive={isActive} toggleCart={toggleCart} />
 
-        {/* CART DRAWER */}
         <PortalCartDrawer
           isCartOpen={isCartOpen}
           toggleCart={toggleCart}

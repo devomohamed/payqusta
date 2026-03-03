@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { getStorefrontTenantSlugFromHost } from '../utils/storefrontHost';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const getPortalBasePath = () =>
+  window.location.pathname.startsWith('/account') ? '/account' : '/portal';
+
+export const getPortalTenantSlugFromHost = getStorefrontTenantSlugFromHost;
 
 // Create axios instance for portal
 export const portalApi = axios.create({
@@ -27,8 +32,9 @@ portalApi.interceptors.response.use(
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_customer');
       localStorage.removeItem('portal_tenant');
-      if (window.location.pathname.startsWith('/portal') && !window.location.pathname.includes('/login')) {
-        window.location.href = '/portal/login';
+      const path = window.location.pathname;
+      if ((path.startsWith('/portal') || path.startsWith('/account')) && !path.includes('/login')) {
+        window.location.href = `${getPortalBasePath()}/login`;
       }
     }
     return Promise.reject(error);
@@ -42,6 +48,8 @@ export const usePortalStore = create((set, get) => ({
   isAuthenticated: !!localStorage.getItem('portal_token'),
   loading: false,
   error: null,
+  categories: [],
+  categoriesLoading: false,
 
   // ═══════════════ CART ═══════════════
   cart: JSON.parse(localStorage.getItem('portal_cart') || '[]'),
@@ -100,6 +108,24 @@ export const usePortalStore = create((set, get) => ({
   },
 
   // ═══════════════ AUTH ═══════════════
+
+  fetchCategories: async () => {
+    set({ categoriesLoading: true });
+    try {
+      const tenantSlug = getPortalTenantSlugFromHost();
+      const res = await portalApi.get('/settings', {
+        params: tenantSlug ? { tenantSlug } : undefined,
+      });
+      const categories = (res.data?.data?.tenant?.settings?.categories || []).filter(
+        (category) => category?.isVisible !== false
+      );
+      set({ categories, categoriesLoading: false });
+      return categories;
+    } catch (err) {
+      set({ categoriesLoading: false });
+      return [];
+    }
+  },
 
   login: async (phone, password, storeCode) => {
     set({ loading: true, error: null });
@@ -465,6 +491,24 @@ export const usePortalStore = create((set, get) => ({
 
   toggleWishlist: async (productId) => {
     try {
+      if (!get().isAuthenticated) {
+        // Guest mode fallback
+        let wishlisted = false;
+        set((state) => {
+          let newIds = [...state.wishlistIds];
+          if (newIds.includes(productId)) {
+            newIds = newIds.filter(id => id !== productId);
+            wishlisted = false;
+          } else {
+            newIds.push(productId);
+            wishlisted = true;
+          }
+          localStorage.setItem('portal_wishlist', JSON.stringify(newIds));
+          return { wishlistIds: newIds };
+        });
+        return { success: true, wishlisted };
+      }
+
       const res = await portalApi.post(`/portal/wishlist/${productId}`);
       const { wishlisted } = res.data.data;
       set((state) => {

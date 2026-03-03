@@ -9,14 +9,13 @@ import { notify } from '../AnimatedNotification';
 
 const InfoCard = ({ icon: Icon, label, value, color, dark }) => (
   <div className={`p-4 rounded-xl border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} shadow-sm flex items-center gap-4`}>
-    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-      color === 'blue' ? 'bg-blue-100 text-blue-600' :
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color === 'blue' ? 'bg-blue-100 text-blue-600' :
       color === 'purple' ? 'bg-purple-100 text-purple-600' :
-      color === 'amber' ? 'bg-amber-100 text-amber-600' : 
-      color === 'emerald' ? 'bg-emerald-100 text-emerald-600' : 
-      color === 'red' ? 'bg-red-100 text-red-600' :
-      'bg-gray-100 text-gray-600'
-    }`}>
+        color === 'amber' ? 'bg-amber-100 text-amber-600' :
+          color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
+            color === 'red' ? 'bg-red-100 text-red-600' :
+              'bg-gray-100 text-gray-600'
+      }`}>
       <Icon className="w-5 h-5" />
     </div>
     <div>
@@ -29,7 +28,7 @@ const InfoCard = ({ icon: Icon, label, value, color, dark }) => (
 export default function SettingsProfile() {
   const { user, tenant, getMe, logoutAll } = useAuthStore();
   const { dark } = useThemeStore();
-  
+
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '' });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
@@ -89,7 +88,7 @@ export default function SettingsProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) return notify.warning('يرجى اختيار ملف صورة');
-    if (file.size > 5 * 1024 * 1024) return notify.warning('حجم الصورة لا يتجاوز 5MB');
+    if (file.size > 20 * 1024 * 1024) return notify.warning('حجم الصورة لا يتجاوز 20MB');
 
     setUploadingAvatar(true);
     try {
@@ -224,9 +223,8 @@ export default function SettingsProfile() {
                 type="text"
                 value={userForm.name}
                 onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm ${
-                  dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
+                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
               />
             </div>
           </div>
@@ -238,9 +236,8 @@ export default function SettingsProfile() {
                 type="email"
                 value={userForm.email}
                 disabled
-                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm opacity-60 cursor-not-allowed ${
-                  dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                }`}
+                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm opacity-60 cursor-not-allowed ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
               />
             </div>
             <p className="text-xs text-gray-400 mt-1">لا يمكن تغيير البريد الإلكتروني</p>
@@ -253,9 +250,8 @@ export default function SettingsProfile() {
                 type="text"
                 value={userForm.phone}
                 onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
-                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm ${
-                  dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
+                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
               />
             </div>
           </div>
@@ -277,39 +273,40 @@ export default function SettingsProfile() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { key: 'currentPassword', label: 'كلمة المرور الحالية', show: 'current' },
-            { key: 'newPassword', label: 'كلمة المرور الجديدة', show: 'new' },
-            { key: 'confirmPassword', label: 'تأكيد كلمة المرور', show: 'confirm' },
-          ].map(({ key, label, show }) => (
-            <div key={key}>
-              <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{label}</label>
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type={showPasswords[show] ? 'text' : 'password'}
-                  value={passwordForm[key]}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, [key]: e.target.value })}
-                  className={`w-full pr-10 pl-10 py-2.5 rounded-xl border text-sm ${
-                    dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasswords({ ...showPasswords, [show]: !showPasswords[show] })}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPasswords[show] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+        <form onSubmit={(e) => { e.preventDefault(); handleChangePassword(); }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { key: 'currentPassword', label: 'كلمة المرور الحالية', show: 'current' },
+              { key: 'newPassword', label: 'كلمة المرور الجديدة', show: 'new' },
+              { key: 'confirmPassword', label: 'تأكيد كلمة المرور', show: 'confirm' },
+            ].map(({ key, label, show }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{label}</label>
+                <div className="relative">
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPasswords[show] ? 'text' : 'password'}
+                    value={passwordForm[key]}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, [key]: e.target.value })}
+                    className={`w-full pr-10 pl-10 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                      } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({ ...showPasswords, [show]: !showPasswords[show] })}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPasswords[show] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className="flex justify-end mt-4">
-          <Button variant="warning" onClick={handleChangePassword} loading={saving.password} icon={<Lock className="w-4 h-4" />}>تغيير كلمة المرور</Button>
-        </div>
+          <div className="flex justify-end mt-4">
+            <Button type="submit" variant="warning" loading={saving.password} icon={<Lock className="w-4 h-4" />}>تغيير كلمة المرور</Button>
+          </div>
+        </form>
       </div>
 
       {/* Account Info Cards */}
@@ -321,7 +318,7 @@ export default function SettingsProfile() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <InfoCard icon={Shield} label="الصلاحية" value={user?.role === 'admin' ? 'مدير النظام' : user?.role === 'vendor' ? 'بائع' : 'منسق'} color="blue" dark={dark} />
           <InfoCard icon={Building2} label="المتجر" value={tenant?.name || 'غير محدد'} color="purple" dark={dark} />
-          <InfoCard icon={Calendar} label="الخطة" value={tenant?.subscription?.plan === 'trial' ? 'تجريبية' : tenant?.subscription?.plan || 'غير محدد'} color="amber" dark={dark} />
+          <InfoCard icon={Calendar} label="الخطة" value={tenant?.subscription?.plan?.name || (tenant?.subscription?.plan === 'trial' ? 'تجريبية' : typeof tenant?.subscription?.plan === 'string' ? 'مفعلة' : 'غير محدد')} color="amber" dark={dark} />
           <InfoCard icon={CheckCircle} label="حالة الحساب" value={user?.isActive ? 'نشط' : 'معطل'} color={user?.isActive ? 'emerald' : 'red'} dark={dark} />
           <InfoCard icon={Clock} label="آخر تسجيل دخول" value={formatDate(user?.lastLogin)} color="gray" dark={dark} />
           <InfoCard icon={Calendar} label="تاريخ الانضمام" value={formatDate(user?.createdAt)} color="gray" dark={dark} />
@@ -354,7 +351,7 @@ export default function SettingsProfile() {
                     },
                     style: 'danger',
                   },
-                  { label: 'إلغاء', onClick: () => {}, style: 'secondary' },
+                  { label: 'إلغاء', onClick: () => { }, style: 'secondary' },
                 ],
               });
             }}

@@ -45,6 +45,7 @@ export default function NotificationDropdown() {
 
   // Fetch unread count periodically
   const fetchUnreadCount = useCallback(async () => {
+    if (!localStorage.getItem('payqusta_token')) return;
     try {
       const { data } = await api.get('/notifications/unread-count');
       setUnreadCount(data.data?.count || 0);
@@ -53,6 +54,7 @@ export default function NotificationDropdown() {
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
+    if (!localStorage.getItem('payqusta_token')) return;
     setLoading(true);
     try {
       const { data } = await api.get('/notifications', { params: { limit: 20 } });

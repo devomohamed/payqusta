@@ -1,36 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, ArrowRight, Package } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { ShoppingCart, Plus, Minus, Package, Star, Heart, Share2, MessageCircle, ChevronRight, ZoomIn, X, Copy, Check, ChevronLeft } from 'lucide-react';
 import { api } from '../store';
-import { portalApi, usePortalStore } from '../store/portalStore'; // Import portal store
+import { portalApi, usePortalStore } from '../store/portalStore';
 import { Card, Button, Badge, LoadingSpinner, Select } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
+import PortalInstallmentCalculator from '../portal/PortalInstallmentCalculator';
 import { collectProductImages, pickProductImage } from '../utils/media';
+import { storefrontPath } from '../utils/storefrontHost';
+
+/* ─── Recently Viewed Utility ─── */
+const RECENTLY_VIEWED_KEY = 'rv_products';
+function saveRecentlyViewed(product) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
+    const filtered = existing.filter(p => p._id !== product._id);
+    const updated = [{ _id: product._id, name: product.name, price: product.price, image: pickProductImage(product), category: typeof product.category === 'object' ? product.category?.name : product.category }, ...filtered].slice(0, 8);
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(updated));
+  } catch (_) { }
+}
+function getRecentlyViewed(excludeId) {
+  try {
+    return JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]').filter(p => p._id !== excludeId).slice(0, 5);
+  } catch (_) { return []; }
+}
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const isPortal = location.pathname.includes('/portal');
-  
-  const { addToCart: addToPortalCart } = usePortalStore(); // Portal Cart Action
+
+  const { addToCart: addToPortalCart, toggleWishlist, wishlistIds } = usePortalStore();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [activeImage, setActiveImage] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsStats, setReviewsStats] = useState({ total: 0, avgRating: 0 });
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+
+  // UI states
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showStickyCart, setShowStickyCart] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const addToCartRef = useRef(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     loadProduct();
+    loadReviews();
+    window.scrollTo({ top: 0 });
   }, [id]);
+
+  // Sticky cart visibility on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!addToCartRef.current) return;
+      const rect = addToCartRef.current.getBoundingClientRect();
+      setShowStickyCart(rect.bottom < 0);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const loadReviews = async () => {
+    try {
+      const res = await api.get(`/reviews/product/${id}`);
+      setReviews(res.data.data.reviews || []);
+      setReviewsStats({ total: res.data.data.total || 0, avgRating: res.data.data.avgRating || 0 });
+    } catch (_) { }
+  };
 
   useEffect(() => {
     if (product) {
-      const initialImage = pickProductImage(product);
-      setActiveImage(initialImage);
+      setActiveImage(pickProductImage(product));
+      saveRecentlyViewed(product);
+      setRecentlyViewed(getRecentlyViewed(product._id));
+      loadRelated(product.category, product._id);
     }
   }, [product]);
+
+  const loadRelated = async (category, currentId) => {
+    if (!category) return;
+    try {
+      const res = await api.get(`/products?isActive=true&limit=6`);
+      const products = (res.data.data || []).filter(p => p._id !== currentId).slice(0, 5);
+      setRelatedProducts(products);
+    } catch (_) { }
+  };
 
   const loadProduct = async () => {
     setLoading(true);
@@ -38,9 +103,7 @@ export default function ProductDetails() {
       const apiClient = isPortal ? portalApi : api;
       const endpoint = isPortal ? `/portal/products/${id}` : `/products/${id}`;
       const res = await apiClient.get(endpoint);
-      
       setProduct(res.data.data);
-      
       if (res.data.data.hasVariants && res.data.data.variants?.length > 0) {
         setSelectedVariant(res.data.data.variants[0]);
       }
@@ -55,278 +118,488 @@ export default function ProductDetails() {
   const addToCart = () => {
     if (isPortal) {
       addToPortalCart(product, quantity, selectedVariant);
-      notify.success('تم إضافة المنتج للسلة');
+      notify.success('تم إضافة المنتج للسلة 🛒');
       return;
     }
-
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const cartItem = {
-      productId: product._id,
-      name: product.name,
-      price: selectedVariant?.price || product.price,
-      quantity,
+      productId: product._id, name: product.name,
+      price: selectedVariant?.price || product.price, quantity,
       image: activeImage || pickProductImage(product),
-      variant: selectedVariant ? {
-        id: selectedVariant._id,
-        attributes: selectedVariant.attributes
-      } : null
+      variant: selectedVariant ? { id: selectedVariant._id, attributes: selectedVariant.attributes } : null
     };
-
-    const existingIndex = cart.findIndex(item => 
-      item.productId === cartItem.productId && 
-      JSON.stringify(item.variant) === JSON.stringify(cartItem.variant)
+    const existingIndex = cart.findIndex(item =>
+      item.productId === cartItem.productId && JSON.stringify(item.variant) === JSON.stringify(cartItem.variant)
     );
-
-    if (existingIndex >= 0) {
-      cart[existingIndex].quantity += quantity;
-    } else {
-      cart.push(cartItem);
-    }
-
+    if (existingIndex >= 0) cart[existingIndex].quantity += quantity;
+    else cart.push(cartItem);
     localStorage.setItem('cart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
-    notify.success('تم إضافة المنتج للسلة');
+    notify.success('تم إضافة المنتج للسلة 🛒');
   };
 
-  const currentPrice = selectedVariant?.price || product?.price || 0;
-  const currentStock = selectedVariant?.stock || product?.stock?.quantity || 0;
-  const isOutOfStock = currentStock === 0;
+  const handleWishlist = async () => {
+    setWishlistLoading(true);
+    const res = await toggleWishlist(product._id);
+    if (res?.success) notify.success(res.wishlisted ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة');
+    setWishlistLoading(false);
+  };
 
-  // Collect all unique images
-  const allImages = collectProductImages(product);
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: product.name, url }); return; } catch (_) { }
+    }
+    setShareOpen(v => !v);
+  };
 
-  /* Zoom Logic */
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const whatsappShare = () => {
+    const msg = encodeURIComponent(`${product.name} — ${currentPrice.toLocaleString('en-US')} ج.م\n${window.location.href}`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  };
+
+  const whatsappOrder = () => {
+    const msg = encodeURIComponent(`مرحباً، أريد طلب:\n🛍️ ${product.name}\n💰 السعر: ${currentPrice.toLocaleString('en-US')} ج.م\n🔢 الكمية: ${quantity}`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  };
 
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.target.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    setMousePos({ x, y });
+    setMousePos({ x: ((e.clientX - left) / width) * 100, y: ((e.clientY - top) / height) * 100 });
     setIsZoomed(true);
   };
 
-  const handleMouseLeave = () => {
-    setIsZoomed(false);
-  };
+  const currentPrice = selectedVariant?.price || product?.price || 0;
+  const currentStock = selectedVariant?.stock ?? product?.stock?.quantity ?? 0;
+  const isOutOfStock = currentStock === 0;
+  const allImages = collectProductImages(product);
+  const stockPercent = product?.stock?.maxQuantity ? Math.min(100, (currentStock / product.stock.maxQuantity) * 100) : Math.min(100, (currentStock / 50) * 100);
 
   if (loading) return <LoadingSpinner />;
   if (!product) return null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 animate-fade-in">
-      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-        <button onClick={() => navigate(isPortal ? '/portal/products' : '/store/products')} className="hover:text-primary-600 transition-colors">
-          المنتجات
-        </button>
-        <span>/</span>
-        <span className="text-gray-900 dark:text-gray-200 font-medium truncate max-w-[200px]">{product.name}</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 animate-fade-in" dir="rtl">
+
+      {/* ─── Lightbox ─── */}
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center" onClick={() => setLightboxOpen(false)}>
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all" onClick={() => setLightboxOpen(false)}>
+            <X className="w-6 h-6" />
+          </button>
+          {allImages.length > 1 && (
+            <>
+              <button className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all" onClick={(e) => { e.stopPropagation(); setLightboxIndex(i => (i - 1 + allImages.length) % allImages.length); }}>
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all" onClick={(e) => { e.stopPropagation(); setLightboxIndex(i => (i + 1) % allImages.length); }}>
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+          <img src={allImages[lightboxIndex]} alt={product.name} className="max-w-[90vw] max-h-[90vh] object-contain rounded-2xl" onClick={e => e.stopPropagation()} />
+          {allImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              {allImages.map((_, i) => (
+                <button key={i} onClick={e => { e.stopPropagation(); setLightboxIndex(i); }} className={`w-2 h-2 rounded-full transition-all ${i === lightboxIndex ? 'bg-white w-6' : 'bg-white/40'}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Sticky Add-to-Cart Bar ─── */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ${showStickyCart ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
+        <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-3 shadow-2xl">
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
+            {activeImage && <img src={activeImage} alt={product.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{product.name}</p>
+              <p className="text-primary-600 font-black">{currentPrice.toLocaleString('en-US')} ج.م</p>
+            </div>
+            <button
+              onClick={addToCart}
+              disabled={isOutOfStock}
+              className="flex-shrink-0 h-11 px-6 bg-primary-600 hover:bg-primary-500 active:scale-95 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              أضف للسلة
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Breadcrumbs ─── */}
+      <nav className="flex items-center gap-2 text-sm text-gray-400 mb-8 pt-4 flex-wrap" aria-label="breadcrumb">
+        <Link to={storefrontPath('/')} className="hover:text-primary-600 transition-colors font-medium">الرئيسية</Link>
+        <ChevronLeft className="w-4 h-4 flex-shrink-0" />
+        <Link to={storefrontPath('/products')} className="hover:text-primary-600 transition-colors font-medium">المنتجات</Link>
+        {product.category && (
+          <>
+            <ChevronLeft className="w-4 h-4 flex-shrink-0" />
+            <Link to={storefrontPath(`/products?category=${typeof product.category === 'object' ? product.category?._id : product.category}`)} className="hover:text-primary-600 transition-colors font-medium">{typeof product.category === 'object' ? product.category?.name : product.category}</Link>
+          </>
+        )}
+        <ChevronLeft className="w-4 h-4 flex-shrink-0" />
+        <span className="text-gray-700 dark:text-gray-200 font-semibold truncate max-w-[180px]">{product.name}</span>
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Product Gallery (Left Column on LTR, Right on RTL) - Span 7 */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-3xl overflow-hidden relative group cursor-zoom-in border-2 border-transparent hover:border-primary-100 dark:hover:border-gray-700 transition-all">
-            <div 
-              className="w-full h-full"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-            >
-              {activeImage ? (
-                <img
-                  src={activeImage}
-                  alt={product.name}
-                  className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal p-8 transition-transform duration-200"
-                  style={{
-                    transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
-                    transform: isZoomed ? 'scale(2)' : 'scale(1)',
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Package className="w-32 h-32 text-gray-200 dark:text-gray-700" />
-                </div>
-              )}
-            </div>
-            {isOutOfStock && (
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
-                <div className="bg-red-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg transform -rotate-12">
-                  نفذت الكمية
-                </div>
+
+        {/* ─── Gallery ─── */}
+        <div className="lg:col-span-7 space-y-4">
+          <div
+            className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-3xl overflow-hidden relative group cursor-zoom-in border-2 border-transparent hover:border-primary-100 dark:hover:border-gray-700 transition-all shadow-xl"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setIsZoomed(false)}
+            onClick={() => { setLightboxIndex(allImages.indexOf(activeImage)); setLightboxOpen(true); }}
+          >
+            {activeImage ? (
+              <img
+                src={activeImage}
+                alt={product.name}
+                className="w-full h-full object-contain p-6 transition-transform duration-200"
+                style={{ transformOrigin: `${mousePos.x}% ${mousePos.y}%`, transform: isZoomed ? 'scale(1.8)' : 'scale(1)' }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Package className="w-32 h-32 text-gray-200" />
               </div>
             )}
-             {/* Zoom Hint */}
-             <div className="absolute bottom-4 left-4 bg-black/50 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                حرك الماوس للتكبير
+            {isOutOfStock && (
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-10">
+                <div className="bg-red-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg -rotate-12">نفذت الكمية</div>
               </div>
+            )}
+            <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ZoomIn className="w-3 h-3" /> تكبير
+            </div>
           </div>
 
           {/* Thumbnails */}
           {allImages.length > 1 && (
-            <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
+            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
               {allImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImage(img)}
-                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
-                    activeImage === img
-                      ? 'border-primary-500 ring-2 ring-primary-500/20'
-                      : 'border-transparent bg-gray-50 dark:bg-gray-800 hover:border-gray-300'
-                  }`}
+                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${activeImage === img ? 'border-primary-500 ring-2 ring-primary-500/30 shadow-md' : 'border-transparent bg-gray-50 dark:bg-gray-800 hover:border-gray-300'}`}
                 >
-                  <img
-                    src={img}
-                    alt={`Thumbnail ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
           )}
-          
-          {/* Description Section (Desktop) */}
-          <div className="hidden lg:block mt-10">
+
+          {/* Desktop Description */}
+          <div className="hidden lg:block mt-6">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-primary-500 rounded-full"></span>
-                وصف المنتج
+              <span className="w-1 h-6 bg-primary-500 rounded-full" />وصف المنتج
             </h3>
-            <div 
+            <div
               className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/30 p-6 rounded-2xl"
               dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف متاح لهذا المنتج.</p>' }}
             />
           </div>
         </div>
 
-        {/* Product Info & Actions (Right Column) - Span 5 */}
-        <div className="lg:col-span-5 space-y-8">
-            {/* Header Info */}
-            <div>
-                {product.category && (
-                    <Badge variant="neutral" className="mb-3 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                        {product.category}
-                    </Badge>
-                )}
-                <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white leading-tight mb-4">
-                    {product.name}
-                </h1>
-                
-                {/* SKU & Barcode Inline */}
-                <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 font-mono bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg w-fit">
-                     {product.sku && <span>SKU: <span className="text-gray-700 dark:text-gray-300 select-all">{product.sku}</span></span>}
-                     {product.sku && product.barcode && <span className="w-px h-3 bg-gray-300"></span>}
-                     {product.barcode && <span>BARCODE: <span className="text-gray-700 dark:text-gray-300 select-all">{product.barcode}</span></span>}
-                </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-3xl border-2 border-gray-100 dark:border-gray-800 p-6 shadow-xl shadow-gray-100/50 dark:shadow-none sticky top-24">
-                {/* Price */}
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <p className="text-sm text-gray-500 mb-1">السعر</p>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-5xl font-black text-primary-600 tracking-tight">
-                                {currentPrice.toLocaleString('en-US')}
-                            </span>
-                            <span className="text-xl font-bold text-gray-400">ج.م</span>
-                        </div>
-                         {product.taxable && (
-                            <p className="text-xs text-gray-400 mt-1">
-                                {product.priceIncludesTax ? '(شامل الضريبة)' : `(+ ${product.taxRate}% ضريبة)`}
-                            </p>
-                        )}
-                    </div>
-                     {!isOutOfStock ? (
-                        <div className="text-center bg-green-50 dark:bg-green-900/10 px-4 py-2 rounded-2xl">
-                             <span className="block text-2xl font-bold text-green-600 dark:text-green-400">{currentStock}</span>
-                             <span className="text-xs font-semibold text-green-600/70 dark:text-green-400/70">متوفر</span>
-                        </div>
-                     ) : (
-                        <div className="text-center bg-red-50 dark:bg-red-900/10 px-4 py-2 rounded-2xl">
-                             <span className="block text-2xl font-bold text-red-600 dark:text-red-400">0</span>
-                             <span className="text-xs font-semibold text-red-600/70 dark:text-red-400/70">نفذ</span>
-                        </div>
-                     )}
-                </div>
-
-                {/* Variants Selection */}
-                {product.hasVariants && product.variants?.length > 0 && (
-                    <div className="mb-6 space-y-3">
-                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300">خيارات المنتج:</label>
-                        <div className="grid grid-cols-2 gap-2">
-                        {product.variants.map(variant => (
-                            <button
-                            key={variant._id}
-                            onClick={() => setSelectedVariant(variant)}
-                            disabled={variant.stock === 0}
-                            className={`px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all flex justify-between items-center ${
-                                selectedVariant?._id === variant._id
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 shadow-sm'
-                                : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 hover:border-gray-300'
-                            } ${variant.stock === 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                            >
-                                <span className="truncate">{Object.values(variant.attributes || {}).join(' / ')}</span>
-                                {variant.stock > 0 && selectedVariant?._id !== variant._id && (
-                                    <span className="text-[10px] bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500">
-                                        {variant.price > product.price ? `+${(variant.price - product.price).toFixed(0)}` : ''}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Quantity & Add to Cart */}
-                {!isOutOfStock ? (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4 p-2 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
-                            <span className="text-sm font-bold text-gray-500 px-2">الكمية:</span>
-                            <div className="flex-1 flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl shadow-sm p-1">
-                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition">
-                                    <Minus className="w-4 h-4" />
-                                </button>
-                                <span className="font-bold text-lg w-8 text-center">{quantity}</span>
-                                <button onClick={() => setQuantity(Math.min(currentStock, quantity + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition">
-                                    <Plus className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <Button 
-                            onClick={addToCart} 
-                            disabled={isOutOfStock} 
-                            className="w-full h-14 text-lg rounded-2xl shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all"
-                            icon={<ShoppingCart className="w-6 h-6" />}
-                        >
-                            أضف إلى السلة
-                        </Button>
-                    </div>
-                ) : (
-                    <button disabled className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 font-bold cursor-not-allowed">
-                        غير متوفر حالياً
+        {/* ─── Product Info ─── */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Header */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              {product.category && (
+                <Badge variant="neutral" className="text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 border-primary-100 dark:border-primary-800">
+                  {product.category}
+                </Badge>
+              )}
+              {/* Share Button */}
+              <div className="relative">
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-600 transition-colors px-3 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Share2 className="w-4 h-4" /> مشاركة
+                </button>
+                {shareOpen && (
+                  <div className="absolute left-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-2 min-w-[180px] z-30 animate-fade-in">
+                    <button onClick={copyLink} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">
+                      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
+                      {copied ? 'تم النسخ!' : 'نسخ الرابط'}
                     </button>
+                    <button onClick={whatsappShare} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">
+                      <MessageCircle className="w-4 h-4 text-green-500" /> شارك واتساب
+                    </button>
+                  </div>
                 )}
-            
-                 {/* Expiry Warning */}
-                 {product.expiryDate && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                        <span>ينتهي الصلاحية في: <span className="font-bold font-mono text-base">{new Date(product.expiryDate).toLocaleDateString('en-GB')}</span></span>
-                    </div>
-                )}
+              </div>
             </div>
 
-            {/* Description (Mobile Only) */}
-            <div className="block lg:hidden pt-8 border-t border-gray-200 dark:border-gray-800">
-                 <h3 className="text-xl font-bold mb-4">وصف المنتج</h3>
-                 <div 
-                    className="prose dark:prose-invert max-w-none text-gray-600 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف متاح لهذا المنتج.</p>' }}
-                 />
+            <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white leading-tight">{product.name}</h1>
+
+            {/* Stars summary */}
+            <div className="flex items-center gap-3">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`w-5 h-5 ${i < Math.round(reviewsStats.avgRating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200 dark:text-gray-700'}`} />
+                ))}
+              </div>
+              {reviewsStats.total > 0 ? (
+                <button onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-sm font-bold text-gray-400 underline underline-offset-2 hover:text-primary-600 transition-colors">
+                  {reviewsStats.total} تقييم
+                </button>
+              ) : <span className="text-sm text-gray-400">لا توجد تقييمات بعد</span>}
             </div>
+
+            {(product.sku || product.barcode) && (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 font-mono">
+                {product.sku && <span className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">SKU: <strong className="text-gray-600 dark:text-gray-300 select-all">{product.sku}</strong></span>}
+                {product.barcode && <span className="bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">BARCODE: <strong className="text-gray-600 dark:text-gray-300 select-all">{product.barcode}</strong></span>}
+              </div>
+            )}
+          </div>
+
+          {/* ─── Action Card ─── */}
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border-2 border-gray-100 dark:border-gray-800 p-6 shadow-xl shadow-gray-100/50 dark:shadow-none sticky top-24 space-y-5">
+
+            {/* Price */}
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs text-gray-400 mb-1 font-medium">السعر</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-5xl font-black text-primary-600 tracking-tight tabular-nums">{currentPrice.toLocaleString('en-US')}</span>
+                  <span className="text-lg font-bold text-gray-400">ج.م</span>
+                </div>
+                {product.compareAtPrice > currentPrice && (
+                  <p className="text-sm text-gray-400 line-through mt-0.5">{product.compareAtPrice.toLocaleString()} ج.م</p>
+                )}
+                {product.taxable && (
+                  <p className="text-xs text-gray-400 mt-0.5">{product.priceIncludesTax ? '(شامل الضريبة)' : `(+ ${product.taxRate}% ضريبة)`}</p>
+                )}
+              </div>
+              <div className={`text-center px-4 py-2 rounded-2xl ${isOutOfStock ? 'bg-red-50 dark:bg-red-900/10' : 'bg-green-50 dark:bg-green-900/10'}`}>
+                <span className={`block text-2xl font-black ${isOutOfStock ? 'text-red-500' : 'text-green-600'}`}>{isOutOfStock ? '0' : currentStock}</span>
+                <span className={`text-xs font-semibold ${isOutOfStock ? 'text-red-400' : 'text-green-500'}`}>{isOutOfStock ? 'نفذ' : 'متوفر'}</span>
+              </div>
+            </div>
+
+            {/* Stock progress bar */}
+            {!isOutOfStock && currentStock <= 20 && (
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse inline-block" />
+                    آخر {currentStock} قطعة فقط!
+                  </span>
+                  <span className="text-gray-400">{Math.round(stockPercent)}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${stockPercent}%`, background: stockPercent > 50 ? '#22c55e' : stockPercent > 20 ? '#f59e0b' : '#ef4444' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Variants */}
+            {product.hasVariants && product.variants?.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">الخيارات:</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {product.variants.map(v => (
+                    <button
+                      key={v._id}
+                      onClick={() => setSelectedVariant(v)}
+                      disabled={v.stock === 0}
+                      className={`px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all flex justify-between items-center ${selectedVariant?._id === v._id ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 hover:border-gray-300'} ${v.stock === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    >
+                      <span className="truncate">{Object.values(v.attributes || {}).join(' / ')}</span>
+                      {v.price > product.price && <span className="text-[10px] bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded">+{(v.price - product.price).toFixed(0)}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity + Add to Cart */}
+            <div ref={addToCartRef}>
+              {!isOutOfStock ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-1.5 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <span className="text-sm font-bold text-gray-500 pr-2">الكمية:</span>
+                    <div className="flex-1 flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl p-1">
+                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition active:scale-90">
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="font-black text-lg w-8 text-center tabular-nums">{quantity}</span>
+                      <button onClick={() => setQuantity(Math.min(currentStock, quantity + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition active:scale-90">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Button
+                      onClick={addToCart}
+                      className="flex-1 h-14 text-base rounded-2xl shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all"
+                      icon={<ShoppingCart className="w-5 h-5" />}
+                    >
+                      أضف إلى السلة
+                    </Button>
+                    <button
+                      onClick={handleWishlist}
+                      disabled={wishlistLoading}
+                      className={`w-14 h-14 flex items-center justify-center rounded-2xl border-2 transition-all active:scale-90 flex-shrink-0 ${wishlistIds?.includes(product._id) ? 'border-red-100 bg-red-50 text-red-500' : 'border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-400 dark:border-gray-700'}`}
+                    >
+                      <Heart className={`w-6 h-6 transition-transform ${wishlistIds?.includes(product._id) ? 'fill-current scale-110' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button disabled className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 font-bold cursor-not-allowed">غير متوفر حالياً</button>
+              )}
+            </div>
+
+            {/* WhatsApp Order Button */}
+            {!isPortal && (
+              <button
+                onClick={whatsappOrder}
+                className="w-full h-12 flex items-center justify-center gap-2.5 rounded-2xl bg-green-500 hover:bg-green-400 active:scale-[0.98] text-white font-bold transition-all shadow-md shadow-green-500/20"
+              >
+                <MessageCircle className="w-5 h-5" />
+                اطلب عبر واتساب
+              </button>
+            )}
+
+            {/* Expiry Warning */}
+            {product.expiryDate && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                ينتهي الصلاحية: <span className="font-bold font-mono">{new Date(product.expiryDate).toLocaleDateString('en-GB')}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Description */}
+          <div className="block lg:hidden pt-6 border-t border-gray-100 dark:border-gray-800">
+            <h3 className="text-xl font-bold mb-3">وصف المنتج</h3>
+            <div className="prose dark:prose-invert max-w-none text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف.</p>' }} />
+          </div>
+
+          {/* Installment Calculator */}
+          <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+            <PortalInstallmentCalculator />
+          </div>
+
+          {/* Reviews */}
+          <div id="reviews-section" className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
+            <h3 className="text-xl font-black flex items-center gap-2">
+              <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> آراء وتقييمات العملاء
+            </h3>
+            {reviews.length > 0 ? (
+              <div className="space-y-3">
+                {reviews.map(r => (
+                  <div key={r._id} className="p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="font-bold text-sm text-gray-900 dark:text-white">{r.customer?.name || 'مستخدم'}</span>
+                        <div className="flex mt-0.5">{[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < r.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />)}</div>
+                      </div>
+                      <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {r.title && <h4 className="font-bold text-sm mb-1">{r.title}</h4>}
+                    <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{r.body}</p>
+                    {r.reply && (
+                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border-r-4 border-primary-500">
+                        <span className="text-xs font-black text-primary-600 block mb-1">رد المتجر</span>
+                        <p className="text-xs text-gray-500 leading-relaxed">{r.reply.body}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+                <Star className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                <p className="text-gray-500 font-bold">لا توجد تقييمات حتى الآن</p>
+                <p className="text-sm text-gray-400">كن أول من يقيم هذا المنتج!</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ─── Related Products ─── */}
+      {relatedProducts.length > 0 && (
+        <section className="mt-16 pt-10 border-t border-gray-100 dark:border-gray-800 animate-fade-in">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white">منتجات قد تعجبك</h2>
+            <Link to={storefrontPath('/products')} className="text-sm font-bold text-primary-600 hover:text-primary-500 flex items-center gap-1">
+              عرض الكل <ChevronLeft className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {relatedProducts.map(p => (
+              <Link
+                key={p._id}
+                to={storefrontPath(`/products/${p._id}`)}
+                className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="aspect-square bg-gray-50 dark:bg-gray-700 overflow-hidden">
+                  {pickProductImage(p) ? (
+                    <img src={pickProductImage(p)} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-10 h-10 text-gray-300" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 transition-colors">{p.name}</p>
+                  <p className="text-primary-600 font-black text-sm mt-1">{p.price?.toLocaleString()} ج.م</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─── Recently Viewed ─── */}
+      {recentlyViewed.length > 0 && (
+        <section className="mt-12 animate-fade-in">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+            <span className="w-1 h-5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+            شاهدته مؤخراً
+          </h2>
+          <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar">
+            {recentlyViewed.map(p => (
+              <Link
+                key={p._id}
+                to={storefrontPath(`/products/${p._id}`)}
+                className="flex-shrink-0 w-32 group"
+              >
+                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 group-hover:border-primary-300 transition-all">
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center"><Package className="w-8 h-8 text-gray-300" /></div>
+                  )}
+                </div>
+                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mt-2 line-clamp-2 group-hover:text-primary-600 transition-colors">{p.name}</p>
+                <p className="text-xs text-primary-600 font-black">{p.price?.toLocaleString()} ج.م</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
     </div>
   );
 }

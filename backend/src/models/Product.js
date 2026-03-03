@@ -29,7 +29,6 @@ const productSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
-      required: [true, 'تصنيف المنتج مطلوب'],
     },
     subcategory: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,6 +43,10 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'سعر البيع مطلوب'],
       min: [0, 'السعر لا يمكن أن يكون سالباً'],
+    },
+    compareAtPrice: {
+      type: Number,
+      min: [0, 'سعر المقارنة لا يمكن أن يكون سالباً'],
     },
     cost: {
       type: Number,
@@ -110,6 +113,8 @@ const productSchema = new mongoose.Schema(
     barcode: { type: String },
     tags: [{ type: String }],
     isActive: { type: Boolean, default: true },
+    seoTitle: { type: String, trim: true, maxlength: 100 },
+    seoDescription: { type: String, trim: true, maxlength: 300 },
 
     // Product Variants (Size/Color)
     hasVariants: { type: Boolean, default: false },
@@ -122,6 +127,7 @@ const productSchema = new mongoose.Schema(
           default: {},
         },
         price: { type: Number, min: 0 },
+        compareAtPrice: { type: Number, min: 0 },
         cost: { type: Number, min: 0 },
         stock: { type: Number, default: 0, min: 0 }, // Variant Global Stock
         inventory: [ // Variant Branch Inventory

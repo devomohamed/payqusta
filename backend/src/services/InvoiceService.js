@@ -77,22 +77,30 @@ class InvoiceService {
         }
 
         // Check branch stock if branchId is provided
-        const branchId = data.branchId || user.branch;
+        // Use provided branchId, or logged in user's branch, or fallback to first branch if none
+        let targetBranchId = data.branchId || (user ? user.branch : null);
+
+        if (!targetBranchId) {
+          const Branch = require('../models/Branch');
+          const firstBranch = await Branch.findOne({ tenant: tenantId, isActive: true }).select('_id');
+          targetBranchId = firstBranch ? firstBranch._id : null;
+        }
+
         const variant = item.variantId ? product.variants.id(item.variantId) : null;
 
-        if (branchId) {
+        if (targetBranchId) {
           if (variant) {
-            const branchStock = variant.inventory?.find(inv => inv.branch.toString() === branchId.toString());
+            const branchStock = variant.inventory?.find(inv => inv.branch.toString() === targetBranchId.toString());
             if (!branchStock || branchStock.quantity < item.quantity) {
-              throw AppError.badRequest(`الكمية المطلوبة من "${product.name} - ${variant.sku}" غير متوفرة في هذا الفرع (المتاح: ${branchStock?.quantity || 0})`);
+              throw AppError.badRequest(`الكمية المطلوبة من "${product.name} - ${variant.sku}" غير متوفرة (المتاح: ${branchStock?.quantity || 0})`);
             }
           } else {
-            const branchStock = product.inventory?.find(inv => inv.branch.toString() === branchId.toString());
+            const branchStock = product.inventory?.find(inv => inv.branch.toString() === targetBranchId.toString());
             if (!branchStock || branchStock.quantity < item.quantity) {
-              throw AppError.badRequest(`الكمية المطلوبة من "${product.name}" غير متوفرة في هذا الفرع (المتاح: ${branchStock?.quantity || 0})`);
+              throw AppError.badRequest(`الكمية المطلوبة من "${product.name}" غير متوفرة (المتاح: ${branchStock?.quantity || 0})`);
             }
           }
-          productsToUpdate.push({ product, quantity: item.quantity, branchId, variantId: item.variantId });
+          productsToUpdate.push({ product, quantity: item.quantity, branchId: targetBranchId, variantId: item.variantId });
         } else {
           const availableQty = variant ? (variant.stock?.quantity || 0) : (product.stock.quantity || 0);
           if (availableQty < item.quantity) {

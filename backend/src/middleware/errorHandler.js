@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Global Error Handling Middleware
  * Centralizes all error responses
  */
@@ -14,7 +14,22 @@ const handleCastError = (err) => {
 };
 
 const handleDuplicateKey = (err) => {
-  const field = Object.keys(err.keyValue)[0];
+  const keyValue = err.keyValue || {};
+  const keyPattern = err.keyPattern || {};
+  const keys = Object.keys(keyValue);
+  const patternKeys = Object.keys(keyPattern);
+
+  let field = keys[0] || patternKeys[0] || 'value';
+
+  if (field === 'tenant') {
+    const secondaryField = [...keys, ...patternKeys].find((key) => key && key !== 'tenant');
+    if (secondaryField) {
+      field = secondaryField;
+    } else {
+      return new AppError('تعذر الحفظ بسبب تعارض داخلي في بيانات المتجر. يرجى إعادة المحاولة.', 409);
+    }
+  }
+
   const translations = {
     barcode: 'الباركود',
     sku: 'كود SKU',
@@ -22,13 +37,28 @@ const handleDuplicateKey = (err) => {
     email: 'البريد الإلكتروني',
     nationalId: 'الرقم القومي',
     whatsappNumber: 'رقم واتساب',
+    customDomain: 'النطاق المخصص',
+    subdomain: 'رابط المتجر',
+    slug: 'رابط المتجر',
+    name: 'الاسم'
   };
+
   const fieldName = translations[field] || field;
-  return new AppError(`القيمة "${err.keyValue[field] || ''}" مستخدمة بالفعل في حقل "${fieldName}"`, 409);
+  const value = keyValue[field];
+
+  if (value === undefined || value === null || value === '') {
+    return new AppError(`هذه القيمة مستخدمة بالفعل في حقل "${fieldName}"`, 409);
+  }
+
+  return new AppError(`القيمة "${value}" مستخدمة بالفعل في حقل "${fieldName}"`, 409);
 };
 
 const handleValidationError = (err) => {
-  const messages = Object.values(err.errors).map((e) => e.message);
+  const messages = Object.values(err.errors)
+    .filter((e) => e.path !== 'tenant')
+    .map((e) => e.message.replace(/tenant/gi, 'المتجر'));
+
+  if (messages.length === 0) return new AppError('بيانات غير صالحة أو مفقودة', 422);
   return new AppError(messages.join('. '), 422);
 };
 
@@ -38,7 +68,6 @@ const handleValidationError = (err) => {
 const errorHandler = (err, req, res, next) => {
   let error = { ...err, message: err.message, stack: err.stack };
 
-  // Log error
   logger.error(`${err.name}: ${err.message}`, {
     path: req.path,
     method: req.method,
@@ -48,16 +77,9 @@ const errorHandler = (err, req, res, next) => {
     userId: req.user?._id
   });
 
-  // Mongoose bad ObjectId
   if (err.name === 'CastError') error = handleCastError(err);
-
-  // Mongoose duplicate key
   if (err.code === 11000) error = handleDuplicateKey(err);
-
-  // Mongoose validation error
   if (err.name === 'ValidationError') error = handleValidationError(err);
-
-  // JWT errors are handled in auth middleware
 
   const statusCode = error.statusCode || 500;
   const message = error.isOperational

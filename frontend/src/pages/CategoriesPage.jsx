@@ -34,7 +34,21 @@ export default function CategoriesPage() {
         try {
             const res = await categoriesApi.getTree();
             const data = res.data.data || [];
+
+            // Add a virtual "Uncategorized" category if it doesn't exist in the tree
+            const defaultCat = data.find(c => c.name === 'بدون تصنيف' || c.isDefault);
+            if (!defaultCat) {
+                data.push({
+                    _id: 'uncategorized',
+                    name: 'منتجات أخرى / بدون تصنيف',
+                    icon: '📦',
+                    description: 'المنتجات التي لم يتم تحديد تصنيف لها.',
+                    children: []
+                });
+            }
+
             setCategories(data);
+
 
             // Auto-select first category if none selected
             if (!selectedCategoryId && data.length > 0) {
@@ -51,7 +65,13 @@ export default function CategoriesPage() {
         if (!catId) return;
         setLoadingProducts(true);
         try {
-            const res = await productsApi.getAll({ category: catId, limit: 100 });
+            const params = { limit: 100 };
+            if (catId === 'uncategorized') {
+                params.category = 'null'; // Use 'null' string to indicate no category for the API
+            } else {
+                params.category = catId;
+            }
+            const res = await productsApi.getAll(params);
             setCategoryProducts(res.data.data?.products || res.data.data || []);
         } catch (err) {
             console.error('Failed to fetch products:', err);
@@ -393,6 +413,15 @@ export default function CategoriesPage() {
 
             <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل التصنيف' : 'إضافة تصنيف جديد'}>
                 <div className="space-y-4">
+                    <div className="flex items-center gap-3 rounded-2xl border border-primary-500/10 bg-primary-50/40 px-4 py-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">
+                            {form.icon || '📦'}
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs font-black text-primary-500">{'\u0627\u0644\u0623\u064a\u0642\u0648\u0646\u0629 \u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u0627\u0633\u0645 \u0627\u0644\u062a\u0635\u0646\u064a\u0641'}</p>
+                            <p className="text-xs text-gray-500">{'\u062a\u062a\u062d\u062f\u062b \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627 \u0639\u0646\u062f \u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0627\u0633\u0645'}</p>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-1">
                             <Input label="أيقونة" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="📦" />

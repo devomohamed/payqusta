@@ -86,7 +86,6 @@ export default function ProductCatalog() {
   const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isPortal) return;
     setWishlistLoading(prev => ({ ...prev, [product._id]: true }));
     const res = await toggleWishlist(product._id);
     if (res.success) {
@@ -197,37 +196,52 @@ export default function ProductCatalog() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredProducts.map(product => {
+          {filteredProducts.map((product, index) => {
             const inWishlist = wishlistIds?.includes(product._id);
             const isAdding = addingId === product._id;
             const loadingHeart = wishlistLoading[product._id];
             const outOfStock = product.stock?.quantity === 0;
             const imageUrl = pickProductImage(product);
+            const discount = product.compareAtPrice && product.compareAtPrice > product.price
+              ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : null;
 
             return (
               <div
                 key={product._id}
-                className="bg-white dark:bg-gray-800/90 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:shadow-primary-500/5 transition-all duration-300 group cursor-pointer"
+                className="bg-white dark:bg-gray-800/90 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl hover:shadow-primary-500/10 cursor-pointer group"
+                style={{
+                  opacity: 0,
+                  animation: `fadeSlideUp 0.4s ease forwards ${index * 55}ms`,
+                  transition: 'transform 0.15s ease, box-shadow 0.3s ease',
+                }}
                 onClick={() => navigate(detailPath(product))}
+                onMouseMove={(e) => {
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - r.left) / r.width - 0.5) * 14;
+                  const y = ((e.clientY - r.top) / r.height - 0.5) * -14;
+                  e.currentTarget.style.transform = `perspective(700px) rotateX(${y}deg) rotateY(${x}deg) scale(1.025)`;
+                }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) scale(1)'; }}
               >
                 {/* Image */}
                 <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
                   {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <img src={imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" loading="lazy" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-10 h-10 text-gray-300" />
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center"><Package className="w-10 h-10 text-gray-300" /></div>
                   )}
 
-                  {/* Out of stock overlay */}
+                  {/* Discount badge */}
+                  {discount && (
+                    <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg">
+                      -{discount}%
+                    </span>
+                  )}
+
+                  {/* Out of stock */}
                   {outOfStock && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-bold">نفذت الكمية</span>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
+                      <span className="bg-white text-gray-800 text-xs px-3 py-1 rounded-full font-black">نفذت الكمية</span>
                     </div>
                   )}
 
@@ -239,19 +253,17 @@ export default function ProductCatalog() {
                     </span>
                   )}
 
-                  {/* ❤ Wishlist (portal only) */}
-                  {isPortal && (
-                    <button
-                      onClick={(e) => handleWishlist(e, product)}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                    >
-                      {loadingHeart ? (
-                        <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
-                      ) : (
-                        <Heart className={`w-4 h-4 transition-colors ${inWishlist ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-                      )}
-                    </button>
-                  )}
+                  {/* ❤ Wishlist (portal + storefront guests) */}
+                  <button
+                    onClick={(e) => handleWishlist(e, product)}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                  >
+                    {loadingHeart ? (
+                      <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
+                    ) : (
+                      <Heart className={`w-4 h-4 transition-colors ${inWishlist ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
+                    )}
+                  </button>
 
                   {/* 🛒 Add to cart floating button */}
                   {isPortal && !outOfStock && (
@@ -274,6 +286,18 @@ export default function ProductCatalog() {
                     {product.name}
                   </h3>
 
+                  {/* Star Ratings display */}
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <div className="flex text-amber-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-3 h-3 ${i < Math.round(product.avgRating || 0) ? 'fill-current' : 'text-gray-200 dark:text-gray-700'}`} />
+                      ))}
+                    </div>
+                    {product.reviewCount > 0 && (
+                      <span className="text-[10px] text-gray-400 font-medium">({product.reviewCount})</span>
+                    )}
+                  </div>
+
                   {/* Price row */}
                   <div className="flex items-end justify-between mt-2">
                     <div>
@@ -282,7 +306,10 @@ export default function ProductCatalog() {
                         <span className="text-xs text-gray-400 font-normal mr-0.5">ج.م</span>
                       </p>
                       {product.stock?.quantity > 0 && product.stock?.quantity <= 5 && (
-                        <p className="text-[10px] text-orange-500 font-bold mt-0.5">آخر {product.stock.quantity} قطعة!</p>
+                        <p className="text-[10px] text-orange-500 font-bold mt-0.5 flex items-center gap-0.5">
+                          <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse inline-block" />
+                          آخر {product.stock.quantity} قطعة!
+                        </p>
                       )}
                     </div>
                     {product.stock?.quantity > 5 && (

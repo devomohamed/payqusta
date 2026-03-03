@@ -12,6 +12,14 @@ import AnimatedBrandLogo from './components/AnimatedBrandLogo';
 const hasBackofficeToken = !!localStorage.getItem('payqusta_token');
 const isPortalPath = window.location.pathname.startsWith('/portal');
 
+// Suppress known "findDOMNode is deprecated" warnings from internal libraries (e.g. react-quill, framer-motion in older versions) 
+// to prevent forced reflow log flooding in React 18 StrictMode
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('findDOMNode is deprecated')) return;
+  originalConsoleError(...args);
+};
+
 if (hasBackofficeToken && !isPortalPath) {
   syncService.init().then(() => {
     console.log('✅ Sync Service initialized');

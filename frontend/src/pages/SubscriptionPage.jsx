@@ -106,8 +106,8 @@ export default function SubscriptionPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('حجم الصورة يجب أن لا يتعدى 5 ميجابايت');
+      if (file.size > 20 * 1024 * 1024) {
+        toast.warning('حجم صورة التحويل يجب ألا يتجاوز 20MB');
         return;
       }
       setReceiptFile(file);
