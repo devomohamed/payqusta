@@ -145,6 +145,23 @@ const invoiceSchema = new mongoose.Schema(
       enum: ['pos', 'portal', 'online_store', 'import'],
       default: 'pos',
     },
+    // Storefront campaign attribution (UTM / ad source)
+    campaignAttribution: {
+      utmSource: { type: String },
+      utmMedium: { type: String },
+      utmCampaign: { type: String },
+      utmTerm: { type: String },
+      utmContent: { type: String },
+      campaignMessage: { type: String },
+      ref: { type: String },
+      gclid: { type: String },
+      fbclid: { type: String },
+      referrer: { type: String },
+      landingPath: { type: String },
+      landingUrl: { type: String },
+      firstSeenAt: { type: Date },
+      lastSeenAt: { type: Date },
+    },
     // Shipping / Delivery details (portal orders)
     shippingAddress: {
       fullName: { type: String },

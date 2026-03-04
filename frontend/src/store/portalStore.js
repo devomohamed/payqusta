@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { getStorefrontTenantSlugFromHost } from '../utils/storefrontHost';
+import { loadStorefrontCategories } from '../storefront/storefrontDataClient';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 const getPortalBasePath = () =>
@@ -104,6 +105,7 @@ export const usePortalStore = create((set, get) => ({
 
   clearCart: () => {
     localStorage.removeItem('portal_cart');
+    localStorage.removeItem('storefront_coupon');
     set({ cart: [] });
   },
 
@@ -113,12 +115,10 @@ export const usePortalStore = create((set, get) => ({
     set({ categoriesLoading: true });
     try {
       const tenantSlug = getPortalTenantSlugFromHost();
-      const res = await portalApi.get('/settings', {
-        params: tenantSlug ? { tenantSlug } : undefined,
+      const res = await loadStorefrontCategories({
+        params: tenantSlug ? { slug: tenantSlug } : undefined,
       });
-      const categories = (res.data?.data?.tenant?.settings?.categories || []).filter(
-        (category) => category?.isVisible !== false
-      );
+      const categories = (res.data?.data || []).filter((category) => category?.isVisible !== false);
       set({ categories, categoriesLoading: false });
       return categories;
     } catch (err) {

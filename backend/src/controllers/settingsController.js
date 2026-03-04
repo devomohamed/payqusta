@@ -698,8 +698,82 @@ class SettingsController {
       affectedProducts: productUpdate.modifiedCount
     }, `تم حذف التصنيف "${decodedCategory}" وتحويل ${productUpdate.modifiedCount} منتج إلى "${fallbackCategory}"`);
   });
-}
 
+  /**
+   * POST /api/v1/settings/watermark/apply-to-all
+   * Re-process every existing product image with the current watermark settings.
+   */
+  applyWatermarkToAll = catchAsync(async (req, res, next) => {
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    const watermarkOptions = tenant?.settings?.watermark;
+    if (!watermarkOptions?.enabled || !watermarkOptions?.text) {
+      return next(AppError.badRequest('العلامة المائية غير مفعلة أو النص فارغ — فعّلها أولاً'));
+    }
+
+    const Product = require('../models/Product');
+    const { processImage } = require('../middleware/upload');
+    const fs = require('fs');
+    const path = require('path');
+
+    const products = await Product.find({ ...req.tenantFilter, isActive: true });
+    let processed = 0, failed = 0;
+
+    for (const product of products) {
+      const images = product.images || [];
+      const updatedImages = [];
+
+      for (const imageUrl of images) {
+        try {
+          let buffer;
+          if (typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
+            const fullPath = path.join(__dirname, '../..', imageUrl);
+            if (fs.existsSync(fullPath)) buffer = fs.readFileSync(fullPath);
+          }
+          if (!buffer && process.env.GCS_BUCKET_NAME) {
+            try {
+              const { Storage } = require('@google-cloud/storage');
+              const bucket = new Storage().bucket(process.env.GCS_BUCKET_NAME);
+              const baseUrl = (process.env.GCS_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
+              const gcsPrefix = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/`;
+              let objectPath = null;
+              if (baseUrl && imageUrl.startsWith(`${baseUrl}/`)) objectPath = imageUrl.slice(baseUrl.length + 1);
+              else if (imageUrl.startsWith(gcsPrefix)) objectPath = imageUrl.slice(gcsPrefix.length);
+              if (objectPath) { [buffer] = await bucket.file(objectPath).download(); }
+            } catch (_) { }
+          }
+          if (!buffer) { updatedImages.push(imageUrl); continue; }
+
+          const filename = `product-wm-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
+          const newPath = await processImage(buffer, filename, 'products', 'image/webp', watermarkOptions);
+          updatedImages.push(newPath);
+          processed++;
+
+          if (typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
+            const oldFull = path.join(__dirname, '../..', imageUrl);
+            if (fs.existsSync(oldFull)) fs.unlinkSync(oldFull);
+          }
+        } catch (err) {
+          logger.error(`[WM_APPLY] ${imageUrl}: ${err.message}`);
+          updatedImages.push(imageUrl);
+          failed++;
+        }
+      }
+
+      product.images = updatedImages;
+      if (product.thumbnail && images.includes(product.thumbnail)) {
+        const idx = images.indexOf(product.thumbnail);
+        if (updatedImages[idx]) product.thumbnail = updatedImages[idx];
+      }
+      await product.save({ validateBeforeSave: false });
+    }
+
+    ApiResponse.success(res, { processed, failed, totalProducts: products.length },
+      `تم تطبيق العلامة المائية على ${processed} صورة${failed > 0 ? ` (${failed} فشلت)` : ''}`
+    );
+  });
+}
 
 module.exports = new SettingsController();
 

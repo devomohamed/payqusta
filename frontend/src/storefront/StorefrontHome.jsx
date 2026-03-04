@@ -1,15 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingBag, TrendingUp, Star, ArrowRight, ShieldCheck,
   Truck, RotateCcw, CreditCard, Tag, Sparkles, ChevronLeft, ChevronRight, Loader2, Wallet, Gift,
-  MessageCircle, Bell, Package, FileText
+  MessageCircle, Bell, Package, FileText, PhoneCall
 } from 'lucide-react';
 import { api } from '../store';
 import { Card, LoadingSpinner, Badge, Button } from '../components/UI';
+import { notify } from '../components/AnimatedNotification';
 import { storefrontPath } from '../utils/storefrontHost';
+import { useCommerceStore } from '../store/commerceStore';
 import { usePortalStore } from '../store/portalStore';
 import { pickProductImage } from '../utils/media';
+import { createBuyNowItem } from './buyNowItem';
+import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
+import { getStorefrontLandingPages } from './storefrontLandingPages';
+
+function buildUniqueProductList(...productLists) {
+  const seen = new Set();
+
+  return productLists
+    .flat()
+    .filter((product) => {
+      if (!product?._id || seen.has(product._id)) return false;
+      seen.add(product._id);
+      return true;
+    });
+}
+
+function getStorefrontRatingSnapshot(products) {
+  const metrics = products.reduce((summary, product) => {
+    const reviewCount = Number(product?.reviewCount) || 0;
+    const avgRating = Number(product?.avgRating) || 0;
+
+    if (reviewCount <= 0 || avgRating <= 0) return summary;
+
+    return {
+      reviewCount: summary.reviewCount + reviewCount,
+      weightedRating: summary.weightedRating + (avgRating * reviewCount),
+    };
+  }, { reviewCount: 0, weightedRating: 0 });
+
+  return {
+    reviewCount: metrics.reviewCount,
+    avgRating: metrics.reviewCount > 0 ? (metrics.weightedRating / metrics.reviewCount) : 0,
+  };
+}
 
 export default function StorefrontHome() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -39,6 +75,8 @@ export default function StorefrontHome() {
     fetchAddresses,
     notificationStreamStatus,
   } = usePortalStore();
+  const directSupportPhone = settings?.store?.phone?.trim() || '';
+  const publicSupportHref = directSupportPhone ? `tel:${directSupportPhone}` : storefrontPath('/track-order');
   const heroHighlights = [
     {
       key: 'installments',
@@ -217,10 +255,80 @@ export default function StorefrontHome() {
 
   if (loading) return <LoadingSpinner />;
 
+  const showcasedProducts = buildUniqueProductList(featuredProducts, newArrivals);
+  const showcasedProductsCount = showcasedProducts.length;
+  const showcasedInStockCount = showcasedProducts.filter((product) => (product?.stock?.quantity ?? 0) > 0).length;
+  const storefrontRatingSnapshot = getStorefrontRatingSnapshot(showcasedProducts);
+  const heroTrustSignals = [
+    {
+      key: 'availability',
+      value: showcasedInStockCount > 0 ? showcasedInStockCount.toLocaleString() : '0',
+      label: 'منتج متاح الآن',
+      detail: showcasedProductsCount > 0
+        ? `من أصل ${showcasedProductsCount.toLocaleString()} منتجًا ظاهرًا الآن`
+        : 'يتم تحديث التوفر مع تحميل الصفحة',
+    },
+    {
+      key: 'reviews',
+      value: storefrontRatingSnapshot.reviewCount > 0 ? `${storefrontRatingSnapshot.avgRating.toFixed(1)} / 5` : 'جاري التحديث',
+      label: 'متوسط تقييم معتمد',
+      detail: storefrontRatingSnapshot.reviewCount > 0
+        ? `${storefrontRatingSnapshot.reviewCount.toLocaleString()} تقييم على المنتجات المعروضة`
+        : 'سيظهر هنا متوسط التقييم بعد أول مراجعات معتمدة',
+    },
+    {
+      key: 'guest-checkout',
+      value: 'بدون حساب',
+      label: 'إتمام الطلب',
+      detail: 'أكمل الشراء كضيف ثم تابع الطلب برقم الهاتف أو رقم الطلب',
+    },
+  ];
+  const dynamicTrustBadges = [
+    {
+      key: 'shipping',
+      icon: Truck,
+      title: 'التوصيل المتوقع',
+      desc: '24-48 ساعة للمحافظات الرئيسية ويظهر الموعد قبل التأكيد',
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+    },
+    {
+      key: 'reviews',
+      icon: Star,
+      title: 'تقييمات موثقة',
+      desc: storefrontRatingSnapshot.reviewCount > 0
+        ? `${storefrontRatingSnapshot.reviewCount.toLocaleString()} تقييم معتمد على المنتجات الظاهرة`
+        : 'تظهر التقييمات تلقائيًا عند اعتماد مراجعات العملاء',
+      color: 'text-amber-600',
+      bg: 'bg-amber-50',
+    },
+    {
+      key: 'availability',
+      icon: ShoppingBag,
+      title: 'منتجات جاهزة للطلب',
+      desc: showcasedProductsCount > 0
+        ? `${showcasedInStockCount.toLocaleString()} من ${showcasedProductsCount.toLocaleString()} منتجًا بالواجهة متاح الآن`
+        : 'يتم تحديث حالة التوفر مباشرة داخل المتجر',
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50',
+    },
+    {
+      key: 'support',
+      icon: directSupportPhone ? PhoneCall : Bell,
+      title: directSupportPhone ? 'دعم مباشر' : 'تتبع واضح',
+      desc: directSupportPhone
+        ? `تواصل مع المتجر مباشرة على ${directSupportPhone}`
+        : 'تابع الطلب لاحقًا من صفحة التتبع باستخدام رقم الطلب والهاتف',
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-50',
+    },
+  ];
+  const landingPages = getStorefrontLandingPages();
+
   return (
     <div className="space-y-16 pb-12">
       {/* Premium Hero Section */}
-      <section className="relative h-[500px] md:h-[600px] flex items-center overflow-hidden rounded-[2.5rem] bg-indigo-900 group">
+      <section className="group relative flex min-h-[560px] items-center overflow-hidden rounded-[2.5rem] bg-indigo-900 px-0 pb-32 pt-10 md:min-h-[640px] md:pb-36">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-950 via-indigo-900/40 to-transparent z-10" />
           <img
@@ -253,9 +361,26 @@ export default function StorefrontHome() {
             </Link>
           </div>
         </div>
+
+        <div className="absolute inset-x-0 bottom-0 z-20 p-6 md:p-8">
+          <div className="grid gap-3 md:grid-cols-3">
+            {heroTrustSignals.map((signal) => (
+              <div
+                key={signal.key}
+                className="rounded-3xl border border-white/10 bg-white/10 p-4 text-right text-white backdrop-blur-md"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-100">{signal.label}</p>
+                <p className="mt-2 text-2xl font-black">{signal.value}</p>
+                <p className="mt-1 text-xs font-medium leading-6 text-indigo-100/90">{signal.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      {/* Hero Highlights (portal capabilities) */}
+      {customer && (
+        <>
+          {/* Hero Highlights (portal capabilities) */}
       <section dir="rtl" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 px-2">
         {heroHighlights.map((highlight) => (
           <Card
@@ -294,7 +419,7 @@ export default function StorefrontHome() {
                   )}
                   <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">من البوابة</span>
                 </div>
-                <Link to={storefrontPath('/portal/notifications')} className="text-primary-500 underline">
+                <Link to="/portal/notifications" className="text-primary-500 underline">
                   عرض الإشعارات
                 </Link>
               </div>
@@ -321,7 +446,7 @@ export default function StorefrontHome() {
             </div>
           </div>
           <Link
-            to={storefrontPath('/portal/notifications')}
+            to="/portal/notifications"
             className="text-sm font-bold text-primary-600 hover:text-primary-500 transition-colors"
           >
             افتح الإشعارات
@@ -332,7 +457,7 @@ export default function StorefrontHome() {
       <section dir="rtl" className="px-2 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-black text-gray-900 dark:text-white">روابط سريعة</h3>
-          <Link to={storefrontPath('/portal/orders')} className="text-sm font-bold text-primary-600">
+          <Link to="/portal/orders" className="text-sm font-bold text-primary-600">
             فتح البوابة
           </Link>
         </div>
@@ -340,7 +465,7 @@ export default function StorefrontHome() {
           {quickActions.map((action) => (
             <Link
               key={action.key}
-              to={storefrontPath(action.path)}
+              to={action.path}
               className="group"
             >
               <Card className="h-full border-0 shadow-xl rounded-3xl overflow-hidden">
@@ -359,7 +484,10 @@ export default function StorefrontHome() {
           ))}
         </div>
       </section>
+        </>
+      )}
 
+      {false && (<div className="hidden">
       {/* Trust Badges - Improved Commerce Feel */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 text-right" dir="rtl">
         {[
@@ -376,6 +504,52 @@ export default function StorefrontHome() {
             <p className="text-xs text-gray-500 font-medium">{feat.desc}</p>
           </div>
         ))}
+      </section></div>)}
+
+      <section className="grid grid-cols-2 gap-4 px-4 text-right md:grid-cols-4" dir="rtl">
+        {dynamicTrustBadges.map((feat) => (
+          <div key={feat.key} className="flex flex-col items-center rounded-3xl border border-gray-100 bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
+            <div className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl ${feat.bg} dark:bg-gray-800`}>
+              <feat.icon className={`h-7 w-7 ${feat.color}`} />
+            </div>
+            <h3 className="mb-1 font-bold text-gray-900 dark:text-white">{feat.title}</h3>
+            <p className="text-xs font-medium text-gray-500">{feat.desc}</p>
+          </div>
+        ))}
+      </section>
+
+      <section dir="rtl">
+        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="text-right">
+            <p className="text-xs font-black uppercase tracking-widest text-primary-500">صفحات هبوط جاهزة</p>
+            <h2 className="mt-2 text-3xl font-black text-gray-900 dark:text-white">اختر طريقة التصفح حسب هدفك</h2>
+            <p className="mt-2 text-sm font-medium text-gray-500">عروض موسمية، منتجات شائعة، اختيارات مناسبة للتقسيط، وصفحة جاهزة للحملات.</p>
+          </div>
+          <Link to={landingPages[0]?.path || storefrontPath('/products')} className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 px-5 py-3 text-sm font-black text-gray-700 transition-colors hover:bg-gray-900 hover:text-white">
+            افتح أول صفحة
+            <ChevronLeft className="w-4 h-4" />
+          </Link>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {landingPages.map((page) => (
+            <Link key={page.slug} to={page.path} className="group block">
+              <Card className="h-full rounded-[2rem] border border-gray-100 p-6 text-right shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
+                <p className="text-[11px] font-black uppercase tracking-widest text-primary-500">{page.eyebrow}</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{page.title}</h3>
+                  <span className="rounded-full bg-primary-50 px-3 py-1 text-[11px] font-black text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
+                    {page.badge}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs font-medium leading-6 text-gray-500">{page.description}</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-primary-600">
+                  افتح الآن
+                  <ChevronLeft className="w-4 h-4" />
+                </span>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* Category Navigation */}
@@ -492,7 +666,7 @@ export default function StorefrontHome() {
         <section dir="rtl" className="px-4 py-10 space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-black text-gray-900 dark:text-white">مركز حسابي</h3>
-            <Link to={storefrontPath('/portal/profile')} className="text-sm font-bold text-primary-600">
+            <Link to="/portal/profile" className="text-sm font-bold text-primary-600">
               إدارة الحساب
             </Link>
           </div>
@@ -509,7 +683,7 @@ export default function StorefrontHome() {
                       : 'جارٍ التحميل...'}
                   </p>
                 </div>
-                <Link to={storefrontPath('/portal/documents')} className="text-sm text-primary-600 font-bold">
+                <Link to="/portal/documents" className="text-sm text-primary-600 font-bold">
                   عرض الوثائق
                 </Link>
               </div>
@@ -529,7 +703,7 @@ export default function StorefrontHome() {
                       : 'جارٍ التحميل...'}
                   </p>
                 </div>
-                <Link to={storefrontPath('/portal/wishlist')} className="text-sm text-primary-600 font-bold">
+                <Link to="/portal/wishlist" className="text-sm text-primary-600 font-bold">
                   فتح المفضلة
                 </Link>
               </div>
@@ -549,7 +723,7 @@ export default function StorefrontHome() {
                       : 'جارٍ التحميل...'}
                   </p>
                 </div>
-                <Link to={storefrontPath('/portal/addresses')} className="text-sm text-primary-600 font-bold">
+                <Link to="/portal/addresses" className="text-sm text-primary-600 font-bold">
                   تعديل العناوين
                 </Link>
               </div>
@@ -561,8 +735,71 @@ export default function StorefrontHome() {
         </section>
       )}
 
-      {/* Loyalty Points Promo Banner (unauthenticated guests only) */}
       {!customer && (
+        <>
+          <section dir="rtl" className="grid gap-4 md:grid-cols-3 px-4">
+            {[
+              {
+                icon: ShieldCheck,
+                title: 'اطلب بدون حساب',
+                desc: 'أكمل الشراء مباشرة، وبياناتك تُستخدم لتأكيد الطلب والتوصيل فقط.',
+              },
+              {
+                icon: Package,
+                title: 'تتبع مباشر',
+                desc: 'تابع حالة الشحنة من صفحة التتبع باستخدام رقم الطلب ورقم الهاتف.',
+              },
+              {
+                icon: PhoneCall,
+                title: directSupportPhone ? 'دعم سريع' : 'شراء مرن',
+                desc: directSupportPhone
+                  ? 'تواصل مع المتجر فورًا لو عندك أي استفسار قبل أو بعد الطلب.'
+                  : 'اختر منتجاتك الآن وأكمل الطلب من غير أي خطوات إضافية.',
+              },
+            ].map((item) => (
+              <Card key={item.title} className="p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm text-right">
+                <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 flex items-center justify-center mb-4">
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-6">{item.desc}</p>
+              </Card>
+            ))}
+          </section>
+
+          <section dir="rtl" className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-xl">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="text-right space-y-3">
+                <Badge variant="primary" className="bg-primary-50 text-primary-700 border border-primary-100">شراء كضيف</Badge>
+                <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">كل خطوات الشراء متاحة بدون تسجيل دخول.</h2>
+                <p className="text-base text-gray-500 dark:text-gray-400 leading-7 max-w-2xl">
+                  اختر المنتج، أضفه للسلة، وأكمل الطلب فورًا. ولو احتجت متابعة، استخدم صفحة تتبع الطلب أو تواصل مباشرة مع المتجر.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link to={storefrontPath('/track-order')} className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary-600 text-white font-bold shadow-lg shadow-primary-500/20 hover:bg-primary-500 transition-colors">
+                  تتبع طلبك
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                {directSupportPhone ? (
+                  <a href={publicSupportHref} className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-bold hover:border-primary-300 hover:text-primary-600 transition-colors">
+                    اتصل بالمتجر
+                    <PhoneCall className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <Link to={storefrontPath('/products')} className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-bold hover:border-primary-300 hover:text-primary-600 transition-colors">
+                    ابدأ التسوق
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Loyalty Points Promo Banner (unauthenticated guests only) */}
+      {false && !customer && (
         <section dir="rtl" className="bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-700 rounded-[2.5rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -574,7 +811,7 @@ export default function StorefrontHome() {
               <p className="text-white/80 text-base font-medium">اكسب نقاطاً مع كل عملية شراء، واستبدلها بخصومات وهدايا حصرية.</p>
             </div>
             <div className="flex flex-col items-center gap-3 flex-shrink-0">
-              <Link to={storefrontPath('/portal/register')} className="bg-white text-violet-700 font-black px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-yellow-300 hover:text-violet-800 transition-all hover:-translate-y-0.5">
+              <Link to="/portal/login" className="bg-white text-violet-700 font-black px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-yellow-300 hover:text-violet-800 transition-all hover:-translate-y-0.5">
                 ابدأ مجاناً الآن
               </Link>
               <p className="text-white/60 text-xs">التسجيل مجاني بالكامل</p>
@@ -620,9 +857,26 @@ export default function StorefrontHome() {
           )}
         </div>
       </section>
+      {customer ? (
+        <Link
+          to="/portal/support"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
+        >
+          <MessageCircle className="w-5 h-5" />
+          <span className="font-bold text-sm">الدعم المباشر</span>
+        </Link>
+      ) : (
+        <a
+          href={publicSupportHref}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
+        >
+          {directSupportPhone ? <PhoneCall className="w-5 h-5" /> : <Package className="w-5 h-5" />}
+          <span className="font-bold text-sm">{directSupportPhone ? 'اتصل بالمتجر' : 'تتبع الطلب'}</span>
+        </a>
+      )}
       <Link
-        to={storefrontPath('/portal/support')}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
+        to="/portal/support"
+        className="hidden fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
       >
         <MessageCircle className="w-5 h-5" />
         <span className="font-bold text-sm">الدعم المباشر</span>
@@ -632,7 +886,66 @@ export default function StorefrontHome() {
 }
 
 function ProductCard({ product }) {
+  const navigate = useNavigate();
+  const { addToCart } = useCommerceStore((state) => ({
+    addToCart: state.addToCart,
+  }));
+  const [adding, setAdding] = useState(false);
   const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : null;
+  const outOfStock = product.stock?.quantity === 0;
+
+  const handleQuickAdd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (outOfStock) {
+      notify.error('المنتج غير متوفر حالياً');
+      return;
+    }
+
+    if (product.hasVariants) {
+      notify.info('اختر المواصفات أولاً من صفحة المنتج');
+      navigate(storefrontPath(`/products/${product._id}`));
+      return;
+    }
+
+    setAdding(true);
+    addToCart(product, 1);
+    trackStorefrontFunnelEvent('add_to_cart', {
+      productId: product._id,
+      itemCount: 1,
+      cartSize: 1,
+      source: 'home_quick_add',
+    });
+    notify.success(`تمت إضافة "${product.name}" للسلة`);
+    window.setTimeout(() => setAdding(false), 500);
+  };
+
+  const handleBuyNow = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (outOfStock) {
+      notify.error('المنتج غير متوفر حالياً');
+      return;
+    }
+
+    if (product.hasVariants) {
+      notify.info('اختر المواصفات أولاً لإتمام الشراء');
+      navigate(storefrontPath(`/products/${product._id}`));
+      return;
+    }
+
+    const buyNowItem = createBuyNowItem(product);
+    if (!buyNowItem) {
+      notify.error('تعذر بدء الشراء الآن');
+      return;
+    }
+
+    navigate(storefrontPath('/checkout'), {
+      state: { buyNowItem },
+    });
+  };
 
   return (
     <Link to={storefrontPath(`/products/${product._id}`)} className="group block h-full">
@@ -645,9 +958,9 @@ function ProductCard({ product }) {
           {product.isNew && !discount && (
             <Badge variant="success" className="font-black px-3 py-1 shadow-lg pointer-events-auto">جديد</Badge>
           )}
-          <button className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-2 rounded-full shadow-md text-gray-400 hover:text-red-500 hover:scale-110 transition-all pointer-events-auto mr-auto">
-            <Star className="w-4 h-4" />
-          </button>
+          <span className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-3 py-1 rounded-full shadow-md text-[10px] font-black text-gray-700 dark:text-gray-200 pointer-events-auto mr-auto">
+            {outOfStock ? 'غير متاح' : 'شراء سريع'}
+          </span>
         </div>
 
         {/* Product Image */}
@@ -667,13 +980,13 @@ function ProductCard({ product }) {
 
           {/* Quick Shop Overlay */}
           <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-20">
-            <Button className="w-full shadow-xl" size="md">
+            <Button className="w-full shadow-xl" size="md" onClick={handleQuickAdd} loading={adding} disabled={outOfStock}>
               <ShoppingBag className="w-4 h-4 ml-2" />
               أضف للسلة
             </Button>
           </div>
 
-          {product.stock?.quantity === 0 && (
+          {outOfStock && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
               <span className="bg-white text-black font-black px-6 py-2 rounded-full text-sm uppercase tracking-wider">نفذت الكمية</span>
             </div>
@@ -703,6 +1016,24 @@ function ProductCard({ product }) {
               <span className="text-[10px] font-bold text-indigo-600 uppercase">ج.م</span>
             </div>
           </div>
+
+          <button
+            onClick={handleQuickAdd}
+            disabled={outOfStock || adding}
+            className={`mt-4 w-full h-11 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${outOfStock ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/20 active:scale-95'}`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            {product.hasVariants ? 'اختر المواصفات' : adding ? 'جارٍ الإضافة...' : 'أضف للسلة الآن'}
+          </button>
+
+          {!outOfStock && (
+            <button
+              onClick={handleBuyNow}
+              className="mt-2.5 w-full h-10 rounded-2xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-300 hover:border-primary-300 hover:text-primary-600 transition-all active:scale-95"
+            >
+              اشترِ الآن
+            </button>
+          )}
 
           {/* Trust Signal for Card */}
           <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center gap-2 opacity-60">

@@ -4,7 +4,7 @@ import 'react-quill/dist/quill.snow.css';
 import { api } from '../store';
 import toast from 'react-hot-toast';
 
-export default function RichTextEditor({ value, onChange, label, className = '' }) {
+export default function RichTextEditor({ value, onChange, label, className = '', minHeight = 250 }) {
   const quillRef = useRef(null);
 
   const imageHandler = () => {
@@ -95,57 +95,49 @@ export default function RichTextEditor({ value, onChange, label, className = '' 
           background: #f8fafc;
           border-top-left-radius: 0.75rem;
           border-top-right-radius: 0.75rem;
-          padding: 12px 8px !important;
+          padding: 10px 8px !important;
+          flex-wrap: wrap;
         }
         .dark .ql-toolbar {
           border-color: #374151 !important;
           background: #1e293b;
         }
-        .ql-toolbar .ql-picker {
-          color: #475569;
-        }
-        .dark .ql-toolbar .ql-picker {
-          color: #cbd5e1;
-        }
-        .ql-toolbar .ql-stroke {
-          stroke: #475569;
-        }
-        .dark .ql-toolbar .ql-stroke {
-          stroke: #cbd5e1 !important;
-        }
-        .ql-toolbar .ql-fill {
-          fill: #475569;
-        }
-        .dark .ql-toolbar .ql-fill {
-          fill: #cbd5e1 !important;
-        }
-        .dark .ql-picker {
-          color: #cbd5e1 !important;
-        }
+        .ql-toolbar .ql-picker { color: #475569; }
+        .dark .ql-toolbar .ql-picker { color: #cbd5e1; }
+        .ql-toolbar .ql-stroke { stroke: #475569; }
+        .dark .ql-toolbar .ql-stroke { stroke: #cbd5e1 !important; }
+        .ql-toolbar .ql-fill { fill: #475569; }
+        .dark .ql-toolbar .ql-fill { fill: #cbd5e1 !important; }
+        .dark .ql-picker { color: #cbd5e1 !important; }
         .ql-container {
           border: none !important;
-          min-height: 250px;
+          min-height: ${minHeight}px;
           font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif !important;
           font-size: 1.05rem !important;
           border-bottom-left-radius: 0.75rem;
           border-bottom-right-radius: 0.75rem;
         }
         .ql-editor {
-          min-height: 250px;
-          line-height: 1.8;
-          padding: 1rem 1.5rem !important;
+          min-height: ${minHeight}px;
+          line-height: 1.9;
+          padding: 1.2rem 1.5rem !important;
+          direction: rtl;
+          text-align: right;
         }
-        .ql-editor p {
-          margin-bottom: 0.75em;
-        }
+        .ql-editor p { margin-bottom: 0.75em; }
+        .ql-editor h1, .ql-editor h2, .ql-editor h3 { font-weight: 700; margin-bottom: 0.5em; line-height: 1.4; }
+        .ql-editor ul, .ql-editor ol { padding-right: 1.5em; }
+        .ql-editor img { max-width: 100%; border-radius: 8px; margin: 0.5em 0; }
         .ql-editor.ql-blank::before {
           color: #94a3b8;
           font-style: normal;
           opacity: 0.7;
+          right: 1.5rem;
+          left: auto;
         }
-        .dark .ql-editor.ql-blank::before {
-          color: #64748b;
-        }
+        .dark .ql-editor.ql-blank::before { color: #64748b; }
+        .dark .ql-editor { color: #f1f5f9; background: #1e293b; }
+        .dark .ql-container { background: #1e293b; }
       `}</style>
     </div>
   );

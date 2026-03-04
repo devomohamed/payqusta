@@ -1,24 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, Upload, X as XIcon, Image as ImageIcon, CheckSquare, Square, XCircle, Tag, Clock, AlertCircle, FolderTree, ChevronDown, ChevronRight } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
 import { productsApi, suppliersApi, categoriesApi, api, useAuthStore } from '../store';
-import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState, TextArea } from '../components/UI';
+import { Button, Input, Select, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
 import Pagination from '../components/Pagination';
 import BarcodeScanner from '../components/BarcodeScanner';
-import RichTextEditor from '../components/RichTextEditor';
 import ProductDetailModal from '../components/ProductDetailModal';
-import CategorySelector from '../components/CategorySelector';
 import ProductSearchModal from '../components/ProductSearchModal';
-import SeoAnalyzer from '../components/products/SeoAnalyzer';
-import ImageEditorModal from '../components/products/ImageEditorModal';
+import ProductComposer from '../components/products/ProductComposer';
 
 const CategoriesPage = lazy(() => import('./CategoriesPage'));
 
 export default function ProductsPage() {
   const { user, can } = useAuthStore();
-  const [activePageTab, setActivePageTab] = useState('products'); // 'products' | 'categories'
+  const [activePageTab, setActivePageTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -32,38 +28,32 @@ export default function ProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [sendingRestock, setSendingRestock] = useState(null); // supplier ID being sent
+  const [sendingRestock, setSendingRestock] = useState(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [productImages, setProductImages] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [form, setForm] = useState({
-    name: '', sku: '', barcode: '', category: '', subcategory: '', price: '', cost: '',
-    wholesalePrice: '', shippingCost: '',
-    stockQuantity: '', minQuantity: '5', description: '', supplier: '', expiryDate: '',
-    variants: []
+    name: '', sku: '', barcode: '', category: '', subcategory: '', price: '', costPrice: '',
+    wholesalePrice: '', shippingCost: '', isFreeShipping: false,
+    stock: '', minStockAlert: '5', description: '', supplier: '', expiryDate: '',
+    variants: [], primaryImagePreview: null, seoTitle: '', seoDescription: ''
   });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [pendingImages, setPendingImages] = useState([]);
+  const [stepErrors, setStepErrors] = useState({});
   const LIMIT = 8;
 
-  const [pendingImages, setPendingImages] = useState([]);
-
-  // Load categories & suppliers once
   useEffect(() => {
     categoriesApi.getTree().then((r) => setCategories(r.data.data || [])).catch(() => { });
     suppliersApi.getAll({ limit: 100 }).then((r) => setSuppliers(r.data.data || [])).catch(() => { });
   }, []);
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  // Debounce search input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -76,63 +66,158 @@ export default function ProductsPage() {
       if (supplierFilter) params.supplier = supplierFilter;
       const res = await productsApi.getAll(params);
       setProducts(res.data.data || []);
-      setPagination({ totalPages: res.data.pagination?.totalPages || 1, totalItems: res.data.pagination?.totalItems || 0 });
-    } catch { toast.error('خطأ في تحميل المنتجات'); }
-    finally { setLoading(false); }
+      setPagination({
+        totalPages: res.data.pagination?.totalPages || 1,
+        totalItems: res.data.pagination?.totalItems || 0
+      });
+    } catch {
+      toast.error('خطأ في تحميل المنتجات');
+    } finally {
+      setLoading(false);
+    }
   }, [page, debouncedSearch, stockFilter, categoryFilter, supplierFilter]);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
   useEffect(() => { setPage(1); }, [debouncedSearch, stockFilter, categoryFilter, supplierFilter]);
 
-  const openAdd = () => { setEditId(null); setProductImages([]); setPendingImages([]); setForm({ name: '', sku: '', barcode: '', category: '', subcategory: '', price: '', cost: '', wholesalePrice: '', shippingCost: '', stockQuantity: '', minQuantity: '5', description: '', supplier: '', expiryDate: '', variants: [] }); setShowModal(true); };
-  const openEdit = (p) => { setEditId(p._id); setProductImages(p.images || []); setPendingImages([]); setForm({ name: p.name, sku: p.sku || '', barcode: p.barcode || '', category: p.category?._id || p.category || '', subcategory: p.subcategory?._id || p.subcategory || '', price: String(p.price), cost: String(p.cost), wholesalePrice: String(p.wholesalePrice || ''), shippingCost: String(p.shippingCost || ''), stockQuantity: String(p.stock?.quantity || 0), minQuantity: String(p.stock?.minQuantity || 5), description: p.description || '', supplier: p.supplier?._id || p.supplier || '', expiryDate: p.expiryDate ? p.expiryDate.split('T')[0] : '', variants: p.variants || [] }); setShowModal(true); };
+  const openEdit = (prod) => {
+    setEditId(prod._id);
+    const formatImageUrl = (url) => url?.startsWith('/uploads/')
+      ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'}${url}`
+      : url;
+
+    setForm({
+      name: prod.name || '',
+      sku: prod.sku || '',
+      barcode: prod.barcode || '',
+      category: prod.category?._id || prod.category || '',
+      subcategory: prod.subcategory?._id || prod.subcategory || '',
+      price: prod.price || '',
+      costPrice: prod.cost || '',
+      wholesalePrice: prod.wholesalePrice || '',
+      shippingCost: prod.shippingCost || '',
+      isFreeShipping: prod.shippingCost === 0,
+      stock: prod.stock?.quantity || '',
+      minStockAlert: prod.stock?.minQuantity || '5',
+      description: prod.description || '',
+      supplier: prod.supplier?._id || prod.supplier || '',
+      expiryDate: prod.expiryDate ? prod.expiryDate.split('T')[0] : '',
+      variants: prod.variants || [],
+      primaryImagePreview: formatImageUrl(prod.thumbnail || prod.images?.[0] || null),
+      seoTitle: prod.seoTitle || '',
+      seoDescription: prod.seoDescription || ''
+    });
+    setProductImages((prod.images || []).map(formatImageUrl));
+    setPendingImages([]);
+    setStepErrors({});
+    setShowModal(true);
+  };
+
+  const openNew = () => {
+    setEditId(null);
+    setForm({
+      name: '', sku: '', barcode: '', category: '', subcategory: '', price: '', costPrice: '',
+      wholesalePrice: '', shippingCost: '', isFreeShipping: false,
+      stock: '', minStockAlert: '5', description: '', supplier: '', expiryDate: '',
+      variants: [], primaryImagePreview: null, seoTitle: '', seoDescription: ''
+    });
+    setProductImages([]);
+    setPendingImages([]);
+    setStepErrors({});
+    setShowModal(true);
+  };
+
+  const validateProductComposer = () => {
+    const errors = { basics: false, pricing: false, media: false };
+    if (!form.name || !form.category) errors.basics = true;
+    if (!form.price || Number(form.price) <= 0) errors.pricing = true;
+    if (form.variants && form.variants.length > 0) {
+      const invalid = form.variants.some(v => !v.price);
+      if (invalid) errors.pricing = true;
+    }
+    setStepErrors(errors);
+    return !Object.values(errors).some(Boolean);
+  };
 
   const handleSave = async () => {
-    // Basic validation
-    if (!form.name) return toast.error('يرجى إدخال اسم المنتج');
-    if (!form.category) return toast.error('يرجى اختيار تصنيف للمنتج');
-    if (!form.price) return toast.error('يرجى تحديد سعر البيع');
-    if (!form.cost) return toast.error('يرجى تحديد سعر التكلفة');
-
+    if (!validateProductComposer()) {
+      notify({ title: 'أخطاء في الحقول', description: 'يرجى مراجعة الخطوات المميزة باللون الأحمر', type: 'error' });
+      return;
+    }
     setSaving(true);
     try {
-      const data = { ...form };
-      if (!data.supplier) delete data.supplier;
-      let createdId = editId;
+      const formData = new FormData();
+      formData.append('name', form.name);
+      if (form.sku) formData.append('sku', form.sku);
+      if (form.barcode) formData.append('barcode', form.barcode);
+      formData.append('category', form.category);
+      if (form.subcategory) formData.append('subcategory', form.subcategory);
+      formData.append('description', form.description || '');
+      if (form.supplier) formData.append('supplier', form.supplier);
+      formData.append('price', form.price);
+      if (form.costPrice) formData.append('cost', form.costPrice);
+      if (form.wholesalePrice) formData.append('wholesalePrice', form.wholesalePrice);
+      if (form.isFreeShipping) {
+        formData.append('shippingCost', 0);
+      } else if (form.shippingCost) {
+        formData.append('shippingCost', form.shippingCost);
+      }
+      formData.append('stock[quantity]', form.stock || 0);
+      formData.append('stock[minQuantity]', form.minStockAlert || 5);
+      if (form.expiryDate) formData.append('expiryDate', form.expiryDate);
+      if (form.seoTitle) formData.append('seoTitle', form.seoTitle);
+      if (form.seoDescription) formData.append('seoDescription', form.seoDescription);
+      formData.append('variants', JSON.stringify(form.variants || []));
+
+      // Sort existing images so the selected primary is first
+      const sortedExisting = form.primaryImagePreview && productImages.includes(form.primaryImagePreview)
+        ? [form.primaryImagePreview, ...productImages.filter(i => i !== form.primaryImagePreview)]
+        : productImages;
+
+      const getRelativeUrl = (url) => {
+        if (!url) return url;
+        try {
+          const apiBaseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+          return url.startsWith(apiBaseUrl) ? url.replace(apiBaseUrl, '') : url;
+        } catch { return url; }
+      };
+
+      sortedExisting.forEach(img => formData.append('existingImages', getRelativeUrl(img)));
+
+      // Sort pending images so the selected primary is first (identify by _previewUrl)
+      const primaryPendingIdx = pendingImages.findIndex(f => f._previewUrl === form.primaryImagePreview);
+      const sortedPending = primaryPendingIdx > 0
+        ? [pendingImages[primaryPendingIdx], ...pendingImages.filter((_, i) => i !== primaryPendingIdx)]
+        : pendingImages;
+      sortedPending.forEach(file => formData.append('images', file));
+
+      // Only send primaryImage if it's an existing server path (not a blob URL)
+      const primaryIsExisting = form.primaryImagePreview && !form.primaryImagePreview.startsWith('blob:');
+      if (primaryIsExisting) {
+        formData.append('primaryImage', getRelativeUrl(form.primaryImagePreview));
+      } else if (sortedExisting.length > 0 && sortedPending.length === 0) {
+        // Fallback: only use the first existing image if there are no new uploads at all
+        formData.append('primaryImage', getRelativeUrl(sortedExisting[0]));
+      }
+      // If primary is a pending image, don't send primaryImage. The backend uses the first uploaded image.
 
       if (editId) {
-        await productsApi.update(editId, data);
-        toast.success('تم تحديث المنتج بنجاح ✅');
+        await productsApi.update(editId, formData);
+        toast.success('تم تحديث المنتج بنجاح');
       } else {
-        const res = await productsApi.create(data);
-        createdId = res.data.data._id;
-        toast.success('تم إضافة المنتج الجديد بنجاح ✅');
+        await productsApi.create(formData);
+        toast.success('تم اضافة المنتج بنجاح');
       }
-
-      // Upload pending images if any
-      if (pendingImages.length > 0 && createdId) {
-        const loadToast = toast.loading('جاري رفع صور المنتج...');
-        try {
-          const formData = new FormData();
-          for (let i = 0; i < pendingImages.length; i++) {
-            formData.append('images', pendingImages[i]);
-          }
-          formData.append('setAsThumbnail', (!editId || productImages.length === 0) ? 'true' : 'false');
-          await productsApi.uploadImage(createdId, formData);
-          toast.success('تم رفع الصور بنجاح', { id: loadToast });
-        } catch (err) {
-          toast.error('حدث خطأ أثناء رفع الصور', { id: loadToast });
-        }
-      }
-
       setShowModal(false);
       setPendingImages([]);
+      setProductImages([]);
       loadProducts();
     } catch (err) {
       const msg = err.response?.data?.message || 'حدث خطأ غير متوقع أثناء الحفظ';
       toast.error(msg);
+    } finally {
+      setSaving(false);
     }
-    finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
@@ -148,21 +233,20 @@ export default function ProductsPage() {
             await productsApi.delete(id);
             notify.success('تم حذف المنتج بنجاح', 'تم الحذف');
             loadProducts();
-          } catch (err) {
+          } catch {
             notify.error('فشل حذف المنتج', 'خطأ في الحذف');
           }
-        },
-      },
+        }
+      }
     });
   };
 
-  // Bulk selection
   const toggleSelect = (id) => {
-    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
   const toggleSelectAll = () => {
     if (selectedIds.length === products.length) setSelectedIds([]);
-    else setSelectedIds(products.map((p) => p._id));
+    else setSelectedIds(products.map(p => p._id));
   };
   const handleBulkDelete = () => {
     notify.custom({
@@ -179,24 +263,26 @@ export default function ProductsPage() {
             notify.success(`تم حذف ${selectedIds.length} منتج بنجاح`);
             setSelectedIds([]);
             loadProducts();
-          } catch { notify.error('حدث خطأ في الحذف الجماعي'); }
-          finally { setBulkDeleting(false); }
-        },
-      },
+          } catch {
+            notify.error('حدث خطأ في الحذف الجماعي');
+          } finally {
+            setBulkDeleting(false);
+          }
+        }
+      }
     });
   };
 
-  // Request restock from supplier
   const handleRequestRestock = async (supplierId) => {
     setSendingRestock(supplierId);
     try {
       const res = await suppliersApi.requestRestock(supplierId);
       if (res.data.data?.whatsappSent) {
-        toast.success(`تم إرسال طلب إعادة التخزين للمورد عبر WhatsApp ✅\n${res.data.data.productsCount} منتج`);
+        toast.success(`تم إرسال طلب إعادة التخزين للمورد عبر WhatsApp\n${res.data.data.productsCount} منتج`);
       } else {
         toast.success(`تم إعداد طلب إعادة التخزين (${res.data.data?.productsCount || 0} منتج)`);
       }
-    } catch (err) {
+    } catch {
       toast.error('خطأ في إرسال طلب إعادة التخزين');
     } finally {
       setSendingRestock(null);
@@ -211,780 +297,386 @@ export default function ProductsPage() {
       barcode: product.barcode || '',
       category: product.category?._id || product.category || '',
       price: String(product.price || 0),
-      cost: String(product.cost || 0),
+      costPrice: String(product.cost || 0),
       description: product.description || '',
-      supplier: product.supplier?._id || product.supplier || '',
+      supplier: product.supplier?._id || product.supplier || ''
     });
     setShowProductSearch(false);
-    toast.success('تم استيراد بيانات المنتج بنجاح!');
+    toast.success('تم استيراد بيانات المنتج بنجاح');
   };
 
-  // Intercept Image Upload to show the Cropper First
-  const handleImageUpload = (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    for (let i = 0; i < files.length; i++) {
-      if (!files[i].type.startsWith('image/')) return toast.error('الملفات يجب أن تكون صور فقط');
-      if (files[i].size > 20 * 1024 * 1024) return toast.error('حجم الصورة يجب ألا يتجاوز 20MB');
-    }
-
-    setEditorFiles(Array.from(files));
-    setShowImageEditor(true);
-    e.target.value = ''; // Reset input
+  const handleComposerImagesChange = (e) => {
+    const files = e?.target?.files ? Array.from(e.target.files) : (Array.isArray(e) ? e : []);
+    // Attach a stable preview URL to each file so we can reliably remove it later
+    const filesWithUrls = files.map(file => {
+      if (!file._previewUrl) {
+        file._previewUrl = URL.createObjectURL(file);
+      }
+      return file;
+    });
+    setPendingImages(prev => [...prev, ...filesWithUrls]);
   };
 
-  // Called after images have been cropped/skipped in the ImageEditorModal
-  const handleEditorComplete = async (processedFiles) => {
-    setShowImageEditor(false);
-    setEditorFiles([]);
+  const handleComposerPrimarySelect = (imageUrl) => {
+    setForm(prev => ({ ...prev, primaryImagePreview: imageUrl }));
+  };
 
-    if (!processedFiles || processedFiles.length === 0) return;
-
-    if (editId) {
-      setUploadingImage(true);
-      try {
-        const formData = new FormData();
-        for (let i = 0; i < processedFiles.length; i++) {
-          formData.append('images', processedFiles[i]);
+  // Called from ProductMediaStep as: onRemoveImage(type, url_or_index)
+  const handleComposerRemoveImage = (type, urlOrIndex) => {
+    if (type === 'pending') {
+      // urlOrIndex is the index of the pending file
+      setPendingImages(prev => {
+        const removed = prev[urlOrIndex];
+        if (removed?._previewUrl) {
+          // Clear primary preview if this image was selected as primary
+          if (form.primaryImagePreview === removed._previewUrl) {
+            setForm(f => ({ ...f, primaryImagePreview: null }));
+          }
+          URL.revokeObjectURL(removed._previewUrl);
         }
-        formData.append('setAsThumbnail', productImages.length === 0 ? 'true' : 'false');
-
-        const res = await productsApi.uploadImage(editId, formData);
-        const newImages = res.data.data.images || [res.data.data.image];
-        setProductImages([...productImages, ...newImages]);
-        toast.success("تم رفع الصور بنجاح ✅");
-      } catch (err) {
-        toast.error("خطأ في رفع الصور");
-      } finally {
-        setUploadingImage(false);
-      }
+        return prev.filter((_, i) => i !== urlOrIndex);
+      });
     } else {
-      setPendingImages([...pendingImages, ...processedFiles]);
-      toast.success("تم إعداد الصور (سيتم الرفع عند الحفظ)");
-    }
-  };
-
-  // Delete image
-  const handleDeleteImage = async (imageUrl) => {
-    if (!editId) return; // Should not happen for pending images via this function
-
-    if (confirm('هل أنت متأكد من حذف الصورة؟')) {
-      try {
-        await productsApi.deleteImage(editId, imageUrl);
-        setProductImages(productImages.filter(img => img !== imageUrl));
-        toast.success('تم حذف الصورة');
-      } catch (err) {
-        toast.error('خطأ في حذف الصورة');
+      // type === 'existing', urlOrIndex is the image URL
+      const imageUrl = urlOrIndex;
+      setProductImages(prev => prev.filter(img => img !== imageUrl));
+      if (form.primaryImagePreview === imageUrl) {
+        setForm(prev => ({ ...prev, primaryImagePreview: null }));
       }
     }
   };
 
-  const removePendingImage = (index) => {
-    setPendingImages(pendingImages.filter((_, i) => i !== index));
+  const handleComposerAddVariant = (variant) => {
+    setForm(prev => ({ ...prev, variants: [...(prev.variants || []), variant] }));
   };
 
-  const statusBadge = (s) => s === 'in_stock' ? <Badge variant="success">متوفر</Badge> : s === 'low_stock' ? <Badge variant="warning">منخفض ⚠️</Badge> : <Badge variant="danger">نفذ 🚨</Badge>;
-  const catIcon = (c) => {
-    if (typeof c === 'object' && c?.icon) return c.icon;
-    return c === 'هواتف' ? '📱' : c === 'لابتوب' ? '💻' : c === 'تابلت' ? '📟' : c === 'شاشات' ? '🖥️' : c === 'إكسسوارات' ? '🎧' : '📦';
+  const handleComposerUpdateVariant = (index, field, value) => {
+    setForm(prev => {
+      const variants = [...(prev.variants || [])];
+      variants[index] = { ...variants[index], [field]: value };
+      return { ...prev, variants };
+    });
   };
 
-  const getSupplierName = (p) => {
-    if (p.supplier?.name) return p.supplier.name;
-    const found = suppliers.find((s) => s._id === p.supplier);
-    return found?.name || null;
+  const handleComposerRemoveVariant = (index) => {
+    setForm(prev => ({
+      ...prev,
+      variants: (prev.variants || []).filter((_, i) => i !== index)
+    }));
   };
 
-  const getSupplierPhone = (p) => {
-    if (p.supplier?.phone) return p.supplier.phone;
-    const found = suppliers.find((s) => s._id === p.supplier);
-    return found?.phone || null;
+  const getStockBadge = (prod) => {
+    const qty = prod.stock?.quantity ?? 0;
+    const min = prod.stock?.minQuantity ?? 5;
+    if (qty === 0) return <Badge variant="danger">نفد المخزون</Badge>;
+    if (qty <= min) return <Badge variant="warning">مخزون منخفض</Badge>;
+    return <Badge variant="success">متاح ({qty})</Badge>;
   };
 
-  const getSupplierId = (p) => {
-    if (p.supplier?._id) return p.supplier._id;
-    return p.supplier || null;
-  };
-
-  const activeFilters = [stockFilter, categoryFilter, supplierFilter].filter(Boolean).length;
-
-  // Count low stock products by supplier
-  const lowStockBySupplier = products.reduce((acc, p) => {
-    if (p.stockStatus === 'low_stock' || p.stockStatus === 'out_of_stock') {
-      const suppId = getSupplierId(p);
-      if (suppId) {
-        if (!acc[suppId]) acc[suppId] = { count: 0, name: getSupplierName(p), phone: getSupplierPhone(p) };
-        acc[suppId].count++;
-      }
-    }
-    return acc;
-  }, {});
-
-  // Expiry badge helper
-  const expiryBadge = (expiryDate) => {
-    if (!expiryDate) return null;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return <Badge variant="danger">منتهي الصلاحية ⚠️</Badge>;
-    if (diffDays <= 30) return <Badge variant="warning">صلاحية: {diffDays} يوم</Badge>;
-    return null;
-  };
+  if (activePageTab === 'categories') {
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <div>
+          <button
+            onClick={() => setActivePageTab('products')}
+            className="mb-4 flex items-center gap-2 text-sm text-gray-500 hover:text-primary-600 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" /> العودة للمنتجات
+          </button>
+          <CategoriesPage />
+        </div>
+      </Suspense>
+    );
+  }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Page Tabs */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setActivePageTab('products')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activePageTab === 'products'
-            ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'
-            }`}
-        >
-          <Package className="w-4 h-4" /> المنتجات
-        </button>
-        <button
-          onClick={() => setActivePageTab('categories')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${activePageTab === 'categories'
-            ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/30'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'
-            }`}
-        >
-          <Tag className="w-4 h-4" /> التصنيفات
-        </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Package className="w-7 h-7 text-primary-600" />
+            إدارة المنتجات
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {pagination.totalItems} منتج في المخزون
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="ghost" size="sm" onClick={() => setActivePageTab('categories')}>
+            <Tag className="w-4 h-4" />
+            إدارة التصنيفات
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowBarcodeScanner(true)}>
+            <Scan className="w-4 h-4" />
+            مسح باركود
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowProductSearch(true)}>
+            <Search className="w-4 h-4" />
+            استيراد منتج
+          </Button>
+          <Button onClick={openNew}>
+            <Plus className="w-4 h-4" />
+            إضافة منتج
+          </Button>
+        </div>
       </div>
 
-      {/* CATEGORIES TAB */}
-      {activePageTab === 'categories' && (
-        <Suspense fallback={<LoadingSpinner />}>
-          <CategoriesPage />
-        </Suspense>
-      )}
-
-      {/* PRODUCTS TAB */}
-      {activePageTab === 'products' && (
-        <div className="space-y-5">
-          {/* Filters Bar */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الكود..."
-                className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:border-primary-500 transition-all" />
-            </div>
-
-            {/* Category Dropdown */}
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
-              <option value="">📂 كل الفئات</option>
-              {categories.map((cat) => (
-                <React.Fragment key={cat._id}>
-                  <option value={cat._id}>{cat.icon || '📦'} {cat.name}</option>
-                  {(cat.children || []).map(sub => (
-                    <option key={sub._id} value={sub._id}>&nbsp;&nbsp;&nbsp;{sub.icon || '📦'} {sub.name}</option>
-                  ))}
-                </React.Fragment>
-              ))}
-            </select>
-
-            {/* Supplier Dropdown */}
-            <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
-              <option value="">🚛 كل الموردين</option>
-              {suppliers.map((s) => (<option key={s._id} value={s._id}>{s.name}</option>))}
-            </select>
-
-            {/* Stock Filter */}
-            <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
-              <option value="">📦 كل المخزون</option>
-              <option value="in_stock">✅ متوفر</option>
-              <option value="low_stock">⚠️ منخفض</option>
-              <option value="out_of_stock">🚨 نفذ</option>
-            </select>
-
-            {activeFilters > 0 && (
-              <button onClick={() => { setStockFilter(''); setCategoryFilter(''); setSupplierFilter(''); setSearch(''); }}
-                className="text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                مسح الفلاتر ({activeFilters})
-              </button>
-            )}
-
-            {can('products', 'create') && (
-              <Button icon={<Plus className="w-4 h-4" />} onClick={openAdd}>إضافة منتج</Button>
-            )}
-          </div>
-
-          {/* Bulk Actions Bar */}
-          {
-            selectedIds.length > 0 && (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30 animate-fade-in">
-                <button onClick={toggleSelectAll} className="p-1">
-                  {selectedIds.length === products.length ? <CheckSquare className="w-5 h-5 text-primary-500" /> : <Square className="w-5 h-5 text-primary-500" />}
-                </button>
-                <span className="text-sm font-bold text-primary-600 dark:text-primary-400">تم تحديد {selectedIds.length} منتج</span>
-                <div className="mr-auto flex gap-2">
-                  {can('products', 'delete') && (
-                    <Button size="sm" variant="danger" icon={<Trash2 className="w-3.5 h-3.5" />} loading={bulkDeleting} onClick={handleBulkDelete}>
-                      حذف المحدد
-                    </Button>
-                  )}
-                  <button onClick={() => setSelectedIds([])} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                    <XCircle className="w-4 h-4 text-gray-500" />
-                  </button>
-                </div>
-              </div>
-            )
-          }
-
-          {/* Low Stock Supplier Alert */}
-          {
-            Object.keys(lowStockBySupplier).length > 0 && (
-              <Card className="p-4 border-2 border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
-                  <h4 className="font-bold text-amber-700 dark:text-amber-400">منتجات تحتاج إعادة تخزين</h4>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {Object.entries(lowStockBySupplier).map(([suppId, info]) => (
-                    <div key={suppId} className="flex items-center gap-2 bg-white dark:bg-gray-900 rounded-xl px-3 py-2 shadow-sm">
-                      <div>
-                        <p className="font-semibold text-sm">{info.name}</p>
-                        <p className="text-xs text-red-500">{info.count} منتج منخفض</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="whatsapp"
-                        loading={sendingRestock === suppId}
-                        onClick={() => handleRequestRestock(suppId)}
-                        icon={<Send className="w-3.5 h-3.5" />}
-                      >
-                        طلب تخزين
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )
-          }
-
-          {/* Products Grid */}
-          {
-            loading ? <LoadingSpinner /> : products.length === 0 ? (
-              <EmptyState icon={<Package className="w-8 h-8" />} title="لا توجد منتجات" description={search || activeFilters ? 'لا نتائج للفلاتر المحددة' : 'ابدأ بإضافة أول منتج'} />
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {products.map((p) => {
-                    const supplierName = getSupplierName(p);
-                    return (
-                      <Card
-                        key={p._id}
-                        hover
-                        onClick={() => {
-                          setSelectedProduct(p);
-                          setShowDetailModal(true);
-                        }}
-                        className={`p-5 animate-fade-in relative cursor-pointer ${selectedIds.includes(p._id) ? 'ring-2 ring-primary-500' : ''}`}
-                      >
-                        {/* Selection Checkbox */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleSelect(p._id); }}
-                          className="absolute top-3 left-3 z-10"
-                        >
-                          {selectedIds.includes(p._id)
-                            ? <CheckSquare className="w-5 h-5 text-primary-500" />
-                            : <Square className="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-primary-400" />
-                          }
-                        </button>
-                        {/* Product Image or Icon */}
-                        <div className="flex justify-between items-start mb-3">
-                          {p.thumbnail || (p.images && p.images.length > 0) ? (
-                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
-                              <img
-                                src={p.thumbnail || p.images[0]}
-                                alt={p.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center text-2xl">${p.category?.icon || '📦'}</div>`;
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-100 to-primary-50 dark:from-primary-500/10 dark:to-primary-500/5 flex items-center justify-center text-2xl">{p.category?.icon || '📦'}</div>
-                          )}
-                          {statusBadge(p.stockStatus)}
-                          {expiryBadge(p.expiryDate)}
-                        </div>
-                        <h4 className="font-bold text-sm mb-0.5 truncate" title={p.name}>{p.name}</h4>
-                        <p className="text-xs text-gray-400 mb-1">SKU: {p.sku || '—'} · {p.category?.name || p.categoryName || 'بدون تصنيف'}</p>
-
-                        {/* Supplier tag */}
-                        {supplierName && (
-                          <div className="flex items-center gap-1 mb-3">
-                            <Truck className="w-3 h-3 text-emerald-500" />
-                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">{supplierName}</span>
-                          </div>
-                        )}
-
-                        {/* Branch Inventory Breakdown */}
-                        {p.inventory && p.inventory.length > 0 && (
-                          <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs">
-                            <p className="font-bold text-gray-500 mb-1">توزيع المخزون:</p>
-                            <div className="space-y-1">
-                              {p.inventory.map((inv, idx) => (
-                                <div key={idx} className="flex justify-between items-center">
-                                  <span>{inv.branch?.name || 'فرع غير معروف'}</span>
-                                  <span className={`font-bold ${inv.quantity <= inv.minQuantity ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                                    {inv.quantity}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
-                            <p className="text-[10px] text-gray-400">سعر البيع</p>
-                            <p className="text-sm font-extrabold text-primary-500">{(p.price || 0).toLocaleString('ar-EG')}</p>
-                          </div>
-                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2.5">
-                            <p className="text-[10px] text-gray-400">المخزون</p>
-                            <p className={`text-sm font-extrabold ${(p.stock?.quantity || 0) <= (p.stock?.minQuantity || 5) ? 'text-red-500' : ''}`}>{p.stock?.quantity || 0}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs mb-4 px-1">
-                          <span className="text-gray-400">الربح:</span>
-                          <span className="font-bold text-emerald-500">{(p.price - p.cost).toLocaleString('ar-EG')} ج.م</span>
-                        </div>
-
-                        <div className="flex gap-2">
-                          {can('products', 'update') && (
-                            <button onClick={() => openEdit(p)}
-                              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm font-semibold text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors">
-                              <Edit className="w-3.5 h-3.5" /> تعديل
-                            </button>
-                          )}
-                          {(p.stockStatus === 'low_stock' || p.stockStatus === 'out_of_stock') && getSupplierId(p) && (
-                            <button
-                              onClick={() => handleRequestRestock(getSupplierId(p))}
-                              disabled={sendingRestock === getSupplierId(p)}
-                              className="px-3 py-2 rounded-xl border-2 border-green-200 dark:border-green-500/30 text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors disabled:opacity-50"
-                              title="طلب من المورد"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          {can('products', 'delete') && (
-                            <button onClick={() => handleDelete(p._id)}
-                              className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-                <Pagination currentPage={page} totalPages={pagination.totalPages} totalItems={pagination.totalItems} onPageChange={setPage} />
-                <ProductDetailModal
-                  product={selectedProduct}
-                  open={showDetailModal}
-                  onClose={() => setShowDetailModal(false)}
-                />
-              </>
-            )
-          }
-
-          <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل منتج' : 'إضافة منتج جديد'} size="lg">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <Input label="اسم المنتج *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div>
-                <Input label="كود SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
-              </div>
-
-              {/* Barcode input with scanner and search */}
-              <div className="relative">
-                <Input
-                  label="الباركود"
-                  value={form.barcode}
-                  onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                  placeholder="أدخل الباركود أو امسحه"
-                />
-                <div className="absolute left-2 top-[34px] flex gap-1 z-10">
-                  <button
-                    type="button"
-                    onClick={() => setShowProductSearch(true)}
-                    className="p-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
-                    title="بحث عن منتج لاستيراد البيانات"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowBarcodeScanner(true)}
-                    className="p-2 rounded-lg bg-primary-50 dark:bg-primary-500/10 text-primary-500 hover:bg-primary-100 dark:hover:bg-primary-500/20 transition-colors"
-                    title="مسح بالكاميرا"
-                  >
-                    <Scan className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="sm:col-span-2">
-                <RichTextEditor
-                  label="وصف المنتج"
-                  value={form.description}
-                  onChange={(content) => setForm({ ...form, description: content })}
-                />
-              </div>
-
-              <div className="z-[60]">
-                <CategorySelector
-                  label="التصنيف *"
-                  value={form.category}
-                  onChange={(val) => setForm({ ...form, category: val || '', subcategory: '' })}
-                  categories={categories}
-                  error={form.category ? '' : 'يرجى اختيار تصنيف'}
-                />
-              </div>
-              <div className="z-[50]">
-                <CategorySelector
-                  label="التصنيف الفرعي"
-                  value={form.subcategory}
-                  onChange={(val) => setForm({ ...form, subcategory: val || '' })}
-                  placeholder="بدون تصنيف فرعي"
-                  categories={categories.find(c => c._id === form.category)?.children || []}
-                  disabled={!form.category}
-                />
-              </div>
-
-              {/* Supplier dropdown */}
-              <div>
-                <Select label="المورد" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })}
-                  options={[{ value: '', label: 'بدون مورد' }, ...suppliers.map((s) => ({ value: s._id, label: `🚛 ${s.name}` }))]} />
-              </div>
-
-              <div>
-                <Input label="سعر البيع *" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} error={!form.price && 'السعر مطلوب'} />
-              </div>
-              <div>
-                <Input label="سعر التكلفة *" type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} error={!form.cost && 'التكلفة مطلوبة'} />
-              </div>
-              <div>
-                <Input label="سعر الجملة" type="number" value={form.wholesalePrice} onChange={(e) => setForm({ ...form, wholesalePrice: e.target.value })} placeholder="اختياري" />
-              </div>
-              <div>
-                <Input label="تكلفة الشحن" type="number" value={form.shippingCost} onChange={(e) => setForm({ ...form, shippingCost: e.target.value })} placeholder="اختياري" />
-              </div>
-              <div>
-                <Input label="الكمية بالمخزون" type="number" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} />
-              </div>
-              <div>
-                <Input label="الحد الأدنى (تنبيه)" type="number" value={form.minQuantity} onChange={(e) => setForm({ ...form, minQuantity: e.target.value })} />
-              </div>
-
-              {/* Variants Section */}
-              <div className="sm:col-span-2 mt-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h5 className="font-bold flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-primary-500" />
-                      موديلات المنتج (Variants)
-                    </h5>
-                    <p className="text-[10px] text-gray-500">أضف مقاسات، ألوان، أو أنواع مختلفة لهذا المنتج</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={<Plus className="w-3 h-3" />}
-                    onClick={() => setForm({
-                      ...form,
-                      variants: [...form.variants, {
-                        sku: `${form.sku}-${form.variants.length + 1}`,
-                        barcode: '',
-                        price: form.price,
-                        cost: form.cost,
-                        attributes: { الحجم: '', اللون: '' }
-                      }]
-                    })}
-                  >
-                    إضافة موديل
-                  </Button>
-                </div>
-
-                {form.variants.length > 0 ? (
-                  <div className="space-y-3">
-                    {form.variants.map((v, idx) => (
-                      <div key={idx} className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-                        <div className="flex justify-between items-start mb-2">
-                          <Badge variant="primary">موديل #{idx + 1}</Badge>
-                          <button
-                            onClick={() => {
-                              const next = [...form.variants];
-                              next.splice(idx, 1);
-                              setForm({ ...form, variants: next });
-                            }}
-                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <Input
-                            placeholder="المقاس / الحجم"
-                            value={v.attributes?.['الحجم'] || ''}
-                            onChange={(e) => {
-                              const next = [...form.variants];
-                              next[idx].attributes = { ...next[idx].attributes, 'الحجم': e.target.value };
-                              setForm({ ...form, variants: next });
-                            }}
-                          />
-                          <Input
-                            placeholder="اللون"
-                            value={v.attributes?.['اللون'] || ''}
-                            onChange={(e) => {
-                              const next = [...form.variants];
-                              next[idx].attributes = { ...next[idx].attributes, 'اللون': e.target.value };
-                              setForm({ ...form, variants: next });
-                            }}
-                          />
-                          <Input
-                            placeholder="الباركود"
-                            value={v.barcode}
-                            onChange={(e) => {
-                              const next = [...form.variants];
-                              next[idx].barcode = e.target.value;
-                              setForm({ ...form, variants: next });
-                            }}
-                          />
-                          <Input
-                            placeholder="السعر"
-                            type="number"
-                            value={v.price}
-                            onChange={(e) => {
-                              const next = [...form.variants];
-                              next[idx].price = e.target.value;
-                              setForm({ ...form, variants: next });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center py-4 text-xs text-gray-400">لا توجد موديلات مضافة حالياً</p>
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!!form.expiryDate}
-                    onChange={(e) => setForm({ ...form, expiryDate: e.target.checked ? new Date().toISOString().split('T')[0] : '' })}
-                    className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">للمنتج تاريخ صلاحية</span>
-                </label>
-
-                {form.expiryDate && (
-                  <Input
-                    type="date"
-                    value={form.expiryDate ? form.expiryDate.split('T')[0] : ''}
-                    onChange={(e) => setForm({ ...form, expiryDate: e.target.value })}
-                  />
-                )}
-              </div>
-
-              {/* Product Images */}
-              <div className="mt-6 sm:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                  صور المنتج
-                </label>
-
-                {/* Image Upload Button */}
-                <label className="flex items-center justify-center gap-2 px-4 py-5 rounded-2xl border-2 border-dashed border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/10 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="hidden"
-                  />
-                  {uploadingImage ? (
-                    <div className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-800/50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
-                        <Upload className="w-5 h-5 text-primary-500" />
-                      </div>
-                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                        {editId ? 'إضافة صور إضافية' : 'اختر صور (سيتم الرفع مع الحفظ)'}
-                      </span>
-                      <span className="text-xs text-gray-400">يمكنك سحب وإفلات الصور هنا</span>
-                    </div>
-                  )}
-                </label>
-
-                {/* Images Grid */}
-                {(productImages.length > 0 || pendingImages.length > 0) && (
-                  <div className="grid grid-cols-3 gap-3 mt-3">
-                    {/* Existing Images */}
-                    {productImages.map((img, idx) => (
-                      <div key={`exist-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
-                        <img
-                          src={img}
-                          alt={`Product ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E';
-                          }}
-                        />
-                        {idx === 0 && (
-                          <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-primary-500 text-white text-xs font-bold">
-                            رئيسية
-                          </div>
-                        )}
-                        <button
-                          onClick={() => handleDeleteImage(img)}
-                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Pending Images */}
-                    {pendingImages.map((file, idx) => (
-                      <div key={`pending-${idx}`} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 opacity-80 border-2 border-dashed border-primary-300">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Pending ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                          onLoad={(e) => URL.revokeObjectURL(e.target.src)} // Free memory
-                        />
-                        <div className="absolute bottom-2 left-2 px-2 py-1 rounded-md bg-amber-500 text-white text-[10px] font-bold">
-                          جديدة
-                        </div>
-                        <button
-                          onClick={() => removePendingImage(idx)}
-                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {!editId && (
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-sm text-blue-700 dark:text-blue-300 sm:col-span-2">
-                  💡 احفظ المنتج أولاً ثم يمكنك إضافة الصور
-                </div>
-              )}
-
-              {form.price && form.cost && (
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:col-span-2">
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-center">
-                    <span className="text-xs text-gray-500">صافي الربح: </span>
-                    <span className="text-lg font-extrabold text-emerald-500">{(Number(form.price) - Number(form.cost) - Number(form.shippingCost || 0)).toLocaleString('ar-EG')} ج.م</span>
-                  </div>
-                  <div className="p-3 bg-primary-50 dark:bg-primary-500/10 rounded-xl text-center">
-                    <span className="text-xs text-gray-500">هامش الربح: </span>
-                    <span className="text-lg font-extrabold text-primary-500">
-                      {form.cost > 0 ? (((Number(form.price) - Number(form.cost)) / Number(form.cost)) * 100).toFixed(1) : 0}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 mt-6 sm:col-span-2">
-                <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
-                <Button icon={<Check className="w-4 h-4" />} onClick={handleSave} loading={saving}>{editId ? 'تحديث' : 'إضافة'}</Button>
-              </div>
-            </div>
-          </Modal>
-
-          {/* Barcode Scanner Modal */}
-          {showBarcodeScanner && (
-            <BarcodeScanner
-              onScan={async (barcode) => {
-                setShowBarcodeScanner(false);
-                const loadToast = toast.loading('جاري البحث عن بيانات المنتج...');
-
-                try {
-                  // 1. Check local DB first
-                  try {
-                    const res = await productsApi.getByBarcode(barcode);
-                    if (res?.data?.data) {
-                      toast.success('هذا الباركود موجود بالفعل! تم فتحه للتعديل...', { id: loadToast });
-                      const p = res.data.data;
-                      setEditId(p._id);
-                      setForm({
-                        name: p.name, sku: p.sku || '', barcode: barcode,
-                        category: p.category?._id || p.category || '', price: String(p.price), cost: String(p.cost),
-                        stockQuantity: String(p.stock?.quantity || 0),
-                        minQuantity: String(p.stock?.minQuantity || 5),
-                        description: p.description || '', supplier: p.supplier?._id || p.supplier || '',
-                        expiryDate: p.expiryDate ? p.expiryDate.split('T')[0] : ''
-                      });
-                      return;
-                    }
-                  } catch (err) { /* Not in local DB */ }
-
-                  // 2. Fetch from OpenFoodFacts
-                  const { barcodeService } = await import('../services/BarcodeService');
-                  const productData = await barcodeService.getProductByBarcode(barcode);
-
-                  if (productData) {
-                    toast.success('تم العثور على بيانات المنتج! 🥫✨', { id: loadToast });
-                    setForm(prev => ({
-                      ...prev,
-                      barcode,
-                      name: productData.name || prev.name,
-                      description: productData.brand ? `ماركة: ${productData.brand}` : prev.description,
-                    }));
-
-                    if (productData.image) {
-                      toast((t) => (
-                        <div className="flex items-center gap-2">
-                          <img src={productData.image} className="w-10 h-10 rounded" alt="Found" />
-                          <div className="text-sm">
-                            <p className="font-bold">وجدنا صورة للمنتج!</p>
-                            <a href={productData.image} target="_blank" className="text-blue-500 underline text-xs">عرض الصورة</a>
-                          </div>
-                        </div>
-                      ), { duration: 5000 });
-                    }
-                  } else {
-                    toast.error('لم يتم العثور على بيانات للمنتج، لكن تم تسجيل الباركود.', { id: loadToast });
-                    setForm(prev => ({ ...prev, barcode }));
-                  }
-                } catch (err) {
-                  console.error(err);
-                  toast.error('خطأ في البحث، تم تسجيل الباركود فقط', { id: loadToast });
-                  setForm(prev => ({ ...prev, barcode }));
-                }
-              }}
-              onClose={() => setShowBarcodeScanner(false)}
-            />
-          )}
-
-          <ProductSearchModal
-            open={showProductSearch}
-            onClose={() => setShowProductSearch(false)}
-            onSelect={handleSelectFromSearch}
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="ابحث عن منتج..."
+            className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
+        <select
+          value={stockFilter}
+          onChange={e => setStockFilter(e.target.value)}
+          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">كل المخزون</option>
+          <option value="out">نفد المخزون</option>
+          <option value="low">مخزون منخفض</option>
+          <option value="in">متاح</option>
+        </select>
+        <select
+          value={categoryFilter}
+          onChange={e => setCategoryFilter(e.target.value)}
+          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">كل التصنيفات</option>
+          {categories.map(cat => (
+            <option key={cat._id} value={cat._id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Bulk actions */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-200 dark:border-primary-800">
+          <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+            {selectedIds.length} منتج محدد
+          </span>
+          <Button variant="danger" size="sm" loading={bulkDeleting} onClick={handleBulkDelete}>
+            <Trash2 className="w-4 h-4" />
+            حذف المحدد
+          </Button>
+          <button onClick={() => setSelectedIds([])} className="text-sm text-gray-500 hover:text-gray-700">
+            إلغاء
+          </button>
+        </div>
       )}
+
+      {/* Product Grid */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : products.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title="لا توجد منتجات"
+          description="ابدأ بإضافة منتجك الأول للمتجر"
+          action={{ label: 'إضافة منتج', onClick: openNew }}
+        />
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary-600"
+            >
+              {selectedIds.length === products.length ? (
+                <CheckSquare className="w-4 h-4 text-primary-600" />
+              ) : (
+                <Square className="w-4 h-4" />
+              )}
+              تحديد الكل
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {products.map(prod => {
+              const imageUrl = prod.thumbnail || prod.images?.[0];
+              const displayUrl = imageUrl?.startsWith('/uploads/')
+                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'}${imageUrl}`
+                : imageUrl;
+
+              return (
+                <Card key={prod._id} className="group relative overflow-hidden hover:shadow-lg transition-all duration-200">
+                  {/* Checkbox */}
+                  <button
+                    onClick={() => toggleSelect(prod._id)}
+                    className="absolute top-3 right-3 z-10"
+                  >
+                    {selectedIds.includes(prod._id) ? (
+                      <CheckSquare className="w-5 h-5 text-primary-600 bg-white rounded" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-400 bg-white/80 rounded opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </button>
+
+                  {/* Image */}
+                  <div
+                    className="aspect-square bg-gray-100 dark:bg-gray-800 cursor-pointer overflow-hidden p-[2px]"
+                    onClick={() => { setSelectedProduct(prod); setShowDetailModal(true); }}
+                  >
+                    {displayUrl ? (
+                      <img
+                        src={displayUrl}
+                        alt={prod.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover rounded-[calc(1rem-2px)] group-hover:scale-105 transition-transform duration-300 bg-white"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-600">
+                        <Package className="w-12 h-12 mb-2" />
+                        <span className="text-xs font-semibold">بدون صورة</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-3 space-y-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 leading-tight">
+                      {prod.name}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-primary-600">
+                        {Number(prod.price || 0).toLocaleString('ar-EG')} ج.م
+                      </span>
+                      {getStockBadge(prod)}
+                    </div>
+
+                    {/* Supplier restock */}
+                    {prod.supplier && (
+                      <button
+                        onClick={() => handleRequestRestock(prod.supplier?._id || prod.supplier)}
+                        disabled={sendingRestock === (prod.supplier?._id || prod.supplier)}
+                        className="w-full flex items-center justify-center gap-1.5 text-xs text-gray-500 hover:text-primary-600 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors disabled:opacity-50"
+                      >
+                        {sendingRestock === (prod.supplier?._id || prod.supplier) ? (
+                          <Clock className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Truck className="w-3.5 h-3.5" />
+                        )}
+                        طلب إعادة تخزين
+                      </button>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={() => openEdit(prod)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => handleDelete(prod._id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Pagination
+            currentPage={page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+
+      {/* Product Composer (Fullscreen Wizard) */}
+      <ProductComposer
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        mode={editId ? 'edit' : 'create'}
+        loading={saving}
+        form={form}
+        setForm={setForm}
+        categories={categories}
+        suppliers={suppliers}
+        productImages={productImages}
+        pendingImages={pendingImages}
+        onImagesChange={handleComposerImagesChange}
+        onPrimaryImageSelect={handleComposerPrimarySelect}
+        onRemoveImage={handleComposerRemoveImage}
+        onSubmit={handleSave}
+        onAddVariant={handleComposerAddVariant}
+        onUpdateVariant={handleComposerUpdateVariant}
+        onRemoveVariant={handleComposerRemoveVariant}
+        stepErrors={stepErrors}
+      />
+
+      {/* Product Detail Modal */}
+      {showDetailModal && selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => { setShowDetailModal(false); setSelectedProduct(null); }}
+          onEdit={() => { setShowDetailModal(false); openEdit(selectedProduct); }}
+        />
+      )}
+
+      {/* Barcode Scanner */}
+      {showBarcodeScanner && (
+        <BarcodeScanner
+          onScan={async (barcode) => {
+            setShowBarcodeScanner(false);
+            const loadToast = toast.loading('جاري البحث عن بيانات المنتج...');
+            try {
+              try {
+                const res = await productsApi.getByBarcode(barcode);
+                if (res?.data?.data) {
+                  toast.success('هذا الباركود موجود بالفعل! تم فتحه للتعديل...', { id: loadToast });
+                  const p = res.data.data;
+                  openEdit(p);
+                  return;
+                }
+              } catch { /* Not in local DB */ }
+
+              const { barcodeService } = await import('../services/BarcodeService');
+              const productData = await barcodeService.getProductByBarcode(barcode);
+
+              if (productData) {
+                toast.success('تم العثور على بيانات المنتج!', { id: loadToast });
+                setForm(prev => ({
+                  ...prev,
+                  barcode,
+                  name: productData.name || prev.name,
+                  description: productData.brand ? `ماركة: ${productData.brand}` : prev.description
+                }));
+              } else {
+                toast.error('لم يتم العثور على بيانات للمنتج، لكن تم تسجيل الباركود.', { id: loadToast });
+                setForm(prev => ({ ...prev, barcode }));
+              }
+            } catch (err) {
+              console.error(err);
+              toast.error('خطأ في البحث، تم تسجيل الباركود فقط', { id: loadToast });
+              setForm(prev => ({ ...prev, barcode }));
+            }
+          }}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
+
+      {/* Product Search Modal */}
+      <ProductSearchModal
+        open={showProductSearch}
+        onClose={() => setShowProductSearch(false)}
+        onSelect={handleSelectFromSearch}
+      />
     </div>
   );
 }

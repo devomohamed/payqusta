@@ -7,9 +7,11 @@ import { useAuthStore, useThemeStore } from './store';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AnimatedNotification from './components/AnimatedNotification';
+import ConfirmDialog from './components/ConfirmDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
+import { storefrontPath } from './utils/storefrontHost';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -70,6 +72,8 @@ import ShoppingCart from './storefront/ShoppingCart';
 import Checkout from './storefront/Checkout';
 import OrderConfirmation from './storefront/OrderConfirmation';
 import OrderTracking from './storefront/OrderTracking';
+import StorefrontAbout from './storefront/StorefrontAbout';
+import StorefrontLandingPage from './storefront/StorefrontLandingPage';
 
 // Customer Portal Pages
 import PortalLogin from './portal/PortalLogin';
@@ -185,14 +189,6 @@ function MainLayout() {
                 <Route path="/admin/import" element={<AdminRoute><ImportDataPage /></AdminRoute>} />
                 <Route path="/admin/backup" element={<AdminRoute><BackupRestorePage /></AdminRoute>} />
 
-                {/* Storefront Routes (Public) */}
-                <Route path="/store" element={<StorefrontLayout><StorefrontHome /></StorefrontLayout>} />
-                <Route path="/store/products" element={<StorefrontLayout><ProductCatalog /></StorefrontLayout>} />
-                <Route path="/store/products/:id" element={<StorefrontLayout><ProductDetails /></StorefrontLayout>} />
-                <Route path="/store/cart" element={<StorefrontLayout><ShoppingCart /></StorefrontLayout>} />
-                <Route path="/store/checkout" element={<StorefrontLayout><Checkout /></StorefrontLayout>} />
-                <Route path="/store/order/:id" element={<StorefrontLayout><OrderConfirmation /></StorefrontLayout>} />
-                <Route path="/store/track-order" element={<StorefrontLayout><OrderTracking /></StorefrontLayout>} />
                 <Route path="/admin/tenants" element={<AdminRoute><AdminTenantsPage /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
                 <Route path="/admin/audit-logs" element={<AdminRoute><AdminAuditLogsPage /></AdminRoute>} />
@@ -308,6 +304,8 @@ export default function App() {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         {/* Beautiful Animated Notifications */}
         <AnimatedNotification />
+        {/* Global Confirm Dialog */}
+        <ConfirmDialog />
 
         {/* Keep Toaster for backward compatibility */}
         <Toaster
@@ -356,6 +354,17 @@ export default function App() {
             <Route path="cart" element={<ShoppingCart />} />
             <Route path="checkout" element={<PortalCheckout />} />
           </Route>
+
+          {/* Storefront Routes (Public) */}
+          <Route path={storefrontPath('/')} element={<StorefrontLayout><StorefrontHome /></StorefrontLayout>} />
+          <Route path={storefrontPath('/products')} element={<StorefrontLayout><ProductCatalog /></StorefrontLayout>} />
+          <Route path={storefrontPath('/products/:id')} element={<StorefrontLayout><ProductDetails /></StorefrontLayout>} />
+          <Route path={storefrontPath('/collections/:slug')} element={<StorefrontLayout><StorefrontLandingPage /></StorefrontLayout>} />
+          <Route path={storefrontPath('/about')} element={<StorefrontLayout><StorefrontAbout /></StorefrontLayout>} />
+          <Route path={storefrontPath('/cart')} element={<StorefrontLayout><ShoppingCart /></StorefrontLayout>} />
+          <Route path={storefrontPath('/checkout')} element={<StorefrontLayout><Checkout /></StorefrontLayout>} />
+          <Route path={storefrontPath('/order/:id')} element={<StorefrontLayout><OrderConfirmation /></StorefrontLayout>} />
+          <Route path={storefrontPath('/track-order')} element={<StorefrontLayout><OrderTracking /></StorefrontLayout>} />
 
           <Route path="/login" element={
             isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />

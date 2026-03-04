@@ -3,6 +3,7 @@ import { Package, Search, Save, AlertTriangle, CheckSquare, RefreshCw } from 'lu
 import toast from 'react-hot-toast';
 import { productsApi, useAuthStore } from '../store';
 import { Button, Card, LoadingSpinner, EmptyState, Badge } from '../components/UI';
+import { confirm } from '../components/ConfirmDialog';
 
 export default function StocktakePage() {
     const { user } = useAuthStore();
@@ -102,7 +103,8 @@ export default function StocktakePage() {
             return toast.success('جميع الكميات مطابقة للمخزون النظامي، لا يوجد ما يتم تحديثه.');
         }
 
-        if (!confirm(`هل أنت متأكد من حفظ الجرد المكون من ${discrepancies.length} صنف مختلف؟`)) return;
+        const ok = await confirm.warn(`هل أنت متأكد من حفظ الجرد المكون من ${discrepancies.length} صنف مختلف؟`, 'تأكيد حفظ الجرد');
+        if (!ok) return;
 
         setSaving(true);
         const loadToast = toast.loading('جاري تحديث المخزون...');

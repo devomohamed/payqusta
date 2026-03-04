@@ -5,6 +5,101 @@
 
 const mongoose = require('mongoose');
 const { STOCK_STATUS } = require('../config/constants');
+const logger = require('../utils/logger');
+
+async function dispatchBackInStockNotifications(product) {
+  const pendingNotifications = (product?.stockNotifications || [])
+    .map((notification, index) => ({ notification, index }))
+    .filter(({ notification }) => !notification?.notifiedAt && (notification?.email || notification?.phone));
+
+  if (!product?.tenant || (product?.stock?.quantity || 0) <= 0 || pendingNotifications.length === 0) {
+    return;
+  }
+
+  const Tenant = require('./Tenant');
+  const emailService = require('../services/EmailService');
+  const WhatsAppService = require('../services/WhatsAppService');
+  const tenant = await Tenant.findById(product.tenant).select('name whatsapp');
+  const storeName = tenant?.name || 'متجرك';
+
+  const emailSubject = `المنتج "${product.name}" متوفر الآن`;
+  const notificationText = `مرحبًا، المنتج "${product.name}" عاد للمخزون الآن لدى ${storeName}. يمكنك إكمال الطلب قبل نفاد الكمية مرة أخرى.`;
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; margin: 0; padding: 24px; }
+        .card { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #ecfdf5; color: #047857; font-weight: 700; font-size: 12px; }
+        h1 { font-size: 24px; color: #0f172a; margin: 16px 0 12px; }
+        p { color: #475569; line-height: 1.8; margin: 0 0 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <span class="badge">عاد إلى المخزون</span>
+        <h1>${product.name}</h1>
+        <p>المنتج الذي طلبت تنبيهًا له أصبح متوفرًا الآن لدى ${storeName}.</p>
+        <p>ننصح بإتمام الطلب قريبًا قبل نفاد الكمية مرة أخرى.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const results = await Promise.all(
+    pendingNotifications.map(async ({ notification, index }) => {
+      let attempted = false;
+      let delivered = false;
+
+      if (notification.email) {
+        attempted = true;
+        try {
+          const emailResult = await emailService.sendEmail({
+            to: notification.email,
+            subject: emailSubject,
+            text: notificationText,
+            html: emailHtml,
+          });
+          delivered = delivered || Boolean(emailResult?.success);
+        } catch (error) {
+          logger.error(`Back-in-stock email send failed: ${error.message}`);
+        }
+      }
+
+      if (notification.phone) {
+        attempted = true;
+        try {
+          const whatsappResult = await WhatsAppService.sendMessage(notification.phone, notificationText, tenant?.whatsapp);
+          delivered = delivered || Boolean(whatsappResult?.success);
+        } catch (error) {
+          logger.error(`Back-in-stock WhatsApp send failed: ${error.message}`);
+        }
+      }
+
+      return attempted ? { index, delivered } : null;
+    })
+  );
+
+  const processedNotifications = results.filter(Boolean);
+  if (processedNotifications.length === 0) return;
+
+  const notifiedAt = new Date();
+  const updateSet = {};
+
+  processedNotifications.forEach(({ index }) => {
+    if (product.stockNotifications?.[index]) {
+      product.stockNotifications[index].notifiedAt = notifiedAt;
+    }
+    updateSet[`stockNotifications.${index}.notifiedAt`] = notifiedAt;
+  });
+
+  await product.constructor.updateOne({ _id: product._id }, { $set: updateSet });
+
+  const deliveredCount = processedNotifications.filter(({ delivered }) => delivered).length;
+  logger.info(`Processed ${processedNotifications.length} back-in-stock alerts for product ${product._id} (${deliveredCount} delivered).`);
+}
 
 const productSchema = new mongoose.Schema(
   {
@@ -157,6 +252,15 @@ const productSchema = new mongoose.Schema(
       enabled: { type: Boolean, default: false },
       quantity: { type: Number, default: 0 },
     },
+    // Back-in-stock notifications (C2)
+    stockNotifications: [
+      {
+        email: { type: String, trim: true, lowercase: true },
+        phone: { type: String, trim: true },
+        notifiedAt: { type: Date }, // null = not yet notified
+        createdAt: { type: Date, default: Date.now }
+      }
+    ],
   },
   {
     timestamps: true,
@@ -216,6 +320,14 @@ productSchema.pre('save', function (next) {
   }
 
   next();
+});
+
+productSchema.post('save', async function (doc) {
+  try {
+    await dispatchBackInStockNotifications(doc);
+  } catch (error) {
+    logger.error(`Back-in-stock dispatch error for product ${doc?._id}: ${error.message}`);
+  }
 });
 
 // Post-findOneAndUpdate: Sync stockStatus and calculate totals

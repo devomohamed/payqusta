@@ -14,12 +14,19 @@ const expenseController = require('../controllers/expenseController');
 const settingsController = require('../controllers/settingsController');
 const adminController = require('../controllers/adminController');
 const tenantController = require('../controllers/tenantController');
-const { requireFeature } = require('../middleware/requireFeature');
-const reportsController = require('../controllers/reportsController');
-const searchController = require('../controllers/searchController');
-const importController = require('../controllers/importController');
-const backupController = require('../controllers/backupController');
 const supplierController = require('../controllers/supplierController');
+const productController = require('../controllers/productController');
+const customerController = require('../controllers/customerController');
+const invoiceController = require('../controllers/invoiceController');
+const couponController = require('../controllers/couponController');
+const addonController = require('../controllers/addonController');
+const referralController = require('../controllers/referralController');
+const ownerMgmt = require('../controllers/ownerManagementController');
+const roleController = require('../controllers/roleController');
+const purchaseOrderController = require('../controllers/purchaseOrderController');
+const revenueAnalyticsController = require('../controllers/revenueAnalyticsController');
+const planController = require('../controllers/planController');
+const reviewController = require('../controllers/reviewController');
 const { uploadSingle } = require('../middleware/upload');
 
 // ============ APP INFO ============
@@ -38,13 +45,11 @@ router.post('/auth/reset-password/:token', authController.resetPassword);
 router.post('/auth/logout', protect, authController.logout);
 router.post('/auth/logout-all', protect, authController.logoutAll);
 
-// We need to route public product requests to the product controller, but scoped.
-// Since we moved standard product routes to ./productRoutes, we can mount them there.
-// However, public routes use 'publicTenantScope'.
-// Let's keep specific public routes here for clarity and safety as they use different middleware.
-const productController = require('../controllers/productController');
-const customerController = require('../controllers/customerController');
-const invoiceController = require('../controllers/invoiceController');
+const { requireFeature } = require('../middleware/requireFeature');
+const reportsController = require('../controllers/reportsController');
+const searchController = require('../controllers/searchController');
+const importController = require('../controllers/importController');
+const backupController = require('../controllers/backupController');
 
 router.get('/storefront/settings', settingsController.getStorefrontSettings);
 router.get('/settings', publicTenantScope, settingsController.getSettings);
@@ -55,6 +60,7 @@ router.get('/products', publicTenantScope, productController.getAll);
 router.get('/products/categories', publicTenantScope, productController.getCategories);
 router.get('/products/barcode/:code', publicTenantScope, productController.getByBarcode);
 router.get('/products/:id([0-9a-fA-F]{24})', publicTenantScope, productController.getById);
+router.post('/products/:id([0-9a-fA-F]{24})/notify-stock', publicTenantScope, productController.subscribeStockNotification);
 
 // Public Checkout Routes
 router.get('/customers', (req, res, next) => {
@@ -73,6 +79,7 @@ router.post('/invoices', (req, res, next) => {
   if (req.body.source === 'online_store') return next();
   protect(req, res, next);
 }, publicTenantScope, invoiceController.create);
+router.post('/coupons/validate', publicTenantScope, couponController.validate);
 
 // ============ SUPER ADMIN ROUTES ============
 router.use('/super-admin', protect, require('./superAdminRoutes'));
@@ -172,23 +179,21 @@ router.put('/settings/user', settingsController.updateUser);
 router.put('/settings/password', settingsController.changePassword);
 router.put('/settings/categories', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateCategories);
 router.delete('/settings/categories/:name', authorize('vendor', 'admin'), checkPermission('settings', 'delete'), settingsController.deleteCategory);
+router.post('/settings/watermark/apply-to-all', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.applyWatermarkToAll);
 
 // --- Subscriptions & Billing ---
 router.use('/subscriptions', require('./subscriptionRoutes'));
 
 // --- Addons Marketplace ---
-const addonController = require('../controllers/addonController');
 router.get('/addons', authorize('vendor', 'admin'), addonController.getAllAddons);
 router.post('/addons/:key/purchase', authorize('vendor', 'admin'), addonController.purchaseAddon);
 
 // --- Referral Program ---
-const referralController = require('../controllers/referralController');
 router.get('/referrals/my-code', authorize('vendor', 'admin'), referralController.getMyCode);
 router.get('/referrals/stats', authorize('vendor', 'admin'), referralController.getStats);
 router.post('/referrals/apply', referralController.applyCode);
 
 // --- Owner Management (Returns, KYC, Support) ---
-const ownerMgmt = require('../controllers/ownerManagementController');
 router.get('/manage/returns', authorize('vendor', 'admin', 'coordinator'), ownerMgmt.getReturns);
 router.patch('/manage/returns/:id', authorize('vendor', 'admin', 'coordinator'), ownerMgmt.updateReturn);
 router.get('/manage/documents', authorize('vendor', 'admin', 'coordinator'), ownerMgmt.getDocuments);
@@ -199,7 +204,6 @@ router.post('/manage/support/:id/reply', authorize('vendor', 'admin', 'coordinat
 router.patch('/manage/support/:id/close', authorize('vendor', 'admin', 'coordinator'), ownerMgmt.closeSupportMessage);
 
 // --- Roles & Permissions ---
-const roleController = require('../controllers/roleController');
 router.get('/roles', authorize('vendor', 'admin'), roleController.getAll);
 router.get('/roles/:id', authorize('vendor', 'admin'), roleController.getById);
 router.post('/roles', authorize('vendor', 'admin'), roleController.create);
@@ -207,7 +211,6 @@ router.put('/roles/:id', authorize('vendor', 'admin'), roleController.update);
 router.delete('/roles/:id', authorize('vendor', 'admin'), roleController.delete);
 
 // --- Purchase Orders ---
-const purchaseOrderController = require('../controllers/purchaseOrderController');
 router.get('/purchase-orders', authorize('vendor', 'admin'), purchaseOrderController.getAll);
 router.get('/purchase-orders/:id', authorize('vendor', 'admin'), purchaseOrderController.getById);
 router.get('/purchase-orders/:id/pdf', authorize('vendor', 'admin'), purchaseOrderController.generatePDF);
@@ -227,7 +230,6 @@ router.get('/admin/dashboard', authorize('admin'), adminController.getDashboard)
 router.get('/admin/statistics', authorize('admin'), adminController.getStatistics);
 
 // Revenue Analytics
-const revenueAnalyticsController = require('../controllers/revenueAnalyticsController');
 router.get('/admin/analytics/revenue', authorize('admin'), revenueAnalyticsController.getRevenueAnalytics);
 
 // Tenant Management
@@ -238,7 +240,6 @@ router.delete('/admin/tenants/:id', authorize('admin'), auditLog('delete', 'tena
 router.post('/admin/tenants/:id/reset-password', authorize('admin'), adminController.resetTenantPassword);
 
 // Plans Management (Super Admin)
-const planController = require('../controllers/planController');
 router.post('/admin/plans', authorize('admin'), planController.createPlan);
 router.put('/admin/plans/:id', authorize('admin'), planController.updatePlan);
 router.delete('/admin/plans/:id', authorize('admin'), planController.deletePlan);
@@ -279,7 +280,7 @@ router.get('/search/quick', searchController.quickSearchByBarcode);
 const multer = require('multer');
 const importUpload = multer({
   dest: 'uploads/imports/',
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 50 * 1024 * 1024 }, // Increased to 50MB
   fileFilter: (req, file, cb) => {
     const allowed = ['.xlsx', '.xls', '.csv'];
     const ext = require('path').extname(file.originalname).toLowerCase();
@@ -293,7 +294,6 @@ router.post('/import/preview', authorize('vendor', 'admin'), importUpload.single
 router.get('/import/template/:type', authorize('vendor', 'admin'), importController.downloadTemplate);
 
 // ============ REVIEWS ROUTES ============
-const reviewController = require('../controllers/reviewController');
 router.get('/reviews', authorize('vendor', 'admin', 'coordinator'), reviewController.getAll);
 router.get('/reviews/stats', authorize('vendor', 'admin'), reviewController.getStats);
 router.get('/reviews/product/:productId', reviewController.getProductReviews);
@@ -303,10 +303,8 @@ router.post('/reviews/:id/reply', authorize('vendor', 'admin'), reviewController
 router.delete('/reviews/:id', authorize('vendor', 'admin'), reviewController.delete);
 
 // ============ COUPON ROUTES ============
-const couponController = require('../controllers/couponController');
 router.get('/coupons', authorize('vendor', 'admin'), couponController.getAll);
 router.get('/coupons/stats', authorize('vendor', 'admin'), couponController.getStats);
-router.post('/coupons/validate', couponController.validate); // Can be called from POS (vendor) or portal
 router.get('/coupons/:id', authorize('vendor', 'admin'), couponController.getById);
 router.post('/coupons', authorize('vendor', 'admin'), auditLog('create', 'coupon'), couponController.create);
 router.put('/coupons/:id', authorize('vendor', 'admin'), couponController.update);

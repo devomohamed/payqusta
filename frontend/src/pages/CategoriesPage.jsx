@@ -8,6 +8,7 @@ import CategorySelector from '../components/CategorySelector';
 import { getIconForCategory } from '../utils/aiHelper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { confirm } from '../components/ConfirmDialog';
 
 export default function CategoriesPage() {
     const { can } = useAuthStore();
@@ -72,7 +73,8 @@ export default function CategoriesPage() {
                 params.category = catId;
             }
             const res = await productsApi.getAll(params);
-            setCategoryProducts(res.data.data?.products || res.data.data || []);
+            const data = res.data.data;
+            setCategoryProducts(data?.products || (Array.isArray(data) ? data : []));
         } catch (err) {
             console.error('Failed to fetch products:', err);
         } finally {
@@ -142,7 +144,8 @@ export default function CategoriesPage() {
 
     const handleDelete = async (id) => {
         if (!id) return;
-        if (!window.confirm('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط المنتجات التابعة له.')) return;
+        const ok = await confirm.delete('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط المنتجات التابعة له.');
+        if (!ok) return;
         try {
             await categoriesApi.delete(id);
             toast.success('تم حذف التصنيف');

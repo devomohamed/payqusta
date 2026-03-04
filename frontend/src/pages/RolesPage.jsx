@@ -4,6 +4,7 @@ import { Shield, Plus, Edit2, Trash2, Save, X, Users, ArrowLeft } from 'lucide-r
 import { api } from '../store';
 import { Button, Card, Input, Modal, Badge, LoadingSpinner, EmptyState } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
+import { confirm } from '../components/ConfirmDialog';
 
 const RESOURCES = [
   { id: 'products', label: 'المنتجات' },
@@ -94,7 +95,8 @@ export default function RolesPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا الدور؟')) return;
+    const ok = await confirm.delete('هل أنت متأكد من حذف هذا الدور؟');
+    if (!ok) return;
     try {
       await api.delete(`/roles/${id}`);
       notify.success('تم حذف الدور');

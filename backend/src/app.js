@@ -33,8 +33,8 @@ function createApp() {
   app.use('/api/v1/auth/forgot-password', security.passwordResetLimiter);
   app.use('/api/v1/auth/reset-password', security.passwordResetLimiter);
 
-  app.use(express.json({ limit: '25mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+  app.use(express.json({ limit: '50mb' })); // Increased for large image uploads
+  app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increased for large image uploads
 
   app.use((err, req, res, next) => {
     if (err.type === 'entity.parse.failed') {

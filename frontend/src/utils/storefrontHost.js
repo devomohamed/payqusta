@@ -47,3 +47,15 @@ export function storefrontPath(path = '/', hostname = window.location.hostname) 
 
   return `${basePath}${normalizedPath}`;
 }
+
+export function getStorefrontDomainUrl(tenantSlug, hostname = window.location.hostname) {
+  if (!tenantSlug) return '/store';
+
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+  if (isLocalhost) {
+    return '/store';
+  }
+
+  return `https://${tenantSlug}.${PLATFORM_ROOT_DOMAIN}/`;
+}

@@ -46,6 +46,7 @@ export default function CategorySelector({
 
     // Filter categories by search
     const filterBySearch = (items, term) => {
+        if (!Array.isArray(items)) return [];
         if (!term) return items;
 
         return items.reduce((acc, cat) => {

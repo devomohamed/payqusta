@@ -33,9 +33,19 @@ if (hasBackofficeToken && !isPortalPath) {
 if (import.meta.env.PROD && window.isSecureContext) {
   const updateSW = registerSW({
     onNeedRefresh() {
-      if (confirm('تحديث جديد متاح. هل تريد التحديث؟')) {
-        updateSW(true);
-      }
+      // Use the animated notify system instead of native browser confirm
+      import('./components/AnimatedNotification').then(({ notify }) => {
+        notify.custom({
+          type: 'info',
+          title: 'تحديث جديد متاح 🚀',
+          message: 'إصدار جديد من التطبيق جاهز. اضغط "تحديث" لتطبيقه الآن.',
+          duration: 0, // Keep until dismissed
+          action: {
+            label: 'تحديث الآن',
+            onClick: () => updateSW(true),
+          },
+        });
+      });
     },
     onOfflineReady() {
       console.log('App ready to work offline');

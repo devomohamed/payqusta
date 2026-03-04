@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Crown, RefreshCw, CreditCard, Save } from 'lucide
 import toast from 'react-hot-toast';
 import { superAdminApi } from '../store';
 import { Badge, Button, Card, Input, LoadingSpinner, Modal, Select, TextArea } from '../components/UI';
+import { confirm } from '../components/ConfirmDialog';
 
 const DEFAULT_FORM = {
   name: '',
@@ -149,7 +150,8 @@ export default function SuperAdminPlansPage() {
   };
 
   const handleDisable = async (plan) => {
-    if (!window.confirm(`هل تريد إيقاف الباقة "${plan.name}"؟`)) return;
+    const ok = await confirm.warn(`هل تريد إيقاف الباقة "${plan.name}"؟ ثها لن تظهر للعملاء.`, 'إيقاف الباقة');
+    if (!ok) return;
     try {
       await superAdminApi.deletePlan(plan._id);
       toast.success('تم إيقاف الباقة');

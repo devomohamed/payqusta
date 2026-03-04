@@ -167,11 +167,10 @@ export function Select({ label, options = [], children, error, className = '', .
         <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
       )}
       <select
-        className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 appearance-none cursor-pointer ${
-          error
-            ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
-            : 'border-gray-200 dark:border-gray-700 focus:border-primary-500'
-        }`}
+        className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 appearance-none cursor-pointer ${error
+          ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
+          : 'border-gray-200 dark:border-gray-700 focus:border-primary-500'
+          }`}
         {...props}
       >
         {options.map((opt) => (
@@ -226,14 +225,34 @@ export function Card({ children, className = '', hover = false, ...props }) {
 }
 
 // ========== EMPTY STATE ==========
-export function EmptyState({ icon, title, description }) {
+export function EmptyState({ icon, title, description, action }) {
+  // Support both icon={Package} (component) and icon={<Package />} (element)
+  const renderIcon = () => {
+    if (!icon) return null;
+    // If it's a React element (already rendered JSX like <Package />)
+    if (typeof icon === 'object' && icon !== null && '$$typeof' in icon) {
+      return icon;
+    }
+    // If it's a component function/class
+    if (typeof icon === 'function') {
+      const Icon = icon;
+      return <Icon className="w-8 h-8" />;
+    }
+    return null;
+  };
+
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 mb-4">
-        {icon}
+        {renderIcon()}
       </div>
       <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">{title}</h3>
-      <p className="text-sm text-gray-400">{description}</p>
+      <p className="text-sm text-gray-400 mb-4">{description}</p>
+      {action && (
+        <Button onClick={action.onClick} variant="outline" size="sm">
+          {action.label}
+        </Button>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { FileText, Upload, Trash2, CheckCircle, Clock, AlertCircle, Eye, Shield, Camera, Image as ImageIcon } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
+import { confirm } from '../components/ConfirmDialog';
 
 const docTypes = [
     { id: 'national_id', label: 'بطاقة الهوية الوطنية', required: true, description: 'يرجى تقديم الوجهين الأمامي والخلفي بطريقة واضحة للتحقق.' },
@@ -89,14 +90,14 @@ export default function PortalDocuments() {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('هل أنت متأكد من حذف هذا المستند؟')) {
-            const res = await deleteDocument(id);
-            if (res.success) {
-                notify.success('تم حذف المستند');
-                setDocuments(res.documents);
-            } else {
-                notify.error(res.message);
-            }
+        const ok = await confirm.delete('هل أنت متأكد من حذف هذا المستند؟');
+        if (!ok) return;
+        const res = await deleteDocument(id);
+        if (res.success) {
+            notify.success('تم حذف المستند');
+            setDocuments(res.documents);
+        } else {
+            notify.error(res.message);
         }
     };
 

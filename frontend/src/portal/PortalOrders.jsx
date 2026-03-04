@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { Package, Clock, CheckCircle, Truck, XCircle, RotateCcw, ChevronLeft, X, ShoppingBag } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
+import { confirm } from '../components/ConfirmDialog';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
 
@@ -56,7 +57,8 @@ export default function PortalOrders() {
     };
 
     const handleCancel = async (id) => {
-        if (!window.confirm(t('orders.cancel_confirm'))) return;
+        const ok = await confirm.show({ title: 'إلغاء الطلب', message: t('orders.cancel_confirm'), confirmLabel: 'إلغاء الطلب', type: 'warning' });
+        if (!ok) return;
         setCancelling(id);
         const res = await cancelOrder(id);
         if (res.success) {

@@ -314,7 +314,7 @@ export const useThemeStore = create((set, get) => ({
 
   syncWithSystem: () => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return () => {};
+      return () => { };
     }
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -343,8 +343,8 @@ export const productsApi = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
   getByBarcode: (code) => api.get(`/products/barcode/${code}`),
-  create: (data) => api.post('/products', data),
-  update: (id, data) => api.put(`/products/${id}`, data),
+  create: (data) => api.post('/products', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update: (id, data) => api.put(`/products/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   delete: (id) => api.delete(`/products/${id}`),
   updateStock: (id, data) => api.patch(`/products/${id}/stock`, data),
   getLowStock: () => api.get('/products/low-stock'),

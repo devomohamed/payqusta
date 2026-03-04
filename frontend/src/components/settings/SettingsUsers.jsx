@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Users, Plus, Search, Edit2, Trash2, Mail, Phone, Shield, 
-  CheckCircle, XCircle, MoreVertical 
+import {
+  Users, Plus, Search, Edit2, Trash2, Mail, Phone, Shield,
+  CheckCircle, XCircle, MoreVertical
 } from 'lucide-react';
 import { api } from '../../store';
 import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../UI';
 import { notify } from '../AnimatedNotification';
+import { confirm } from '../ConfirmDialog';
 import Pagination from '../Pagination';
 
 export default function SettingsUsers() {
@@ -17,7 +18,7 @@ export default function SettingsUsers() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -86,7 +87,8 @@ export default function SettingsUsers() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('هل أنت متأكد من تعطيل هذا المستخدم؟')) return;
+    const ok = await confirm.show({ title: 'تعطيل مستخدم', message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول بعد ذلك.', confirmLabel: 'تعطيل', type: 'warning' });
+    if (!ok) return;
     try {
       await api.delete(`/auth/users/${id}`);
       notify.success('تم تعطيل المستخدم');
@@ -110,8 +112,8 @@ export default function SettingsUsers() {
         <div className="p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="relative max-w-sm">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input 
-              placeholder="بحث بالاسم أو البريد..." 
+            <Input
+              placeholder="بحث بالاسم أو البريد..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pr-10"
@@ -122,10 +124,10 @@ export default function SettingsUsers() {
         {loading ? (
           <LoadingSpinner />
         ) : users.length === 0 ? (
-          <EmptyState 
-            icon={<Users className="w-8 h-8" />} 
-            title="لا يوجد مستخدمين" 
-            description="قم بإضافة موظفين لمساعدتك في إدارة المتجر" 
+          <EmptyState
+            icon={<Users className="w-8 h-8" />}
+            title="لا يوجد مستخدمين"
+            description="قم بإضافة موظفين لمساعدتك في إدارة المتجر"
           />
         ) : (
           <div className="overflow-x-auto">
@@ -177,7 +179,7 @@ export default function SettingsUsers() {
             </table>
           </div>
         )}
-        
+
         {pagination.totalPages > 1 && (
           <div className="p-4">
             <Pagination currentPage={page} totalPages={pagination.totalPages} onPageChange={setPage} />
@@ -185,55 +187,55 @@ export default function SettingsUsers() {
         )}
       </Card>
 
-      <Modal 
-        open={showModal} 
-        onClose={() => setShowModal(false)} 
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
         title={editId ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}
       >
         <div className="space-y-4">
-          <Input 
-            label="الاسم" 
-            value={form.name} 
-            onChange={e => setForm({...form, name: e.target.value})} 
+          <Input
+            label="الاسم"
+            value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })}
           />
-          <Input 
-            label="البريد الإلكتروني" 
+          <Input
+            label="البريد الإلكتروني"
             type="email"
-            value={form.email} 
-            onChange={e => setForm({...form, email: e.target.value})}
+            value={form.email}
+            onChange={e => setForm({ ...form, email: e.target.value })}
             disabled={!!editId} // Email immutable on edit usually
           />
-          <Input 
-            label="رقم الهاتف" 
-            value={form.phone} 
-            onChange={e => setForm({...form, phone: e.target.value})} 
+          <Input
+            label="رقم الهاتف"
+            value={form.phone}
+            onChange={e => setForm({ ...form, phone: e.target.value })}
           />
           <div>
             <label className="block text-sm font-bold mb-2">الدور</label>
-            <select 
-              value={form.role} 
-              onChange={e => setForm({...form, role: e.target.value})}
+            <select
+              value={form.role}
+              onChange={e => setForm({ ...form, role: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
             >
               <option value="coordinator">منسق (Coordinator)</option>
               <option value="vendor">مسؤول (Vendor Admin)</option>
             </select>
           </div>
-          
-          <Input 
+
+          <Input
             label={editId ? 'تغيير كلمة المرور (اختياري)' : 'كلمة المرور'}
             type="password"
             value={form.password}
-            onChange={e => setForm({...form, password: e.target.value})}
+            onChange={e => setForm({ ...form, password: e.target.value })}
             placeholder={editId ? 'اتركه فارغاً للإبقاء على الحالية' : ''}
           />
 
           {editId && (
             <div>
               <label className="block text-sm font-bold mb-2">الحالة</label>
-              <select 
-                value={form.isActive} 
-                onChange={e => setForm({...form, isActive: e.target.value === 'true'})}
+              <select
+                value={form.isActive}
+                onChange={e => setForm({ ...form, isActive: e.target.value === 'true' })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
               >
                 <option value="true">نشط</option>
@@ -243,8 +245,8 @@ export default function SettingsUsers() {
           )}
 
           <div className="pt-4 flex gap-3">
-             <Button className="flex-1" onClick={handleSave} loading={saving}>حفظ</Button>
-             <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
+            <Button className="flex-1" onClick={handleSave} loading={saving}>حفظ</Button>
+            <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
           </div>
         </div>
       </Modal>

@@ -15,6 +15,11 @@ const UNCATEGORIZED_CATEGORY_NAME = '\u0628\u062f\u0648\u0646 \u062a\u0635\u0646
 const UNCATEGORIZED_CATEGORY_SLUG = 'uncategorized';
 const UNCATEGORIZED_CATEGORY_ICON = '\u{1F4E6}';
 
+function normalizeNotificationChannel(value = '') {
+  const normalizedValue = String(value || '').trim();
+  return normalizedValue || '';
+}
+
 async function ensureDefaultCategory(tenantId) {
   return Category.findOneAndUpdate(
     {
@@ -53,10 +58,15 @@ class ProductController {
 
     // Search
     if (req.query.search) {
+      const searchPattern = String(req.query.search).trim();
       queryConditions.push({
         $or: [
-          { name: { $regex: req.query.search, $options: 'i' } },
-          { sku: { $regex: req.query.search, $options: 'i' } },
+          { name: { $regex: searchPattern, $options: 'i' } },
+          { sku: { $regex: searchPattern, $options: 'i' } },
+          { barcode: { $regex: searchPattern, $options: 'i' } },
+          { description: { $regex: searchPattern, $options: 'i' } },
+          { categoryName: { $regex: searchPattern, $options: 'i' } },
+          { tags: { $regex: searchPattern, $options: 'i' } },
         ],
       });
     }
@@ -146,23 +156,125 @@ class ProductController {
   });
 
   /**
+   * POST /api/v1/products/:id/notify-stock
+   * Register an email / phone alert when an out-of-stock product returns.
+   */
+  subscribeStockNotification = catchAsync(async (req, res, next) => {
+    const product = await Product.findOne({
+      _id: req.params.id,
+      ...req.tenantFilter,
+      isActive: true,
+    }).select('name stock stockNotifications');
+
+    if (!product) return next(AppError.notFound('المنتج غير موجود'));
+
+    if ((product.stock?.quantity || 0) > 0) {
+      return ApiResponse.success(res, { availableNow: true }, 'المنتج متوفر الآن ويمكنك الطلب مباشرة');
+    }
+
+    const email = normalizeNotificationChannel(req.body.email).toLowerCase();
+    const phone = normalizeNotificationChannel(req.body.phone);
+
+    if (!email && !phone) {
+      return next(AppError.badRequest('يرجى إدخال البريد الإلكتروني أو رقم الهاتف'));
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return next(AppError.badRequest('يرجى إدخال بريد إلكتروني صحيح'));
+    }
+
+    if (phone && phone.replace(/[^\d+]/g, '').length < 8) {
+      return next(AppError.badRequest('يرجى إدخال رقم هاتف صحيح'));
+    }
+
+    const alreadyExists = (product.stockNotifications || []).some((notification) => {
+      if (notification?.notifiedAt) return false;
+      return (email && notification.email === email) || (phone && notification.phone === phone);
+    });
+
+    if (alreadyExists) {
+      return ApiResponse.success(res, {}, 'تم تسجيلك مسبقًا، سنبلغك فور توفر المنتج');
+    }
+
+    product.stockNotifications = product.stockNotifications || [];
+    product.stockNotifications.push({
+      email: email || undefined,
+      phone: phone || undefined,
+    });
+    await product.save();
+
+    ApiResponse.success(res, {}, 'تم تسجيل طلب الإشعار بنجاح');
+  });
+
+  /**
    * POST /api/v1/products
    * Create a new product
    */
   create = catchAsync(async (req, res, next) => {
     const hasSelectedCategory = Boolean(req.body.category);
     const fallbackCategory = hasSelectedCategory ? null : await ensureDefaultCategory(req.tenantId);
+
+    // Parse variants JSON string sent from FormData
+    let variants = [];
+    if (req.body.variants) {
+      try {
+        variants = JSON.parse(req.body.variants);
+        // Strip UI-only fields and ensure correct types
+        variants = variants.map(({ expanded, ...v }) => ({
+          ...v,
+          price: v.price !== '' && v.price !== undefined ? Number(v.price) : undefined,
+          cost: v.cost !== '' && v.cost !== undefined ? Number(v.cost) : undefined,
+          stock: v.stock !== '' && v.stock !== undefined ? Number(v.stock) : undefined,
+        }));
+      } catch (e) {
+        variants = [];
+      }
+    }
+
+    // Process uploaded images with watermark
+    const { processImage } = require('../middleware/upload');
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findById(req.tenantId);
+    const watermarkOptions = tenant?.settings?.watermark || {};
+
+    const uploadedImages = [];
+    for (const file of (req.files || [])) {
+      const filename = `product-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
+      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
+      uploadedImages.push(imagePath);
+    }
+
+    const existingImages = req.body.existingImages
+      ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]).flat(Infinity)
+      : [];
+    const allImages = [...existingImages, ...uploadedImages];
+
+
+    // Exclude FormData string fields from the spread; use parsed values instead
+    const {
+      variants: _rawVariants,
+      existingImages: _rawExisting,
+      primaryImage: _rawPrimary,
+      'stock[quantity]': _sq,
+      'stock[minQuantity]': _smq,
+      ...restBody
+    } = req.body;
+
     const productData = {
-      ...req.body,
+      ...restBody,
       tenant: req.tenantId,
       category: hasSelectedCategory ? req.body.category : fallbackCategory._id,
       subcategory: (hasSelectedCategory && req.body.subcategory) ? req.body.subcategory : undefined,
       stock: {
-        quantity: req.body.stockQuantity || 0,
-        minQuantity: req.body.minQuantity || 5,
+        quantity: Number(req.body['stock[quantity]'] ?? req.body.stockQuantity ?? 0),
+        minQuantity: Number(req.body['stock[minQuantity]'] ?? req.body.minQuantity ?? 5),
         unit: req.body.unit || 'قطعة',
       },
+      variants,
+      images: allImages,
+      thumbnail: req.body.primaryImage || allImages[0] || undefined,
     };
+
 
     // Check for uniqueness manually
     if (req.body.sku || req.body.barcode) {
@@ -214,11 +326,52 @@ class ProductController {
 
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
 
-    // Update fields
+    // Parse variants JSON string if present
+    if (req.body.variants) {
+      try {
+        let variants = JSON.parse(req.body.variants);
+        product.variants = variants.map(({ expanded, ...v }) => ({
+          ...v,
+          price: v.price !== '' && v.price !== undefined ? Number(v.price) : undefined,
+          cost: v.cost !== '' && v.cost !== undefined ? Number(v.cost) : undefined,
+          stock: v.stock !== '' && v.stock !== undefined ? Number(v.stock) : undefined,
+        }));
+      } catch (e) { /* keep existing variants */ }
+    }
+
+    // Process newly uploaded images with watermark
+    const { processImage } = require('../middleware/upload');
+    const Tenant = require('../models/Tenant');
+    const tenant = await Tenant.findById(req.tenantId);
+    const watermarkOptions = tenant?.settings?.watermark || {};
+
+    const uploadedImages = [];
+    for (const file of (req.files || [])) {
+      const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
+      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
+      uploadedImages.push(imagePath);
+    }
+
+    const existingImages = req.body.existingImages
+      ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]).flat(Infinity)
+      : null;
+    if (existingImages !== null || uploadedImages.length > 0) {
+      product.images = [...(existingImages || product.images || []), ...uploadedImages];
+    }
+    if (req.body.primaryImage) {
+      product.thumbnail = req.body.primaryImage;
+    } else if (uploadedImages.length > 0) {
+      // First uploaded image is the primary (frontend sorts it to front)
+      product.thumbnail = uploadedImages[0];
+    } else if (existingImages && existingImages.length > 0) {
+      product.thumbnail = existingImages[0];
+    }
+
+
+    // Update scalar fields
     const allowedFields = [
       'name', 'sku', 'description', 'category', 'price', 'compareAtPrice', 'cost',
-      'wholesalePrice', 'shippingCost',
-      'images', 'thumbnail', 'barcode', 'tags', 'isActive', 'supplier',
+      'wholesalePrice', 'shippingCost', 'barcode', 'tags', 'isActive', 'supplier',
       'expiryDate', 'seoTitle', 'seoDescription'
     ];
 

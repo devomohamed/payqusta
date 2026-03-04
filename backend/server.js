@@ -108,8 +108,8 @@ class PayQustaServer {
     this.app.use('/api/v1/auth/reset-password', security.passwordResetLimiter);
 
     // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
-    this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+    this.app.use(express.json({ limit: '50mb' }));
+    this.app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
     // Handle JSON parse errors (e.g. body sent as "null" literal string)
     this.app.use((err, req, res, next) => {

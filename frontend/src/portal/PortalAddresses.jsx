@@ -4,6 +4,7 @@ import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { MapPin, Plus, Edit2, Trash2, X, Check, Home, Briefcase } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
+import { confirm } from '../components/ConfirmDialog';
 
 export default function PortalAddresses() {
     const { fetchAddresses, addAddress, updateAddress, deleteAddress } = usePortalStore();
@@ -58,14 +59,14 @@ export default function PortalAddresses() {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm(t('addresses.delete_confirm'))) {
-            const res = await deleteAddress(id);
-            if (res.success) {
-                notify.success(t('addresses.delete_success'));
-                setAddresses(res.addresses);
-            } else {
-                notify.error(res.message);
-            }
+        const ok = await confirm.delete(t('addresses.delete_confirm'));
+        if (!ok) return;
+        const res = await deleteAddress(id);
+        if (res.success) {
+            notify.success(t('addresses.delete_success'));
+            setAddresses(res.addresses);
+        } else {
+            notify.error(res.message);
         }
     };
 

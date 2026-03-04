@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const Invoice = require('../models/Invoice');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const Coupon = require('../models/Coupon');
 const AppError = require('../utils/AppError');
 const Helpers = require('../utils/helpers');
 const NotificationService = require('./NotificationService');
@@ -22,10 +23,30 @@ class InvoiceService {
    */
   async createInvoice(tenantId, userId, data) {
     const {
-      customerId, items, paymentMethod, discount = 0,
-      numberOfInstallments, frequency, downPayment, startDate,
-      notes, sendWhatsApp, source
+      customerId,
+      customer: legacyCustomerId,
+      items,
+      paymentMethod: rawPaymentMethod,
+      discount = 0,
+      numberOfInstallments,
+      frequency,
+      downPayment,
+      startDate,
+      notes,
+      sendWhatsApp,
+      source,
+      shippingAddress,
+      couponCode,
+      campaignAttribution,
     } = data;
+    const resolvedCustomerId = customerId || legacyCustomerId;
+    const paymentMethod = rawPaymentMethod === 'online' ? PAYMENT_METHODS.VISA : rawPaymentMethod;
+    const shouldSendWhatsApp = source === 'online_store' ? sendWhatsApp !== false : !!sendWhatsApp;
+    let appliedCoupon = null;
+    let reservedCouponUsage = false;
+    let couponDiscountAmount = 0;
+    let discountAmount = Number(discount) || 0;
+    const normalizedCampaignAttribution = this.normalizeCampaignAttribution(campaignAttribution);
 
     // Check if MongoDB topology supports transactions (ReplicaSet or Sharded)
     let session = undefined;
@@ -43,7 +64,7 @@ class InvoiceService {
     try {
       // Validate customer
       const customerQuery = Customer.findOne({
-        _id: customerId,
+        _id: resolvedCustomerId,
         tenant: tenantId,
         isActive: true
       });
@@ -62,6 +83,14 @@ class InvoiceService {
       let subtotal = 0;
       let totalProfit = 0;
       const productsToUpdate = []; // collect products, update stock after invoice is created
+
+      let user = null;
+      if (userId) {
+        const User = require('../models/User');
+        const userQuery = User.findById(userId);
+        if (session) userQuery.session(session);
+        user = await userQuery;
+      }
 
       for (const item of items) {
         const productQuery = Product.findOne({
@@ -132,8 +161,67 @@ class InvoiceService {
         }
       }
 
+      if (source === 'online_store') {
+        discountAmount += this.calculateOnlineStoreVolumeDiscount(invoiceItems);
+      }
+
+      if (couponCode) {
+        const normalizedCouponCode = String(couponCode).trim().toUpperCase();
+        const coupon = await Coupon.findOne({
+          tenant: tenantId,
+          code: normalizedCouponCode,
+        });
+
+        const validity = coupon ? coupon.isValid() : { valid: false };
+        if (!coupon || !validity.valid) {
+          throw AppError.badRequest(validity.reason || 'كود الخصم غير صالح أو منتهي الصلاحية');
+        }
+
+        if (Math.max(0, subtotal - discountAmount) < coupon.minOrderAmount) {
+          throw AppError.badRequest(`الحد الأدنى للطلب لاستخدام هذا الكوبون هو ${coupon.minOrderAmount} ج.م`);
+        }
+
+        if (coupon.applicableCustomers.length > 0) {
+          const isCustomerAllowed = coupon.applicableCustomers.some(
+            (id) => id.toString() === customer._id.toString()
+          );
+          if (!isCustomerAllowed) {
+            throw AppError.badRequest('هذا الكوبون غير مخصص لهذا العميل');
+          }
+        }
+
+        const customerUsages = (coupon.usages || []).filter(
+          (usage) => usage.customer?.toString() === customer._id.toString()
+        ).length;
+        if (customerUsages >= (coupon.usagePerCustomer || 1)) {
+          throw AppError.badRequest('لقد استخدمت هذا الكوبون بالحد الأقصى المسموح');
+        }
+
+        const couponQuery = { _id: coupon._id };
+        if (coupon.usageLimit) {
+          couponQuery.usageCount = { $lt: coupon.usageLimit };
+        }
+
+        let reserveQuery = Coupon.findOneAndUpdate(
+          couponQuery,
+          { $inc: { usageCount: 1 } },
+          { new: true }
+        );
+        if (session) reserveQuery = reserveQuery.session(session);
+
+        const reservedCoupon = await reserveQuery;
+        if (!reservedCoupon && coupon.usageLimit) {
+          throw AppError.badRequest('تم الوصول للحد الأقصى لاستخدام كود الخصم');
+        }
+
+        appliedCoupon = reservedCoupon || coupon;
+        reservedCouponUsage = true;
+        couponDiscountAmount = appliedCoupon.calculateDiscount(Math.max(0, subtotal - discountAmount));
+        discountAmount += couponDiscountAmount;
+      }
+
       // Calculate total
-      const totalAmount = subtotal - discount;
+      const totalAmount = Math.max(0, subtotal - discountAmount);
 
       // Check Credit Limit
       let transactionPendingAmount = 0;
@@ -158,12 +246,27 @@ class InvoiceService {
         createdBy: userId,
         items: invoiceItems,
         subtotal,
-        discount,
+        discount: discountAmount,
         totalAmount,
         paymentMethod,
         notes,
         source: source || 'pos',
       };
+
+      if (normalizedCampaignAttribution) {
+        invoiceData.campaignAttribution = normalizedCampaignAttribution;
+      }
+
+      if (shippingAddress && typeof shippingAddress === 'object') {
+        invoiceData.shippingAddress = {
+          fullName: shippingAddress.fullName,
+          phone: shippingAddress.phone,
+          address: shippingAddress.address,
+          city: shippingAddress.city,
+          governorate: shippingAddress.governorate,
+          notes: shippingAddress.notes,
+        };
+      }
 
       // Handle payment method configuration
       if (paymentMethod === PAYMENT_METHODS.CASH) {
@@ -198,18 +301,12 @@ class InvoiceService {
         invoiceData.dueDate = data.dueDate ? new Date(data.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       }
 
-      // Load user to check commission rate
-      const User = require('../models/User');
-      const userQuery = User.findById(userId);
-      if (session) userQuery.session(session);
-      const user = await userQuery;
-
       if (user && user.commissionRate > 0) {
         // Calculate commission from total profit minus any discounts spread proportionally, 
         // or simply from raw profit for simplicity 
         // Simplified: Just use raw total profit. Discounts might reduce profit, but typically commission on raw item profit is standard, 
         // or we can adjust: totalProfit = Math.max(0, totalProfit - discount)
-        const adjustedProfit = Math.max(0, totalProfit - discount);
+        const adjustedProfit = Math.max(0, totalProfit - discountAmount);
         invoiceData.commission = {
           amount: (adjustedProfit * user.commissionRate) / 100,
           isPaid: false
@@ -275,7 +372,20 @@ class InvoiceService {
       const Tenant = require('../models/Tenant');
       const tenant = await Tenant.findById(tenantId);
 
-      if (sendWhatsApp && customer.whatsapp?.enabled && customer.whatsapp?.notifications?.invoices !== false) {
+      if (appliedCoupon) {
+        Coupon.findByIdAndUpdate(appliedCoupon._id, {
+          $push: {
+            usages: {
+              customer: customer._id,
+              invoice: invoice._id,
+              discountAmount: couponDiscountAmount,
+              usedAt: new Date(),
+            },
+          },
+        }).catch(() => { });
+      }
+
+      if (shouldSendWhatsApp && customer.whatsapp?.enabled && customer.whatsapp?.notifications?.invoices !== false) {
         WhatsAppService.sendInvoiceNotification(
           customer.whatsapp.number || customer.phone,
           invoice,
@@ -303,8 +413,77 @@ class InvoiceService {
         await session.abortTransaction();
         session.endSession();
       }
+      if (!session && reservedCouponUsage && appliedCoupon?._id) {
+        Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usageCount: -1 } }).catch(() => { });
+      }
       throw err;
     }
+  }
+
+  calculateOnlineStoreVolumeDiscount(invoiceItems = []) {
+    if (!Array.isArray(invoiceItems) || invoiceItems.length === 0) return 0;
+
+    return invoiceItems.reduce((sum, item) => {
+      const quantity = Number(item?.quantity) || 0;
+      const totalPrice = Number(item?.totalPrice) || 0;
+
+      if (quantity >= 3) {
+        return sum + (totalPrice * 0.10);
+      }
+
+      if (quantity >= 2) {
+        return sum + (totalPrice * 0.05);
+      }
+
+      return sum;
+    }, 0);
+  }
+
+  normalizeCampaignAttribution(campaignAttribution = {}) {
+    if (!campaignAttribution || typeof campaignAttribution !== 'object') return null;
+
+    const normalizeString = (value, maxLength = 180) => (
+      typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+    );
+
+    const parseDate = (value) => {
+      if (!value) return undefined;
+
+      const candidate = new Date(value);
+      return Number.isNaN(candidate.getTime()) ? undefined : candidate;
+    };
+
+    const normalized = {
+      utmSource: normalizeString(campaignAttribution.utmSource),
+      utmMedium: normalizeString(campaignAttribution.utmMedium),
+      utmCampaign: normalizeString(campaignAttribution.utmCampaign),
+      utmTerm: normalizeString(campaignAttribution.utmTerm),
+      utmContent: normalizeString(campaignAttribution.utmContent),
+      campaignMessage: normalizeString(campaignAttribution.campaignMessage, 240),
+      ref: normalizeString(campaignAttribution.ref),
+      gclid: normalizeString(campaignAttribution.gclid, 240),
+      fbclid: normalizeString(campaignAttribution.fbclid, 240),
+      referrer: normalizeString(campaignAttribution.referrer, 320),
+      landingPath: normalizeString(campaignAttribution.landingPath, 240),
+      landingUrl: normalizeString(campaignAttribution.landingUrl, 420),
+      firstSeenAt: parseDate(campaignAttribution.firstSeenAt),
+      lastSeenAt: parseDate(campaignAttribution.lastSeenAt),
+    };
+
+    const hasAttribution = [
+      normalized.utmSource,
+      normalized.utmMedium,
+      normalized.utmCampaign,
+      normalized.utmTerm,
+      normalized.utmContent,
+      normalized.campaignMessage,
+      normalized.ref,
+      normalized.gclid,
+      normalized.fbclid,
+      normalized.referrer,
+    ].some(Boolean);
+
+    return hasAttribution ? normalized : null;
   }
 }
 

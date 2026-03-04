@@ -1,13 +1,22 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus, Package, Star, Heart, Share2, MessageCircle, ChevronRight, ZoomIn, X, Copy, Check, ChevronLeft } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Package, Star, Heart, Share2, MessageCircle, ChevronRight, ZoomIn, X, Copy, Check, ChevronLeft, Bell, BellOff } from 'lucide-react';
 import { api } from '../store';
-import { portalApi, usePortalStore } from '../store/portalStore';
+import { portalApi } from '../store/portalStore';
+import { useCommerceStore } from '../store/commerceStore';
 import { Card, Button, Badge, LoadingSpinner, Select } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import PortalInstallmentCalculator from '../portal/PortalInstallmentCalculator';
 import { collectProductImages, pickProductImage } from '../utils/media';
 import { storefrontPath } from '../utils/storefrontHost';
+import { createBuyNowItem } from './buyNowItem';
+import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
+import { loadStorefrontGuestProfile } from './storefrontGuestProfile';
+import {
+  calculateStorefrontVolumeDiscountForLine,
+  getStorefrontVolumeOfferForQuantity,
+  STOREFRONT_VOLUME_OFFER_TIERS,
+} from './storefrontVolumeOffers';
 
 /* ─── Recently Viewed Utility ─── */
 const RECENTLY_VIEWED_KEY = 'rv_products';
@@ -25,13 +34,111 @@ function getRecentlyViewed(excludeId) {
   } catch (_) { return []; }
 }
 
+const CROSS_SELL_EVENTS_KEY = 'storefront_cross_sell_events';
+
+function normalizeCategoryId(category) {
+  if (!category) return '';
+  if (typeof category === 'object') {
+    return category._id || category.name || '';
+  }
+  return category;
+}
+
+function uniqueProducts(products) {
+  const seen = new Set();
+
+  return products.filter((product) => {
+    if (!product?._id || seen.has(product._id)) return false;
+    seen.add(product._id);
+    return true;
+  });
+}
+
+function getSharedTagCount(baseProduct, candidate) {
+  const sourceTags = new Set((baseProduct?.tags || []).map((tag) => String(tag).trim().toLowerCase()).filter(Boolean));
+  const candidateTags = (candidate?.tags || []).map((tag) => String(tag).trim().toLowerCase()).filter(Boolean);
+
+  if (sourceTags.size === 0 || candidateTags.length === 0) return 0;
+
+  return candidateTags.reduce((count, tag) => count + (sourceTags.has(tag) ? 1 : 0), 0);
+}
+
+function scoreRelatedProduct(baseProduct, candidate) {
+  const sameCategory = normalizeCategoryId(baseProduct?.category) === normalizeCategoryId(candidate?.category);
+  const sharedTags = getSharedTagCount(baseProduct, candidate);
+  const basePrice = baseProduct?.price || 0;
+  const candidatePrice = candidate?.price || 0;
+  const priceGapScore = basePrice > 0 ? Math.max(0, 1 - (Math.abs(basePrice - candidatePrice) / basePrice)) : 0;
+
+  return (sameCategory ? 10 : 0) + (sharedTags * 4) + priceGapScore;
+}
+
+function getCrossSellReason(baseProduct, candidate) {
+  if (normalizeCategoryId(baseProduct?.category) === normalizeCategoryId(candidate?.category)) {
+    return 'يكمل نفس الفئة';
+  }
+
+  if (getSharedTagCount(baseProduct, candidate) > 0) {
+    return 'مقترح من نفس الاهتمام';
+  }
+
+  return 'اختيار مناسب مع هذا المنتج';
+}
+
+function trackCrossSellEvent(type, sourceProductId, relatedProductId) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const existingEvents = JSON.parse(window.localStorage.getItem(CROSS_SELL_EVENTS_KEY) || '[]');
+    const nextEvents = [
+      ...existingEvents,
+      {
+        type,
+        sourceProductId,
+        relatedProductId,
+        createdAt: new Date().toISOString(),
+      },
+    ].slice(-40);
+
+    window.localStorage.setItem(CROSS_SELL_EVENTS_KEY, JSON.stringify(nextEvents));
+  } catch (_) { }
+}
+
+const REVIEW_SIGNAL_PATTERNS = [
+  { label: 'الجودة', patterns: ['جودة', 'الخامة', 'خامه', 'متقن'] },
+  { label: 'السعر', patterns: ['سعر', 'السعر', 'قيمة', 'قيمه'] },
+  { label: 'التوصيل', patterns: ['شحن', 'توصيل', 'وصل', 'التسليم'] },
+  { label: 'التغليف', patterns: ['تغليف', 'تعبئة', 'تغليفه'] },
+  { label: 'الخدمة', patterns: ['خدمة', 'الدعم', 'التعامل'] },
+];
+
+function getTopReviewSignal(reviews) {
+  if (!Array.isArray(reviews) || reviews.length === 0) return null;
+
+  const scoredSignals = REVIEW_SIGNAL_PATTERNS.map((signal) => {
+    const score = reviews.reduce((total, review) => {
+      const text = `${review?.title || ''} ${review?.body || ''}`.toLowerCase();
+      return total + signal.patterns.reduce((count, pattern) => count + (text.includes(pattern) ? 1 : 0), 0);
+    }, 0);
+
+    return { ...signal, score };
+  });
+
+  const topSignal = scoredSignals.sort((a, b) => b.score - a.score)[0];
+  return topSignal?.score > 0 ? topSignal.label : null;
+}
+
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const isPortal = location.pathname.includes('/portal');
 
-  const { addToCart: addToPortalCart, toggleWishlist, wishlistIds } = usePortalStore();
+  const { addToCart: addToCartShared, toggleWishlist, wishlistIds } = useCommerceStore((state) => ({
+    addToCart: state.addToCart,
+    toggleWishlist: state.toggleWishlist,
+    wishlistIds: state.wishlistIds,
+  }));
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +149,7 @@ export default function ProductDetails() {
   const [reviewsStats, setReviewsStats] = useState({ total: 0, avgRating: 0 });
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [crossSellAddingId, setCrossSellAddingId] = useState(null);
 
   // UI states
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -53,8 +161,14 @@ export default function ProductDetails() {
   const addToCartRef = useRef(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // C2 — Notify Me When Back In Stock
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [notifyPhone, setNotifyPhone] = useState('');
+  const [notifySubmitting, setNotifySubmitting] = useState(false);
+  const [notifyDone, setNotifyDone] = useState(false);
 
   useEffect(() => {
+    setNotifyDone(false);
     loadProduct();
     loadReviews();
     window.scrollTo({ top: 0 });
@@ -71,6 +185,16 @@ export default function ProductDetails() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isPortal) return;
+
+    const guestProfile = loadStorefrontGuestProfile();
+    if (!guestProfile) return;
+
+    if (guestProfile.email) setNotifyEmail(guestProfile.email);
+    if (guestProfile.phone) setNotifyPhone(guestProfile.phone);
+  }, [isPortal]);
+
   const loadReviews = async () => {
     try {
       const res = await api.get(`/reviews/product/${id}`);
@@ -84,15 +208,33 @@ export default function ProductDetails() {
       setActiveImage(pickProductImage(product));
       saveRecentlyViewed(product);
       setRecentlyViewed(getRecentlyViewed(product._id));
-      loadRelated(product.category, product._id);
+      loadRelated(product, product._id);
+      if (!isPortal) {
+        trackStorefrontFunnelEvent('product_view', {
+          productId: product._id,
+          uniqueEventKey: `product_view:${product._id}`,
+        });
+      }
     }
-  }, [product]);
+  }, [product, isPortal]);
 
-  const loadRelated = async (category, currentId) => {
-    if (!category) return;
+  const loadRelated = async (currentProduct, currentId) => {
+    if (!currentProduct) return;
     try {
-      const res = await api.get(`/products?isActive=true&limit=6`);
-      const products = (res.data.data || []).filter(p => p._id !== currentId).slice(0, 5);
+      const categoryId = normalizeCategoryId(currentProduct.category);
+      const [sameCategoryRes, fallbackRes] = await Promise.all([
+        categoryId ? api.get(`/products?isActive=true&limit=12&category=${categoryId}`) : Promise.resolve({ data: { data: [] } }),
+        api.get('/products?isActive=true&limit=18&sort=-sales'),
+      ]);
+
+      const products = uniqueProducts([
+        ...(sameCategoryRes.data.data || []),
+        ...(fallbackRes.data.data || []),
+      ])
+        .filter((candidate) => candidate?._id && candidate._id !== currentId && (candidate.stock?.quantity ?? 0) > 0)
+        .sort((a, b) => scoreRelatedProduct(currentProduct, b) - scoreRelatedProduct(currentProduct, a))
+        .slice(0, 5);
+
       setRelatedProducts(products);
     } catch (_) { }
   };
@@ -116,6 +258,17 @@ export default function ProductDetails() {
   };
 
   const addToCart = () => {
+    addToCartShared(product, quantity, selectedVariant);
+    if (!isPortal) {
+      trackStorefrontFunnelEvent('add_to_cart', {
+        productId: product?._id,
+        itemCount: quantity,
+        cartSize: quantity,
+        source: selectedVariant ? 'product_details_variant' : 'product_details',
+      });
+    }
+    notify.success(isPortal ? 'تم إضافة المنتج للسلة' : 'تمت إضافة المنتج للسلة. يمكنك إكمال الطلب مباشرة كضيف.');
+    return;
     if (isPortal) {
       addToPortalCart(product, quantity, selectedVariant);
       notify.success('تم إضافة المنتج للسلة 🛒');
@@ -136,6 +289,60 @@ export default function ProductDetails() {
     localStorage.setItem('cart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
     notify.success('تم إضافة المنتج للسلة 🛒');
+  };
+
+  const handleCrossSellOpen = (relatedProductId) => {
+    trackCrossSellEvent('click', product?._id, relatedProductId);
+  };
+
+  const handleCrossSellAdd = (event, relatedProduct) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!relatedProduct?._id) return;
+
+    if ((relatedProduct.stock?.quantity ?? 0) <= 0) {
+      notify.error('هذا المنتج غير متوفر حاليًا');
+      return;
+    }
+
+    if (relatedProduct.hasVariants) {
+      trackCrossSellEvent('click', product?._id, relatedProduct._id);
+      notify.info('اختر المواصفات أولًا من صفحة المنتج');
+      navigate(storefrontPath(`/products/${relatedProduct._id}`));
+      return;
+    }
+
+    setCrossSellAddingId(relatedProduct._id);
+    addToCartShared(relatedProduct, 1);
+    trackCrossSellEvent('add', product?._id, relatedProduct._id);
+    if (!isPortal) {
+      trackStorefrontFunnelEvent('add_to_cart', {
+        productId: relatedProduct._id,
+        itemCount: 1,
+        cartSize: 1,
+        source: 'cross_sell',
+      });
+    }
+    notify.success(`تمت إضافة "${relatedProduct.name}" إلى السلة`);
+    window.setTimeout(() => setCrossSellAddingId(null), 600);
+  };
+
+  const handleBuyNow = () => {
+    if (isOutOfStock) {
+      notify.error('المنتج غير متوفر حالياً');
+      return;
+    }
+
+    const buyNowItem = createBuyNowItem(product, quantity, selectedVariant);
+    if (!buyNowItem) {
+      notify.error('تعذر بدء الشراء الآن');
+      return;
+    }
+
+    navigate(storefrontPath('/checkout'), {
+      state: { buyNowItem },
+    });
   };
 
   const handleWishlist = async () => {
@@ -170,6 +377,42 @@ export default function ProductDetails() {
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   };
 
+  const handleNotifyMe = async () => {
+    const normalizedEmail = notifyEmail.trim().toLowerCase();
+    const normalizedPhone = notifyPhone.trim();
+
+    if (!normalizedEmail && !normalizedPhone) {
+      notify.error('أدخل بريدك الإلكتروني أو رقم الهاتف');
+      return;
+    }
+
+    if (normalizedEmail && !normalizedEmail.includes('@')) {
+      notify.error('يرجى إدخال بريد إلكتروني صحيح');
+      return;
+    }
+
+    setNotifySubmitting(true);
+
+    try {
+      const res = await api.post(`/products/${product._id}/notify-stock`, {
+        email: normalizedEmail,
+        phone: normalizedPhone,
+      });
+
+      if (res?.data?.data?.availableNow) {
+        notify.info(res?.data?.message || 'المنتج متوفر الآن ويمكنك إكمال الطلب');
+        return;
+      }
+
+      setNotifyDone(true);
+      notify.success(res?.data?.message || 'تم تسجيل طلبك وسنبلغك فور توفر المنتج');
+    } catch (error) {
+      notify.error(error?.response?.data?.message || 'حدث خطأ، يرجى المحاولة مرة أخرى');
+    } finally {
+      setNotifySubmitting(false);
+    }
+  };
+
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.target.getBoundingClientRect();
     setMousePos({ x: ((e.clientX - left) / width) * 100, y: ((e.clientY - top) / height) * 100 });
@@ -181,9 +424,64 @@ export default function ProductDetails() {
   const isOutOfStock = currentStock === 0;
   const allImages = collectProductImages(product);
   const stockPercent = product?.stock?.maxQuantity ? Math.min(100, (currentStock / product.stock.maxQuantity) * 100) : Math.min(100, (currentStock / 50) * 100);
+  const activeVolumeOffer = !isPortal ? getStorefrontVolumeOfferForQuantity(quantity) : null;
+  const activeVolumeSavings = !isPortal ? calculateStorefrontVolumeDiscountForLine(currentPrice, quantity) : 0;
+  const sortedReviews = [...reviews].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const highlightedReviews = sortedReviews.slice(0, 2);
+  const topReviewSignal = getTopReviewSignal(sortedReviews);
+  const latestReviewDate = sortedReviews[0]?.createdAt ? new Date(sortedReviews[0].createdAt).toLocaleDateString() : null;
+  const productTrustSignals = [
+    {
+      key: 'rating',
+      icon: Star,
+      title: 'تقييم العملاء',
+      value: reviewsStats.total > 0 ? `${reviewsStats.avgRating?.toFixed(1) || '0.0'} / 5` : 'بانتظار أول تقييم',
+      detail: reviewsStats.total > 0 ? `${reviewsStats.total} مراجعة معتمدة` : 'سيظهر هنا أول تقييم معتمد',
+    },
+    {
+      key: 'availability',
+      icon: Package,
+      title: 'حالة التوفر',
+      value: isOutOfStock ? 'غير متوفر الآن' : `${currentStock} قطعة`,
+      detail: isOutOfStock ? 'فعّل تنبيه العودة للمخزون' : (currentStock <= 20 ? 'مخزون محدود حاليًا' : 'جاهز للطلب الآن'),
+    },
+    {
+      key: 'signal',
+      icon: MessageCircle,
+      title: 'إشارة الثقة',
+      value: topReviewSignal || (latestReviewDate ? 'آخر مراجعة مؤكدة' : 'طلب مباشر كضيف'),
+      detail: topReviewSignal
+        ? 'أكثر ما يتكرر داخل آراء العملاء'
+        : (latestReviewDate ? `آخر مراجعة بتاريخ ${latestReviewDate}` : 'يمكنك إتمام الطلب بدون إنشاء حساب'),
+    },
+  ];
 
   if (loading) return <LoadingSpinner />;
   if (!product) return null;
+
+  // D1 — Open Graph meta tags
+  const pageTitle = product.seoTitle || product.name;
+  const pageDesc = product.seoDescription || (product.description ? product.description.replace(/<[^>]*>/g, '').slice(0, 155) : '');
+  const pageImage = pickProductImage(product);
+  const pageUrl = window.location.href;
+  // Dynamically update document head for OG
+  if (typeof document !== 'undefined') {
+    document.title = pageTitle;
+    const setMeta = (prop, val, attr = 'property') => {
+      let el = document.querySelector(`meta[${attr}='${prop}']`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, prop); document.head.appendChild(el); }
+      el.setAttribute('content', val);
+    };
+    setMeta('og:title', pageTitle);
+    setMeta('og:description', pageDesc);
+    setMeta('og:image', pageImage || '');
+    setMeta('og:url', pageUrl);
+    setMeta('og:type', 'product');
+    setMeta('twitter:card', 'summary_large_image', 'name');
+    setMeta('twitter:title', pageTitle, 'name');
+    setMeta('twitter:description', pageDesc, 'name');
+    setMeta('twitter:image', pageImage || '', 'name');
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 animate-fade-in" dir="rtl">
@@ -317,7 +615,7 @@ export default function ProductDetails() {
             <div className="flex items-center justify-between">
               {product.category && (
                 <Badge variant="neutral" className="text-xs bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 border-primary-100 dark:border-primary-800">
-                  {product.category}
+                  {typeof product.category === 'object' ? product.category.name : product.category}
                 </Badge>
               )}
               {/* Share Button */}
@@ -409,6 +707,22 @@ export default function ProductDetails() {
               </div>
             )}
 
+            <div className="grid gap-3 sm:grid-cols-3">
+              {productTrustSignals.map((signal) => (
+                <div
+                  key={signal.key}
+                  className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/60"
+                >
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-300">
+                    <signal.icon className="h-4 w-4 text-primary-500" />
+                    <span className="text-[11px] font-black">{signal.title}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-black text-gray-900 dark:text-white">{signal.value}</p>
+                  <p className="mt-1 text-[11px] font-medium leading-5 text-gray-500 dark:text-gray-400">{signal.detail}</p>
+                </div>
+              ))}
+            </div>
+
             {/* Variants */}
             {product.hasVariants && product.variants?.length > 0 && (
               <div className="space-y-2">
@@ -445,6 +759,25 @@ export default function ProductDetails() {
                       </button>
                     </div>
                   </div>
+                  {!isPortal && (
+                    <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {STOREFRONT_VOLUME_OFFER_TIERS.map((tier) => (
+                          <span
+                            key={tier.minQuantity}
+                            className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black ${activeVolumeOffer?.minQuantity === tier.minQuantity ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-amber-700'}`}
+                          >
+                            {tier.label}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs font-medium text-amber-800">
+                        {activeVolumeOffer
+                          ? `الكمية الحالية فعّلت ${activeVolumeOffer.shortLabel} وتوفّر ${activeVolumeSavings.toFixed(2)} ج.م على هذا المنتج.`
+                          : 'ارفع الكمية إلى 2 أو أكثر لتفعيل خصم تلقائي يظهر في السلة والـ checkout.'}
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2.5">
                     <Button
                       onClick={addToCart}
@@ -461,9 +794,96 @@ export default function ProductDetails() {
                       <Heart className={`w-6 h-6 transition-transform ${wishlistIds?.includes(product._id) ? 'fill-current scale-110' : ''}`} />
                     </button>
                   </div>
+                  {!isPortal && (
+                    <button
+                      onClick={handleBuyNow}
+                      className="w-full h-12 rounded-2xl border border-primary-200 bg-primary-50 text-primary-700 font-bold hover:bg-primary-100 transition-all active:scale-[0.98]"
+                    >
+                      اشترِ الآن
+                    </button>
+                  )}
                 </div>
               ) : (
-                <button disabled className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 font-bold cursor-not-allowed">غير متوفر حالياً</button>
+                <div className="space-y-3">
+                  <button disabled className="w-full py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 font-bold cursor-not-allowed">
+                    غير متوفر حالياً
+                  </button>
+                  {/* C2 — Notify Me When Back In Stock */}
+                  {!isPortal && (
+                    <div className="p-4 rounded-2xl border-2 border-dashed border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/10 space-y-3">
+                      {notifyDone ? (
+                        <div className="flex items-center gap-2 text-primary-700 dark:text-primary-400 font-semibold text-sm justify-center py-1">
+                          <Bell className="w-4 h-4 fill-current" />
+                          سيصلك إشعار فور توفر المنتج!
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 text-center">
+                            <Bell className="w-3.5 h-3.5 inline-block ml-1 text-primary-500" />
+                            أبلغني عند توفر المنتج
+                          </p>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <input
+                              type="email"
+                              value={notifyEmail}
+                              onChange={(e) => setNotifyEmail(e.target.value)}
+                              placeholder="البريد الإلكتروني"
+                              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-right text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 dark:border-gray-700 dark:bg-gray-900"
+                              dir="rtl"
+                            />
+                            <input
+                              type="tel"
+                              value={notifyPhone}
+                              onChange={(e) => setNotifyPhone(e.target.value)}
+                              placeholder="رقم الهاتف / واتساب"
+                              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-right text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 dark:border-gray-700 dark:bg-gray-900"
+                              dir="rtl"
+                            />
+                          </div>
+                          <button
+                            onClick={handleNotifyMe}
+                            disabled={notifySubmitting}
+                            className="w-full rounded-xl bg-primary-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-primary-500 disabled:opacity-50"
+                          >
+                            {notifySubmitting ? '...' : 'أبلغني عند التوفر'}
+                          </button>
+                          {false && (<>
+                            <input
+                              type="email"
+                              value={notifyEmail}
+                              onChange={e => setNotifyEmail(e.target.value)}
+                              placeholder="بريدك الإلكتروني"
+                              className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400 text-right"
+                              dir="rtl"
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!notifyEmail || !notifyEmail.includes('@')) {
+                                  notify.error('يرجى إدخال بريد إلكتروني صحيح');
+                                  return;
+                                }
+                                setNotifySubmitting(true);
+                                try {
+                                  await api.post(`/products/${product._id}/notify-stock`, { email: notifyEmail });
+                                  setNotifyDone(true);
+                                  notify.success('تم تسجيل طلبك! سنبلغك فور توفر المنتج');
+                                } catch {
+                                  notify.error('حدث خطأ، يرجى المحاولة مرة أخرى');
+                                } finally {
+                                  setNotifySubmitting(false);
+                                }
+                              }}
+                              disabled={notifySubmitting}
+                              className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-bold transition-all disabled:opacity-50 flex-shrink-0"
+                            >
+                              {notifySubmitting ? '...' : 'أبلغني'}
+                            </button>
+                          </>)}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -503,9 +923,41 @@ export default function ProductDetails() {
             <h3 className="text-xl font-black flex items-center gap-2">
               <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> آراء وتقييمات العملاء
             </h3>
-            {reviews.length > 0 ? (
+            {sortedReviews.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <p className="text-[11px] font-black text-amber-700">متوسط التقييم</p>
+                  <p className="mt-1 text-2xl font-black text-amber-900">{reviewsStats.avgRating?.toFixed(1) || '0.0'} / 5</p>
+                  <p className="mt-1 text-xs font-medium text-amber-700">{reviewsStats.total} تقييم فعلي</p>
+                </div>
+                <div className="rounded-2xl border border-primary-100 bg-primary-50 p-4">
+                  <p className="text-[11px] font-black text-primary-700">آخر تقييم</p>
+                  <p className="mt-1 text-base font-black text-primary-900">{latestReviewDate || 'لا يوجد بعد'}</p>
+                  <p className="mt-1 text-xs font-medium text-primary-700">أحدث آراء العملاء تظهر أولًا</p>
+                </div>
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                  <p className="text-[11px] font-black text-emerald-700">أكثر ما يذكره العملاء</p>
+                  <p className="mt-1 text-base font-black text-emerald-900">{topReviewSignal || 'تجربة شراء جيدة'}</p>
+                  <p className="mt-1 text-xs font-medium text-emerald-700">إشارة ثقة متكررة داخل المراجعات</p>
+                </div>
+              </div>
+            )}
+            {highlightedReviews.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {highlightedReviews.map((review) => (
+                  <div key={`highlight-${review._id}`} className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black text-gray-500">{review.customer?.name || 'عميل'}</span>
+                      <div className="flex">{[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />)}</div>
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-gray-800 dark:text-gray-100 line-clamp-3">{review.title || review.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {sortedReviews.length > 0 ? (
               <div className="space-y-3">
-                {reviews.map(r => (
+                {sortedReviews.map(r => (
                   <div key={r._id} className="p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -541,31 +993,54 @@ export default function ProductDetails() {
         <section className="mt-16 pt-10 border-t border-gray-100 dark:border-gray-800 animate-fade-in">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white">منتجات قد تعجبك</h2>
-            <Link to={storefrontPath('/products')} className="text-sm font-bold text-primary-600 hover:text-primary-500 flex items-center gap-1">
+            <Link to={isPortal ? '/portal/products' : storefrontPath('/products')} className="text-sm font-bold text-primary-600 hover:text-primary-500 flex items-center gap-1">
               عرض الكل <ChevronLeft className="w-4 h-4" />
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {relatedProducts.map(p => (
-              <Link
+              <div
                 key={p._id}
-                to={storefrontPath(`/products/${p._id}`)}
                 className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="aspect-square bg-gray-50 dark:bg-gray-700 overflow-hidden">
-                  {pickProductImage(p) ? (
-                    <img src={pickProductImage(p)} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-10 h-10 text-gray-300" />
-                    </div>
-                  )}
+                <Link
+                  to={isPortal ? `/portal/products/${p._id}` : storefrontPath(`/products/${p._id}`)}
+                  onClick={() => handleCrossSellOpen(p._id)}
+                  className="block"
+                >
+                  <div className="aspect-square bg-gray-50 dark:bg-gray-700 overflow-hidden">
+                    {pickProductImage(p) ? (
+                      <img src={pickProductImage(p)} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-10 h-10 text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 transition-colors">{p.name}</p>
+                    <span className="mt-2 inline-flex w-fit rounded-full bg-primary-50 px-2 py-1 text-[10px] font-black text-primary-700">
+                      {getCrossSellReason(product, p)}
+                    </span>
+                    <p className="text-primary-600 font-black text-sm mt-1">{p.price?.toLocaleString()} ج.م</p>
+                  </div>
+                </Link>
+                <div className="px-3 pb-3">
+                  <button
+                    onClick={(event) => handleCrossSellAdd(event, p)}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary-200 px-3 py-2 text-xs font-black text-primary-700 transition-colors hover:border-primary-300 hover:bg-primary-50"
+                  >
+                    {crossSellAddingId === p._id ? (
+                      <span className="h-4 w-4 rounded-full border-2 border-primary-200 border-t-primary-600 animate-spin" />
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-4 w-4" />
+                        {p.hasVariants ? 'عرض التفاصيل' : 'أضفه مع الطلب'}
+                      </>
+                    )}
+                  </button>
                 </div>
-                <div className="p-3">
-                  <p className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 transition-colors">{p.name}</p>
-                  <p className="text-primary-600 font-black text-sm mt-1">{p.price?.toLocaleString()} ج.م</p>
-                </div>
-              </Link>
+              </div>
             ))}
           </div>
         </section>

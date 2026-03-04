@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Package, Users, FileText, Truck,
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import AnimatedBrandLogo from './AnimatedBrandLogo';
-import { storefrontPath } from '../utils/storefrontHost';
+import { storefrontPath, getStorefrontDomainUrl } from '../utils/storefrontHost';
 
 export default function Sidebar({ open, onClose }) {
   const { user, tenant, logout, permissions, can } = useAuthStore();
@@ -303,16 +303,18 @@ export default function Sidebar({ open, onClose }) {
 
         {/* My Store Quick Link - visible to tenant admins only */}
         {!isSystemSuperAdmin && user?.role === 'admin' && (
-          <a
-            href={storefrontPath('/')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all duration-200 border border-emerald-200 dark:border-emerald-800/40"
-          >
-            <Store className="w-5 h-5 flex-shrink-0" />
-            <span className="flex-1">متجري</span>
-            <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-          </a>
+          <div className="my-2">
+            <Link
+              to={storefrontPath('/')}
+              onClick={onClose}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-primary-600 to-primary-500 shadow-md shadow-primary-500/30 hover:shadow-lg hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <Store className="w-5 h-5 flex-shrink-0" />
+              </div>
+              <span className="flex-1">تصفح متجري</span>
+            </Link>
+          </div>
         )}
 
         {!isSystemSuperAdmin && (can('suppliers', 'read') || can('expenses', 'read') || user?.role === 'admin') && (

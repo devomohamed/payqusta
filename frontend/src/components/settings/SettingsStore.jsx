@@ -27,6 +27,8 @@ export default function SettingsStore() {
     watermarkPosition: 'southeast',
   });
   const [saving, setSaving] = useState(false);
+  const [applyingWatermark, setApplyingWatermark] = useState(false);
+  const [applyResult, setApplyResult] = useState(null);
 
   const [subdomain, setSubdomain] = useState('');
   const [checking, setChecking] = useState(false);
@@ -81,6 +83,25 @@ export default function SettingsStore() {
       notify.error(getUserFriendlyErrorMessage(err, 'خطأ في الحفظ'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleApplyWatermarkToAll = async () => {
+    if (!storeForm.watermarkEnabled || !storeForm.watermarkText) {
+      notify.error('فعّل العلامة المائية وأدخل النص أولاً ثم احفظ');
+      return;
+    }
+    setApplyingWatermark(true);
+    setApplyResult(null);
+    try {
+      const res = await api.post('/settings/watermark/apply-to-all');
+      const { processed, failed, totalProducts } = res.data?.data || {};
+      setApplyResult({ processed, failed, totalProducts });
+      notify.success(`تم تطبيق العلامة المائية على ${processed} صورة من ${totalProducts} منتج`);
+    } catch (err) {
+      notify.error('فشل تطبيق العلامة المائية — تأكد من حفظ الإعدادات أولاً');
+    } finally {
+      setApplyingWatermark(false);
     }
   };
 
@@ -285,8 +306,8 @@ export default function SettingsStore() {
             {(checking || isAvailable !== null) && subdomain && (
               <div
                 className={`mt-3 flex items-center gap-2 text-sm font-medium ${isAvailable === true
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
                   }`}
               >
                 {checking ? (
@@ -444,11 +465,28 @@ export default function SettingsStore() {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex flex-wrap gap-3 justify-end">
             <Button onClick={handleSaveStore} loading={saving} icon={<Save className="h-4 w-4" />}>
               حفظ إعدادات المتجر والعلامة المائية
             </Button>
+            <button
+              onClick={handleApplyWatermarkToAll}
+              disabled={applyingWatermark || !storeForm.watermarkEnabled}
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 text-sm font-bold text-white shadow transition-all active:scale-95"
+            >
+              {applyingWatermark ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> جاري التطبيق...</>
+              ) : (
+                <>🖼️ تطبيق على الصور الموجودة</>
+              )}
+            </button>
           </div>
+          {applyResult && (
+            <p className="mt-3 text-sm text-teal-700 dark:text-teal-300 font-medium text-left">
+              ✅ تم معالجة {applyResult.processed} صورة من {applyResult.totalProducts} منتج
+              {applyResult.failed > 0 && ` (${applyResult.failed} فشلت)`}
+            </p>
+          )}
         </div>
       </section>
     </div>

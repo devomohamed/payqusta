@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, ShoppingBag, X, Heart, Package, Star, Tag, SlidersHorizontal, ShoppingCart } from 'lucide-react';
+import { Search, ShoppingBag, X, Heart, Package, Star, Tag, SlidersHorizontal, ShoppingCart, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { api } from '../store';
-import { portalApi, usePortalStore } from '../store/portalStore';
+import { portalApi } from '../store/portalStore';
+import { useCommerceStore } from '../store/commerceStore';
 import { notify } from '../components/AnimatedNotification';
 import { pickProductImage } from '../utils/media';
+import { storefrontPath } from '../utils/storefrontHost';
+import { createBuyNowItem } from './buyNowItem';
+import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
+import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
+import { STOREFRONT_VOLUME_OFFER_TIERS } from './storefrontVolumeOffers';
 
 const priceRanges = [
   { value: 'all', label: 'جميع الأسعار' },
@@ -18,8 +24,12 @@ export default function ProductCatalog() {
   const navigate = useNavigate();
   const isPortal = location.pathname.includes('/portal');
 
-  // Portal store (only used when isPortal)
-  const { addToCart, toggleWishlist, wishlistIds } = usePortalStore();
+  const { addToCart, toggleWishlist, wishlistIds, cart } = useCommerceStore((state) => ({
+    addToCart: state.addToCart,
+    toggleWishlist: state.toggleWishlist,
+    wishlistIds: state.wishlistIds,
+    cart: state.cart,
+  }));
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -30,13 +40,29 @@ export default function ProductCatalog() {
   const [addingId, setAddingId] = useState(null);
   const [wishlistLoading, setWishlistLoading] = useState({});
   const [showFilters, setShowFilters] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchPanelRef = useRef(null);
+  const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const catParam = params.get('category');
-    if (catParam) setSelectedCategory(catParam);
+    const searchParam = params.get('search');
+    setSelectedCategory(catParam || '');
+    setSearch(searchParam || '');
     loadData();
   }, [location.search, location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchPanelRef.current && !searchPanelRef.current.contains(event.target)) {
+        setSearchFocused(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -44,7 +70,7 @@ export default function ProductCatalog() {
       if (isPortal) {
         const res = await portalApi.get('/portal/products?limit=100');
         setProducts(res.data.data.products || []);
-        setCategories(res.data.data.categories?.map(c => typeof c === 'string' ? c : c.name) || []);
+        setCategories(res.data.data.categories || []);
       } else {
         const [productsRes, categoriesRes] = await Promise.all([
           api.get('/products?isActive=true&limit=100'),
@@ -60,22 +86,49 @@ export default function ProductCatalog() {
     }
   };
 
+  const searchRankedPool = search.trim() ? rankStorefrontProducts(products, search) : products;
+  const searchSuggestions = buildStorefrontSearchSuggestions({
+    products,
+    categories,
+    query: search,
+    limit: 6,
+  });
+
   // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) ||
-      product.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+  const filteredProducts = searchRankedPool.filter((product) => {
+    // category can be an object (populated) or a string/id
+    const productCatId = typeof product.category === 'object' ? product.category?._id?.toString() : product.category;
+    const productCatName = typeof product.category === 'object' ? product.category?.name : product.category;
+    const matchesCategory = !selectedCategory || productCatId === selectedCategory || productCatName === selectedCategory;
     let matchesPrice = true;
     if (priceRange === 'under100') matchesPrice = product.price < 100;
     else if (priceRange === '100-500') matchesPrice = product.price >= 100 && product.price <= 500;
     else if (priceRange === 'over500') matchesPrice = product.price > 500;
-    return matchesSearch && matchesCategory && matchesPrice;
+    return matchesCategory && matchesPrice;
   });
 
   const handleAddToCart = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isPortal) return;
+    if (product.stock?.quantity === 0) { notify.error('المنتج غير متوفر حالياً'); return; }
+    if (product.hasVariants) {
+      notify.info('اختر المواصفات أولاً من صفحة المنتج');
+      navigate(detailPath(product));
+      return;
+    }
+    setAddingId(product._id);
+    addToCart(product, 1);
+    if (!isPortal) {
+      trackStorefrontFunnelEvent('add_to_cart', {
+        productId: product._id,
+        itemCount: 1,
+        cartSize: 1,
+        source: 'catalog',
+      });
+    }
+    notify.success(isPortal ? `تمت إضافة "${product.name}" للسلة` : `تمت إضافة "${product.name}" للسلة. يمكنك إكمال الطلب كضيف في أي وقت.`);
+    setTimeout(() => setAddingId(null), 600);
+    return;
     if (product.stock?.quantity === 0) { notify.error('المنتج غير متوفر حالياً'); return; }
     setAddingId(product._id);
     addToCart(product, 1);
@@ -97,6 +150,42 @@ export default function ProductCatalog() {
   const detailPath = (product) =>
     isPortal ? `/portal/products/${product._id}` : `/store/products/${product._id}`;
 
+  const handleBuyNow = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (product.stock?.quantity === 0) {
+      notify.error('المنتج غير متوفر حالياً');
+      return;
+    }
+
+    if (product.hasVariants) {
+      notify.info('اختر المواصفات أولاً لإتمام الشراء');
+      navigate(detailPath(product));
+      return;
+    }
+
+    const buyNowItem = createBuyNowItem(product);
+    if (!buyNowItem) {
+      notify.error('تعذر بدء الشراء الآن');
+      return;
+    }
+
+    navigate(storefrontPath('/checkout'), {
+      state: { buyNowItem },
+    });
+  };
+
+  const handleSuggestionSelect = (product) => {
+    setSearchFocused(false);
+    navigate(detailPath(product));
+  };
+
+  const handleCategorySuggestion = (categoryId) => {
+    setSearchFocused(false);
+    navigate(`${isPortal ? '/portal/products' : storefrontPath('/products')}?category=${encodeURIComponent(categoryId)}`);
+  };
+
   return (
     <div className={`space-y-4 pb-20 ${isPortal ? '' : ''}`} dir={isPortal ? 'rtl' : undefined}>
 
@@ -116,20 +205,98 @@ export default function ProductCatalog() {
       )}
 
       {/* ═══ SEARCH BAR ═══ */}
+      {!isPortal && (
+        <div className="rounded-3xl border border-primary-100 bg-white dark:bg-gray-900 dark:border-gray-800 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="text-right">
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                شراء كضيف
+              </div>
+              <p className="mt-3 text-lg font-black text-gray-900 dark:text-white">أضف منتجاتك مباشرة من هنا وأكمل الطلب بدون تسجيل دخول.</p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">كل منتج تضيفه يذهب للسلة فورًا، ويمكنك مراجعة الطلب أو المتابعة لاحقًا.</p>
+            </div>
+            <button
+              onClick={() => navigate(storefrontPath('/cart'))}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary-500/20 hover:bg-primary-500 transition-colors"
+            >
+              مراجعة السلة
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">{cartCount}</span>
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2">
-        <div className="relative flex-1">
+        <div ref={searchPanelRef} className="relative flex-1">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="ابحث عن منتج..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSearchFocused(true);
+            }}
             className="w-full pr-11 pl-10 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-primary-500 focus:outline-none transition-all"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button onClick={() => { setSearch(''); setSearchFocused(true); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </button>
+          )}
+          {searchFocused && (
+            <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl shadow-black/5 dark:border-gray-700 dark:bg-gray-800">
+              {searchSuggestions.products.length > 0 ? (
+                <div className="border-b border-gray-100 px-2 py-2 dark:border-gray-700">
+                  {searchSuggestions.products.map((product) => (
+                    <button
+                      key={product._id}
+                      onClick={() => handleSuggestionSelect(product)}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-right transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-700">
+                        {pickProductImage(product) ? (
+                          <img src={pickProductImage(product)} alt={product.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <Package className="m-auto mt-2.5 h-5 w-5 text-gray-300" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{product.name}</p>
+                        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                          {typeof product.category === 'object' ? product.category?.name : (product.categoryName || product.category || 'منتج')}
+                        </p>
+                      </div>
+                      <span className="text-xs font-black text-primary-600">{product.price?.toLocaleString()} ج.م</span>
+                    </button>
+                  ))}
+                </div>
+              ) : search.trim() ? (
+                <div className="px-4 py-4 text-center text-sm text-gray-400">لا توجد نتائج قريبة، جرّب اسمًا أقصر أو SKU.</div>
+              ) : (
+                <div className="px-4 py-3 text-xs font-bold text-gray-400">ابدأ بالكتابة أو اختر قسمًا شائعًا.</div>
+              )}
+
+              {searchSuggestions.categories.length > 0 && (
+                <div className="px-4 py-3 text-right">
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-gray-400">اقتراحات سريعة</p>
+                  <div className="flex flex-wrap gap-2">
+                    {searchSuggestions.categories.map((category) => (
+                      <button
+                        key={category.id || category.name}
+                        onClick={() => handleCategorySuggestion(category.id)}
+                        className="rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-600 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        {category.icon ? `${category.icon} ` : ''}{category.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <button
@@ -149,15 +316,20 @@ export default function ProductCatalog() {
         >
           الكل
         </button>
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 ${selectedCategory === cat ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
-          >
-            {cat}
-          </button>
-        ))}
+        {categories.map(cat => {
+          const catId = typeof cat === 'object' ? cat._id : cat;
+          const catName = typeof cat === 'object' ? cat.name : cat;
+          const catIcon = typeof cat === 'object' ? cat.icon : null;
+          return (
+            <button
+              key={catId || catName}
+              onClick={() => setSelectedCategory(selectedCategory === catId ? '' : catId)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 ${selectedCategory === catId ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
+            >
+              {catIcon && <span className="mr-1">{catIcon}</span>}{catName}
+            </button>
+          );
+        })}
       </div>
 
       {/* ═══ PRICE FILTER (collapsible) ═══ */}
@@ -249,7 +421,7 @@ export default function ProductCatalog() {
                   {product.category && (
                     <span className="absolute top-2 left-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-gray-600 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      {product.category}
+                      {typeof product.category === 'object' ? product.category.name : product.category}
                     </span>
                   )}
 
@@ -266,7 +438,7 @@ export default function ProductCatalog() {
                   </button>
 
                   {/* 🛒 Add to cart floating button */}
-                  {isPortal && !outOfStock && (
+                  {!outOfStock && (
                     <button
                       onClick={(e) => handleAddToCart(e, product)}
                       className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/30 flex items-center justify-center transition-all hover:bg-primary-600 hover:scale-110 active:scale-95 translate-y-10 group-hover:translate-y-0 duration-300"
@@ -317,8 +489,44 @@ export default function ProductCatalog() {
                     )}
                   </div>
 
+                  {!isPortal && !product.hasVariants && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {STOREFRONT_VOLUME_OFFER_TIERS.map((tier) => (
+                        <span key={tier.minQuantity} className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-700">
+                          {tier.shortLabel} عند {tier.minQuantity}+
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Add to cart row (always visible button below price) */}
-                  {isPortal && (
+                  <button
+                    onClick={(e) => handleAddToCart(e, product)}
+                    disabled={outOfStock}
+                    className={`w-full mt-2.5 h-10 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm ${outOfStock ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary-500 text-white hover:bg-primary-600 shadow-primary-500/20'}`}
+                  >
+                    {outOfStock ? (
+                      'نفذت الكمية'
+                    ) : isAdding ? (
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        {product.hasVariants ? 'اختر المواصفات' : 'أضف للسلة'}
+                      </>
+                    )}
+                  </button>
+
+                  {!isPortal && !outOfStock && (
+                    <button
+                      onClick={(e) => handleBuyNow(e, product)}
+                      className="w-full mt-2 h-9 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:border-primary-300 hover:text-primary-600 transition-colors"
+                    >
+                      اشترِ الآن
+                    </button>
+                  )}
+
+                  {false && isPortal && (
                     <button
                       onClick={(e) => handleAddToCart(e, product)}
                       disabled={outOfStock}
