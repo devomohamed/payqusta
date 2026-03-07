@@ -19,6 +19,7 @@ import {
   getStorefrontVolumeOfferForQuantity,
 } from './storefrontVolumeOffers';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
+import { loadStorefrontProducts } from './storefrontDataClient';
 
 const FREE_SHIPPING_THRESHOLD = 500;
 const ESTIMATED_SHIPPING_FEE = 50;
@@ -163,7 +164,11 @@ export default function ShoppingCart() {
             .filter(Boolean)
         );
 
-        const res = await api.get('/products?isActive=true&limit=12&sort=-sales');
+        const res = await loadStorefrontProducts({
+          isActive: true,
+          limit: 12,
+          sort: '-sales',
+        }, { ttlMs: 10000 });
         if (cancelled) return;
 
         const candidates = (res.data.data || []).filter((product) => {

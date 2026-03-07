@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Zap, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore, useThemeStore } from '../store';
@@ -15,6 +15,25 @@ export default function LoginPage() {
   const { login, register, loading } = useAuthStore();
   const { dark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const mode = (params.get('mode') || '').toLowerCase();
+    const shouldOpenRegister =
+      mode === 'register' ||
+      params.get('register') === '1' ||
+      params.get('signup') === '1';
+
+    if (shouldOpenRegister) {
+      setIsRegister(true);
+      return;
+    }
+
+    if (mode === 'login') {
+      setIsRegister(false);
+    }
+  }, [location.search]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

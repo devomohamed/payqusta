@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Package, MapPin, AlertCircle, RefreshCcw } from 'lucide-react';
+import { Search, Package, MapPin, RefreshCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { productsApi } from '../store';
+import { productsApi, useAuthStore } from '../store';
 import { Card, LoadingSpinner, EmptyState, Badge } from '../components/UI';
 import Pagination from '../components/Pagination';
 
@@ -12,6 +12,14 @@ export default function StockSearchPage() {
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ totalPages: 1, totalItems: 0 });
     const LIMIT = 10;
+    const tenantId = useAuthStore((state) => state.tenant?._id || state.tenant?.id || '');
+
+    const resolveBranchName = useCallback((branchRef) => {
+        const branchId = typeof branchRef === 'string' ? branchRef : (branchRef?._id || '');
+        if (branchRef?.name) return branchRef.name;
+        if (branchId && tenantId && String(branchId) === String(tenantId)) return 'الفرع الرئيسي';
+        return branchId ? 'فرع غير معروف' : 'الفرع الرئيسي';
+    }, [tenantId]);
 
     const toCategoryName = (category) => {
         if (!category) return '—';
@@ -40,6 +48,17 @@ export default function StockSearchPage() {
                 ...product,
                 categoryName: toCategoryName(product.category),
                 categoryIcon: toCategoryIcon(product.category),
+                availabilityRows: (Array.isArray(product.inventory) && product.inventory.length > 0)
+                    ? product.inventory.map((inv) => ({
+                        branchName: resolveBranchName(inv?.branch),
+                        quantity: Number(inv?.quantity) || 0,
+                        minQuantity: Number(inv?.minQuantity) || 5,
+                    }))
+                    : [{
+                        branchName: 'الفرع الرئيسي',
+                        quantity: Number(product.stock?.quantity) || 0,
+                        minQuantity: Number(product.stock?.minQuantity) || 5,
+                    }],
             }));
             setProducts(normalizedProducts);
             setPagination({
@@ -51,7 +70,7 @@ export default function StockSearchPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search]);
+    }, [page, search, resolveBranchName]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -141,35 +160,28 @@ export default function StockSearchPage() {
                                     <MapPin className="w-3.5 h-3.5" /> التوفر في الفروع
                                 </h4>
 
-                                {product.inventory && product.inventory.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {product.inventory.map((inv, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500">
-                                                        <MapPin className="w-4 h-4" />
-                                                    </div>
-                                                    <span className="font-bold text-gray-700 dark:text-gray-300">
-                                                        {inv.branch?.name || 'فرع غير معروف'}
-                                                    </span>
+                                <div className="space-y-3">
+                                    {(product.availabilityRows || []).map((inv, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500">
+                                                    <MapPin className="w-4 h-4" />
                                                 </div>
-                                                <div className="text-left">
-                                                    <span className={`text-lg font-black ${inv.quantity <= 0 ? 'text-red-500' :
-                                                            inv.quantity <= (inv.minQuantity || 5) ? 'text-amber-500' : 'text-primary-600'
-                                                        }`}>
-                                                        {inv.quantity}
-                                                    </span>
-                                                    <span className="text-[10px] text-gray-400 mr-1 font-bold">{product.stock?.unit || 'قطعة'}</span>
-                                                </div>
+                                                <span className="font-bold text-gray-700 dark:text-gray-300">
+                                                    {inv.branchName}
+                                                </span>
                                             </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="py-4 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-                                        <AlertCircle className="w-6 h-6 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-gray-400 text-xs">لم يتم توزيع هذا المنتج على أي فروع بعد</p>
-                                    </div>
-                                )}
+                                            <div className="text-left">
+                                                <span className={`text-lg font-black ${inv.quantity <= 0 ? 'text-red-500' :
+                                                        inv.quantity <= (inv.minQuantity || 5) ? 'text-amber-500' : 'text-primary-600'
+                                                    }`}>
+                                                    {inv.quantity}
+                                                </span>
+                                                <span className="text-[10px] text-gray-400 mr-1 font-bold">{product.stock?.unit || 'قطعة'}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="p-4 bg-white dark:bg-gray-900 flex justify-between items-center text-sm border-t border-gray-50 dark:border-gray-800">
@@ -196,3 +208,4 @@ export default function StockSearchPage() {
         </div>
     );
 }
+

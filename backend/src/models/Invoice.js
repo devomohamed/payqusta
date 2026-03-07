@@ -171,6 +171,13 @@ const invoiceSchema = new mongoose.Schema(
       governorate: { type: String },
       notes: { type: String },
     },
+    // Shipping Integration (Bosta, etc.)
+    shippingDetails: {
+      provider: { type: String, enum: ['bosta', 'aramex', 'local', null], default: null },
+      waybillNumber: { type: String },
+      trackingUrl: { type: String },
+      status: { type: String, enum: ['pending', 'created', 'picked_up', 'in_transit', 'delivered', 'returned', 'cancelled'], default: 'pending' },
+    },
     // Electronic Signature (For portal credit/installment orders)
     electronicSignature: {
       type: String,

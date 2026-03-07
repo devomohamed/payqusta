@@ -10,6 +10,7 @@ const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const catchAsync = require('../utils/catchAsync');
 const { STOCK_STATUS } = require('../config/constants');
+const { seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 
 const UNCATEGORIZED_CATEGORY_NAME = '\u0628\u062f\u0648\u0646 \u062a\u0635\u0646\u064a\u0641';
 const UNCATEGORIZED_CATEGORY_SLUG = 'uncategorized';
@@ -18,6 +19,54 @@ const UNCATEGORIZED_CATEGORY_ICON = '\u{1F4E6}';
 function normalizeNotificationChannel(value = '') {
   const normalizedValue = String(value || '').trim();
   return normalizedValue || '';
+  uploadEditorImages = catchAsync(async (req, res, next) => {
+    const files = Array.isArray(req.files)
+      ? req.files
+      : [
+        ...(Array.isArray(req.files?.image) ? req.files.image : req.file ? [req.file] : []),
+        ...(Array.isArray(req.files?.images) ? req.files.images : []),
+      ];
+
+    if (!files.length) {
+      return next(AppError.badRequest('ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± ØµÙˆØ±Ø©'));
+    }
+
+    const { processImage } = require('../middleware/upload');
+    const imageUrls = await Promise.all(
+      files.map((file) => (
+        processImage(file.buffer, file.originalname, `editor/${req.tenantId}`, file.mimetype)
+      ))
+    );
+
+    return ApiResponse.success(
+      res,
+      { url: imageUrls[0], urls: imageUrls },
+      imageUrls.length > 1 ? 'ØªÙ… Ø±ÙØ¹ Ø§Ù„ØµÙˆØ± Ø¨Ù†Ø¬Ø§Ø­' : 'ØªÙ… Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø© Ø¨Ù†Ø¬Ø§Ø­'
+    );
+  });
+}
+
+function toNonNegativeNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return parsed;
+}
+
+function normalizeInventoryItems(rawInventory = [], fallbackMinQuantity = 5) {
+  const rows = Array.isArray(rawInventory) ? rawInventory : [];
+
+  return rows
+    .map((item) => {
+      const branch = item?.branch?._id || item?.branch;
+      if (!branch) return null;
+
+      return {
+        branch: String(branch),
+        quantity: toNonNegativeNumber(item?.quantity, 0),
+        minQuantity: toNonNegativeNumber(item?.minQuantity, fallbackMinQuantity),
+      };
+    })
+    .filter(Boolean);
 }
 
 async function ensureDefaultCategory(tenantId) {
@@ -54,6 +103,22 @@ class ProductController {
 
     // Build filter
     const filter = { ...req.tenantFilter, isActive: true };
+    const isPublicStorefrontRequest = !req.user;
+    const scopeQuery = String(req.query.scope || '').trim().toLowerCase();
+    const suspendedQuery = String(req.query.suspended || '').trim().toLowerCase();
+
+    if (isPublicStorefrontRequest) {
+      filter.isSuspended = { $ne: true };
+    } else if (scopeQuery === 'suspended') {
+      filter.isSuspended = true;
+    } else if (scopeQuery === 'active') {
+      filter.isSuspended = { $ne: true };
+    } else if (suspendedQuery === 'true') {
+      filter.isSuspended = true;
+    } else if (suspendedQuery === 'false') {
+      filter.isSuspended = { $ne: true };
+    }
+
     const queryConditions = [];
 
     // Search
@@ -108,17 +173,27 @@ class ProductController {
 
     const Review = require('../models/Review');
 
-    const [products, total] = await Promise.all([
+    const loadProductPage = () => Promise.all([
       Product.find(filter)
         .populate('supplier', 'name')
         .populate('category', 'name icon')
         .populate('subcategory', 'name icon')
+        .populate('inventory.branch', 'name')
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .lean(),
       Product.countDocuments(filter),
     ]);
+
+    let [products, total] = await loadProductPage();
+
+    if (total === 0) {
+      const seedResult = await seedStarterCatalogForTenant(req.tenantId);
+      if (seedResult.seeded) {
+        [products, total] = await loadProductPage();
+      }
+    }
 
     // Enrich with review stats in one aggregate
     if (products.length > 0) {
@@ -146,9 +221,12 @@ class ProductController {
     const product = await Product.findOne({
       _id: req.params.id,
       ...req.tenantFilter,
+      isActive: true,
+      ...(req.user ? {} : { isSuspended: { $ne: true } }),
     }).populate('supplier', 'name contactPerson phone')
       .populate('category', 'name icon')
-      .populate('subcategory', 'name icon');
+      .populate('subcategory', 'name icon')
+      .populate('inventory.branch', 'name');
 
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
 
@@ -164,6 +242,7 @@ class ProductController {
       _id: req.params.id,
       ...req.tenantFilter,
       isActive: true,
+      isSuspended: { $ne: true },
     }).select('name stock stockNotifications');
 
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
@@ -231,18 +310,102 @@ class ProductController {
       }
     }
 
-    // Process uploaded images with watermark
+    // Parse inventory JSON string sent from FormData
+    let inventory = [];
+    if (req.body.inventory) {
+      if (typeof req.body.inventory === 'string') {
+        try {
+          inventory = JSON.parse(req.body.inventory);
+        } catch (e) {
+          inventory = [];
+        }
+      } else if (Array.isArray(req.body.inventory)) {
+        inventory = req.body.inventory;
+      }
+    }
+
+    let stockQuantity = toNonNegativeNumber(req.body['stock[quantity]'] ?? req.body.stockQuantity ?? 0, 0);
+    let minQuantity = toNonNegativeNumber(req.body['stock[minQuantity]'] ?? req.body.minQuantity ?? 5, 5);
+    const isAdminLikeUser = req.user?.role === 'admin' || !!req.user?.isSuperAdmin;
+    const userBranchId = (!isAdminLikeUser && req.user?.branch)
+      ? String(req.user.branch?._id || req.user.branch)
+      : '';
+    const mainBranchId = String(req.tenantId);
+
+    const Branch = require('../models/Branch');
+    const activeBranches = await Branch.find({ tenant: req.tenantId, isActive: true }).select('_id');
+    const activeBranchIds = new Set(activeBranches.map((branch) => branch._id.toString()));
+
+    let normalizedInventory = normalizeInventoryItems(inventory, minQuantity);
+
+    if (userBranchId) {
+      if (userBranchId !== mainBranchId && !activeBranchIds.has(userBranchId)) {
+        return next(AppError.badRequest('فرع الحساب الحالي غير نشط أو غير صالح.'));
+      }
+
+      const scopedQuantity = normalizedInventory.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+      const scopedMinQuantity = normalizedInventory[0]?.minQuantity ?? minQuantity;
+      const resolvedScopedQuantity = scopedQuantity > 0 ? scopedQuantity : stockQuantity;
+
+      if (userBranchId === mainBranchId) {
+        stockQuantity = toNonNegativeNumber(resolvedScopedQuantity, stockQuantity);
+        minQuantity = toNonNegativeNumber(scopedMinQuantity, minQuantity);
+        normalizedInventory = [];
+      } else {
+        normalizedInventory = [{
+          branch: userBranchId,
+          quantity: resolvedScopedQuantity,
+          minQuantity: scopedMinQuantity,
+        }];
+      }
+    } else {
+      const requestedBranchId = req.body.branchId ? String(req.body.branchId) : '';
+      const mainRows = normalizedInventory.filter((item) => String(item.branch) === mainBranchId);
+      const branchRows = normalizedInventory.filter((item) => String(item.branch) !== mainBranchId);
+
+      if (normalizedInventory.length === 0) {
+        if (!requestedBranchId) {
+          return next(AppError.badRequest('يرجى اختيار الفرع قبل إضافة المنتج.'));
+        }
+        if (requestedBranchId === mainBranchId) {
+          normalizedInventory = [];
+        } else if (!activeBranchIds.has(requestedBranchId)) {
+          return next(AppError.badRequest('الفرع المحدد غير صالح أو غير نشط.'));
+        } else {
+          normalizedInventory = [{
+            branch: requestedBranchId,
+            quantity: stockQuantity,
+            minQuantity,
+          }];
+        }
+      } else if (mainRows.length > 0) {
+        if (mainRows.length > 1 || branchRows.length > 0) {
+          return next(AppError.badRequest('لا يمكن دمج الفرع الرئيسي مع فروع أخرى لنفس المنتج.'));
+        }
+        stockQuantity = toNonNegativeNumber(mainRows[0].quantity, stockQuantity);
+        minQuantity = toNonNegativeNumber(mainRows[0].minQuantity, minQuantity);
+        normalizedInventory = [];
+      } else {
+        const hasInvalidBranch = branchRows.some((item) => !activeBranchIds.has(String(item.branch)));
+        if (hasInvalidBranch) {
+          return next(AppError.badRequest('يوجد فرع غير صالح ضمن بيانات المخزون.'));
+        }
+        normalizedInventory = branchRows;
+      }
+    }
+
+    // Process uploaded images with watermark concurrently
     const { processImage } = require('../middleware/upload');
     const Tenant = require('../models/Tenant');
     const tenant = await Tenant.findById(req.tenantId);
     const watermarkOptions = tenant?.settings?.watermark || {};
 
-    const uploadedImages = [];
-    for (const file of (req.files || [])) {
-      const filename = `product-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
-      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
-      uploadedImages.push(imagePath);
-    }
+    const uploadedImages = await Promise.all(
+      (req.files || []).map(async (file) => {
+        const filename = `product-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
+        return processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
+      })
+    );
 
     const existingImages = req.body.existingImages
       ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]).flat(Infinity)
@@ -253,6 +416,7 @@ class ProductController {
     // Exclude FormData string fields from the spread; use parsed values instead
     const {
       variants: _rawVariants,
+      inventory: _rawInventory,
       existingImages: _rawExisting,
       primaryImage: _rawPrimary,
       'stock[quantity]': _sq,
@@ -266,11 +430,12 @@ class ProductController {
       category: hasSelectedCategory ? req.body.category : fallbackCategory._id,
       subcategory: (hasSelectedCategory && req.body.subcategory) ? req.body.subcategory : undefined,
       stock: {
-        quantity: Number(req.body['stock[quantity]'] ?? req.body.stockQuantity ?? 0),
-        minQuantity: Number(req.body['stock[minQuantity]'] ?? req.body.minQuantity ?? 5),
+        quantity: stockQuantity,
+        minQuantity,
         unit: req.body.unit || 'قطعة',
       },
       variants,
+      inventory: normalizedInventory,
       images: allImages,
       thumbnail: req.body.primaryImage || allImages[0] || undefined,
     };
@@ -278,39 +443,30 @@ class ProductController {
 
     // Check for uniqueness manually
     if (req.body.sku || req.body.barcode) {
-      const existing = await Product.findOne({
-        tenant: req.tenantId,
-        $or: [
-          ...(req.body.sku ? [{ sku: req.body.sku }, { 'variants.sku': req.body.sku }] : []),
-          ...(req.body.barcode ? [{ barcode: req.body.barcode }, { 'variants.barcode': req.body.barcode }] : []),
-        ],
-      });
+      const collisionQuery = { tenant: req.tenantId, $or: [] };
+      if (req.body.sku) {
+        collisionQuery.$or.push({ sku: req.body.sku });
+        collisionQuery.$or.push({ 'variants.sku': req.body.sku });
+      }
+      if (req.body.barcode) {
+        collisionQuery.$or.push({ barcode: req.body.barcode });
+        collisionQuery.$or.push({ 'variants.barcode': req.body.barcode });
+      }
+
+      const existing = await Product.findOne(collisionQuery);
 
       if (existing) {
-        const field = (req.body.sku && (existing.sku === req.body.sku || existing.variants?.some(v => v.sku === req.body.sku))) ? 'كود SKU' : 'الباركود';
-        return next(new AppError(`${field} مستخدم بالفعل لمُنتج آخر في هذا المتجر`, 409));
+        let fieldName = 'الحقل';
+        if (req.body.sku && (existing.sku === req.body.sku || existing.variants?.some(v => v.sku === req.body.sku))) {
+          fieldName = 'كود SKU';
+        } else if (req.body.barcode && (existing.barcode === req.body.barcode || existing.variants?.some(v => v.barcode === req.body.barcode))) {
+          fieldName = 'الباركود';
+        }
+        return next(new AppError(`${fieldName} مستخدم بالفعل لمُنتج آخر في هذا المتجر`, 409));
       }
     }
 
     const product = await Product.create(productData);
-
-    // Initialize inventory for all active branches if inventory not provided
-    if ((!req.body.inventory || req.body.inventory.length === 0) && req.body.stockQuantity > 0) {
-      const Branch = require('../models/Branch');
-      const branches = await Branch.find({ tenant: req.tenantId, isActive: true });
-
-      if (branches.length > 0) {
-        // If branchId is provided in body, use it. Otherwise, use user's branch or first branch.
-        const targetBranchId = req.body.branchId || (req.user ? req.user.branch : null) || branches[0]._id;
-
-        product.inventory = [{
-          branch: targetBranchId,
-          quantity: req.body.stockQuantity,
-          minQuantity: req.body.minQuantity || 5
-        }];
-        await product.save();
-      }
-    }
 
     ApiResponse.created(res, product, 'تم إضافة المنتج بنجاح');
   });
@@ -339,32 +495,48 @@ class ProductController {
       } catch (e) { /* keep existing variants */ }
     }
 
-    // Process newly uploaded images with watermark
+    // Parse inventory JSON string if present
+    if (req.body.inventory) {
+      try {
+        let inventory = JSON.parse(req.body.inventory);
+        product.inventory = inventory;
+      } catch (e) { /* keep existing inventory */ }
+    }
+
+    // Process newly uploaded images with watermark concurrently
     const { processImage } = require('../middleware/upload');
     const Tenant = require('../models/Tenant');
     const tenant = await Tenant.findById(req.tenantId);
     const watermarkOptions = tenant?.settings?.watermark || {};
 
-    const uploadedImages = [];
-    for (const file of (req.files || [])) {
-      const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
-      const imagePath = await processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
-      uploadedImages.push(imagePath);
-    }
+    const uploadedImages = await Promise.all(
+      (req.files || []).map(async (file) => {
+        const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
+        return processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
+      })
+    );
 
-    const existingImages = req.body.existingImages
-      ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]).flat(Infinity)
+    const hasExistingImagesField = Object.prototype.hasOwnProperty.call(req.body, 'existingImages');
+    const existingImages = hasExistingImagesField
+      ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages])
+        .flat(Infinity)
+        .filter(Boolean)
       : null;
-    if (existingImages !== null || uploadedImages.length > 0) {
-      product.images = [...(existingImages || product.images || []), ...uploadedImages];
-    }
-    if (req.body.primaryImage) {
-      product.thumbnail = req.body.primaryImage;
-    } else if (uploadedImages.length > 0) {
-      // First uploaded image is the primary (frontend sorts it to front)
-      product.thumbnail = uploadedImages[0];
-    } else if (existingImages && existingImages.length > 0) {
-      product.thumbnail = existingImages[0];
+
+    if (hasExistingImagesField || uploadedImages.length > 0) {
+      product.images = [...(existingImages || []), ...uploadedImages];
+
+      if (req.body.primaryImage) {
+        product.thumbnail = req.body.primaryImage;
+      } else if (uploadedImages.length > 0) {
+        // First uploaded image is the primary (frontend sorts it to front)
+        product.thumbnail = uploadedImages[0];
+      } else if (existingImages && existingImages.length > 0) {
+        product.thumbnail = existingImages[0];
+      } else {
+        // No images left after update.
+        product.thumbnail = undefined;
+      }
     }
 
 
@@ -439,6 +611,34 @@ class ProductController {
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
 
     ApiResponse.success(res, null, 'تم حذف المنتج بنجاح');
+  });
+
+  /**
+   * PATCH /api/v1/products/:id/suspend
+   * Toggle product suspension (hide/show in storefront)
+   */
+  setSuspended = catchAsync(async (req, res, next) => {
+    const { suspended } = req.body || {};
+    if (typeof suspended !== 'boolean') {
+      return next(AppError.badRequest('يرجى تحديد قيمة التعليق بشكل صحيح'));
+    }
+
+    const product = await Product.findOne({
+      _id: req.params.id,
+      ...req.tenantFilter,
+      isActive: true,
+    });
+
+    if (!product) return next(AppError.notFound('المنتج غير موجود'));
+
+    product.isSuspended = suspended;
+    await product.save();
+
+    ApiResponse.success(
+      res,
+      product,
+      suspended ? 'تم تعليق المنتج ولن يظهر في المتجر' : 'تم إلغاء تعليق المنتج'
+    );
   });
 
   /**
@@ -530,7 +730,7 @@ class ProductController {
    */
   getCategories = catchAsync(async (req, res, next) => {
     const Category = require('../models/Category');
-    const categories = await Category.find({
+    const loadCategories = () => Category.find({
       ...req.tenantFilter,
       parent: null,
       isActive: true,
@@ -542,6 +742,15 @@ class ProductController {
         match: { isActive: true }
       }
     }).sort({ name: 1 });
+
+    let categories = await loadCategories();
+
+    if (categories.length === 0) {
+      const seedResult = await seedStarterCatalogForTenant(req.tenantId);
+      if (seedResult.seeded) {
+        categories = await loadCategories();
+      }
+    }
 
     ApiResponse.success(res, categories);
   });
@@ -677,6 +886,7 @@ class ProductController {
     const product = await Product.findOne({
       ...req.tenantFilter,
       isActive: true,
+      ...(req.user ? {} : { isSuspended: { $ne: true } }),
       $or: [
         { barcode: code },
         { sku: code },
@@ -872,4 +1082,32 @@ class ProductController {
   });
 }
 
-module.exports = new ProductController();
+const productController = new ProductController();
+
+productController.uploadEditorImages = catchAsync(async (req, res, next) => {
+  const files = Array.isArray(req.files)
+    ? req.files
+    : [
+      ...(Array.isArray(req.files?.image) ? req.files.image : req.file ? [req.file] : []),
+      ...(Array.isArray(req.files?.images) ? req.files.images : []),
+    ];
+
+  if (!files.length) {
+    return next(AppError.badRequest('يرجى اختيار صورة'));
+  }
+
+  const { processImage } = require('../middleware/upload');
+  const imageUrls = await Promise.all(
+    files.map((file) => (
+      processImage(file.buffer, file.originalname, `editor/${req.tenantId}`, file.mimetype)
+    ))
+  );
+
+  return ApiResponse.success(
+    res,
+    { url: imageUrls[0], urls: imageUrls },
+    imageUrls.length > 1 ? 'تم رفع الصور بنجاح' : 'تم رفع الصورة بنجاح'
+  );
+});
+
+module.exports = productController;

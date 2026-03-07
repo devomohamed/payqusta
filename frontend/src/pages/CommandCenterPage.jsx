@@ -18,6 +18,7 @@ export default function CommandCenterPage() {
   const [healthData, setHealthData] = useState(null);
   const [cashFlow, setCashFlow] = useState(null);
   const [achievements, setAchievements] = useState(null);
+  const [smartAssistant, setSmartAssistant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [showSettlement, setShowSettlement] = useState(false);
@@ -30,16 +31,18 @@ export default function CommandCenterPage() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [cmdRes, healthRes, cashRes, achRes] = await Promise.all([
+      const [cmdRes, healthRes, cashRes, achRes, smartRes] = await Promise.all([
         biApi.getCommandCenter(),
         biApi.getHealthScore(),
         biApi.getCashFlowForecast(),
         biApi.getAchievements(),
+        dashboardApi.getSmartAssistant(),
       ]);
       setCommandData(cmdRes.data.data);
       setHealthData(healthRes.data.data);
       setCashFlow(cashRes.data.data);
       setAchievements(achRes.data.data);
+      setSmartAssistant(smartRes.data.data?.suggestions || []);
     } catch { toast.error('خطأ في تحميل البيانات'); }
     finally { setLoading(false); }
   };
@@ -159,6 +162,40 @@ export default function CommandCenterPage() {
         </Card>
       )}
 
+      {/* AI Smart Alerts (Stock & Urgent Focus) */}
+      {smartAssistant && smartAssistant.length > 0 && (
+        <Card className="p-5 border-2 border-primary-200 dark:border-primary-500/20 bg-primary-50/30 dark:bg-primary-500/5 relative overflow-hidden">
+          {/* subtle glow */}
+          <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary-400/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex items-center gap-2 mb-4">
+            <div className="bg-primary-100 dark:bg-primary-900/50 p-2 rounded-xl">
+              <Lightbulb className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <h3 className="font-bold text-lg text-primary-900 dark:text-primary-100 tracking-tight">مساعد PayQusta الذكي</h3>
+            <span className="text-xs bg-primary-500 text-white px-2 py-0.5 rounded-full font-bold ml-auto animate-pulse">AI Powered</span>
+          </div>
+
+          <div className="space-y-3 relative z-10">
+            {smartAssistant.map((alert, i) => (
+              <div key={i} className="flex gap-4 p-4 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md rounded-2xl border border-white/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all">
+                <div className="text-3xl flex-shrink-0">{alert.icon}</div>
+                <div className="flex-1">
+                  <h4 className="font-extrabold text-sm mb-1">{alert.title}</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{alert.message}</p>
+                </div>
+                {alert.type === 'urgent' && (
+                  <Badge variant="danger" className="self-center">عاجل</Badge>
+                )}
+                {alert.type === 'warning' && (
+                  <Badge variant="warning" className="self-center">تنبيه</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/50 p-1.5 rounded-2xl">
         {[
@@ -167,9 +204,8 @@ export default function CommandCenterPage() {
           { key: 'achievements', label: 'الإنجازات', icon: Award },
         ].map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              activeTab === tab.key ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-            }`}>
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.key ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              }`}>
             <tab.icon className="w-4 h-4" /> {tab.label}
           </button>
         ))}

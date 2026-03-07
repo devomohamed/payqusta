@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { Plus, Archive, AlertTriangle, Check, Search, X } from 'lucide-react';
 import { Button, Card, Input, Modal, LoadingSpinner, EmptyState, Select, Badge } from '../components/UI';
 import Pagination from '../components/Pagination';
+import { useAuthStore } from '../store';
 
 const TYPES = {
   damage: { label: 'تالف (Damage)', color: 'danger' },
@@ -15,15 +16,17 @@ const TYPES = {
 };
 
 export default function StockAdjustmentsPage() {
+  const { user } = useAuthStore();
   const [adjustments, setAdjustments] = useState([]);
   const [products, setProducts] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   // Form State
-  const [form, setForm] = useState({ productId: '', type: 'damage', quantity: 1, reason: '' });
+  const [form, setForm] = useState({ productId: '', type: 'damage', quantity: 1, reason: '', branchId: user?.branch || '' });
   const [productSearch, setProductSearch] = useState('');
 
   const fetchAdjustments = async () => {
@@ -46,20 +49,33 @@ export default function StockAdjustmentsPage() {
     } catch (err) { }
   };
 
+  const fetchBranches = async () => {
+    try {
+      const res = await api.get('/settings/branches');
+      setBranches(res.data.data);
+      if (!form.branchId && res.data.data.length > 0) {
+        setForm(prev => ({ ...prev, branchId: res.data.data[0]._id }));
+      }
+    } catch (err) { }
+  }
+
   useEffect(() => {
     fetchAdjustments();
     fetchProducts();
+    if (!user?.branch) {
+      fetchBranches();
+    }
   }, [page]);
 
   const handleSubmit = async () => {
-    if (!form.productId || !form.quantity) return toast.error('اختر المنتج والكمية');
+    if (!form.productId || !form.quantity || !form.branchId) return toast.error('اختر المنتج، الكمية والفرع');
 
     try {
       await api.post('/stock-adjustments', form);
       toast.success('تم تسجيل التسوية بنجاح');
       setShowModal(false);
       fetchAdjustments();
-      setForm({ productId: '', type: 'damage', quantity: 1, reason: '' });
+      setForm({ productId: '', type: 'damage', quantity: 1, reason: '', branchId: user?.branch || (branches.length > 0 ? branches[0]._id : '') });
     } catch (err) {
       toast.error(err.response?.data?.message || 'حدث خطأ');
     }
@@ -107,6 +123,7 @@ export default function StockAdjustmentsPage() {
               <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 border-b border-gray-100 dark:border-gray-800">
                 <tr>
                   <th className="px-6 py-4 font-bold">التاريخ</th>
+                  <th className="px-6 py-4 font-bold">الفرع</th>
                   <th className="px-6 py-4 font-bold">المنتج</th>
                   <th className="px-6 py-4 font-bold">النوع</th>
                   <th className="px-6 py-4 font-bold">الكمية</th>
@@ -119,6 +136,9 @@ export default function StockAdjustmentsPage() {
                   <tr key={adj._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <td className="px-6 py-4 text-gray-500">
                       {new Date(adj.createdAt).toLocaleDateString('ar-EG')}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200">
+                      {adj.branch?.name || '---'}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200">
                       {adj.product?.name}
@@ -169,12 +189,21 @@ export default function StockAdjustmentsPage() {
                     className={`p-2 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-500/10 flex justify-between items-center ${form.productId === p._id ? 'bg-primary-50 dark:bg-primary-500/10' : ''}`}
                   >
                     <span className="font-bold text-sm">{p.name}</span>
-                    <span className="text-xs text-gray-400">متاح: {p.stock?.quantity}</span>
+                    <span className="text-xs text-gray-400">متاح كليًا: {p.stock?.quantity}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {!user?.branch && branches.length > 0 && (
+            <Select
+              label="الفرع"
+              value={form.branchId}
+              onChange={(e) => setForm({ ...form, branchId: e.target.value })}
+              options={branches.map(b => ({ value: b._id, label: b.name }))}
+            />
+          )}
 
           <Select
             label="نوع التسوية"

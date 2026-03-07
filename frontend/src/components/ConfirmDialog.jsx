@@ -2,176 +2,205 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Trash2, Info, CheckCircle } from 'lucide-react';
 import { create } from 'zustand';
 
-// ─── Store ───────────────────────────────────────────────────────────────────
-
 const useConfirmStore = create((set) => ({
-    dialog: null,
-    show: ({ title, message, confirmLabel = 'تأكيد', cancelLabel = 'إلغاء', type = 'danger', icon = null, onConfirm, onCancel }) => {
-        set({
-            dialog: { title, message, confirmLabel, cancelLabel, type, icon, onConfirm, onCancel },
-        });
-    },
-    hide: () => set({ dialog: null }),
+  dialog: null,
+  show: ({
+    title,
+    message,
+    confirmLabel = '\u062a\u0623\u0643\u064a\u062f',
+    cancelLabel = '\u0625\u0644\u063a\u0627\u0621',
+    type = 'danger',
+    icon = null,
+    onConfirm,
+    onCancel,
+  }) => {
+    set({
+      dialog: { title, message, confirmLabel, cancelLabel, type, icon, onConfirm, onCancel },
+    });
+  },
+  hide: () => set({ dialog: null }),
 }));
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
-/**
- * Promise-based confirm dialog — replaces window.confirm()
- * Usage: const ok = await confirm.show({ title: '...', message: '...' });
- */
 export const confirm = {
-    show: (options) =>
-        new Promise((resolve) => {
-            useConfirmStore.getState().show({
-                ...options,
-                onConfirm: () => {
-                    useConfirmStore.getState().hide();
-                    resolve(true);
-                },
-                onCancel: () => {
-                    useConfirmStore.getState().hide();
-                    resolve(false);
-                },
-            });
-        }),
+  show: (options) =>
+    new Promise((resolve) => {
+      useConfirmStore.getState().show({
+        ...options,
+        onConfirm: () => {
+          useConfirmStore.getState().hide();
+          resolve(true);
+        },
+        onCancel: () => {
+          useConfirmStore.getState().hide();
+          resolve(false);
+        },
+      });
+    }),
 
-    delete: (message = 'هل أنت متأكد من الحذف؟ لا يمكن التراجع عن هذا الإجراء.') =>
-        confirm.show({
-            title: 'تأكيد الحذف',
-            message,
-            confirmLabel: 'حذف',
-            cancelLabel: 'إلغاء',
-            type: 'danger',
-        }),
+  delete: (
+    message = '\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u0627\u0644\u062d\u0630\u0641\u061f \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639 \u0639\u0646 \u0647\u0630\u0627 \u0627\u0644\u0625\u062c\u0631\u0627\u0621.'
+  ) =>
+    confirm.show({
+      title: '\u062a\u0623\u0643\u064a\u062f \u0627\u0644\u062d\u0630\u0641',
+      message,
+      confirmLabel: '\u062a\u0623\u0643\u064a\u062f \u0627\u0644\u062d\u0630\u0641',
+      cancelLabel: '\u0625\u0644\u063a\u0627\u0621',
+      type: 'danger',
+    }),
 
-    warn: (message, title = 'تأكيد الإجراء') =>
-        confirm.show({ title, message, type: 'warning', confirmLabel: 'متابعة' }),
+  warn: (
+    message,
+    title = '\u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0625\u062c\u0631\u0627\u0621'
+  ) =>
+    confirm.show({
+      title,
+      message,
+      type: 'warning',
+      confirmLabel: '\u0645\u062a\u0627\u0628\u0639\u0629',
+    }),
 
-    info: (message, title = 'تأكيد') =>
-        confirm.show({ title, message, type: 'info', confirmLabel: 'موافق' }),
+  info: (
+    message,
+    title = '\u062a\u0623\u0643\u064a\u062f'
+  ) =>
+    confirm.show({
+      title,
+      message,
+      type: 'info',
+      confirmLabel: '\u0645\u0648\u0627\u0641\u0642',
+    }),
 };
 
-// ─── Color presets ────────────────────────────────────────────────────────────
 const PRESETS = {
-    danger: {
-        bg: 'bg-red-50 dark:bg-red-900/20',
-        border: 'border-red-200 dark:border-red-700',
-        icon: 'text-red-500',
-        iconBg: 'bg-red-100 dark:bg-red-900/40',
-        confirmBtn: 'bg-red-600 hover:bg-red-500 active:bg-red-700 shadow-red-500/30',
-        Icon: Trash2,
-    },
-    warning: {
-        bg: 'bg-amber-50 dark:bg-amber-900/20',
-        border: 'border-amber-200 dark:border-amber-700',
-        icon: 'text-amber-500',
-        iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-        confirmBtn: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600 shadow-amber-500/30',
-        Icon: AlertTriangle,
-    },
-    info: {
-        bg: 'bg-blue-50 dark:bg-blue-900/20',
-        border: 'border-blue-200 dark:border-blue-700',
-        icon: 'text-blue-500',
-        iconBg: 'bg-blue-100 dark:bg-blue-900/40',
-        confirmBtn: 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-blue-500/30',
-        Icon: Info,
-    },
-    success: {
-        bg: 'bg-green-50 dark:bg-green-900/20',
-        border: 'border-green-200 dark:border-green-700',
-        icon: 'text-green-500',
-        iconBg: 'bg-green-100 dark:bg-green-900/40',
-        confirmBtn: 'bg-green-600 hover:bg-green-500 active:bg-green-700 shadow-green-500/30',
-        Icon: CheckCircle,
-    },
+  danger: {
+    panel:
+      'border-red-500/60 bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.35),rgba(127,29,29,0.94)_65%,rgba(69,10,10,0.98))] text-white shadow-[0_28px_90px_rgba(69,10,10,0.55)]',
+    iconWrap: 'border border-red-300/40 bg-white/10 text-red-100',
+    title: 'text-white',
+    message: 'text-red-50/90',
+    cancelBtn:
+      'bg-slate-300 text-slate-900 hover:bg-slate-200 shadow-[0_14px_35px_rgba(148,163,184,0.35)]',
+    confirmBtn:
+      'bg-red-600 text-white hover:bg-red-500 shadow-[0_18px_40px_rgba(220,38,38,0.45)]',
+    Icon: AlertTriangle,
+  },
+  warning: {
+    panel:
+      'border-amber-200 bg-white text-slate-950 shadow-2xl dark:border-amber-400/30 dark:bg-slate-900 dark:text-white',
+    iconWrap: 'border border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
+    title: 'text-slate-950 dark:text-white',
+    message: 'text-slate-600 dark:text-slate-300',
+    cancelBtn:
+      'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
+    confirmBtn:
+      'bg-amber-500 text-white hover:bg-amber-400 shadow-[0_18px_40px_rgba(245,158,11,0.25)]',
+    Icon: AlertTriangle,
+  },
+  info: {
+    panel:
+      'border-blue-200 bg-white text-slate-950 shadow-2xl dark:border-blue-400/30 dark:bg-slate-900 dark:text-white',
+    iconWrap: 'border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300',
+    title: 'text-slate-950 dark:text-white',
+    message: 'text-slate-600 dark:text-slate-300',
+    cancelBtn:
+      'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
+    confirmBtn:
+      'bg-blue-600 text-white hover:bg-blue-500 shadow-[0_18px_40px_rgba(37,99,235,0.25)]',
+    Icon: Info,
+  },
+  success: {
+    panel:
+      'border-emerald-200 bg-white text-slate-950 shadow-2xl dark:border-emerald-400/30 dark:bg-slate-900 dark:text-white',
+    iconWrap: 'border border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
+    title: 'text-slate-950 dark:text-white',
+    message: 'text-slate-600 dark:text-slate-300',
+    cancelBtn:
+      'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
+    confirmBtn:
+      'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_18px_40px_rgba(5,150,105,0.25)]',
+    Icon: CheckCircle,
+  },
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function ConfirmDialog() {
-    const { dialog, hide } = useConfirmStore();
-    const preset = PRESETS[dialog?.type] || PRESETS.danger;
-    const IconComponent = dialog?.icon || preset.Icon;
+  const { dialog } = useConfirmStore();
+  const preset = PRESETS[dialog?.type] || PRESETS.danger;
+  const IconComponent = dialog?.icon || preset.Icon;
+  const showDeleteIcon = dialog?.type === 'danger';
 
-    return (
-        <AnimatePresence>
-            {dialog && (
-                <>
-                    {/* Backdrop */}
-                    <motion.div
-                        key="backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm"
-                        onClick={dialog.onCancel}
-                    />
+  return (
+    <AnimatePresence>
+      {dialog && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9998] bg-slate-950/70 backdrop-blur-md"
+            onClick={dialog.onCancel}
+          />
 
-                    {/* Dialog */}
-                    <motion.div
-                        key="dialog"
-                        initial={{ opacity: 0, scale: 0.85, y: 40 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.85, y: 40 }}
-                        transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none"
-                    >
-                        <div
-                            className={`
-                pointer-events-auto w-full max-w-md rounded-3xl border shadow-2xl
-                bg-white dark:bg-gray-900
-                ${preset.border}
-                overflow-hidden
-              `}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Header stripe */}
-                            <div className={`${preset.bg} p-6 flex flex-col items-center text-center gap-4`}>
-                                {/* Animated Icon */}
-                                <motion.div
-                                    initial={{ rotate: -180, scale: 0 }}
-                                    animate={{ rotate: 0, scale: 1 }}
-                                    transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
-                                    className={`w-16 h-16 rounded-full ${preset.iconBg} flex items-center justify-center shadow-inner`}
-                                >
-                                    <IconComponent className={`w-8 h-8 ${preset.icon}`} />
-                                </motion.div>
+          <motion.div
+            key="dialog"
+            initial={{ opacity: 0, scale: 0.92, y: 32 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 18 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 pointer-events-none"
+            dir="rtl"
+          >
+            <div
+              className={`pointer-events-auto w-full max-w-2xl overflow-hidden rounded-[2rem] border ${preset.panel}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-row-reverse items-start justify-between gap-4 sm:gap-6">
+                  <motion.div
+                    initial={{ rotate: -12, scale: 0.8, opacity: 0 }}
+                    animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.05, duration: 0.25 }}
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${preset.iconWrap}`}
+                  >
+                    <IconComponent className="h-8 w-8" />
+                  </motion.div>
 
-                                <div>
-                                    <h2 className="text-xl font-black text-gray-900 dark:text-white">
-                                        {dialog.title}
-                                    </h2>
-                                    {dialog.message && (
-                                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-xs mx-auto">
-                                            {dialog.message}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
+                  <div className="flex-1 text-right">
+                    <h2 className={`text-3xl font-black tracking-tight sm:text-4xl ${preset.title}`}>
+                      {dialog.title}
+                    </h2>
+                    {dialog.message && (
+                      <p className={`mt-4 text-lg leading-relaxed sm:text-2xl ${preset.message}`}>
+                        {dialog.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-                            {/* Actions */}
-                            <div className="p-4 flex flex-col sm:flex-row gap-3 bg-white dark:bg-gray-900">
-                                <button
-                                    onClick={dialog.onCancel}
-                                    className="flex-1 h-12 rounded-2xl border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-all active:scale-95"
-                                >
-                                    {dialog.cancelLabel}
-                                </button>
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    onClick={dialog.onConfirm}
-                                    className={`flex-1 h-12 rounded-2xl text-white font-bold text-sm shadow-lg transition-all ${preset.confirmBtn}`}
-                                >
-                                    {dialog.confirmLabel}
-                                </motion.button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </>
-            )}
-        </AnimatePresence>
-    );
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse">
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={dialog.onConfirm}
+                    className={`inline-flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl px-6 text-lg font-black transition-colors ${preset.confirmBtn}`}
+                  >
+                    {showDeleteIcon && <Trash2 className="h-5 w-5" />}
+                    <span>{dialog.confirmLabel}</span>
+                  </motion.button>
+
+                  <button
+                    onClick={dialog.onCancel}
+                    className={`h-14 min-w-[9rem] rounded-2xl px-6 text-lg font-black transition-colors ${preset.cancelBtn}`}
+                  >
+                    {dialog.cancelLabel}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
 }

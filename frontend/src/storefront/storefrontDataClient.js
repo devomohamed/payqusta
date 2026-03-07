@@ -78,15 +78,21 @@ function resolveStorefrontTenantContext() {
 
   const queryContext = getUrlTenantContext();
   const hostSlug = getStorefrontTenantSlugFromHost();
+  const isHostScopedStorefront = Boolean(hostSlug);
   const storedContext = readStoredContext() || {};
   const portalTenant = safeParseJSON(window.localStorage.getItem('portal_tenant')) || {};
   const backofficeTokenPayload = decodeJwtPayload(window.localStorage.getItem('payqusta_token')) || {};
 
   const tenantId =
     queryContext.tenantId ||
-    backofficeTokenPayload.tenant ||
-    portalTenant._id ||
-    storedContext.tenantId ||
+    (isHostScopedStorefront
+      ? ''
+      : (
+        portalTenant._id ||
+        storedContext.tenantId ||
+        backofficeTokenPayload.tenant ||
+        ''
+      )) ||
     '';
 
   const slug =
@@ -104,15 +110,17 @@ export function getStorefrontTenantRequestConfig(options = {}) {
   const params = { ...(options.params || {}) };
   const headers = { ...(options.headers || {}) };
 
-  if (!params.tenant && context.tenantId) {
-    params.tenant = context.tenantId;
-  }
-
   if (!params.slug && !params.tenant && context.slug) {
     params.slug = context.slug;
   }
 
-  if (!headers['x-tenant-id'] && context.tenantId) {
+  const shouldInjectTenantId = !params.slug && !params.tenant && !headers['x-tenant-slug'];
+
+  if (shouldInjectTenantId && !params.tenant && context.tenantId) {
+    params.tenant = context.tenantId;
+  }
+
+  if (!headers['x-tenant-id'] && !params.slug && !params.tenant && context.tenantId) {
     headers['x-tenant-id'] = context.tenantId;
   } else if (!headers['x-tenant-slug'] && !headers['x-tenant-id'] && context.slug) {
     headers['x-tenant-slug'] = context.slug;

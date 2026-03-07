@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Package, Wallet, Heart, Bell, Sun, Moon, ShoppingCart, LogOut } from 'lucide-react';
+import { Package, Wallet, Heart, Bell, Sun, Moon, ShoppingCart, LogOut, Store } from 'lucide-react';
 import LanguageSwitcher from '../../../components/LanguageSwitcher';
+import { storefrontPath } from '../../../utils/storefrontHost';
 
 export default function PortalHeader({
     customer,
@@ -13,8 +14,11 @@ export default function PortalHeader({
     toggleCart,
     logout
 }) {
+    const location = useLocation();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation('portal');
+    const accountBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
+    const storeHomePath = storefrontPath('/');
 
     const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
 
@@ -22,7 +26,7 @@ export default function PortalHeader({
         <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-sm sticky top-0 z-20 px-4 py-3 flex justify-between items-center border-b border-gray-100 dark:border-gray-800 transition-all">
             <div className="flex items-center gap-4">
                 {/* Brand Logo & Name */}
-                <Link to="/portal/dashboard" className="flex items-center gap-3 group" aria-label={t('layout.home')}>
+                <Link to={`${accountBasePath}/dashboard`} className="flex items-center gap-3 group" aria-label={t('layout.home')}>
                     <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl shadow-inner flex items-center justify-center overflow-hidden border border-gray-100 dark:border-gray-700 p-1.5 transition-transform group-hover:scale-105 active:scale-95">
                         {customer?.tenant?.branding?.logo ? (
                             <img src={customer.tenant.branding.logo} alt={customer.tenant.name} className="w-full h-full object-contain" />
@@ -43,7 +47,7 @@ export default function PortalHeader({
                 <div className="w-px h-8 bg-gray-200 dark:bg-gray-800 mx-1 hidden sm:block" />
 
                 {/* User Info & Balance */}
-                <Link to="/portal/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity select-none group" aria-label={t('layout.home')}>
+                <Link to={`${accountBasePath}/profile`} className="flex items-center gap-3 hover:opacity-80 transition-opacity select-none group" aria-label={t('layout.home')}>
                     <div className="relative">
                         <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md border-2 border-white dark:border-gray-800 overflow-hidden">
                             {customer?.profilePhoto ? (
@@ -72,7 +76,7 @@ export default function PortalHeader({
             <div className="flex items-center gap-1">
                 {/* Wishlist */}
                 <button
-                    onClick={() => navigate('/portal/wishlist')}
+                    onClick={() => navigate(`${accountBasePath}/wishlist`)}
                     className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-90"
                     aria-label={t('layout.wishlist')}
                     title={t('layout.wishlist')}
@@ -80,9 +84,18 @@ export default function PortalHeader({
                     <Heart className="w-5 h-5" />
                 </button>
 
+                <Link
+                    to={storeHomePath}
+                    className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all active:scale-90"
+                    aria-label={t('layout.back_to_store', { defaultValue: 'الرجوع للمتجر' })}
+                    title={t('layout.back_to_store', { defaultValue: 'الرجوع للمتجر' })}
+                >
+                    <Store className="w-5 h-5" />
+                </Link>
+
                 {/* Notifications Bell */}
                 <button
-                    onClick={() => navigate('/portal/notifications')}
+                    onClick={() => navigate(`${accountBasePath}/notifications`)}
                     className="relative w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-90"
                     aria-label={t('layout.notifications')}
                     title={t('layout.notifications')}
@@ -126,7 +139,7 @@ export default function PortalHeader({
                 <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
 
                 <button
-                    onClick={() => { logout(); navigate('/portal/login'); }}
+                    onClick={() => { logout(); navigate(`${accountBasePath}/login`); }}
                     className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90"
                     aria-label={t('layout.logout')}
                     title={t('layout.logout')}

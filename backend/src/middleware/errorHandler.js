@@ -5,6 +5,7 @@
 
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
+const { PRODUCT_IMAGE_UPLOAD_LIMIT } = require('./upload');
 
 /**
  * Handle specific Mongoose errors
@@ -62,6 +63,22 @@ const handleValidationError = (err) => {
   return new AppError(messages.join('. '), 422);
 };
 
+const handleMulterError = (err) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return AppError.badRequest('حجم الملف أكبر من الحد المسموح للرفع');
+  }
+
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    if (err.field === 'images') {
+      return AppError.badRequest(`يمكن رفع حتى ${PRODUCT_IMAGE_UPLOAD_LIMIT} صور للمنتج في المرة الواحدة`);
+    }
+
+    return AppError.badRequest('تم إرسال حقل ملفات غير متوقع');
+  }
+
+  return AppError.badRequest('تعذر رفع الملفات المرسلة');
+};
+
 /**
  * Global error handler
  */
@@ -80,6 +97,7 @@ const errorHandler = (err, req, res, next) => {
   if (err.name === 'CastError') error = handleCastError(err);
   if (err.code === 11000) error = handleDuplicateKey(err);
   if (err.name === 'ValidationError') error = handleValidationError(err);
+  if (err.name === 'MulterError') error = handleMulterError(err);
 
   const statusCode = error.statusCode || 500;
   const message = error.isOperational

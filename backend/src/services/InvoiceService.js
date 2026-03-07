@@ -48,6 +48,9 @@ class InvoiceService {
     let discountAmount = Number(discount) || 0;
     const normalizedCampaignAttribution = this.normalizeCampaignAttribution(campaignAttribution);
 
+    if (!resolvedCustomerId) throw AppError.badRequest('يجب تحديد العميل');
+    if (!items || !Array.isArray(items) || items.length === 0) throw AppError.badRequest('يجب إضافة منتجات للفاتورة');
+
     // Check if MongoDB topology supports transactions (ReplicaSet or Sharded)
     let session = undefined;
     let supportsTransactions = false;
@@ -96,7 +99,8 @@ class InvoiceService {
         const productQuery = Product.findOne({
           _id: item.productId,
           tenant: tenantId,
-          isActive: true
+          isActive: true,
+          ...(source === 'online_store' ? { isSuspended: { $ne: true } } : {})
         });
         if (session) productQuery.session(session);
         const product = await productQuery;

@@ -1,127 +1,125 @@
 /**
- * Installment Scheduler — Cron Job
- * Runs daily to check for upcoming and overdue installments
- * Sends WhatsApp reminders to customers and vendors
+ * Installment Scheduler - Cron Job
+ * Runs daily checks for customer installments and supplier purchase installments.
  */
 
 const cron = require('node-cron');
 const Invoice = require('../models/Invoice');
+const SupplierPurchaseInvoice = require('../models/SupplierPurchaseInvoice');
 const Tenant = require('../models/Tenant');
-const Supplier = require('../models/Supplier');
 const User = require('../models/User');
 const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
 const logger = require('../utils/logger');
 
+function startOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function endOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
 class InstallmentScheduler {
   /**
-   * Start the scheduler
-   * Runs every day at 8:00 AM Cairo time
+   * Start scheduler
    */
   start() {
-    // Customer installment reminders — daily at 8 AM
+    // Customer installment reminders - daily at 8 AM (Cairo)
     cron.schedule('0 8 * * *', () => this.checkCustomerInstallments(), {
       timezone: 'Africa/Cairo',
     });
 
-    // Supplier payment reminders — daily at 9 AM
+    // Supplier purchase installment reminders - daily at 9 AM
     cron.schedule('0 9 * * *', () => this.checkSupplierPayments(), {
       timezone: 'Africa/Cairo',
     });
 
-    // Overdue check — daily at 12 PM
+    // Overdue checks - daily at 12 PM
     cron.schedule('0 12 * * *', () => this.markOverdueInstallments(), {
       timezone: 'Africa/Cairo',
     });
 
-    logger.info('📅 Installment Scheduler started');
+    logger.info('Installment Scheduler started');
   }
 
   /**
-   * Check customer installments and send reminders
-   * تذكير العملاء بالأقساط المستحقة — قبل الموعد بيوم
+   * Customer installment reminders (due tomorrow)
    */
   async checkCustomerInstallments() {
     try {
-      logger.info('🔍 Checking customer installments...');
+      logger.info('Checking customer installments...');
 
       const tenants = await Tenant.find({ isActive: true });
 
       for (const tenant of tenants) {
-        // Find invoices with installments due tomorrow
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-
-        const dayAfter = new Date(tomorrow);
-        dayAfter.setDate(dayAfter.getDate() + 1);
+        const tomorrowStart = startOfDay(new Date(Date.now() + (24 * 60 * 60 * 1000)));
+        const tomorrowEnd = endOfDay(tomorrowStart);
 
         const invoices = await Invoice.find({
           tenant: tenant._id,
           'installments.status': { $in: ['pending'] },
-          'installments.dueDate': { $gte: tomorrow, $lt: dayAfter },
+          'installments.dueDate': { $gte: tomorrowStart, $lte: tomorrowEnd },
           'installments.reminderSent': { $ne: true },
         }).populate('customer', 'name phone whatsapp');
 
         for (const invoice of invoices) {
-          const dueInstallments = invoice.installments.filter(
-            (i) =>
-              i.status === 'pending' &&
-              !i.reminderSent &&
-              i.dueDate >= tomorrow &&
-              i.dueDate < dayAfter
-          );
+          const dueInstallments = (invoice.installments || []).filter((installment) => (
+            installment.status === 'pending'
+            && !installment.reminderSent
+            && installment.dueDate >= tomorrowStart
+            && installment.dueDate <= tomorrowEnd
+          ));
 
           for (const installment of dueInstallments) {
             try {
-              // In-app notification (always fires)
               NotificationService.onInstallmentDue(
                 tenant._id,
-                invoice.customer.name,
+                invoice.customer?.name || 'عميل',
                 invoice.invoiceNumber,
                 installment.amount,
                 installment.dueDate,
                 invoice.branch
               ).catch(() => { });
 
-              // WhatsApp reminder (only if tenant + customer both enabled)
-              const customerWA = invoice.customer.whatsapp;
-              if (tenant.whatsapp?.enabled && tenant.whatsapp?.notifications?.installmentReminder
-                && customerWA?.enabled && customerWA?.notifications?.reminders !== false) {
-                const phone = customerWA?.number || invoice.customer.phone;
+              const customerWA = invoice.customer?.whatsapp;
+              if (
+                tenant.whatsapp?.enabled
+                && tenant.whatsapp?.notifications?.installmentReminder
+                && customerWA?.enabled
+                && customerWA?.notifications?.reminders !== false
+              ) {
+                const phone = customerWA?.number || invoice.customer?.phone;
+                if (phone) {
+                  await WhatsAppService.sendInstallmentReminder(
+                    phone,
+                    invoice.customer,
+                    invoice,
+                    installment,
+                    tenant.whatsapp
+                  );
+                }
 
-                await WhatsAppService.sendInstallmentReminder(
-                  phone,
-                  invoice.customer,
-                  invoice,
-                  installment
-                );
-
-                // Also send reminder to vendor
                 const vendor = await User.findOne({
                   tenant: tenant._id,
                   role: 'vendor',
-                });
+                  isActive: true,
+                }).select('phone');
 
-                if (vendor) {
-                  const vendorMessage =
-                    `⏰ تذكير: العميل *${invoice.customer.name}* عليه قسط ` +
-                    `*${installment.amount.toLocaleString('ar-EG')} ج.م* ` +
-                    `مستحق غداً — فاتورة ${invoice.invoiceNumber}\n` +
-                    `تم السداد: ${invoice.paidAmount.toLocaleString('ar-EG')} ج.م\n` +
-                    `المتبقي: ${invoice.remainingAmount.toLocaleString('ar-EG')} ج.م`;
-
-                  await WhatsAppService.sendMessage(vendor.phone, vendorMessage);
+                if (vendor?.phone) {
+                  const vendorMessage = `تذكير: العميل ${invoice.customer?.name || 'عميل'} عليه قسط ${Number(installment.amount || 0).toLocaleString('ar-EG')} ج.م مستحق غدًا - فاتورة ${invoice.invoiceNumber}`;
+                  await WhatsAppService.sendMessage(vendor.phone, vendorMessage, tenant.whatsapp);
                 }
               }
 
-              // Mark reminder as sent
               installment.reminderSent = true;
               installment.lastReminderDate = new Date();
             } catch (err) {
-              logger.error(
-                `Failed to send installment reminder: ${err.message}`
-              );
+              logger.error(`Failed to send customer installment reminder: ${err.message}`);
             }
           }
 
@@ -129,120 +127,295 @@ class InstallmentScheduler {
         }
       }
 
-      logger.info('✅ Customer installment check completed');
+      logger.info('Customer installment check completed');
     } catch (error) {
-      logger.error(`Installment scheduler error: ${error.message}`);
+      logger.error(`Customer installment scheduler error: ${error.message}`);
     }
   }
 
   /**
-   * Check supplier payments and remind vendor
-   * تذكير البائع بأقساط الموردين المستحقة
-   * "خلي بالك انت عليك قسط للمورد X"
+   * Supplier purchase installment reminders (due today + tomorrow)
    */
   async checkSupplierPayments() {
     try {
-      logger.info('🔍 Checking supplier payments...');
+      logger.info('Checking supplier purchase installments...');
 
-      const tenants = await Tenant.find({ isActive: true });
+      const tenants = await Tenant.find({ isActive: true }).select('_id whatsapp');
+      const now = new Date();
+      const todayStart = startOfDay(now);
+      const todayEnd = endOfDay(now);
+      const tomorrowStart = startOfDay(new Date(now.getTime() + (24 * 60 * 60 * 1000)));
+      const tomorrowEnd = endOfDay(tomorrowStart);
 
       for (const tenant of tenants) {
-        const suppliers = await Supplier.getUpcomingPayments(tenant._id, 1);
+        const [todayInvoices, tomorrowInvoices, users] = await Promise.all([
+          SupplierPurchaseInvoice.getDueInstallments(tenant._id, { from: todayStart, to: todayEnd }),
+          SupplierPurchaseInvoice.getDueInstallments(tenant._id, { from: tomorrowStart, to: tomorrowEnd }),
+          User.find({
+            tenant: tenant._id,
+            role: { $in: ['admin', 'vendor'] },
+            isActive: true,
+          }).select('_id name phone role branch'),
+        ]);
 
-        const vendor = await User.findOne({
-          tenant: tenant._id,
-          role: 'vendor',
+        const invoicesMap = new Map();
+        [...todayInvoices, ...tomorrowInvoices].forEach((invoice) => {
+          invoicesMap.set(invoice._id.toString(), invoice);
         });
 
-        if (!vendor) continue;
+        for (const invoice of invoicesMap.values()) {
+          const schedule = Array.isArray(invoice.installmentsSchedule) ? invoice.installmentsSchedule : [];
+          let hasUpdates = false;
 
-        for (const supplier of suppliers) {
-          const pendingPayments = supplier.payments.filter(
-            (p) =>
-              (p.status === 'pending' || p.status === 'overdue') &&
-              !p.reminderSent
-          );
+          for (const installment of schedule) {
+            const dueDate = installment?.dueDate ? new Date(installment.dueDate) : null;
+            if (!dueDate || Number.isNaN(dueDate.getTime())) continue;
+            if (!['pending', 'partially_paid', 'overdue'].includes(String(installment.status || ''))) continue;
 
-          for (const payment of pendingPayments) {
+            const isToday = dueDate >= todayStart && dueDate <= todayEnd;
+            const isTomorrow = dueDate >= tomorrowStart && dueDate <= tomorrowEnd;
+            if (!isToday && !isTomorrow) continue;
+
+            const reminderState = installment.reminders || {};
+            if (isToday && reminderState.dueDaySent) continue;
+            if (isTomorrow && reminderState.beforeDueSent) continue;
+
+            const installmentAmount = Number(installment.amount || 0);
+            const installmentPaid = Number(installment.paidAmount || 0);
+            const remainingAmount = Math.max(0, installmentAmount - installmentPaid);
+            if (remainingAmount <= 0) continue;
+
             try {
-              // In-app notification (always fires)
-              NotificationService.onSupplierPaymentDue(
-                tenant._id,
-                supplier.name,
-                payment.amount,
-                payment.dueDate
-              ).catch(() => { });
+              NotificationService.onSupplierPaymentDue(tenant._id, {
+                supplierName: invoice.supplier?.name || 'مورد',
+                amount: remainingAmount,
+                dueDate,
+                dueLabel: isTomorrow ? 'مستحق غدًا' : 'مستحق',
+                isTomorrow,
+                invoiceNumber: invoice.invoiceNumber,
+                branchId: invoice.branch?._id || invoice.branch || null,
+                branchName: invoice.branch?.name || '',
+                outstandingAmount: Number(invoice.outstandingAmount || 0),
+                relatedModel: 'SupplierPurchaseInvoice',
+                relatedId: invoice._id,
+              }).catch(() => { });
 
-              // WhatsApp reminder (only if enabled)
               if (tenant.whatsapp?.enabled && tenant.whatsapp?.notifications?.supplierPaymentDue) {
-                await WhatsAppService.sendVendorSupplierPaymentReminder(
-                  vendor.phone,
-                  supplier,
-                  payment
-                );
+                const branchId = invoice.branch?._id || invoice.branch || null;
+                const recipients = users.filter((user) => {
+                  if (!user.phone) return false;
+                  if (user.role === 'admin') return true;
+                  if (!branchId) return true;
+                  return user.branch && user.branch.toString() === branchId.toString();
+                });
+
+                for (const recipient of recipients) {
+                  await WhatsAppService.sendVendorSupplierPaymentReminder(
+                    recipient.phone,
+                    {
+                      supplierName: invoice.supplier?.name || 'مورد',
+                      amount: remainingAmount,
+                      dueDate,
+                      invoiceNumber: invoice.invoiceNumber,
+                      branchName: invoice.branch?.name || '',
+                      outstandingAmount: Number(invoice.outstandingAmount || 0),
+                      isTomorrow,
+                    },
+                    null,
+                    {
+                      recipientName: recipient.name,
+                      tenantWhatsapp: tenant.whatsapp,
+                    }
+                  );
+                }
               }
 
-              payment.reminderSent = true;
+              installment.reminders = installment.reminders || {};
+              if (isToday) installment.reminders.dueDaySent = true;
+              if (isTomorrow) installment.reminders.beforeDueSent = true;
+              installment.lastReminderAt = new Date();
+              hasUpdates = true;
             } catch (err) {
-              logger.error(
-                `Failed to send supplier payment reminder: ${err.message}`
-              );
+              logger.error(`Failed to send supplier reminder: ${err.message}`);
             }
           }
 
-          await supplier.save();
+          if (hasUpdates) {
+            await invoice.save();
+          }
         }
       }
 
-      logger.info('✅ Supplier payment check completed');
+      logger.info('Supplier installment check completed');
     } catch (error) {
-      logger.error(`Supplier payment scheduler error: ${error.message}`);
+      logger.error(`Supplier installment scheduler error: ${error.message}`);
     }
   }
 
   /**
-   * Mark overdue installments
+   * Mark customer + supplier installments as overdue and send one-time overdue reminders.
    */
   async markOverdueInstallments() {
     try {
-      logger.info('🔍 Marking overdue installments...');
+      logger.info('Marking overdue installments...');
 
       const now = new Date();
 
-      // Find invoices with newly overdue installments (before marking them)
+      // -------------------------
+      // Customer overdue handling
+      // -------------------------
       const overdueInvoices = await Invoice.find({
         'installments.status': 'pending',
         'installments.dueDate': { $lt: now },
-      }).populate('customer', 'name');
+      }).populate('customer', 'name phone whatsapp');
 
-      // Send in-app notifications for newly overdue installments
       for (const invoice of overdueInvoices) {
-        const overdueInstallments = invoice.installments.filter(
-          (i) => i.status === 'pending' && i.dueDate < now
-        );
-        for (const inst of overdueInstallments) {
-          NotificationService.onInstallmentOverdue(
-            invoice.tenant,
-            invoice.customer?.name || 'عميل',
-            invoice.invoiceNumber,
-            inst.amount,
-            invoice.branch
-          ).catch(() => { });
+        const overdueInstallments = (invoice.installments || []).filter((installment) => (
+          installment.status === 'pending' && installment.dueDate < now
+        ));
+
+        for (const installment of overdueInstallments) {
+          try {
+            NotificationService.onInstallmentOverdue(
+              invoice.tenant,
+              invoice.customer?.name || 'عميل',
+              invoice.invoiceNumber,
+              installment.amount,
+              invoice.branch
+            ).catch(() => { });
+
+            const tenant = await Tenant.findById(invoice.tenant).select('whatsapp');
+            if (tenant?.whatsapp?.enabled && tenant.whatsapp?.notifications?.installmentReminder) {
+              const customerWA = invoice.customer?.whatsapp;
+              const phone = customerWA?.number || invoice.customer?.phone;
+              if (phone && customerWA?.enabled !== false) {
+                const message = `تنبيه تأخير سداد: العميل ${invoice.customer?.name || 'عميل'} لديه قسط متأخر بقيمة ${Number(installment.amount || 0).toLocaleString('ar-EG')} ج.م (فاتورة ${invoice.invoiceNumber}).`;
+                await WhatsAppService.sendMessage(phone, message, tenant.whatsapp);
+              }
+            }
+          } catch (err) {
+            logger.error(`Failed to send customer overdue reminder: ${err.message}`);
+          }
         }
       }
 
-      // Mark them as overdue
-      const result = await Invoice.updateMany(
+      const customerResult = await Invoice.updateMany(
         { 'installments.status': 'pending', 'installments.dueDate': { $lt: now } },
         { $set: { 'installments.$[elem].status': 'overdue' } },
         { arrayFilters: [{ 'elem.status': 'pending', 'elem.dueDate': { $lt: now } }] }
       );
 
-      logger.info(
-        `✅ Marked ${result.modifiedCount} invoices with overdue installments`
-      );
+      // -------------------------
+      // Supplier overdue handling
+      // -------------------------
+      const tenants = await Tenant.find({ isActive: true }).select('_id whatsapp');
+      let supplierInvoicesUpdated = 0;
+
+      for (const tenant of tenants) {
+        const users = await User.find({
+          tenant: tenant._id,
+          role: { $in: ['admin', 'vendor'] },
+          isActive: true,
+        }).select('_id name phone role branch');
+
+        const supplierInvoices = await SupplierPurchaseInvoice.find({
+          tenant: tenant._id,
+          status: { $in: ['open', 'partial_paid'] },
+          installmentsSchedule: {
+            $elemMatch: {
+              status: { $in: ['pending', 'partially_paid', 'overdue'] },
+              dueDate: { $lt: now },
+            },
+          },
+        }).populate('supplier', 'name').populate('branch', 'name');
+
+        for (const invoice of supplierInvoices) {
+          const schedule = Array.isArray(invoice.installmentsSchedule) ? invoice.installmentsSchedule : [];
+          let hasUpdates = false;
+
+          for (const installment of schedule) {
+            const dueDate = installment?.dueDate ? new Date(installment.dueDate) : null;
+            if (!dueDate || Number.isNaN(dueDate.getTime()) || dueDate >= now) continue;
+
+            const canBeOverdue = ['pending', 'partially_paid', 'overdue'].includes(String(installment.status || ''));
+            if (!canBeOverdue) continue;
+
+            const amount = Number(installment.amount || 0);
+            const paidAmount = Number(installment.paidAmount || 0);
+            const remainingAmount = Math.max(0, amount - paidAmount);
+            if (remainingAmount <= 0) continue;
+
+            // Ensure status is overdue
+            if (installment.status !== 'overdue') {
+              installment.status = 'overdue';
+              hasUpdates = true;
+            }
+
+            // Send overdue reminder once
+            if (installment.reminders?.overdueSent) continue;
+
+            try {
+              NotificationService.onSupplierPaymentOverdue(tenant._id, {
+                supplierName: invoice.supplier?.name || 'مورد',
+                amount: remainingAmount,
+                dueDate,
+                invoiceNumber: invoice.invoiceNumber,
+                branchId: invoice.branch?._id || invoice.branch || null,
+                branchName: invoice.branch?.name || '',
+                outstandingAmount: Number(invoice.outstandingAmount || 0),
+                relatedModel: 'SupplierPurchaseInvoice',
+                relatedId: invoice._id,
+              }).catch(() => { });
+
+              if (tenant.whatsapp?.enabled && tenant.whatsapp?.notifications?.supplierPaymentDue) {
+                const branchId = invoice.branch?._id || invoice.branch || null;
+                const recipients = users.filter((user) => {
+                  if (!user.phone) return false;
+                  if (user.role === 'admin') return true;
+                  if (!branchId) return true;
+                  return user.branch && user.branch.toString() === branchId.toString();
+                });
+
+                for (const recipient of recipients) {
+                  await WhatsAppService.sendVendorSupplierPaymentReminder(
+                    recipient.phone,
+                    {
+                      supplierName: invoice.supplier?.name || 'مورد',
+                      amount: remainingAmount,
+                      dueDate,
+                      invoiceNumber: invoice.invoiceNumber,
+                      branchName: invoice.branch?.name || '',
+                      outstandingAmount: Number(invoice.outstandingAmount || 0),
+                      isOverdue: true,
+                    },
+                    null,
+                    {
+                      recipientName: recipient.name,
+                      tenantWhatsapp: tenant.whatsapp,
+                    }
+                  );
+                }
+              }
+
+              installment.reminders = installment.reminders || {};
+              installment.reminders.overdueSent = true;
+              installment.lastReminderAt = new Date();
+              hasUpdates = true;
+            } catch (err) {
+              logger.error(`Failed to send supplier overdue reminder: ${err.message}`);
+            }
+          }
+
+          if (hasUpdates) {
+            await invoice.save();
+            supplierInvoicesUpdated += 1;
+          }
+        }
+      }
+
+      logger.info(`Marked ${customerResult.modifiedCount} customer invoices overdue and updated ${supplierInvoicesUpdated} supplier purchase invoices`);
     } catch (error) {
-      logger.error(`Overdue check error: ${error.message}`);
+      logger.error(`Overdue scheduler error: ${error.message}`);
     }
   }
 }

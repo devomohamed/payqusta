@@ -4,7 +4,7 @@ const productController = require('../controllers/productController');
 const { authorize, auditLog } = require('../middleware/auth');
 const { checkPermission } = require('../middleware/checkPermission');
 const checkLimit = require('../middleware/checkLimit');
-const { uploadSingle, uploadMultiple } = require('../middleware/upload');
+const { uploadMultiple, uploadEditorImages } = require('../middleware/upload');
 
 // --- Products --- (coordinator can view and update stock)
 router.get('/', checkPermission('products', 'read'), productController.getAll);
@@ -17,12 +17,13 @@ router.get('/barcode/:code', authorize('vendor', 'admin', 'coordinator'), checkP
 
 const { productValidations } = require('../middleware/validation');
 
-router.post('/', authorize('vendor', 'admin'), checkPermission('products', 'create'), uploadMultiple, productValidations.create, checkLimit('product'), auditLog('create', 'product'), productController.create);
+router.post('/', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'create'), uploadMultiple, productValidations.create, checkLimit('product'), auditLog('create', 'product'), productController.create);
 router.put('/:id', authorize('vendor', 'admin'), checkPermission('products', 'update'), uploadMultiple, auditLog('update', 'product'), productController.update);
 router.delete('/:id', authorize('vendor', 'admin'), checkPermission('products', 'delete'), auditLog('delete', 'product'), productController.delete);
+router.patch('/:id/suspend', authorize('vendor', 'admin'), checkPermission('products', 'update'), auditLog('update', 'product'), productController.setSuspended);
 router.patch('/:id/stock', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'update'), auditLog('stock_change', 'product'), productController.updateStock);
 router.post('/:id/upload-image', authorize('vendor', 'admin'), checkPermission('products', 'update'), uploadMultiple, productController.uploadImage);
-router.post('/upload-image', authorize('vendor', 'admin'), checkPermission('products', 'create'), uploadSingle, productController.uploadEditorImage);
+router.post('/upload-image', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'create'), uploadEditorImages, productController.uploadEditorImages);
 
 router.delete('/:id/images/:imageUrl', authorize('vendor', 'admin'), checkPermission('products', 'update'), productController.deleteImage);
 

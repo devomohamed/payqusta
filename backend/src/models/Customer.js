@@ -140,6 +140,12 @@ const customerSchema = new mongoose.Schema(
       ],
       lastDailyRewardClaim: { type: Date },
     },
+    // Wallet System (المحفظة)
+    wallet: {
+      balance: { type: Number, default: 0 }, // الرصيد المتاح للاستخدام في المحفظة
+      totalRecharged: { type: Number, default: 0 },
+      totalSpent: { type: Number, default: 0 },
+    },
     // WhatsApp preferences
     whatsapp: {
       enabled: { type: Boolean, default: true },

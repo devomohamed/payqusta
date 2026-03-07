@@ -13,6 +13,7 @@ const Helpers = require('../utils/helpers');
 const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
 const GamificationService = require('../services/GamificationService');
+const ShippingService = require('../services/ShippingService');
 const catchAsync = require('../utils/catchAsync');
 const { PAYMENT_METHODS, INVOICE_STATUS } = require('../config/constants');
 
@@ -105,11 +106,10 @@ class InvoiceController {
     ApiResponse.success(res, invoice);
   });
 
-  /**
-   * POST /api/v1/invoices
-   * Create a new invoice with optional installment schedule
-   */
   create = catchAsync(async (req, res, next) => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return next(AppError.badRequest('يجب إرسال بيانات الفاتورة'));
+    }
     const invoice = await InvoiceService.createInvoice(req.tenantId, req.user?._id, req.body);
     ApiResponse.created(res, invoice, 'تم إنشاء الفاتورة بنجاح');
   });
@@ -296,9 +296,113 @@ class InvoiceController {
     ApiResponse.success(res, summary);
   });
 
+
+
+  /**
+   * POST /api/v1/invoices/:id/shipping/bosta
+   * Create Bosta Waybill
+   */
+  createBostaWaybill = catchAsync(async (req, res, next) => {
+    const invoice = await Invoice.findOne({ _id: req.params.id, ...req.tenantFilter }).populate('customer');
+    if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
+
+    if (invoice.shippingDetails?.waybillNumber) {
+      return next(AppError.badRequest('يوجد بوليصة شحن مسجلة بالفعل لهذه الفاتورة'));
+    }
+
+    // Default to invoice shipping address or customer address
+    const customer = invoice.customer;
+    const addr = invoice.shippingAddress || {};
+
+    // Attempt to parse out basic delivery details
+    const deliveryData = {
+      itemsCount: invoice.items.reduce((s, i) => s + i.quantity, 0),
+      description: `طلب رقم ${invoice.invoiceNumber}`,
+      notes: invoice.notes || addr.notes || '',
+      cod: invoice.remainingAmount, // Collect Cash on Delivery for pending amounts
+
+      address: addr.address || customer.address || 'العنوان غير محدد',
+      city: addr.city || 'Cairo', // Default to Cairo if empty, Bosta requires specific mapping
+      governorate: addr.governorate || 'Cairo',
+      zone: addr.governorate || 'Cairo',
+
+      customerName: addr.fullName || customer.name,
+      customerPhone: addr.phone || customer.phone,
+      customerEmail: customer.email || 'customer@example.com',
+      reference: invoice.invoiceNumber,
+    };
+
+    // We can also let the frontend pass overrides via req.body
+    Object.assign(deliveryData, req.body);
+
+    const bostaRes = await ShippingService.createDelivery(deliveryData);
+
+    // Save back to invoice
+    invoice.shippingDetails = {
+      provider: 'bosta',
+      waybillNumber: bostaRes.trackingNumber, // or deliveryId based on Bosta's response
+      trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
+      status: bostaRes.state || 'created',
+    };
+    invoice.orderStatus = 'shipped'; // Update internal order status
+
+    invoice.orderStatusHistory.push({
+      status: 'shipped',
+      note: `تم إنشاء بوليصة شحن Bosta: ${bostaRes.trackingNumber}`,
+    });
+
+    await invoice.save();
+
+    ApiResponse.success(res, {
+      waybillNumber: bostaRes.trackingNumber,
+      trackingUrl: invoice.shippingDetails.trackingUrl,
+      status: invoice.shippingDetails.status,
+    }, 'تم إنشاء بوليصة الشحن بنجاح');
+  });
+
+  /**
+   * GET /api/v1/invoices/:id/shipping/bosta/track
+   * Track Bosta Waybill
+   */
+  trackBostaWaybill = catchAsync(async (req, res, next) => {
+    const invoice = await Invoice.findOne({ _id: req.params.id, ...req.tenantFilter });
+    if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
+
+    if (!invoice.shippingDetails || !invoice.shippingDetails.waybillNumber) {
+      return next(AppError.badRequest('لا يوجد بوليصة شحن مسجلة لهذه الفاتورة'));
+    }
+
+    const { waybillNumber } = invoice.shippingDetails;
+    const trackRes = await ShippingService.trackDelivery(waybillNumber);
+
+    // Update DB if status changed
+    if (trackRes.status && invoice.shippingDetails.status !== trackRes.status) {
+      invoice.shippingDetails.status = trackRes.status;
+
+      // Sync internal order status based on shipping status
+      if (trackRes.status === 'delivered') invoice.orderStatus = 'delivered';
+      else if (trackRes.status === 'returned') invoice.orderStatus = 'cancelled';
+      else if (trackRes.status === 'in_transit') invoice.orderStatus = 'shipped';
+
+      invoice.orderStatusHistory.push({
+        status: invoice.orderStatus,
+        note: `تحديث حالة الشحن: ${trackRes.rawStatus}`,
+      });
+
+      await invoice.save();
+    }
+
+    ApiResponse.success(res, {
+      waybillNumber,
+      status: invoice.shippingDetails.status,
+      rawStatus: trackRes.rawStatus,
+      history: trackRes.history,
+    });
+  });
+
   /**
    * POST /api/v1/invoices/send-whatsapp-message
-   * Send custom WhatsApp message (for customer statements, etc.)
+   * Send custom WhatsApp message(for customer statements, etc.)
    */
   sendWhatsAppMessage = catchAsync(async (req, res, next) => {
     const { phone, message } = req.body;

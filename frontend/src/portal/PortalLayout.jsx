@@ -3,7 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
-import { ShoppingCart, Home, Package, User, Receipt, FileText, RefreshCcw, MapPin, Award, Star, Calculator } from 'lucide-react';
+import { ShoppingCart, Home, Package, User, Receipt, FileText, RefreshCcw, MapPin, Award, Star, Calculator, Store } from 'lucide-react';
+import { storefrontPath } from '../utils/storefrontHost';
 
 import PortalHeader from './components/layout/PortalHeader';
 import PortalSidebar from './components/layout/PortalSidebar';
@@ -19,6 +20,7 @@ export default function PortalLayout() {
 
   const accountBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
   const loginPath = `${accountBasePath}/login`;
+  const storefrontHomePath = storefrontPath('/');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -61,6 +63,7 @@ export default function PortalLayout() {
     { icon: MapPin, label: t('nav.addresses'), path: `${accountBasePath}/addresses` },
     { icon: ShoppingCart, label: t('nav.cart'), path: `${accountBasePath}/cart`, badge: cart.length, isCart: true },
     { icon: User, label: t('nav.profile'), path: `${accountBasePath}/profile` },
+    { icon: Store, label: t('nav.store', { defaultValue: 'المتجر' }), path: storefrontHomePath },
   ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');

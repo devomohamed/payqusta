@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Check, FolderTree, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DEFAULT_CATEGORY_ICON } from '../utils/aiHelper';
 
 /**
  * CategorySelector - A premium, searchable dropdown for category selection
@@ -11,15 +12,14 @@ export default function CategorySelector({
     value,
     onChange,
     categories = [],
-    placeholder = "اختر تصنيف...",
+    placeholder = 'اختر قسم...',
     error,
-    className = ""
+    className = ''
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const containerRef = useRef(null);
 
-    // Close when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -30,7 +30,6 @@ export default function CategorySelector({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Find selected category name and icon (search recursively)
     const findCategory = (items, id) => {
         for (const item of items) {
             if (item._id === id) return item;
@@ -44,20 +43,19 @@ export default function CategorySelector({
 
     const selected = findCategory(categories, value);
 
-    // Filter categories by search
     const filterBySearch = (items, term) => {
         if (!Array.isArray(items)) return [];
         if (!term) return items;
 
-        return items.reduce((acc, cat) => {
-            const matchesParent = cat.name.toLowerCase().includes(term.toLowerCase());
-            const filteredChildren = cat.children ? filterBySearch(cat.children, term) : [];
+        return items.reduce((acc, category) => {
+            const matchesParent = category.name.toLowerCase().includes(term.toLowerCase());
+            const filteredChildren = category.children ? filterBySearch(category.children, term) : [];
             const hasMatchingChild = filteredChildren.length > 0;
 
             if (matchesParent || hasMatchingChild) {
                 acc.push({
-                    ...cat,
-                    children: matchesParent ? cat.children : filteredChildren
+                    ...category,
+                    children: matchesParent ? category.children : filteredChildren,
                 });
             }
             return acc;
@@ -69,7 +67,7 @@ export default function CategorySelector({
     return (
         <div className={`relative ${className}`} ref={containerRef}>
             {label && (
-                <label className="block text-sm font-extrabold text-gray-700 dark:text-gray-300 mb-1.5 text-right flex items-center gap-2 justify-end">
+                <label className="mb-1.5 flex items-center justify-end gap-2 text-right text-sm font-extrabold text-gray-700 dark:text-gray-300">
                     {label}
                 </label>
             )}
@@ -78,12 +76,12 @@ export default function CategorySelector({
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-          w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all duration-300
-          ${isOpen
-                        ? 'border-primary-500 ring-4 ring-primary-500/10 bg-white dark:bg-gray-900 shadow-lg'
-                        : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:border-primary-500/30'}
-          ${error ? 'border-red-500' : ''}
-        `}
+                    w-full flex items-center justify-between rounded-2xl border-2 px-4 py-3 transition-all duration-300
+                    ${isOpen
+                        ? 'border-primary-500 bg-white shadow-lg ring-4 ring-primary-500/10 dark:bg-gray-900'
+                        : 'border-gray-100 bg-gray-50/50 hover:border-primary-500/30 dark:border-gray-800 dark:bg-gray-800/30'}
+                    ${error ? 'border-red-500' : ''}
+                `}
             >
                 <div className="flex items-center gap-3">
                     {selected ? (
@@ -92,32 +90,36 @@ export default function CategorySelector({
                             animate={{ opacity: 1, x: 0 }}
                             className="flex items-center gap-3"
                         >
-                            <span className="text-2xl drop-shadow-sm">{selected.icon || '📦'}</span>
+                            <span className="text-2xl drop-shadow-sm">{selected.icon || DEFAULT_CATEGORY_ICON}</span>
                             <div className="text-right">
-                                <span className="block font-black text-gray-800 dark:text-white leading-tight">{selected.name}</span>
+                                <span className="block leading-tight font-black text-gray-800 dark:text-white">{selected.name}</span>
                                 {selected.parent && (
-                                    <span className="text-[10px] text-primary-500 font-bold uppercase tracking-wider">تصنيف فرعي</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary-500">قسم فرعي</span>
                                 )}
                             </div>
                         </motion.div>
                     ) : (
-                        <span className="text-gray-400 font-bold">{placeholder}</span>
+                        <span className="font-bold text-gray-400">{placeholder}</span>
                     )}
                 </div>
+
                 <div className="flex items-center gap-2">
                     {selected && (
                         <button
-                            onClick={(e) => { e.stopPropagation(); onChange(null); }}
-                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-red-500 transition-colors"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onChange(null);
+                            }}
+                            className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
                         >
-                            <X className="w-4 h-4" />
+                            <X className="h-4 w-4" />
                         </button>
                     )}
-                    <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary-500' : ''}`} />
+                    <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary-500' : ''}`} />
                 </div>
             </button>
 
-            {error && <p className="mt-1.5 text-[10px] font-black text-red-500 text-right uppercase tracking-wider">{error}</p>}
+            {error && <p className="mt-1.5 text-right text-[10px] font-black uppercase tracking-wider text-red-500">{error}</p>}
 
             <AnimatePresence>
                 {isOpen && (
@@ -125,77 +127,86 @@ export default function CategorySelector({
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute z-[100] top-full left-0 right-0 mt-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl border-2 border-gray-100 dark:border-gray-800 shadow-2xl overflow-hidden flex flex-col max-h-[450px]"
+                        className="absolute left-0 right-0 top-full z-[100] mt-3 flex max-h-[450px] flex-col overflow-hidden rounded-3xl border-2 border-gray-100 bg-white/80 shadow-2xl backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80"
                     >
-                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+                        <div className="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
                             <div className="relative">
-                                <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                 <input
                                     autoFocus
                                     value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    placeholder="ابحث عن تصنيف..."
-                                    className="w-full pr-11 pl-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm font-bold focus:border-primary-500 outline-none transition-all"
+                                    onChange={(event) => setSearch(event.target.value)}
+                                    placeholder="ابحث عن قسم..."
+                                    className="w-full rounded-xl border-2 border-gray-100 bg-white py-3 pl-4 pr-11 text-sm font-bold outline-none transition-all focus:border-primary-500 dark:border-gray-800 dark:bg-gray-900"
                                 />
                             </div>
                         </div>
 
-                        <div className="overflow-y-auto flex-1 custom-scrollbar p-3 space-y-1.5">
+                        <div className="custom-scrollbar flex-1 space-y-1.5 overflow-y-auto p-3">
                             {filteredCategories.length === 0 ? (
                                 <div className="py-12 text-center">
-                                    <FolderTree className="w-12 h-12 text-gray-200 dark:text-gray-800 mx-auto mb-3" />
-                                    <p className="text-gray-400 text-sm font-bold">لم يتم العثور على نتائج</p>
+                                    <FolderTree className="mx-auto mb-3 h-12 w-12 text-gray-200 dark:text-gray-800" />
+                                    <p className="text-sm font-bold text-gray-400">لم يتم العثور على أقسام</p>
                                 </div>
                             ) : (
-                                filteredCategories.map(cat => (
-                                    <div key={cat._id} className="space-y-1">
+                                filteredCategories.map((category) => (
+                                    <div key={category._id} className="space-y-1">
                                         <button
                                             type="button"
-                                            onClick={() => { onChange(cat._id); setIsOpen(false); }}
+                                            onClick={() => {
+                                                onChange(category._id);
+                                                setIsOpen(false);
+                                            }}
                                             className={`
-                        w-full flex items-center justify-between p-3 rounded-2xl transition-all duration-200 group
-                        ${value === cat._id
+                                                group flex w-full items-center justify-between rounded-2xl p-3 transition-all duration-200
+                                                ${value === category._id
                                                     ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'}
-                      `}
+                                                    : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/50'}
+                                            `}
                                         >
                                             <div className="flex items-center gap-4">
-                                                <span className={`text-2xl transition-transform group-hover:scale-110 ${value === cat._id ? '' : 'grayscale-[0.5] group-hover:grayscale-0'}`}>
-                                                    {cat.icon || '📦'}
+                                                <span className={`text-2xl transition-transform group-hover:scale-110 ${value === category._id ? '' : 'grayscale-[0.5] group-hover:grayscale-0'}`}>
+                                                    {category.icon || DEFAULT_CATEGORY_ICON}
                                                 </span>
                                                 <div className="text-right">
-                                                    <span className={`block font-black ${value === cat._id ? 'text-white' : 'text-gray-800 dark:text-white'}`}>{cat.name}</span>
-                                                    {cat.children && cat.children.length > 0 && !search && (
-                                                        <span className={`text-[9px] font-black uppercase tracking-widest ${value === cat._id ? 'text-white/70' : 'text-primary-500'}`}>
-                                                            {cat.children.length} تصنيفات فرعية
+                                                    <span className={`block font-black ${value === category._id ? 'text-white' : 'text-gray-800 dark:text-white'}`}>{category.name}</span>
+                                                    {category.children && category.children.length > 0 && !search && (
+                                                        <span className={`text-[9px] font-black uppercase tracking-widest ${value === category._id ? 'text-white/70' : 'text-primary-500'}`}>
+                                                            {category.children.length} أقسام فرعية
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
-                                            {value === cat._id && <Check className="w-5 h-5" />}
+                                            {value === category._id && <Check className="h-5 w-5" />}
                                         </button>
 
-                                        {cat.children && cat.children.length > 0 && (
-                                            <div className="mr-6 pr-4 border-r-2 border-primary-500/10 space-y-1 mt-1">
-                                                {cat.children
-                                                    .filter(child => child.name.toLowerCase().includes(search.toLowerCase()) || cat.name.toLowerCase().includes(search.toLowerCase()))
-                                                    .map(child => (
+                                        {category.children && category.children.length > 0 && (
+                                            <div className="mr-6 mt-1 space-y-1 border-r-2 border-primary-500/10 pr-4">
+                                                {category.children
+                                                    .filter((child) => (
+                                                        child.name.toLowerCase().includes(search.toLowerCase())
+                                                        || category.name.toLowerCase().includes(search.toLowerCase())
+                                                    ))
+                                                    .map((child) => (
                                                         <button
                                                             key={child._id}
                                                             type="button"
-                                                            onClick={() => { onChange(child._id); setIsOpen(false); }}
+                                                            onClick={() => {
+                                                                onChange(child._id);
+                                                                setIsOpen(false);
+                                                            }}
                                                             className={`
-                                w-full flex items-center justify-between p-2.5 rounded-xl transition-all duration-200 group
-                                ${value === child._id
-                                                                    ? 'bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-500/30'
-                                                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-400'}
-                              `}
+                                                                group flex w-full items-center justify-between rounded-xl p-2.5 transition-all duration-200
+                                                                ${value === child._id
+                                                                    ? 'border border-primary-200 bg-primary-100 text-primary-600 dark:border-primary-500/30 dark:bg-primary-500/20 dark:text-primary-400'
+                                                                    : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}
+                                                            `}
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <span className="text-lg group-hover:scale-110 transition-transform">{child.icon || '📦'}</span>
+                                                                <span className="text-lg transition-transform group-hover:scale-110">{child.icon || DEFAULT_CATEGORY_ICON}</span>
                                                                 <span className="text-sm font-bold">{child.name}</span>
                                                             </div>
-                                                            {value === child._id && <Check className="w-4 h-4" />}
+                                                            {value === child._id && <Check className="h-4 w-4" />}
                                                         </button>
                                                     ))}
                                             </div>

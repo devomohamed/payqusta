@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Menu, Sun, Moon, Search, Store } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useThemeStore, useAuthStore } from '../store';
-import { storefrontPath } from '../utils/storefrontHost';
+import { getStorefrontDomainUrl } from '../utils/storefrontHost';
 import NotificationDropdown from './NotificationDropdown';
 import GlobalSearch from './GlobalSearch';
 import BranchSwitcher from './BranchSwitcher';
@@ -18,6 +17,7 @@ export default function Header({ onMenuClick }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const isSystemSuperAdmin =
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
+  const storefrontUrl = getStorefrontDomainUrl(tenant?.slug);
 
   const pageTitles = {
     '/': t('header.dashboard'),
@@ -77,14 +77,14 @@ export default function Header({ onMenuClick }) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Link
-            to={storefrontPath('/')}
+          <a
+            href={storefrontUrl}
             className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/40 font-bold text-sm transition-colors"
             title={t('header.visit_store', 'زيارة المتجر')}
           >
             <Store className="w-4 h-4" />
             <span className="hidden md:inline">متجري</span>
-          </Link>
+          </a>
 
           <BranchSwitcher />
 
@@ -108,7 +108,7 @@ export default function Header({ onMenuClick }) {
             <Search className="w-5 h-5" />
           </button>
 
-          <NotificationDropdown />
+          <NotificationDropdown mode="admin" />
 
           <LanguageSwitcher />
 

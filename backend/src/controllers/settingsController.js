@@ -656,7 +656,7 @@ class SettingsController {
 
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
-    ApiResponse.success(res, { categories: tenant.settings.categories }, 'تم تحديث تصنيفات المنتجات بنجاح');
+    ApiResponse.success(res, { categories: tenant.settings.categories }, 'تم تحديث أقسام المنتجات بنجاح');
   });
 
   /**
@@ -669,7 +669,7 @@ class SettingsController {
     logger.info(`[SETTINGS_DEL_CAT] Delete request for: "${decodedCategory}" (Tenant: ${req.tenantId})`);
 
     if (!decodedCategory) {
-      return next(AppError.badRequest('اسم التصنيف مطلوب'));
+      return next(AppError.badRequest('اسم القسم مطلوب'));
     }
 
     // 1. Reassign products to "أخرى"
@@ -696,7 +696,7 @@ class SettingsController {
     ApiResponse.success(res, {
       categories: tenant.settings.categories,
       affectedProducts: productUpdate.modifiedCount
-    }, `تم حذف التصنيف "${decodedCategory}" وتحويل ${productUpdate.modifiedCount} منتج إلى "${fallbackCategory}"`);
+    }, `تم حذف القسم "${decodedCategory}" وتحويل ${productUpdate.modifiedCount} منتج إلى "${fallbackCategory}"`);
   });
 
   /**
@@ -713,9 +713,7 @@ class SettingsController {
     }
 
     const Product = require('../models/Product');
-    const { processImage } = require('../middleware/upload');
-    const fs = require('fs');
-    const path = require('path');
+    const { processImage, readUploadedFile, deleteFile } = require('../middleware/upload');
 
     const products = await Product.find({ ...req.tenantFilter, isActive: true });
     let processed = 0, failed = 0;
@@ -726,34 +724,15 @@ class SettingsController {
 
       for (const imageUrl of images) {
         try {
-          let buffer;
-          if (typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
-            const fullPath = path.join(__dirname, '../..', imageUrl);
-            if (fs.existsSync(fullPath)) buffer = fs.readFileSync(fullPath);
-          }
-          if (!buffer && process.env.GCS_BUCKET_NAME) {
-            try {
-              const { Storage } = require('@google-cloud/storage');
-              const bucket = new Storage().bucket(process.env.GCS_BUCKET_NAME);
-              const baseUrl = (process.env.GCS_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
-              const gcsPrefix = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/`;
-              let objectPath = null;
-              if (baseUrl && imageUrl.startsWith(`${baseUrl}/`)) objectPath = imageUrl.slice(baseUrl.length + 1);
-              else if (imageUrl.startsWith(gcsPrefix)) objectPath = imageUrl.slice(gcsPrefix.length);
-              if (objectPath) { [buffer] = await bucket.file(objectPath).download(); }
-            } catch (_) { }
-          }
-          if (!buffer) { updatedImages.push(imageUrl); continue; }
+          const uploadData = await readUploadedFile(imageUrl);
+          if (!uploadData?.buffer) { updatedImages.push(imageUrl); continue; }
 
           const filename = `product-wm-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
-          const newPath = await processImage(buffer, filename, 'products', 'image/webp', watermarkOptions);
+          const newPath = await processImage(uploadData.buffer, filename, 'products', 'image/webp', watermarkOptions);
           updatedImages.push(newPath);
           processed++;
 
-          if (typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
-            const oldFull = path.join(__dirname, '../..', imageUrl);
-            if (fs.existsSync(oldFull)) fs.unlinkSync(oldFull);
-          }
+          await deleteFile(imageUrl);
         } catch (err) {
           logger.error(`[WM_APPLY] ${imageUrl}: ${err.message}`);
           updatedImages.push(imageUrl);

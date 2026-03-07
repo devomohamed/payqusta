@@ -614,6 +614,36 @@ class CustomerController {
   });
 
   /**
+   * POST /api/v1/customers/:id/wallet/topup
+   * Top up customer wallet balance
+   */
+  topupWallet = catchAsync(async (req, res, next) => {
+    const { amount, paymentMethod = 'cash', reference = '' } = req.body;
+    if (!amount || amount <= 0) return next(AppError.badRequest('قيمة الشحن غير صالحة'));
+
+    const customer = await Customer.findOne({ _id: req.params.id, ...req.tenantFilter });
+    if (!customer) return next(AppError.notFound('العميل غير موجود'));
+
+    // Ensure wallet exists
+    if (!customer.wallet) {
+      customer.wallet = { balance: 0, totalRecharged: 0, totalSpent: 0 };
+    }
+
+    customer.wallet.balance += Number(amount);
+    customer.wallet.totalRecharged += Number(amount);
+
+    await customer.save();
+
+    // TODO: Ideally we should log this in PaymentTransaction or AuditLog
+    // For now, we just update the balance.
+
+    ApiResponse.success(res, {
+      walletBalance: customer.wallet.balance,
+      rechargedAmount: amount,
+    }, `تم شحن المحفظة بقيمة ${amount} ج.م بنجاح`);
+  });
+
+  /**
    * POST /api/v1/customers/:id/redeem-points
    * Redeem gamification points for credit
    */

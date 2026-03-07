@@ -40,8 +40,7 @@ export default function ProductComposerHeader({
             return (
               <React.Fragment key={step.id}>
                 <button
-                  onClick={() => isVisited && onStepClick(step.id)}
-                  disabled={!isVisited && !isActive}
+                  onClick={() => onStepClick(step.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap
                     ${isActive
                       ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 border-2 border-primary-100 dark:border-primary-500/20'
@@ -49,7 +48,7 @@ export default function ProductComposerHeader({
                         ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-2 border-red-100 dark:border-red-500/20'
                         : isVisited
                           ? 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-2 border-transparent'
-                          : 'bg-transparent text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-800 opacity-50 cursor-not-allowed'
+                          : 'bg-transparent text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60 border-opacity-80'
                     }
                   `}
                 >

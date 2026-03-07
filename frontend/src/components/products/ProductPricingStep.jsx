@@ -1,14 +1,58 @@
-import React from 'react';
-import { Input, Badge, Card } from '../UI';
-import { DollarSign, Percent, TrendingUp, AlertTriangle, Truck } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Input, Badge, Button } from '../UI';
+import { DollarSign, TrendingUp, AlertTriangle, Truck, Plus, Trash2 } from 'lucide-react';
 
-export default function ProductPricingStep({ form, setForm }) {
+export default function ProductPricingStep({
+    form,
+    setForm,
+    branches = [],
+    user = null,
+    mode = 'create',
+    branchScopeId = '',
+    mainBranchOption = null,
+    pricingErrors = {}
+}) {
     const price = Number(form.price) || 0;
     const cost = Number(form.costPrice) || 0;
     const profit = price - cost;
     const margin = price > 0 ? ((profit / price) * 100).toFixed(1) : 0;
     const compareAtPrice = Number(form.compareAtPrice) || 0;
     const discount = compareAtPrice > price ? ((compareAtPrice - price) / compareAtPrice) * 100 : 0;
+    const currentUserBranchId = branchScopeId || user?.branch?._id || user?.branch || '';
+    const isAdminLikeUser = user?.role === 'admin' || !!user?.isSuperAdmin;
+    const isBranchScopedUser = mode === 'create' && Boolean(currentUserBranchId) && !isAdminLikeUser;
+    const mainBranchId = mainBranchOption?._id ? String(mainBranchOption._id) : '';
+    const hasMainSelected = Boolean(mainBranchId) && (form.inventory || []).some((item) => String(item?.branch?._id || item?.branch || '') === mainBranchId);
+    const branchOptions = [
+        ...(mainBranchOption ? [mainBranchOption] : []),
+        ...branches.filter((branch) => String(branch._id) !== mainBranchId)
+    ];
+
+    useEffect(() => {
+        if (!isBranchScopedUser) return;
+
+        setForm((prev) => {
+            const currentInventory = Array.isArray(prev.inventory) ? prev.inventory : [];
+            if (currentInventory.length === 1) {
+                const onlyBranchId = currentInventory[0]?.branch?._id || currentInventory[0]?.branch || '';
+                if (String(onlyBranchId) === String(currentUserBranchId)) {
+                    return prev;
+                }
+            }
+
+            const totalQuantity = currentInventory.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0);
+            const resolvedMinQuantity = Math.max(0, Number(prev.minStockAlert ?? 5) || 5);
+
+            return {
+                ...prev,
+                inventory: [{
+                    branch: currentUserBranchId,
+                    quantity: Math.max(0, totalQuantity),
+                    minQuantity: resolvedMinQuantity
+                }]
+            };
+        });
+    }, [isBranchScopedUser, currentUserBranchId, setForm]);
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
@@ -27,6 +71,7 @@ export default function ProductPricingStep({ form, setForm }) {
                         value={form.price}
                         onChange={e => setForm({ ...form, price: e.target.value })}
                         placeholder="0.00"
+                        error={pricingErrors.price}
                         className="md:col-span-1"
                     />
                     <Input
@@ -36,6 +81,7 @@ export default function ProductPricingStep({ form, setForm }) {
                         value={form.compareAtPrice}
                         onChange={e => setForm({ ...form, compareAtPrice: e.target.value })}
                         placeholder="0.00"
+                        error={pricingErrors.compareAtPrice}
                         tooltip="سيظهر مشطوباً لإظهار الخصم للعملاء."
                     />
                 </div>
@@ -48,6 +94,7 @@ export default function ProductPricingStep({ form, setForm }) {
                         value={form.costPrice}
                         onChange={e => setForm({ ...form, costPrice: e.target.value })}
                         placeholder="0.00"
+                        error={pricingErrors.costPrice}
                         tooltip="لحساب الأرباح بدقة. هذا الحقل مخفي عن العملاء."
                     />
                     <Input
@@ -57,6 +104,7 @@ export default function ProductPricingStep({ form, setForm }) {
                         value={form.wholesalePrice}
                         onChange={e => setForm({ ...form, wholesalePrice: e.target.value })}
                         placeholder="0.00"
+                        error={pricingErrors.wholesalePrice}
                         tooltip="الحدود الدنيا وسعر الجملة للموديلات يمكن تخصيصها في صفحة إعدادات المنتجات."
                     />
                 </div>
@@ -93,34 +141,128 @@ export default function ProductPricingStep({ form, setForm }) {
 
             {/* 2. Inventory & Stock Section */}
             <section className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
-                <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
-                    المخزون والكميات
-                </h3>
+                    <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                        المخزون والكميات
+                    </h3>
+                    {isBranchScopedUser && (
+                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl text-sm font-medium text-blue-700 dark:text-blue-300">
+                            سيتم ربط المنتج تلقائيًا بالفرع الخاص بحسابك.
+                        </div>
+                    )}
 
                 {form.hasVariants ? (
                     <div className="p-4 bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-300 text-sm font-medium">
                         بما أن هذا المنتج يحتوي على موديلات (مقاسات، ألوان)، يتم تتبع المخزون داخل إعدادات كل موديل بشكل منفصل. يمكنك تعديلها في خطوة "الصور والموديلات".
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Input
-                            type="number"
-                            min="0"
-                            label="الكمية المتاحة ككل *"
-                            value={form.stock}
-                            onChange={e => setForm({ ...form, stock: e.target.value })}
-                            placeholder="0"
-                        />
-                        <Input
-                            type="number"
-                            min="0"
-                            label="تنبيه المخزون المنخفض"
-                            value={form.minStockAlert}
-                            onChange={e => setForm({ ...form, minStockAlert: e.target.value })}
-                            placeholder="5"
-                            tooltip="الرقم الذي سيتم تنبيهك عنده لإعادة طلب المنتج."
-                        />
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">مخزون الفروع</h4>
+                            {!isBranchScopedUser && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={hasMainSelected}
+                                    onClick={() => {
+                                        setForm({
+                                            ...form,
+                                            inventory: [...(form.inventory || []), { branch: '', quantity: 0, minQuantity: 5 }]
+                                        });
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    إضافة فرع
+                                </Button>
+                            )}
+                        </div>
+
+                        {(form.inventory || []).map((inv, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end p-4 border border-gray-100 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-gray-800/50">
+                                <div className="md:col-span-5">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">الفرع</label>
+                                    <select
+                                        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                        value={inv.branch?._id || inv.branch || ''}
+                                        disabled={isBranchScopedUser}
+                                        onChange={(e) => {
+                                            const newInv = [...form.inventory];
+                                            newInv[index].branch = e.target.value;
+                                            setForm({ ...form, inventory: newInv });
+                                        }}
+                                    >
+                                        <option value="">-- اختر فرع --</option>
+                                        {branchOptions.map(b => {
+                                            const optionId = String(b._id);
+                                            const isMainOption = optionId === mainBranchId;
+                                            const usedElsewhere = (form.inventory || []).some((i, idx) => idx !== index && (String(i.branch) === optionId || String(i.branch?._id) === optionId));
+                                            const hasMainInAnotherRow = Boolean(mainBranchId) && (form.inventory || []).some((i, idx) => idx !== index && (String(i.branch) === mainBranchId || String(i.branch?._id) === mainBranchId));
+                                            const hasOtherInAnotherRow = (form.inventory || []).some((i, idx) => idx !== index && String(i.branch?._id || i.branch || '') !== '');
+                                            const disabled = usedElsewhere || (isMainOption && hasOtherInAnotherRow) || (!isMainOption && hasMainInAnotherRow);
+                                            return (
+                                                <option key={b._id} value={b._id} disabled={disabled}>{b.name}</option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                                <div className="md:col-span-3">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        label="الكمية"
+                                        value={inv.quantity}
+                                        onChange={e => {
+                                            const newInv = [...form.inventory];
+                                            newInv[index].quantity = Number(e.target.value);
+                                            setForm({ ...form, inventory: newInv, stock: newInv.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0) });
+                                        }}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="md:col-span-3">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        label="تنبيه المخزون"
+                                        value={inv.minQuantity}
+                                        onChange={e => {
+                                            const newInv = [...form.inventory];
+                                            newInv[index].minQuantity = Number(e.target.value);
+                                            setForm({ ...form, inventory: newInv });
+                                        }}
+                                        placeholder="5"
+                                    />
+                                </div>
+                                {!isBranchScopedUser && (
+                                    <div className="md:col-span-1 flex justify-end pb-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newInv = form.inventory.filter((_, i) => i !== index);
+                                                setForm({ ...form, inventory: newInv, stock: newInv.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0) });
+                                            }}
+                                            className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {(form.inventory || []).length === 0 && (
+                            <div className="text-center py-6 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{isBranchScopedUser ? 'جاري ربط المنتج بفرعك...' : 'لم يتم إضافة فروع. أضف فرعاً لتحديد الكميات.'}</p>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-100 dark:border-primary-800">
+                            <span className="text-sm font-bold text-primary-700 dark:text-primary-300">إجمالي الكمية في جميع الفروع:</span>
+                            <span className="text-lg font-black text-primary-700 dark:text-primary-300">
+                                {(form.inventory || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)} قطعة
+                            </span>
+                        </div>
                     </div>
                 )}
 

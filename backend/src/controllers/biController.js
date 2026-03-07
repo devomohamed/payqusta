@@ -6,7 +6,7 @@
 const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
-const Supplier = require('../models/Supplier');
+const SupplierPurchaseInvoice = require('../models/SupplierPurchaseInvoice');
 const Expense = require('../models/Expense');
 const mongoose = require('mongoose');
 const ApiResponse = require('../utils/ApiResponse');
@@ -134,7 +134,7 @@ class BusinessIntelligenceController {
       });
     });
 
-    // Expected Expenses: recurring expenses + supplier payments
+    // Expected Expenses: recurring expenses + supplier purchase invoice installments
     const recurringExpenses = await Expense.find({
       tenant: tenantId,
       isActive: true,
@@ -142,12 +142,19 @@ class BusinessIntelligenceController {
       nextDueDate: { $lte: next30Days },
     }).lean();
 
-    const supplierPayments = await Supplier.find({
+    const supplierInvoicesForForecast = await SupplierPurchaseInvoice.find({
       tenant: tenantId,
-      isActive: true,
-      'payments.dueDate': { $gte: today, $lte: next30Days },
-      'payments.status': { $ne: 'paid' },
-    }).lean();
+      status: { $in: ['open', 'partial_paid'] },
+      installmentsSchedule: {
+        $elemMatch: {
+          status: { $in: ['pending', 'partially_paid', 'overdue'] },
+          dueDate: { $gte: today, $lte: next30Days },
+        },
+      },
+    })
+      .populate('supplier', 'name')
+      .select('invoiceNumber supplier installmentsSchedule')
+      .lean();
 
     const expectedExpenses = [];
     recurringExpenses.forEach(exp => {
@@ -160,15 +167,24 @@ class BusinessIntelligenceController {
       });
     });
 
-    supplierPayments.forEach(sup => {
-      (sup.payments || []).forEach(pay => {
-        if (pay.status !== 'paid' && new Date(pay.dueDate) >= today && new Date(pay.dueDate) <= next30Days) {
+    supplierInvoicesForForecast.forEach((invoice) => {
+      (invoice.installmentsSchedule || []).forEach((installment) => {
+        const dueDate = new Date(installment.dueDate);
+        if (
+          ['pending', 'partially_paid', 'overdue'].includes(String(installment.status || ''))
+          && dueDate >= today
+          && dueDate <= next30Days
+        ) {
+          const remainingAmount = Number(installment.amount || 0) - Number(installment.paidAmount || 0);
+          if (remainingAmount <= 0) return;
+
           expectedExpenses.push({
-            date: pay.dueDate,
-            amount: pay.amount - (pay.paidAmount || 0),
+            date: dueDate,
+            amount: remainingAmount,
             type: 'supplier',
-            description: `دفعة للمورد ${sup.name}`,
-            supplierId: sup._id,
+            description: `قسط مورد ${invoice.supplier?.name || '—'} - ${invoice.invoiceNumber || ''}`.trim(),
+            supplierId: invoice.supplier?._id || invoice.supplier,
+            supplierInvoiceId: invoice._id,
           });
         }
       });
@@ -231,6 +247,8 @@ class BusinessIntelligenceController {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowEnd = new Date(tomorrow);
+    tomorrowEnd.setHours(23, 59, 59, 999);
 
     // === 1. Collections due today ===
     const invoicesToday = await Invoice.find({
@@ -324,24 +342,40 @@ class BusinessIntelligenceController {
       });
     }
 
-    // === 4. Supplier payments due ===
-    const suppliersWithPayments = await Supplier.find({
+    // === 4. Supplier payments due (from supplier purchase invoices) ===
+    const supplierInvoicesDue = await SupplierPurchaseInvoice.find({
       tenant: tenantId,
-      isActive: true,
-      'payments.dueDate': { $lte: tomorrow },
-      'payments.status': { $ne: 'paid' },
-    }).lean();
+      status: { $in: ['open', 'partial_paid'] },
+      installmentsSchedule: {
+        $elemMatch: {
+          status: { $in: ['pending', 'partially_paid', 'overdue'] },
+          dueDate: { $lte: tomorrowEnd },
+        },
+      },
+    })
+      .populate('supplier', 'name')
+      .select('supplier invoiceNumber installmentsSchedule outstandingAmount')
+      .lean();
 
     const supplierPaymentsDue = [];
-    suppliersWithPayments.forEach(sup => {
-      (sup.payments || []).forEach(pay => {
-        if (pay.status !== 'paid' && new Date(pay.dueDate) <= tomorrow) {
+    supplierInvoicesDue.forEach((invoice) => {
+      (invoice.installmentsSchedule || []).forEach((installment) => {
+        const dueDate = new Date(installment.dueDate);
+        const remainingAmount = Number(installment.amount || 0) - Number(installment.paidAmount || 0);
+
+        if (
+          ['pending', 'partially_paid', 'overdue'].includes(String(installment.status || ''))
+          && dueDate <= tomorrowEnd
+          && remainingAmount > 0
+        ) {
           supplierPaymentsDue.push({
-            supplierId: sup._id,
-            supplierName: sup.name,
-            amount: pay.amount - (pay.paidAmount || 0),
-            dueDate: pay.dueDate,
-            isOverdue: new Date(pay.dueDate) < today,
+            supplierId: invoice.supplier?._id || invoice.supplier,
+            supplierName: invoice.supplier?.name || '—',
+            supplierInvoiceId: invoice._id,
+            invoiceNumber: invoice.invoiceNumber,
+            amount: remainingAmount,
+            dueDate,
+            isOverdue: dueDate < today,
           });
         }
       });

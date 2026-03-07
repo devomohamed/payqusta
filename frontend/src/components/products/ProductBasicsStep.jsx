@@ -1,20 +1,95 @@
-import React, { useRef, useState } from 'react';
-import { Input, Select, TextArea } from '../UI';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import { Button, Input, Modal, TextArea } from '../UI';
 import RichTextEditor from '../RichTextEditor';
 import BarcodeScanner from '../BarcodeScanner';
 import CategorySelector from '../CategorySelector';
 import SeoAnalyzer from './SeoAnalyzer';
-import { FileText, Hash, Tag, User, Search } from 'lucide-react';
+import { FileText, Hash, Tag, User, Search, Check, Sparkles } from 'lucide-react';
+import { categoriesApi } from '../../store';
+import { getIconForCategory, getCategoryIconSuggestions, DEFAULT_CATEGORY_ICON } from '../../utils/aiHelper';
 
-export default function ProductBasicsStep({ form, setForm, categories, suppliers }) {
+export default function ProductBasicsStep({ form, setForm, categories, suppliers, onCategoriesReload }) {
     const [showScanner, setShowScanner] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const [savingCategory, setSavingCategory] = useState(false);
+    const [sectionMode, setSectionMode] = useState('root');
+    const [categoryForm, setCategoryForm] = useState({
+        name: '',
+        description: '',
+        parent: null,
+        icon: DEFAULT_CATEGORY_ICON,
+    });
+
+    const openAddCategoryModal = () => {
+        setSectionMode('root');
+        setCategoryForm({
+            name: '',
+            description: '',
+            parent: null,
+            icon: DEFAULT_CATEGORY_ICON,
+        });
+        setShowCategoryModal(true);
+    };
+
+    const handleCategoryNameChange = (name) => {
+        const suggestedIcon = getIconForCategory(name);
+        setCategoryForm((prev) => ({
+            ...prev,
+            name,
+            icon: suggestedIcon || prev.icon || DEFAULT_CATEGORY_ICON,
+        }));
+    };
+
+    const handleCreateCategory = async () => {
+        if (!categoryForm.name.trim()) {
+            toast.error('يرجى إدخال اسم القسم');
+            return;
+        }
+        if (sectionMode === 'child' && !categoryForm.parent) {
+            toast.error('اختر القسم الرئيسي أولاً');
+            return;
+        }
+
+        setSavingCategory(true);
+        try {
+            const payload = {
+                name: categoryForm.name.trim(),
+                description: categoryForm.description || '',
+                icon: categoryForm.icon || DEFAULT_CATEGORY_ICON,
+                parent: sectionMode === 'child' ? categoryForm.parent : null,
+            };
+
+            const res = await categoriesApi.create(payload);
+            const createdCategory = res?.data?.data;
+            const createdCategoryId = createdCategory?._id;
+
+            if (typeof onCategoriesReload === 'function') {
+                await onCategoriesReload();
+            }
+            if (createdCategoryId) {
+                setForm((prev) => ({ ...prev, category: createdCategoryId, subcategory: '' }));
+            }
+
+            toast.success('تم إضافة القسم واختياره تلقائيًا');
+            setShowCategoryModal(false);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'تعذر إنشاء القسم');
+        } finally {
+            setSavingCategory(false);
+        }
+    };
+
+    const iconSuggestions = getCategoryIconSuggestions(categoryForm.name, 10);
+    const availableParents = categories.filter((cat) => cat?._id && cat._id !== 'uncategorized');
+    const isChildSection = sectionMode === 'child';
 
     return (
         <div className="space-y-6 animate-fade-in pb-12">
 
             {/* ─── Section 1: Core Info ─── */}
             <section>
-                <SectionHeader icon={FileText} title="المعلومات الأساسية" subtitle="الاسم والتصنيف هما أهم بيانات المنتج" />
+                <SectionHeader icon={FileText} title="المعلومات الأساسية" subtitle="الاسم والأقسام من أهم بيانات المنتج" />
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm space-y-5">
 
                     {/* Product Name */}
@@ -39,15 +114,25 @@ export default function ProductBasicsStep({ form, setForm, categories, suppliers
                     {/* Category */}
                     <div className="space-y-3">
                         <div className="space-y-1.5">
-                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                                <Tag className="w-4 h-4 text-primary-500" />
-                                التصنيف
-                                <span className="text-red-500">*</span>
-                            </label>
+                            <div className="flex items-center justify-between gap-3">
+                                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                                    <Tag className="w-4 h-4 text-primary-500" />
+                                    الأقسام
+                                    <span className="text-xs font-normal text-gray-400">(اختياري - الافتراضي: بدون قسم)</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={openAddCategoryModal}
+                                    className="text-xs font-bold px-3 py-1.5 rounded-lg border border-primary-200 text-primary-600 hover:bg-primary-50 transition-colors whitespace-nowrap"
+                                >
+                                    إضافة قسم جديد
+                                </button>
+                            </div>
                             <CategorySelector
                                 categories={categories}
                                 value={form.category}
-                                onChange={(catId) => setForm({ ...form, category: catId, subcategory: '' })}
+                                placeholder="بدون قسم (افتراضي)"
+                                onChange={(catId) => setForm({ ...form, category: catId || '', subcategory: '' })}
                             />
                         </div>
 
@@ -60,7 +145,7 @@ export default function ProductBasicsStep({ form, setForm, categories, suppliers
                                 <div className="space-y-1.5 animate-fade-in">
                                     <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                                         <Tag className="w-4 h-4 text-primary-400" />
-                                        التصنيف الفرعي
+                                        القسم الفرعي
                                         <span className="text-xs font-normal text-gray-400">(اختياري)</span>
                                     </label>
                                     <select
@@ -69,7 +154,7 @@ export default function ProductBasicsStep({ form, setForm, categories, suppliers
                                         className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors"
                                         dir="rtl"
                                     >
-                                        <option value="">— بدون تصنيف فرعي —</option>
+                                        <option value="">— بدون قسم فرعي —</option>
                                         {subs.map(sub => (
                                             <option key={sub._id} value={sub._id}>
                                                 {sub.icon ? `${sub.icon} ` : ''}{sub.name}
@@ -104,6 +189,136 @@ export default function ProductBasicsStep({ form, setForm, categories, suppliers
                 </div>
             </section>
 
+            <Modal
+                open={showCategoryModal}
+                onClose={() => !savingCategory && setShowCategoryModal(false)}
+                title="إضافة قسم جديد"
+                size="2xl"
+            >
+                <div className="space-y-5 pb-32">
+                    <div className="rounded-3xl border border-primary-500/15 bg-gradient-to-br from-primary-950 via-slate-900 to-slate-950 px-4 py-4 text-white shadow-2xl">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl text-slate-900 shadow-xl">
+                                {categoryForm.icon || DEFAULT_CATEGORY_ICON}
+                            </div>
+                            <div className="flex-1 text-right">
+                                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-primary-100">
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    اقتراح ذكي للأيقونة
+                                </div>
+                                <p className="mt-2 text-sm font-bold leading-6 text-white">
+                                    يتم اقتراح أيقونة مناسبة تلقائيًا حسب اسم القسم، ويمكنك تعديلها أو اختيار واحدة من الاقتراحات بالأسفل.
+                                </p>
+                                <p className="mt-1 text-xs text-slate-300">
+                                    {isChildSection
+                                        ? 'سيُحفظ هذا العنصر كقسم فرعي داخل قسم رئيسي.'
+                                        : 'سيظهر هذا العنصر كقسم رئيسي ويمكنك إضافة أقسام فرعية داخله لاحقًا.'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4">
+                        <div className="col-span-1">
+                            <Input
+                                label="أيقونة"
+                                value={categoryForm.icon}
+                                onChange={(e) => setCategoryForm((prev) => ({ ...prev, icon: e.target.value }))}
+                                placeholder={DEFAULT_CATEGORY_ICON}
+                            />
+                        </div>
+                        <div className="col-span-3">
+                            <Input
+                                label="اسم القسم *"
+                                value={categoryForm.name}
+                                onChange={(e) => handleCategoryNameChange(e.target.value)}
+                                placeholder="مثال: إلكترونيات، ملابس، حريمي..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSectionMode('root');
+                                setCategoryForm((prev) => ({ ...prev, parent: null }));
+                            }}
+                            className={`rounded-2xl border px-4 py-3 text-right transition-all ${!isChildSection ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'}`}
+                        >
+                            <p className="text-sm font-black">قسم رئيسي</p>
+                            <p className="mt-1 text-[11px]">يظهر كقسم أساسي في المتجر.</p>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSectionMode('child')}
+                            className={`rounded-2xl border px-4 py-3 text-right transition-all ${isChildSection ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'}`}
+                        >
+                            <p className="text-sm font-black">قسم فرعي</p>
+                            <p className="mt-1 text-[11px]">يرتبط بقسم رئيسي موجود.</p>
+                        </button>
+                    </div>
+
+                    {isChildSection ? (
+                        <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+                            <CategorySelector
+                                label="القسم الرئيسي *"
+                                value={categoryForm.parent}
+                                onChange={(val) => setCategoryForm((prev) => ({ ...prev, parent: val }))}
+                                categories={availableParents}
+                                placeholder="اختر القسم الرئيسي الذي سيتبع له هذا القسم"
+                            />
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-emerald-500/10 bg-emerald-50/70 px-4 py-3 text-right">
+                            <p className="text-sm font-black text-emerald-700">هذا قسم رئيسي</p>
+                            <p className="mt-1 text-xs leading-5 text-emerald-700/80">
+                                بعد الحفظ يمكنك إضافة أقسام فرعية داخله مثل شاشات، لابتوبات، حريمي، رجالي، أطفال وغيرها.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+                        <div className="mb-3 flex items-center justify-between">
+                            <div className="text-right">
+                                <p className="text-sm font-black text-gray-800 dark:text-white">أيقونات مقترحة</p>
+                                <p className="text-[11px] text-gray-500">اختيارات أكثر وضوحًا حسب نوع القسم.</p>
+                            </div>
+                            <Sparkles className="h-4 w-4 text-primary-500" />
+                        </div>
+                        <div className="grid grid-cols-5 gap-2">
+                            {iconSuggestions.map((icon) => (
+                                <button
+                                    key={`${categoryForm.name || 'default'}-${icon}`}
+                                    type="button"
+                                    onClick={() => setCategoryForm((prev) => ({ ...prev, icon }))}
+                                    className={`flex h-12 items-center justify-center rounded-2xl border text-2xl transition-all ${categoryForm.icon === icon ? 'border-primary-500 bg-primary-50 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/40'}`}
+                                >
+                                    {icon}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <TextArea
+                        label="وصف مختصر (اختياري)"
+                        value={categoryForm.description}
+                        onChange={(e) => setCategoryForm((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="أضف وصفًا مختصرًا يوضح محتوى هذا القسم للعميل..."
+                        rows={3}
+                    />
+                </div>
+
+                <div className="sticky bottom-20 z-30 mt-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur px-4 py-3 flex justify-end gap-3 shadow-lg">
+                    <Button variant="ghost" onClick={() => setShowCategoryModal(false)} disabled={savingCategory}>
+                        إلغاء
+                    </Button>
+                    <Button icon={<Check className="w-4 h-4" />} onClick={handleCreateCategory} loading={savingCategory}>
+                        حفظ
+                    </Button>
+                </div>
+            </Modal>
+
             {/* ─── Section 2: Description ─── */}
             <section>
                 <SectionHeader
@@ -112,7 +327,7 @@ export default function ProductBasicsStep({ form, setForm, categories, suppliers
                     subtitle="اكتب وصفاً شاملاً — يدعم كل تنسيقات النص والصور"
                     badge="Word-like Editor"
                 />
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-visible">
                     <RichTextEditor
                         value={form.description}
                         onChange={content => setForm({ ...form, description: content })}

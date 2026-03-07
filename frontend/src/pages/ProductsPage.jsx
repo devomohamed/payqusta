@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight, PauseCircle, PlayCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { notify } from '../components/AnimatedNotification';
 import { productsApi, suppliersApi, categoriesApi, api, useAuthStore } from '../store';
 import { Button, Input, Select, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
@@ -9,11 +10,172 @@ import BarcodeScanner from '../components/BarcodeScanner';
 import ProductDetailModal from '../components/ProductDetailModal';
 import ProductSearchModal from '../components/ProductSearchModal';
 import ProductComposer from '../components/products/ProductComposer';
+import { confirm } from '../components/ConfirmDialog';
+import { formatFileSize, optimizeImageFilesForUpload } from '../utils/imageUpload';
+import { resolveMediaUrl } from '../utils/media';
+import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 
 const CategoriesPage = lazy(() => import('./CategoriesPage'));
+const MAX_PRODUCT_IMAGES = 10;
+
+const hasValue = (value) => value !== '' && value !== null && value !== undefined;
+
+const toFiniteNumber = (value) => {
+  if (!hasValue(value)) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const toServerMediaPath = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+  const normalized = rawUrl.trim();
+  if (!normalized) return normalized;
+
+  if (normalized.startsWith('/uploads/')) return normalized;
+  if (normalized.startsWith('uploads/')) return `/${normalized}`;
+  if (normalized.startsWith('blob:') || normalized.startsWith('data:')) return normalized;
+
+  try {
+    const parsed = new URL(
+      normalized,
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+    );
+    const pathWithQuery = `${parsed.pathname || ''}${parsed.search || ''}`;
+    if (!pathWithQuery) return normalized;
+
+    const uploadsIndex = pathWithQuery.indexOf('/uploads/');
+    if (uploadsIndex >= 0) {
+      return pathWithQuery.slice(uploadsIndex);
+    }
+
+    if (/^(https?:)?\/\//i.test(normalized)) {
+      return normalized;
+    }
+
+    return pathWithQuery;
+  } catch {
+    return normalized;
+  }
+};
+
+const getPricingValidationErrors = (pricingForm = {}, options = {}) => {
+  const { requireSalePrice = false } = options;
+  const errors = {};
+
+  const salePriceProvided = hasValue(pricingForm.price);
+  const salePrice = toFiniteNumber(pricingForm.price);
+  const compareAtPrice = toFiniteNumber(pricingForm.compareAtPrice);
+  const costPrice = toFiniteNumber(pricingForm.costPrice);
+  const wholesalePrice = toFiniteNumber(pricingForm.wholesalePrice);
+
+  if (requireSalePrice && !salePriceProvided) {
+    errors.price = 'price_required';
+  } else if (salePriceProvided && (salePrice === null || salePrice <= 0)) {
+    errors.price = 'price_positive';
+  }
+
+  if (compareAtPrice !== null && salePrice !== null && salePrice > 0 && compareAtPrice < salePrice) {
+    errors.compareAtPrice = 'compare_price_error';
+  }
+
+  if (costPrice !== null && salePrice !== null && salePrice > 0 && costPrice > salePrice) {
+    errors.costPrice = 'cost_price_error';
+  }
+
+  if (wholesalePrice !== null && salePrice !== null && salePrice > 0 && wholesalePrice > salePrice) {
+    errors.wholesalePrice = 'wholesale_price_error';
+  }
+
+  return errors;
+};
+
+const normalizeInventoryPayload = (rawInventory = []) => {
+  if (!Array.isArray(rawInventory)) return [];
+
+  return rawInventory
+    .map((item) => {
+      const branch = item?.branch?._id || item?.branch;
+      if (!branch) return null;
+
+      const quantity = Number(item?.quantity);
+      const minQuantity = Number(item?.minQuantity);
+
+      return {
+        branch: String(branch),
+        quantity: Number.isFinite(quantity) && quantity >= 0 ? quantity : 0,
+        minQuantity: Number.isFinite(minQuantity) && minQuantity >= 0 ? minQuantity : 5,
+      };
+    })
+    .filter(Boolean);
+};
+
+const createEmptyProductForm = () => ({
+  name: '',
+  sku: '',
+  barcode: '',
+  category: '',
+  subcategory: '',
+  price: '',
+  compareAtPrice: '',
+  costPrice: '',
+  wholesalePrice: '',
+  shippingCost: '',
+  isFreeShipping: false,
+  stock: '',
+  minStockAlert: '5',
+  description: '',
+  supplier: '',
+  expiryDate: '',
+  variants: [],
+  inventory: [],
+  primaryImagePreview: null,
+  seoTitle: '',
+  seoDescription: ''
+});
+
+const buildProductDraftStorageKey = (tenantId, userId) =>
+  `payqusta:product-drafts:${tenantId || 'default'}:${userId || 'default'}`;
+
+const createDraftId = () => `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const sanitizeFormForDraft = (rawForm = {}) => {
+  const normalized = { ...rawForm };
+  if (typeof normalized.primaryImagePreview === 'string' && normalized.primaryImagePreview.startsWith('blob:')) {
+    normalized.primaryImagePreview = null;
+  }
+  if (!Array.isArray(normalized.variants)) normalized.variants = [];
+  if (!Array.isArray(normalized.inventory)) normalized.inventory = [];
+  return normalized;
+};
+
+const normalizeDraftEntries = (parsed) => {
+  if (Array.isArray(parsed)) {
+    return parsed
+      .filter((entry) => entry && typeof entry === 'object' && entry.form)
+      .map((entry) => ({
+        id: entry.id || createDraftId(),
+        form: entry.form,
+        productImages: Array.isArray(entry.productImages) ? entry.productImages : [],
+        savedAt: entry.savedAt || new Date().toISOString(),
+      }));
+  }
+
+  // Backward compatibility: old single-draft format.
+  if (parsed && typeof parsed === 'object' && parsed.form) {
+    return [{
+      id: parsed.id || createDraftId(),
+      form: parsed.form,
+      productImages: Array.isArray(parsed.productImages) ? parsed.productImages : [],
+      savedAt: parsed.savedAt || new Date().toISOString(),
+    }];
+  }
+
+  return [];
+};
 
 export default function ProductsPage() {
-  const { user, can } = useAuthStore();
+  const { t } = useTranslation('admin');
+  const { user, tenant, can, getBranches } = useAuthStore();
   const [activePageTab, setActivePageTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,31 +187,108 @@ export default function ProductsPage() {
   const [supplierFilter, setSupplierFilter] = useState('');
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [productTab, setProductTab] = useState('active');
+  const [activeDraftId, setActiveDraftId] = useState('');
+  const [incompleteDrafts, setIncompleteDrafts] = useState([]);
+  const [togglingSuspendId, setTogglingSuspendId] = useState(null);
   const [sendingRestock, setSendingRestock] = useState(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [productImages, setProductImages] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [form, setForm] = useState({
-    name: '', sku: '', barcode: '', category: '', subcategory: '', price: '', costPrice: '',
-    wholesalePrice: '', shippingCost: '', isFreeShipping: false,
-    stock: '', minStockAlert: '5', description: '', supplier: '', expiryDate: '',
-    variants: [], primaryImagePreview: null, seoTitle: '', seoDescription: ''
-  });
+  const [form, setForm] = useState(createEmptyProductForm);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [pendingImages, setPendingImages] = useState([]);
   const [stepErrors, setStepErrors] = useState({});
   const LIMIT = 8;
+  const isIncompleteTab = productTab === 'incomplete';
+  const isSuspendedTab = productTab === 'suspended';
+  const pricingValidationErrors = getPricingValidationErrors(form, { requireSalePrice: stepErrors.pricing });
+  const branchScopeId = String(user?.branch?._id || user?.branch || '');
+  const draftStorageKey = useMemo(
+    () => buildProductDraftStorageKey(tenant?._id, user?._id || user?.id),
+    [tenant?._id, user?._id, user?.id]
+  );
+  const mainBranchOption = useMemo(() => {
+    if (!tenant?._id) return null;
+    const storeName = tenant?.name || t('products.main_warehouse');
+    return { _id: String(tenant._id), name: `${storeName} (${t('products.main_label')})` };
+  }, [tenant?._id, tenant?.name, t]);
+
+  const isFormDirty = useMemo(() => {
+    if (!showModal) return false;
+    const emptyForm = createEmptyProductForm();
+    return form.name !== emptyForm.name ||
+      form.sku !== emptyForm.sku ||
+      form.barcode !== emptyForm.barcode ||
+      form.price !== emptyForm.price ||
+      form.description !== emptyForm.description ||
+      (form.variants && form.variants.length > 0) ||
+      pendingImages.length > 0;
+  }, [showModal, form, pendingImages.length]);
+
+  useUnsavedWarning(isFormDirty, 'products');
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await categoriesApi.getTree();
+      const rows = res?.data?.data || [];
+      setCategories(rows);
+      return rows;
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const loadDraftsFromStorage = useCallback(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(draftStorageKey);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return normalizeDraftEntries(parsed);
+    } catch {
+      return [];
+    }
+  }, [draftStorageKey]);
+
+  const saveDraftsToStorage = useCallback((draftsPayload) => {
+    if (typeof window === 'undefined') return false;
+    try {
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(draftsPayload));
+      return true;
+    } catch {
+      return false;
+    }
+  }, [draftStorageKey]);
+
+  const refreshIncompleteDrafts = useCallback(() => {
+    setIncompleteDrafts(loadDraftsFromStorage());
+  }, [loadDraftsFromStorage]);
 
   useEffect(() => {
-    categoriesApi.getTree().then((r) => setCategories(r.data.data || [])).catch(() => { });
+    loadCategories();
     suppliersApi.getAll({ limit: 100 }).then((r) => setSuppliers(r.data.data || [])).catch(() => { });
-  }, []);
+    getBranches?.()
+      .then((rows) => {
+        if (Array.isArray(rows)) {
+          setBranches(rows);
+          return;
+        }
+        setBranches([]);
+      })
+      .catch(() => setBranches([]));
+  }, [getBranches, loadCategories]);
+
+  useEffect(() => {
+    refreshIncompleteDrafts();
+  }, [refreshIncompleteDrafts]);
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
@@ -58,9 +297,15 @@ export default function ProductsPage() {
   }, [search]);
 
   const loadProducts = useCallback(async () => {
+    if (isIncompleteTab) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const params = { page, limit: LIMIT, search: debouncedSearch };
+      params.scope = isSuspendedTab ? 'suspended' : 'active';
       if (stockFilter) params.stockStatus = stockFilter;
       if (categoryFilter) params.category = categoryFilter;
       if (supplierFilter) params.supplier = supplierFilter;
@@ -71,20 +316,20 @@ export default function ProductsPage() {
         totalItems: res.data.pagination?.totalItems || 0
       });
     } catch {
-      toast.error('خطأ في تحميل المنتجات');
+      toast.error(t('products.load_error'));
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, stockFilter, categoryFilter, supplierFilter]);
+  }, [page, debouncedSearch, stockFilter, categoryFilter, supplierFilter, isIncompleteTab, isSuspendedTab, t]);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
-  useEffect(() => { setPage(1); }, [debouncedSearch, stockFilter, categoryFilter, supplierFilter]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, stockFilter, categoryFilter, supplierFilter, isSuspendedTab, isIncompleteTab]);
+  useEffect(() => { setSelectedIds([]); }, [isSuspendedTab, isIncompleteTab]);
 
   const openEdit = (prod) => {
     setEditId(prod._id);
-    const formatImageUrl = (url) => url?.startsWith('/uploads/')
-      ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'}${url}`
-      : url;
+    setActiveDraftId('');
+    const formatImageUrl = (url) => resolveMediaUrl(url);
 
     setForm({
       name: prod.name || '',
@@ -93,6 +338,7 @@ export default function ProductsPage() {
       category: prod.category?._id || prod.category || '',
       subcategory: prod.subcategory?._id || prod.subcategory || '',
       price: prod.price || '',
+      compareAtPrice: prod.compareAtPrice || '',
       costPrice: prod.cost || '',
       wholesalePrice: prod.wholesalePrice || '',
       shippingCost: prod.shippingCost || '',
@@ -103,6 +349,7 @@ export default function ProductsPage() {
       supplier: prod.supplier?._id || prod.supplier || '',
       expiryDate: prod.expiryDate ? prod.expiryDate.split('T')[0] : '',
       variants: prod.variants || [],
+      inventory: normalizeInventoryPayload(prod.inventory || []),
       primaryImagePreview: formatImageUrl(prod.thumbnail || prod.images?.[0] || null),
       seoTitle: prod.seoTitle || '',
       seoDescription: prod.seoDescription || ''
@@ -115,22 +362,37 @@ export default function ProductsPage() {
 
   const openNew = () => {
     setEditId(null);
-    setForm({
-      name: '', sku: '', barcode: '', category: '', subcategory: '', price: '', costPrice: '',
-      wholesalePrice: '', shippingCost: '', isFreeShipping: false,
-      stock: '', minStockAlert: '5', description: '', supplier: '', expiryDate: '',
-      variants: [], primaryImagePreview: null, seoTitle: '', seoDescription: ''
-    });
+    setActiveDraftId('');
+    setForm(createEmptyProductForm());
     setProductImages([]);
     setPendingImages([]);
     setStepErrors({});
     setShowModal(true);
   };
 
+  const openIncompleteDraft = (draftId) => {
+    const draft = loadDraftsFromStorage().find((entry) => entry.id === draftId);
+    if (!draft) {
+      toast.error('لم يتم العثور على المنتج غير المستكمل');
+      refreshIncompleteDrafts();
+      return;
+    }
+
+    setEditId(null);
+    setActiveDraftId(draft.id);
+    setForm({ ...createEmptyProductForm(), ...draft.form });
+    setProductImages(Array.isArray(draft.productImages) ? draft.productImages : []);
+    setPendingImages([]);
+    setStepErrors({});
+    setShowModal(true);
+    toast.success('تم فتح المنتج غير المستكمل');
+  };
+
   const validateProductComposer = () => {
     const errors = { basics: false, pricing: false, media: false };
-    if (!form.name || !form.category) errors.basics = true;
-    if (!form.price || Number(form.price) <= 0) errors.pricing = true;
+    const pricingErrors = getPricingValidationErrors(form, { requireSalePrice: true });
+    if (!form.name) errors.basics = true;
+    if (Object.keys(pricingErrors).length > 0) errors.pricing = true;
     if (form.variants && form.variants.length > 0) {
       const invalid = form.variants.some(v => !v.price);
       if (invalid) errors.pricing = true;
@@ -139,23 +401,58 @@ export default function ProductsPage() {
     return !Object.values(errors).some(Boolean);
   };
 
-  const handleSave = async () => {
+  const persistIncompleteDraft = useCallback((draftPayload) => {
+    const currentDrafts = loadDraftsFromStorage();
+    const nextDrafts = (() => {
+      const existingIndex = currentDrafts.findIndex((entry) => entry.id === draftPayload.id);
+      if (existingIndex >= 0) {
+        const clone = [...currentDrafts];
+        clone[existingIndex] = draftPayload;
+        return clone;
+      }
+      return [draftPayload, ...currentDrafts].slice(0, 100);
+    })();
+
+    const saved = saveDraftsToStorage(nextDrafts);
+    if (saved) {
+      setIncompleteDrafts(nextDrafts);
+    }
+    return saved;
+  }, [loadDraftsFromStorage, saveDraftsToStorage]);
+
+  const removeIncompleteDraft = useCallback((draftId) => {
+    if (!draftId) return true;
+    const currentDrafts = loadDraftsFromStorage();
+    const nextDrafts = currentDrafts.filter((entry) => entry.id !== draftId);
+    const saved = saveDraftsToStorage(nextDrafts);
+    if (saved) {
+      setIncompleteDrafts(nextDrafts);
+    }
+    return saved;
+  }, [loadDraftsFromStorage, saveDraftsToStorage]);
+
+  const handleSave = async ({ suspendAfterCreate = false } = {}) => {
     if (!validateProductComposer()) {
-      notify({ title: 'أخطاء في الحقول', description: 'يرجى مراجعة الخطوات المميزة باللون الأحمر', type: 'error' });
+      notify({ title: t('products.field_errors'), description: t('products.review_steps'), type: 'error' });
       return;
     }
+
     setSaving(true);
+    let savingToastId = null;
+
     try {
       const formData = new FormData();
+      const normalizedCategory = form.category || '';
       formData.append('name', form.name);
       if (form.sku) formData.append('sku', form.sku);
       if (form.barcode) formData.append('barcode', form.barcode);
-      formData.append('category', form.category);
+      formData.append('category', normalizedCategory);
       if (form.subcategory) formData.append('subcategory', form.subcategory);
       formData.append('description', form.description || '');
       if (form.supplier) formData.append('supplier', form.supplier);
       formData.append('price', form.price);
-      if (form.costPrice) formData.append('cost', form.costPrice);
+      if (hasValue(form.compareAtPrice)) formData.append('compareAtPrice', form.compareAtPrice);
+      formData.append('cost', hasValue(form.costPrice) ? form.costPrice : 0);
       if (form.wholesalePrice) formData.append('wholesalePrice', form.wholesalePrice);
       if (form.isFreeShipping) {
         formData.append('shippingCost', 0);
@@ -164,6 +461,13 @@ export default function ProductsPage() {
       }
       formData.append('stock[quantity]', form.stock || 0);
       formData.append('stock[minQuantity]', form.minStockAlert || 5);
+      const normalizedInventory = normalizeInventoryPayload(form.inventory || []);
+      if (normalizedInventory.length > 0) {
+        formData.append('inventory', JSON.stringify(normalizedInventory));
+      } else if ((user?.role === 'admin' || !!user?.isSuperAdmin) && tenant?._id) {
+        // Admin users without explicit inventory fall back to main branch context.
+        formData.append('branchId', String(tenant._id));
+      }
       if (form.expiryDate) formData.append('expiryDate', form.expiryDate);
       if (form.seoTitle) formData.append('seoTitle', form.seoTitle);
       if (form.seoDescription) formData.append('seoDescription', form.seoDescription);
@@ -175,21 +479,53 @@ export default function ProductsPage() {
         : productImages;
 
       const getRelativeUrl = (url) => {
-        if (!url) return url;
-        try {
-          const apiBaseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
-          return url.startsWith(apiBaseUrl) ? url.replace(apiBaseUrl, '') : url;
-        } catch { return url; }
+        return toServerMediaPath(url);
       };
 
       sortedExisting.forEach(img => formData.append('existingImages', getRelativeUrl(img)));
+      if (editId && sortedExisting.length === 0) {
+        // Explicitly signal that all existing images were removed.
+        formData.append('existingImages', '');
+      }
 
       // Sort pending images so the selected primary is first (identify by _previewUrl)
       const primaryPendingIdx = pendingImages.findIndex(f => f._previewUrl === form.primaryImagePreview);
       const sortedPending = primaryPendingIdx > 0
         ? [pendingImages[primaryPendingIdx], ...pendingImages.filter((_, i) => i !== primaryPendingIdx)]
         : pendingImages;
-      sortedPending.forEach(file => formData.append('images', file));
+      const rawPendingBytes = sortedPending.reduce((sum, file) => sum + (Number(file?.size) || 0), 0);
+
+      if (sortedPending.length > 0) {
+        savingToastId = toast.loading(
+          t('products.optimizing_images', {
+            defaultValue: 'جار تجهيز صور المنتج قبل الرفع...',
+          })
+        );
+      }
+
+      const optimizedPending = sortedPending.length > 0
+        ? await optimizeImageFilesForUpload(sortedPending, {
+          maxDimension: 1280,
+          maxTargetBytes: 1.1 * 1024 * 1024,
+        })
+        : [];
+      const optimizedPendingBytes = optimizedPending.reduce((sum, file) => sum + (Number(file?.size) || 0), 0);
+
+      if (savingToastId) {
+        const optimizedMessage = optimizedPendingBytes > 0 && optimizedPendingBytes < rawPendingBytes
+          ? t('products.optimized_images_ready', {
+            defaultValue: 'تم تقليل الصور من {{before}} إلى {{after}}. جارٍ رفع المنتج...',
+            before: formatFileSize(rawPendingBytes),
+            after: formatFileSize(optimizedPendingBytes),
+          })
+          : t('products.uploading_after_prepare', {
+            defaultValue: 'تم تجهيز الصور. جارٍ رفع المنتج...',
+          });
+
+        toast.loading(optimizedMessage, { id: savingToastId });
+      }
+
+      optimizedPending.forEach(file => formData.append('images', file));
 
       // Only send primaryImage if it's an existing server path (not a blob URL)
       const primaryIsExisting = form.primaryImagePreview && !form.primaryImagePreview.startsWith('blob:');
@@ -201,44 +537,156 @@ export default function ProductsPage() {
       }
       // If primary is a pending image, don't send primaryImage. The backend uses the first uploaded image.
 
+      const requestConfig = {
+        timeout: Math.max(60000, optimizedPending.length * 30000),
+        onUploadProgress: (event) => {
+          if (!savingToastId) return;
+
+          const total = Number(event.total) || 0;
+          const loaded = Number(event.loaded) || 0;
+          if (!total) return;
+
+          const progress = Math.max(1, Math.min(99, Math.round((loaded / total) * 100)));
+          toast.loading(
+            t('products.upload_progress', {
+              defaultValue: 'جارٍ رفع المنتج... {{progress}}%',
+              progress,
+            }),
+            { id: savingToastId }
+          );
+        },
+      };
+
       if (editId) {
-        await productsApi.update(editId, formData);
-        toast.success('تم تحديث المنتج بنجاح');
+        await productsApi.update(editId, formData, requestConfig);
+        toast.success(t('products.update_success'), savingToastId ? { id: savingToastId } : undefined);
       } else {
-        await productsApi.create(formData);
-        toast.success('تم اضافة المنتج بنجاح');
+        if (suspendAfterCreate) {
+          formData.append('isSuspended', true);
+        }
+        await productsApi.create(formData, requestConfig);
+        if (activeDraftId) {
+          removeIncompleteDraft(activeDraftId);
+          setActiveDraftId('');
+        }
+        toast.success(t('products.create_success'), savingToastId ? { id: savingToastId } : undefined);
+        if (suspendAfterCreate) {
+          setProductTab('suspended');
+        } else {
+          setProductTab('active');
+        }
+        if (search || stockFilter || categoryFilter || supplierFilter) {
+          setSearch('');
+          setStockFilter('');
+          setCategoryFilter('');
+          setSupplierFilter('');
+        }
       }
       setShowModal(false);
       setPendingImages([]);
       setProductImages([]);
-      loadProducts();
+      // Reset to page 1 after adding so the new product is visible immediately
+      if (!editId && page !== 1) {
+        setPage(1); // the useEffect on page will trigger loadProducts
+      } else {
+        loadProducts();
+      }
     } catch (err) {
-      const msg = err.response?.data?.message || 'حدث خطأ غير متوقع أثناء الحفظ';
-      toast.error(msg);
+      const msg = err.response?.data?.message || t('products.save_error');
+      toast.error(msg, savingToastId ? { id: savingToastId } : undefined);
     } finally {
       setSaving(false);
     }
   };
 
+  const handleSuspendDraft = useCallback(() => {
+    if (editId) return;
+
+    const draftId = activeDraftId || createDraftId();
+    const draftPayload = {
+      id: draftId,
+      form: sanitizeFormForDraft(form),
+      productImages: Array.isArray(productImages) ? productImages : [],
+      savedAt: new Date().toISOString(),
+    };
+
+    const saved = persistIncompleteDraft(draftPayload);
+    if (!saved) {
+      toast.error(t('products.draft_save_error', { defaultValue: 'تعذر حفظ المسودة، حاول مرة أخرى' }));
+      return;
+    }
+
+    if (pendingImages.length > 0) {
+      toast(t('products.draft_saved_without_pending_images', { defaultValue: 'تم حفظ المسودة بدون الصور الجديدة. أعد رفع الصور عند استكمال المنتج.' }));
+    }
+
+    setShowModal(false);
+    setPendingImages([]);
+    setStepErrors({});
+    setActiveDraftId(draftId);
+    setProductTab('incomplete');
+    toast.success('تم حفظ المنتج كغير مستكمل');
+  }, [activeDraftId, editId, form, pendingImages.length, persistIncompleteDraft, productImages, t]);
+
+  const handleComposerClose = () => {
+    if (saving) return;
+    setShowModal(false);
+  };
+
   const handleDelete = async (id) => {
-    notify.custom({
-      type: 'error',
-      title: 'تأكيد الحذف',
-      message: 'هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.',
-      duration: 10000,
-      action: {
-        label: 'تأكيد الحذف',
-        onClick: async () => {
-          try {
-            await productsApi.delete(id);
-            notify.success('تم حذف المنتج بنجاح', 'تم الحذف');
-            loadProducts();
-          } catch {
-            notify.error('فشل حذف المنتج', 'خطأ في الحذف');
-          }
-        }
-      }
+    const approved = await confirm.delete('هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.');
+    if (!approved) return;
+
+    try {
+      await productsApi.delete(id);
+      notify.success('تم حذف المنتج بنجاح', 'تم الحذف');
+      loadProducts();
+    } catch {
+      notify.error('فشل حذف المنتج', 'خطأ في الحذف');
+    }
+  };
+
+  const handleToggleSuspension = async (product, shouldSuspend) => {
+    const approved = await confirm.show({
+      type: 'warning',
+      title: shouldSuspend ? 'تعليق المنتج' : 'إلغاء تعليق المنتج',
+      message: shouldSuspend
+        ? `هل تريد تعليق المنتج "${product.name}"؟ لن يظهر في المتجر بعد الآن.`
+        : `هل تريد إلغاء تعليق المنتج "${product.name}"؟ سيظهر مرة أخرى في المتجر.`,
+      confirmLabel: shouldSuspend ? 'تعليق المنتج' : 'إلغاء التعليق',
+      cancelLabel: 'إلغاء',
     });
+
+    if (!approved) return;
+
+    setTogglingSuspendId(product._id);
+    try {
+      await productsApi.setSuspended(product._id, shouldSuspend);
+      toast.success(shouldSuspend ? 'تم تعليق المنتج' : 'تم إلغاء تعليق المنتج');
+      setSelectedIds(prev => prev.filter(id => id !== product._id));
+      loadProducts();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'تعذر تحديث حالة المنتج');
+    } finally {
+      setTogglingSuspendId(null);
+    }
+  };
+
+  const handleDeleteIncompleteDraft = async (draftId) => {
+    const approved = await confirm.delete('هل أنت متأكد من حذف المنتج غير المستكمل؟');
+    if (!approved) return;
+
+    const removed = removeIncompleteDraft(draftId);
+    if (!removed) {
+      toast.error('تعذر حذف المنتج غير المستكمل');
+      return;
+    }
+
+    if (activeDraftId === draftId) {
+      setActiveDraftId('');
+    }
+
+    toast.success('تم حذف المنتج غير المستكمل');
   };
 
   const toggleSelect = (id) => {
@@ -248,29 +696,29 @@ export default function ProductsPage() {
     if (selectedIds.length === products.length) setSelectedIds([]);
     else setSelectedIds(products.map(p => p._id));
   };
-  const handleBulkDelete = () => {
-    notify.custom({
-      type: 'error',
+
+  const handleBulkDelete = async () => {
+    const total = selectedIds.length;
+    const approved = await confirm.show({
+      type: 'danger',
       title: 'تأكيد الحذف الجماعي',
-      message: `هل أنت متأكد من حذف ${selectedIds.length} منتج؟`,
-      duration: 10000,
-      action: {
-        label: `حذف ${selectedIds.length} منتج`,
-        onClick: async () => {
-          setBulkDeleting(true);
-          try {
-            await api.post('/products/bulk-delete', { ids: selectedIds });
-            notify.success(`تم حذف ${selectedIds.length} منتج بنجاح`);
-            setSelectedIds([]);
-            loadProducts();
-          } catch {
-            notify.error('حدث خطأ في الحذف الجماعي');
-          } finally {
-            setBulkDeleting(false);
-          }
-        }
-      }
+      message: `هل أنت متأكد من حذف ${total} منتج؟ لا يمكن التراجع عن هذا الإجراء.`,
+      confirmLabel: `حذف ${total} منتج`,
+      cancelLabel: 'إلغاء',
     });
+    if (!approved) return;
+
+    setBulkDeleting(true);
+    try {
+      await api.post('/products/bulk-delete', { ids: selectedIds });
+      notify.success(`تم حذف ${total} منتج بنجاح`);
+      setSelectedIds([]);
+      loadProducts();
+    } catch {
+      notify.error('حدث خطأ في الحذف الجماعي');
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
   const handleRequestRestock = async (supplierId) => {
@@ -278,12 +726,12 @@ export default function ProductsPage() {
     try {
       const res = await suppliersApi.requestRestock(supplierId);
       if (res.data.data?.whatsappSent) {
-        toast.success(`تم إرسال طلب إعادة التخزين للمورد عبر WhatsApp\n${res.data.data.productsCount} منتج`);
+        toast.success(t('products.whatsapp_sent_restock', { count: res.data.data.productsCount }));
       } else {
-        toast.success(`تم إعداد طلب إعادة التخزين (${res.data.data?.productsCount || 0} منتج)`);
+        toast.success(t('products.restock_prepared', { count: res.data.data?.productsCount || 0 }));
       }
     } catch {
-      toast.error('خطأ في إرسال طلب إعادة التخزين');
+      toast.error(t('products.restock_error'));
     } finally {
       setSendingRestock(null);
     }
@@ -297,18 +745,34 @@ export default function ProductsPage() {
       barcode: product.barcode || '',
       category: product.category?._id || product.category || '',
       price: String(product.price || 0),
+      compareAtPrice: hasValue(product.compareAtPrice) ? String(product.compareAtPrice) : '',
       costPrice: String(product.cost || 0),
       description: product.description || '',
       supplier: product.supplier?._id || product.supplier || ''
     });
     setShowProductSearch(false);
-    toast.success('تم استيراد بيانات المنتج بنجاح');
+    toast.success(t('products.import_success'));
   };
 
   const handleComposerImagesChange = (e) => {
     const files = e?.target?.files ? Array.from(e.target.files) : (Array.isArray(e) ? e : []);
+    if (files.length === 0) return;
+
+    const totalCurrentImages = (Array.isArray(productImages) ? productImages.length : 0) + pendingImages.length;
+    const remainingSlots = Math.max(0, MAX_PRODUCT_IMAGES - totalCurrentImages);
+
+    if (remainingSlots <= 0) {
+      toast.error(`يمكن رفع حتى ${MAX_PRODUCT_IMAGES} صور للمنتج في المرة الواحدة`);
+      return;
+    }
+
+    const acceptedFiles = files.slice(0, remainingSlots);
+    if (acceptedFiles.length < files.length) {
+      toast.error(`تمت إضافة أول ${acceptedFiles.length} صورة فقط. الحد الأقصى هو ${MAX_PRODUCT_IMAGES} صور`);
+    }
+
     // Attach a stable preview URL to each file so we can reliably remove it later
-    const filesWithUrls = files.map(file => {
+    const filesWithUrls = acceptedFiles.map(file => {
       if (!file._previewUrl) {
         file._previewUrl = URL.createObjectURL(file);
       }
@@ -368,10 +832,12 @@ export default function ProductsPage() {
   const getStockBadge = (prod) => {
     const qty = prod.stock?.quantity ?? 0;
     const min = prod.stock?.minQuantity ?? 5;
-    if (qty === 0) return <Badge variant="danger">نفد المخزون</Badge>;
-    if (qty <= min) return <Badge variant="warning">مخزون منخفض</Badge>;
-    return <Badge variant="success">متاح ({qty})</Badge>;
+    if (qty === 0) return <Badge variant="danger">{t('products.out_of_stock')}</Badge>;
+    if (qty <= min) return <Badge variant="warning">{t('products.low_stock')}</Badge>;
+    return <Badge variant="success">{t('products.available')} ({qty})</Badge>;
   };
+
+  const headerProductsCount = isIncompleteTab ? incompleteDrafts.length : pagination.totalItems;
 
   if (activePageTab === 'categories') {
     return (
@@ -381,7 +847,7 @@ export default function ProductsPage() {
             onClick={() => setActivePageTab('products')}
             className="mb-4 flex items-center gap-2 text-sm text-gray-500 hover:text-primary-600 transition-colors"
           >
-            <ChevronRight className="w-4 h-4" /> العودة للمنتجات
+            <ChevronRight className="w-4 h-4" /> {t('products.all_products')}
           </button>
           <CategoriesPage />
         </div>
@@ -396,91 +862,184 @@ export default function ProductsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Package className="w-7 h-7 text-primary-600" />
-            إدارة المنتجات
+            {t('products.title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {pagination.totalItems} منتج في المخزون
+            {t('products.total_count', { count: headerProductsCount })}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => setActivePageTab('categories')}>
             <Tag className="w-4 h-4" />
-            إدارة التصنيفات
+            {t('products.manage_categories')}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowBarcodeScanner(true)}>
             <Scan className="w-4 h-4" />
-            مسح باركود
+            {t('products.scan_barcode')}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setShowProductSearch(true)}>
             <Search className="w-4 h-4" />
-            استيراد منتج
+            {t('products.import_product')}
           </Button>
           <Button onClick={openNew}>
             <Plus className="w-4 h-4" />
-            إضافة منتج
+            {t('products.add_product')}
           </Button>
         </div>
+      </div>
+
+      {/* Products Tabs */}
+      <div className="inline-flex rounded-2xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-gray-900">
+        <button
+          onClick={() => setProductTab('active')}
+          className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'active'
+            ? 'bg-primary-600 text-white'
+            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+        >
+          المنتجات النشطة
+        </button>
+        <button
+          onClick={() => setProductTab('suspended')}
+          className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'suspended'
+            ? 'bg-amber-500 text-white'
+            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+        >
+          المنتجات المعلقة
+        </button>
+        <button
+          onClick={() => setProductTab('incomplete')}
+          className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'incomplete'
+            ? 'bg-slate-700 text-white'
+            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+        >
+          المنتجات الغير مستكملة
+        </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="ابحث عن منتج..."
-            className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
+      {!isIncompleteTab && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={t('products.search_placeholder')}
+              className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+          <select
+            value={stockFilter}
+            onChange={e => setStockFilter(e.target.value)}
+            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">{t('products.all_stock')}</option>
+            <option value="out">{t('products.out_of_stock')}</option>
+            <option value="low">{t('products.low_stock')}</option>
+            <option value="in">{t('products.available')}</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">{t('products.all_categories')}</option>
+            {categories.map(cat => (
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
+            ))}
+          </select>
         </div>
-        <select
-          value={stockFilter}
-          onChange={e => setStockFilter(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">كل المخزون</option>
-          <option value="out">نفد المخزون</option>
-          <option value="low">مخزون منخفض</option>
-          <option value="in">متاح</option>
-        </select>
-        <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">كل التصنيفات</option>
-          {categories.map(cat => (
-            <option key={cat._id} value={cat._id}>{cat.name}</option>
-          ))}
-        </select>
-      </div>
+      )}
 
       {/* Bulk actions */}
-      {selectedIds.length > 0 && (
+      {!isIncompleteTab && selectedIds.length > 0 && (
         <div className="flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-200 dark:border-primary-800">
           <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
-            {selectedIds.length} منتج محدد
+            {t('products.selected_count', { count: selectedIds.length })}
           </span>
           <Button variant="danger" size="sm" loading={bulkDeleting} onClick={handleBulkDelete}>
             <Trash2 className="w-4 h-4" />
-            حذف المحدد
+            {t('products.delete_selected')}
           </Button>
           <button onClick={() => setSelectedIds([])} className="text-sm text-gray-500 hover:text-gray-700">
-            إلغاء
+            {t('common.cancel')}
           </button>
         </div>
       )}
 
       {/* Product Grid */}
-      {loading ? (
+      {isIncompleteTab ? (
+        incompleteDrafts.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title="لا توجد منتجات غير مستكملة"
+            description="أي منتج تحفظه كغير مستكمل سيظهر هنا."
+            action={{ label: t('products.add_product'), onClick: openNew }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {incompleteDrafts.map((draft) => {
+              const imageUrl = draft?.productImages?.[0] || draft?.form?.primaryImagePreview || '';
+              const displayUrl = resolveMediaUrl(imageUrl);
+              const draftName = draft?.form?.name || 'منتج غير مسمى';
+              const savedAtLabel = draft?.savedAt ? new Date(draft.savedAt).toLocaleString('ar-EG') : 'غير محدد';
+
+              return (
+                <Card key={draft.id} className="overflow-hidden hover:shadow-lg transition-all duration-200">
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden p-[2px]">
+                    {displayUrl ? (
+                      <img
+                        src={displayUrl}
+                        alt={draftName}
+                        loading="lazy"
+                        className="w-full h-full object-cover rounded-[calc(1rem-2px)] bg-white"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-600">
+                        <Package className="w-12 h-12 mb-2" />
+                        <span className="text-xs font-semibold">بدون صورة</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 leading-tight">
+                      {draftName}
+                    </h3>
+                    <p className="text-[11px] text-gray-500">آخر حفظ: {savedAtLabel}</p>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        onClick={() => openIncompleteDraft(draft.id)}
+                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        استكمال
+                      </button>
+                      <button
+                        onClick={() => handleDeleteIncompleteDraft(draft.id)}
+                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )
+      ) : loading ? (
         <LoadingSpinner />
       ) : products.length === 0 ? (
         <EmptyState
           icon={Package}
-          title="لا توجد منتجات"
-          description="ابدأ بإضافة منتجك الأول للمتجر"
-          action={{ label: 'إضافة منتج', onClick: openNew }}
+          title={isSuspendedTab ? 'لا توجد منتجات معلّقة' : t('products.no_products')}
+          description={isSuspendedTab ? 'كل منتجاتك ظاهرة حالياً في المتجر.' : t('products.start_adding')}
+          action={isSuspendedTab ? null : { label: t('products.add_product'), onClick: openNew }}
         />
       ) : (
         <>
@@ -494,16 +1053,14 @@ export default function ProductsPage() {
               ) : (
                 <Square className="w-4 h-4" />
               )}
-              تحديد الكل
+              {t('products.select_all')}
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {products.map(prod => {
               const imageUrl = prod.thumbnail || prod.images?.[0];
-              const displayUrl = imageUrl?.startsWith('/uploads/')
-                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000'}${imageUrl}`
-                : imageUrl;
+              const displayUrl = resolveMediaUrl(imageUrl);
 
               return (
                 <Card key={prod._id} className="group relative overflow-hidden hover:shadow-lg transition-all duration-200">
@@ -534,7 +1091,7 @@ export default function ProductsPage() {
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-600">
                         <Package className="w-12 h-12 mb-2" />
-                        <span className="text-xs font-semibold">بدون صورة</span>
+                        <span className="text-xs font-semibold">{t('products.no_image')}</span>
                       </div>
                     )}
                   </div>
@@ -546,13 +1103,13 @@ export default function ProductsPage() {
                     </h3>
                     <div className="flex items-center justify-between">
                       <span className="text-base font-bold text-primary-600">
-                        {Number(prod.price || 0).toLocaleString('ar-EG')} ج.م
+                        {Number(prod.price || 0).toLocaleString('ar-EG')} {t('products.currency')}
                       </span>
                       {getStockBadge(prod)}
                     </div>
 
                     {/* Supplier restock */}
-                    {prod.supplier && (
+                    {!isSuspendedTab && prod.supplier && (
                       <button
                         onClick={() => handleRequestRestock(prod.supplier?._id || prod.supplier)}
                         disabled={sendingRestock === (prod.supplier?._id || prod.supplier)}
@@ -563,25 +1120,40 @@ export default function ProductsPage() {
                         ) : (
                           <Truck className="w-3.5 h-3.5" />
                         )}
-                        طلب إعادة تخزين
+                        {t('products.restock_request')}
                       </button>
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-2 pt-1">
+                    <div className="grid grid-cols-3 gap-2 pt-1">
                       <button
                         onClick={() => openEdit(prod)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
                       >
                         <Edit className="w-3.5 h-3.5" />
-                        تعديل
+                        {t('products.edit')}
+                      </button>
+                      <button
+                        onClick={() => handleToggleSuspension(prod, !isSuspendedTab)}
+                        disabled={togglingSuspendId === prod._id}
+                        className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${isSuspendedTab
+                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100'
+                          : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 hover:bg-amber-100'
+                          }`}
+                      >
+                        {isSuspendedTab ? (
+                          <PlayCircle className={`w-3.5 h-3.5 ${togglingSuspendId === prod._id ? 'animate-spin' : ''}`} />
+                        ) : (
+                          <PauseCircle className={`w-3.5 h-3.5 ${togglingSuspendId === prod._id ? 'animate-spin' : ''}`} />
+                        )}
+                        {isSuspendedTab ? 'إلغاء التعليق' : 'تعليق'}
                       </button>
                       <button
                         onClick={() => handleDelete(prod._id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        حذف
+                        {t('products.delete')}
                       </button>
                     </div>
                   </div>
@@ -601,23 +1173,34 @@ export default function ProductsPage() {
       {/* Product Composer (Fullscreen Wizard) */}
       <ProductComposer
         open={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={handleComposerClose}
         mode={editId ? 'edit' : 'create'}
         loading={saving}
         form={form}
         setForm={setForm}
         categories={categories}
         suppliers={suppliers}
+        onCategoriesReload={loadCategories}
+        branches={branches}
+        user={user}
+        can={can}
+        branchScopeId={branchScopeId}
+        mainBranchOption={mainBranchOption}
         productImages={productImages}
         pendingImages={pendingImages}
+        maxImageCount={MAX_PRODUCT_IMAGES}
         onImagesChange={handleComposerImagesChange}
         onPrimaryImageSelect={handleComposerPrimarySelect}
         onRemoveImage={handleComposerRemoveImage}
         onSubmit={handleSave}
+        onQuickSuspend={() => handleSave({ suspendAfterCreate: true })}
+        onSuspendDraft={handleSuspendDraft}
         onAddVariant={handleComposerAddVariant}
         onUpdateVariant={handleComposerUpdateVariant}
         onRemoveVariant={handleComposerRemoveVariant}
         stepErrors={stepErrors}
+        pricingErrors={pricingValidationErrors}
+        isDirty={isFormDirty}
       />
 
       {/* Product Detail Modal */}
@@ -634,12 +1217,12 @@ export default function ProductsPage() {
         <BarcodeScanner
           onScan={async (barcode) => {
             setShowBarcodeScanner(false);
-            const loadToast = toast.loading('جاري البحث عن بيانات المنتج...');
+            const loadToast = toast.loading(t('products.searching_barcode'));
             try {
               try {
                 const res = await productsApi.getByBarcode(barcode);
                 if (res?.data?.data) {
-                  toast.success('هذا الباركود موجود بالفعل! تم فتحه للتعديل...', { id: loadToast });
+                  toast.success(t('products.barcode_exists'), { id: loadToast });
                   const p = res.data.data;
                   openEdit(p);
                   return;
@@ -650,7 +1233,7 @@ export default function ProductsPage() {
               const productData = await barcodeService.getProductByBarcode(barcode);
 
               if (productData) {
-                toast.success('تم العثور على بيانات المنتج!', { id: loadToast });
+                toast.success(t('products.barcode_found'), { id: loadToast });
                 setForm(prev => ({
                   ...prev,
                   barcode,
@@ -658,12 +1241,12 @@ export default function ProductsPage() {
                   description: productData.brand ? `ماركة: ${productData.brand}` : prev.description
                 }));
               } else {
-                toast.error('لم يتم العثور على بيانات للمنتج، لكن تم تسجيل الباركود.', { id: loadToast });
+                toast.error(t('products.barcode_not_found'), { id: loadToast });
                 setForm(prev => ({ ...prev, barcode }));
               }
             } catch (err) {
               console.error(err);
-              toast.error('خطأ في البحث، تم تسجيل الباركود فقط', { id: loadToast });
+              toast.error(t('products.barcode_error'), { id: loadToast });
               setForm(prev => ({ ...prev, barcode }));
             }
           }}

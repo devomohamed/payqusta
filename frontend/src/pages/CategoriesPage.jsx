@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, FolderTree, Edit, Trash2, ChevronRight, ChevronDown, Package, Check, X, FolderPlus } from 'lucide-react';
+import { Plus, Search, FolderTree, Edit, Trash2, ChevronRight, ChevronDown, Package, Check, X, FolderPlus, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { categoriesApi, productsApi, useAuthStore } from '../store';
-import { Button, Input, Modal, Card, LoadingSpinner, EmptyState, Badge, Select, TextArea } from '../components/UI';
+import { Button, Input, Modal, Card, LoadingSpinner, EmptyState, Badge, TextArea } from '../components/UI';
 import ProductDetailModal from '../components/ProductDetailModal';
 import CategorySelector from '../components/CategorySelector';
-import { getIconForCategory } from '../utils/aiHelper';
+import { getIconForCategory, getCategoryIconSuggestions, DEFAULT_CATEGORY_ICON } from '../utils/aiHelper';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { confirm } from '../components/ConfirmDialog';
@@ -18,7 +18,8 @@ export default function CategoriesPage() {
     const [showModal, setShowModal] = useState(false);
     const [editId, setEditId] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [form, setForm] = useState({ name: '', description: '', parent: null, icon: '📦' });
+    const [form, setForm] = useState({ name: '', description: '', parent: null, icon: DEFAULT_CATEGORY_ICON });
+    const [sectionMode, setSectionMode] = useState('root');
     const [expandedIds, setExpandedIds] = useState(new Set());
 
     // New States for Tree Dropdown & Products
@@ -37,13 +38,13 @@ export default function CategoriesPage() {
             const data = res.data.data || [];
 
             // Add a virtual "Uncategorized" category if it doesn't exist in the tree
-            const defaultCat = data.find(c => c.name === 'بدون تصنيف' || c.isDefault);
+            const defaultCat = data.find(c => c.name === 'بدون تصنيف' || c.name === 'بدون قسم' || c.isDefault);
             if (!defaultCat) {
                 data.push({
                     _id: 'uncategorized',
-                    name: 'منتجات أخرى / بدون تصنيف',
-                    icon: '📦',
-                    description: 'المنتجات التي لم يتم تحديد تصنيف لها.',
+                    name: 'منتجات أخرى / بدون قسم',
+                    icon: DEFAULT_CATEGORY_ICON,
+                    description: 'المنتجات التي لم يتم تحديد قسم لها.',
                     children: []
                 });
             }
@@ -56,7 +57,7 @@ export default function CategoriesPage() {
                 setSelectedCategoryId(data[0]._id);
             }
         } catch {
-            toast.error('خطأ في تحميل التصنيفات');
+            toast.error('خطأ في تحميل الأقسام');
         } finally {
             setLoading(false);
         }
@@ -99,17 +100,19 @@ export default function CategoriesPage() {
 
     const openAdd = (parentId = null) => {
         setEditId(null);
-        setForm({ name: '', description: '', parent: parentId, icon: '📦' });
+        setSectionMode(parentId ? 'child' : 'root');
+        setForm({ name: '', description: '', parent: parentId, icon: DEFAULT_CATEGORY_ICON });
         setShowModal(true);
     };
 
     const openEdit = (cat) => {
         setEditId(cat._id);
+        setSectionMode(cat.parent ? 'child' : 'root');
         setForm({
             name: cat.name,
             description: cat.description || '',
             parent: cat.parent?._id || cat.parent || null,
-            icon: cat.icon || '📦'
+            icon: cat.icon || DEFAULT_CATEGORY_ICON
         });
         setShowModal(true);
         setIsTreeOpen(false);
@@ -117,19 +120,25 @@ export default function CategoriesPage() {
 
     const handleNameChange = (name) => {
         const icon = getIconForCategory(name);
-        setForm(prev => ({ ...prev, name, icon: icon || prev.icon }));
+        setForm(prev => ({ ...prev, name, icon: icon || prev.icon || DEFAULT_CATEGORY_ICON }));
     };
 
     const handleSave = async () => {
-        if (!form.name) return toast.error('يرجى إدخال اسم التصنيف');
+        if (!form.name) return toast.error('يرجى إدخال اسم القسم');
+        if (sectionMode === 'child' && !form.parent) return toast.error('اختر القسم الرئيسي أولاً');
         setSaving(true);
         try {
+            const payload = {
+                ...form,
+                parent: sectionMode === 'child' ? form.parent : null,
+            };
+
             if (editId) {
-                await categoriesApi.update(editId, form);
-                toast.success('تم تحديث التصنيف');
+                await categoriesApi.update(editId, payload);
+                toast.success('تم تحديث القسم');
             } else {
-                const res = await categoriesApi.create(form);
-                toast.success('تم إضافة التصنيف');
+                const res = await categoriesApi.create(payload);
+                toast.success('تم إضافة القسم');
                 // Auto-select new category
                 if (res.data.data?._id) setSelectedCategoryId(res.data.data._id);
             }
@@ -144,11 +153,11 @@ export default function CategoriesPage() {
 
     const handleDelete = async (id) => {
         if (!id) return;
-        const ok = await confirm.delete('هل أنت متأكد من حذف هذا التصنيف؟ سيتم فك ارتباط المنتجات التابعة له.');
+        const ok = await confirm.delete('هل أنت متأكد من حذف هذا القسم؟ سيتم فك ارتباط المنتجات التابعة له.');
         if (!ok) return;
         try {
             await categoriesApi.delete(id);
-            toast.success('تم حذف التصنيف');
+            toast.success('تم حذف القسم');
             if (selectedCategoryId === id) setSelectedCategoryId(null);
             loadData();
         } catch {
@@ -177,7 +186,7 @@ export default function CategoriesPage() {
                     `}
                 >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="text-xl">{cat.icon || '📦'}</span>
+                        <span className="text-xl">{cat.icon || DEFAULT_CATEGORY_ICON}</span>
                         <span className={`font-bold truncate ${isSelected ? 'text-white' : ''}`}>{cat.name}</span>
                         {hasChildren && (
                             <button
@@ -228,6 +237,9 @@ export default function CategoriesPage() {
         }
         return items;
     }).find(c => c._id === selectedCategoryId);
+    const iconSuggestions = getCategoryIconSuggestions(form.name, 10);
+    const availableParents = categories.filter(c => c._id !== editId && c._id !== 'uncategorized');
+    const isChildSection = sectionMode === 'child';
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
@@ -236,9 +248,9 @@ export default function CategoriesPage() {
                 <div className="flex-1 min-w-0">
                     <h1 className="text-2xl font-black font-mona text-gray-800 dark:text-white flex items-center gap-3 mb-1">
                         <FolderTree className="w-8 h-8 text-primary-500" />
-                        إدارة التصنيفات
+                        إدارة الأقسام
                     </h1>
-                    <p className="text-sm text-gray-500">اختر تصنيفاً من القائمة لإدارته واستعراض منتجاته.</p>
+                    <p className="text-sm text-gray-500">اختر قسمًا من القائمة لإدارته واستعراض المنتجات المرتبطة به.</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
@@ -248,7 +260,7 @@ export default function CategoriesPage() {
                             onClick={() => openAdd()}
                             className="bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/20 px-6 py-3.5 rounded-2xl font-black"
                         >
-                            إضافة تصنيف جديد
+                            إضافة قسم جديد
                         </Button>
                     )}
 
@@ -261,10 +273,10 @@ export default function CategoriesPage() {
                             `}
                         >
                             <div className="flex items-center gap-3">
-                                <span className="text-2xl">{selectedCategory?.icon || '📦'}</span>
+                                <span className="text-2xl">{selectedCategory?.icon || DEFAULT_CATEGORY_ICON}</span>
                                 <div className="text-right">
-                                    <p className="text-[10px] uppercase font-black text-primary-500 tracking-widest leading-none mb-1 text-right">التصنيف المختار</p>
-                                    <p className="font-bold text-gray-800 dark:text-white leading-none truncate max-w-[120px] text-right">{selectedCategory?.name || 'اختر تصنيف...'}</p>
+                                    <p className="text-[10px] uppercase font-black text-primary-500 tracking-widest leading-none mb-1 text-right">القسم المختار</p>
+                                    <p className="font-bold text-gray-800 dark:text-white leading-none truncate max-w-[120px] text-right">{selectedCategory?.name || 'اختر قسم...'}</p>
                                 </div>
                             </div>
                             <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isTreeOpen ? 'rotate-180 text-primary-500' : ''}`} />
@@ -307,10 +319,10 @@ export default function CategoriesPage() {
 
                         <div className="relative flex flex-col items-center text-center p-4">
                             <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-primary-500/20 mb-4 transform group-hover:scale-105 transition-transform">
-                                {selectedCategory?.icon || '📦'}
+                                {selectedCategory?.icon || DEFAULT_CATEGORY_ICON}
                             </div>
-                            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{selectedCategory?.name || 'اختر تصنيف'}</h2>
-                            <p className="text-sm text-gray-500 mb-6">{selectedCategory?.description || 'لا يوجد وصف لهذا التصنيف.'}</p>
+                            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{selectedCategory?.name || 'اختر قسم'}</h2>
+                            <p className="text-sm text-gray-500 mb-6">{selectedCategory?.description || 'لا يوجد وصف لهذا القسم.'}</p>
 
                             <div className="grid grid-cols-2 gap-3 w-full">
                                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
@@ -346,7 +358,7 @@ export default function CategoriesPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="font-bold text-gray-800 dark:text-white group-hover:text-primary-500 transition-colors text-right">
-                                        {categories.find(c => c._id === (selectedCategory.parent._id || selectedCategory.parent))?.name || 'تصنيف رئيسي'}
+                                        {categories.find(c => c._id === (selectedCategory.parent._id || selectedCategory.parent))?.name || 'قسم رئيسي'}
                                     </p>
                                     <p className="text-[10px] text-gray-400">اضغط للذهاب للأصل</p>
                                 </div>
@@ -360,7 +372,7 @@ export default function CategoriesPage() {
                     <div className="flex items-center justify-between mb-4 px-2">
                         <h3 className="font-black text-gray-800 dark:text-white flex items-center gap-2">
                             <Package className="w-5 h-5 text-primary-500" />
-                            المنتجات في هذا التصنيف
+                            المنتجات في هذا القسم
                         </h3>
                         <Badge variant="info">مجموع: {categoryProducts.length}</Badge>
                     </div>
@@ -372,7 +384,7 @@ export default function CategoriesPage() {
                             <EmptyState
                                 icon={<Package className="w-16 h-16 opacity-20" />}
                                 title="لا توجد منتجات"
-                                description="هذا التصنيف لا يحتوي على منتجات حالياً. يمكنك إضافة منتجات جديدة من صفحة المنتجات."
+                                description="هذا القسم لا يحتوي على منتجات حاليًا. يمكنك إضافة منتجات جديدة من صفحة المنتجات."
                             />
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -414,51 +426,116 @@ export default function CategoriesPage() {
                 </div>
             </div>
 
-            <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل التصنيف' : 'إضافة تصنيف جديد'}>
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 rounded-2xl border border-primary-500/10 bg-primary-50/40 px-4 py-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">
-                            {form.icon || '📦'}
-                        </div>
-                        <div className="text-right">
-                            <p className="text-xs font-black text-primary-500">{'\u0627\u0644\u0623\u064a\u0642\u0648\u0646\u0629 \u0645\u0631\u062a\u0628\u0637\u0629 \u0628\u0627\u0633\u0645 \u0627\u0644\u062a\u0635\u0646\u064a\u0641'}</p>
-                            <p className="text-xs text-gray-500">{'\u062a\u062a\u062d\u062f\u062b \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627 \u0639\u0646\u062f \u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0627\u0633\u0645'}</p>
+            <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل القسم' : 'إضافة قسم جديد'}>
+                <div className="space-y-5">
+                    <div className="rounded-3xl border border-primary-500/15 bg-gradient-to-br from-primary-950 via-slate-900 to-slate-950 px-4 py-4 text-white shadow-2xl">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl text-slate-900 shadow-xl">
+                                {form.icon || DEFAULT_CATEGORY_ICON}
+                            </div>
+                            <div className="flex-1 text-right">
+                                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-primary-100">
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    اقتراح ذكي للأيقونة
+                                </div>
+                                <p className="mt-2 text-sm font-bold leading-6 text-white">
+                                    يتم اقتراح أيقونة مناسبة تلقائيًا حسب اسم القسم، ويمكنك تعديلها أو اختيار واحدة من الاقتراحات بالأسفل.
+                                </p>
+                                <p className="mt-1 text-xs text-slate-300">
+                                    {isChildSection
+                                        ? 'سيُحفظ هذا العنصر كقسم فرعي داخل قسم رئيسي.'
+                                        : 'سيظهر هذا العنصر كقسم رئيسي ويمكنك إضافة أقسام فرعية داخله لاحقًا.'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-1">
-                            <Input label="أيقونة" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="📦" />
+                            <Input label="أيقونة" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder={DEFAULT_CATEGORY_ICON} />
                         </div>
                         <div className="col-span-3">
                             <Input
-                                label="اسم التصنيف *"
+                                label="اسم القسم *"
                                 value={form.name}
                                 onChange={(e) => handleNameChange(e.target.value)}
-                                placeholder="مثال: ملابس، إلكترونيات..."
+                                placeholder="مثال: إلكترونيات، ملابس، حريمي..."
                             />
                         </div>
                     </div>
 
-                    <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
-                        <CategorySelector
-                            label="التصنيف الأب"
-                            value={form.parent}
-                            onChange={(val) => setForm({ ...form, parent: val })}
-                            categories={categories.filter(c => c._id !== editId)}
-                            placeholder="اجعله تصنيفاً رئيسياً..."
-                        />
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSectionMode('root');
+                                setForm(prev => ({ ...prev, parent: null }));
+                            }}
+                            className={`rounded-2xl border px-4 py-3 text-right transition-all ${!isChildSection ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'}`}
+                        >
+                            <p className="text-sm font-black">قسم رئيسي</p>
+                            <p className="mt-1 text-[11px]">يظهر كقسم أساسي في المتجر.</p>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSectionMode('child')}
+                            className={`rounded-2xl border px-4 py-3 text-right transition-all ${isChildSection ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'}`}
+                        >
+                            <p className="text-sm font-black">قسم فرعي</p>
+                            <p className="mt-1 text-[11px]">يرتبط بقسم رئيسي موجود.</p>
+                        </button>
+                    </div>
+
+                    {isChildSection ? (
+                        <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+                            <CategorySelector
+                                label="القسم الرئيسي *"
+                                value={form.parent}
+                                onChange={(val) => setForm({ ...form, parent: val })}
+                                categories={availableParents}
+                                placeholder="اختر القسم الرئيسي الذي سيتبع له هذا القسم"
+                            />
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-emerald-500/10 bg-emerald-50/70 px-4 py-3 text-right">
+                            <p className="text-sm font-black text-emerald-700">هذا قسم رئيسي</p>
+                            <p className="mt-1 text-xs leading-5 text-emerald-700/80">
+                                بعد الحفظ يمكنك إضافة أقسام فرعية داخله مثل شاشات، لابتوبات، حريمي، رجالي، أطفال وغيرها.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+                        <div className="mb-3 flex items-center justify-between">
+                            <div className="text-right">
+                                <p className="text-sm font-black text-gray-800 dark:text-white">أيقونات مقترحة</p>
+                                <p className="text-[11px] text-gray-500">اختيارات أكثر وضوحًا حسب نوع القسم.</p>
+                            </div>
+                            <Sparkles className="h-4 w-4 text-primary-500" />
+                        </div>
+                        <div className="grid grid-cols-5 gap-2">
+                            {iconSuggestions.map((icon) => (
+                                <button
+                                    key={`${form.name || 'default'}-${icon}`}
+                                    type="button"
+                                    onClick={() => setForm(prev => ({ ...prev, icon }))}
+                                    className={`flex h-12 items-center justify-center rounded-2xl border text-2xl transition-all ${form.icon === icon ? 'border-primary-500 bg-primary-50 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/40'}`}
+                                >
+                                    {icon}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <TextArea
-                        label="الوصف (اختياري)"
+                        label="وصف مختصر (اختياري)"
                         value={form.description}
                         onChange={(e) => setForm({ ...form, description: e.target.value })}
-                        placeholder="أضف وصفاً مختصراً لهذا التصنيف..."
+                        placeholder="أضف وصفًا مختصرًا يوضح محتوى هذا القسم للعميل..."
                         rows={3}
                     />
                 </div>
 
-                <div className="flex justify-end gap-3 mt-8">
+                <div className="mt-8 flex justify-end gap-3">
                     <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
                     <Button icon={<Check className="w-4 h-4" />} onClick={handleSave} loading={saving}>{editId ? 'تحديث' : 'حفظ'}</Button>
                 </div>

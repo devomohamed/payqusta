@@ -9,6 +9,7 @@ const ApiResponse = require('../utils/ApiResponse');
 const jwt = require('jsonwebtoken');
 const catchAsync = require('../utils/catchAsync');
 const mongoose = require('mongoose');
+const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 
 class TenantController {
   /**
@@ -61,11 +62,16 @@ class TenantController {
       }
     });
 
+    tenant.set('settings.categories', getStarterCategorySettings());
+    await tenant.save();
+
     // Add to user's tenants array if not already there
     if (!user.tenants.includes(tenant._id)) {
       user.tenants.push(tenant._id);
       await user.save({ validateBeforeSave: false });
     }
+
+    await seedStarterCatalogForTenant(tenant._id);
 
     ApiResponse.created(res, {
       tenant: {

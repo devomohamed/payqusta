@@ -43,11 +43,18 @@ const resolveDarkMode = (themeMode) => {
 // Configure Axios defaults
 export const api = axios.create({
   baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' },
 });
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (typeof config.headers?.setContentType === 'function') {
+      config.headers.setContentType(undefined);
+    } else if (config.headers) {
+      delete config.headers['Content-Type'];
+    }
+  }
+
   const token = localStorage.getItem('payqusta_token');
   if (token) {
     // Self-heal: If token is absurdly large (e.g. > 10KB due to old bug storing base64 logos), clear it to prevent 431 errors
@@ -343,18 +350,17 @@ export const productsApi = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
   getByBarcode: (code) => api.get(`/products/barcode/${code}`),
-  create: (data) => api.post('/products', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, data) => api.put(`/products/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data, config = {}) => api.post('/products', data, config),
+  update: (id, data, config = {}) => api.put(`/products/${id}`, data, config),
   delete: (id) => api.delete(`/products/${id}`),
+  setSuspended: (id, suspended) => api.patch(`/products/${id}/suspend`, { suspended }),
   updateStock: (id, data) => api.patch(`/products/${id}/stock`, data),
   getLowStock: () => api.get('/products/low-stock'),
   getSummary: () => api.get('/products/summary'),
   getCategories: () => api.get('/products/categories'),
   requestRestock: (id, quantity) => api.post(`/products/${id}/request-restock`, { quantity }),
   requestRestockBulk: () => api.post('/products/request-restock-bulk'),
-  uploadImage: (id, formData) => api.post(`/products/${id}/upload-image`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  uploadImage: (id, formData, config = {}) => api.post(`/products/${id}/upload-image`, formData, config),
   deleteImage: (id, imageUrl) => api.delete(`/products/${id}/images/${encodeURIComponent(imageUrl)}`),
   stocktake: (items) => api.post('/products/stocktake', { items }),
 };
@@ -382,6 +388,7 @@ export const customersApi = {
   sendStatement: (id) => api.post(`/customers/${id}/send-statement`),
   sendStatementPDF: (id, data) => api.post(`/customers/${id}/send-statement-pdf`, data),
   updateWhatsAppPreferences: (id, data) => api.put(`/customers/${id}/whatsapp-preferences`, data),
+  topupWallet: (id, data) => api.post(`/customers/${id}/wallet/topup`, data),
 };
 
 // Invoices API
@@ -396,6 +403,8 @@ export const invoicesApi = {
   getUpcoming: (days) => api.get('/invoices/upcoming-installments', { params: { days } }),
   getSalesSummary: (period) => api.get('/invoices/sales-summary', { params: { period } }),
   generatePaymentLink: (id, gateway) => api.post(`/invoices/${id}/payment-link`, { gateway }),
+  createBostaWaybill: (id, payload) => api.post(`/invoices/${id}/shipping/bosta`, payload),
+  trackBostaWaybill: (id) => api.get(`/invoices/${id}/shipping/bosta/track`),
 };
 
 // Suppliers API
@@ -412,6 +421,22 @@ export const suppliersApi = {
   requestRestock: (id) => api.post(`/suppliers/${id}/request-restock`),
   getLowStockProducts: (id) => api.get(`/suppliers/${id}/low-stock-products`),
   getUpcomingPayments: (days) => api.get('/suppliers/upcoming-payments', { params: { days } }),
+  getStatement: (id) => api.get(`/suppliers/${id}/statement`),
+};
+
+export const purchaseReturnsApi = {
+  getAll: (params) => api.get('/purchase-returns', { params }),
+  getById: (id) => api.get(`/purchase-returns/${id}`),
+  create: (data) => api.post('/purchase-returns', data),
+};
+
+// Supplier Purchase Invoices API
+export const supplierPurchaseInvoicesApi = {
+  getAll: (params) => api.get('/supplier-purchase-invoices', { params }),
+  getById: (id) => api.get(`/supplier-purchase-invoices/${id}`),
+  pay: (id, data) => api.post(`/supplier-purchase-invoices/${id}/pay`, data),
+  getUpcomingInstallments: (days = 7) => api.get('/supplier-purchase-invoices/upcoming-installments', { params: { days } }),
+  syncFromPurchaseOrders: () => api.post('/supplier-purchase-invoices/sync-from-purchase-orders'),
 };
 
 // Purchase Orders API
@@ -432,7 +457,10 @@ export const dashboardApi = {
   getProfitIntelligence: (params) => api.get('/dashboard/profit-intelligence', { params }),
   getRiskScoring: (params) => api.get('/dashboard/risk-scoring', { params }),
   getDailyCollections: (params) => api.get('/dashboard/daily-collections', { params }),
+  getSmartAssistant: (params) => api.get('/dashboard/smart-assistant', { params }),
+  getSupplierAgingReport: (params) => api.get('/dashboard/supplier-aging-report', { params }),
 };
+
 
 // Expenses API
 export const expensesApi = {

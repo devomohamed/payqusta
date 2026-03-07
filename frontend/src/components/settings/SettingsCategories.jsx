@@ -32,7 +32,7 @@ export default function SettingsCategories() {
       const merged = Array.from(new Set([...settingsNames, ...productCategories]));
       setCategories(merged);
     } catch (err) {
-      notify.error('فشل في تحميل التصنيفات');
+      notify.error('فشل في تحميل الأقسام');
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export default function SettingsCategories() {
   const addCategory = () => {
     if (!newCategory.trim()) return;
     if (categories.includes(newCategory.trim())) {
-      return notify.warning('التصنيف موجود بالفعل');
+      return notify.warning('القسم موجود بالفعل');
     }
     
     const updated = [...categories, newCategory.trim()];
@@ -65,8 +65,8 @@ export default function SettingsCategories() {
   const removeCategory = (cat) => {
     notify.custom({
       type: 'warning',
-      title: 'حذف التصنيف',
-      message: `هل أنت متأكد من حذف تصنيف "${cat}"؟ سيتم نقل جميع المنتجات المرتبطة به إلى تصنيف "أخرى".`,
+      title: 'حذف القسم',
+      message: `هل أنت متأكد من حذف قسم "${cat}"؟ سيتم نقل جميع المنتجات المرتبطة به إلى قسم "أخرى".`,
       action: {
         label: 'حذف نهائي',
         onClick: async () => {
@@ -75,9 +75,9 @@ export default function SettingsCategories() {
             await api.delete(`/settings/categories/${encodeURIComponent(cat)}`);
             // Update local state by removing the deleted category
             setCategories(categories.filter(c => c !== cat));
-            notify.success('تم حذف التصنيف بنجاح');
+            notify.success('تم حذف القسم بنجاح');
           } catch (err) {
-            notify.error('فشل في حذف التصنيف');
+            notify.error('فشل في حذف القسم');
           } finally {
             setSaving(false);
           }
@@ -93,7 +93,7 @@ export default function SettingsCategories() {
           <Tag className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">تصنيفات المنتجات</h2>
+          <h2 className="text-xl font-bold">أقسام المنتجات</h2>
           <p className="text-sm text-gray-400">إدارة فئات المنتجات الخاصة بمتجرك</p>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function SettingsCategories() {
       <div className="flex gap-3">
         <div className="flex-1">
           <Input 
-            placeholder="اسم التصنيف الجديد..." 
+            placeholder="اسم القسم الجديد..." 
             value={newCategory} 
             onChange={(e) => setNewCategory(e.target.value)} 
             onKeyPress={(e) => e.key === 'Enter' && addCategory()} 
@@ -142,8 +142,8 @@ export default function SettingsCategories() {
           {categories.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
               <Tag className="w-12 h-12 mb-3 opacity-20" />
-              <p>لا توجد تصنيفات مضافة بعد</p>
-              <p className="text-xs opacity-70 mt-1">أضف تصنيفات لتنظيم منتجاتك</p>
+              <p>لا توجد أقسام مضافة بعد</p>
+              <p className="text-xs opacity-70 mt-1">أضف أقسامًا لتنظيم منتجاتك</p>
             </div>
           )}
         </div>

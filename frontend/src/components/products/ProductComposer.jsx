@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button } from '../UI';
-import { Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle, Loader2 } from 'lucide-react';
+import { confirm } from '../ConfirmDialog';
 import ProductComposerHeader from './ProductComposerHeader';
 import ProductComposerSidebar from './ProductComposerSidebar';
 import ProductBasicsStep from './ProductBasicsStep';
@@ -9,7 +10,7 @@ import ProductMediaStep from './ProductMediaStep';
 import ProductReviewStep from './ProductReviewStep';
 
 export const COMPOSER_STEPS = [
-    { id: 'basics', label: 'الأساسيات', desc: 'الاسم والتصنيف' },
+    { id: 'basics', label: 'الأساسيات', desc: 'الاسم والأقسام' },
     { id: 'pricing', label: 'التسعير والمخزون', desc: 'السعر والكميات' },
     { id: 'media', label: 'الصور والموديلات', desc: 'الوسائط والمتغيرات' },
     { id: 'review', label: 'المراجعة والحفظ', desc: 'الملخص النهائي' }
@@ -24,19 +25,42 @@ export default function ProductComposer({
     setForm,
     categories = [],
     suppliers = [],
+    onCategoriesReload,
+    branches = [],
+    user = null,
+    can = () => false,
+    branchScopeId = '',
+    mainBranchOption = null,
     productImages = [],
     pendingImages = [],
     onImagesChange,
     onPrimaryImageSelect,
     onRemoveImage,
     onSubmit,
+    onQuickSuspend,
+    onSuspendDraft,
     onAddVariant,
     onUpdateVariant,
     onRemoveVariant,
     stepErrors = {},
+    pricingErrors = {},
+    isDirty = false,
 }) {
     const [activeStep, setActiveStep] = useState('basics');
     const [visitedSteps, setVisitedSteps] = useState(['basics']);
+
+    const handleCloseRequest = async () => {
+        if (loading) return;
+        if (isDirty) {
+            const approved = await confirm.warn(
+                'لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟',
+                'تأكيد الإغلاق'
+            );
+            if (approved) onClose();
+        } else {
+            onClose();
+        }
+    };
 
     // Reset wizard on open
     useEffect(() => {
@@ -84,9 +108,10 @@ export default function ProductComposer({
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={handleCloseRequest}
             size="fullscreen"
             showCloseButton={false}
+            closeOnOutsideClick={false}
             bodyClassName="p-0 flex flex-col h-full bg-gray-50/50 dark:bg-gray-900/50"
             contentClassName="h-[95vh] rounded-2xl"
             headerClassName="hidden" // Hiding the default header to use our custom composer header
@@ -96,7 +121,7 @@ export default function ProductComposer({
                 <ProductComposerHeader
                     title={mode === 'edit' ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد'}
                     subtitle="أدخل تفاصيل المنتج خطوة بخطوة واحفظ التعديلات"
-                    onClose={onClose}
+                    onClose={handleCloseRequest}
                     steps={COMPOSER_STEPS}
                     activeStep={activeStep}
                     onStepClick={handleStepClick}
@@ -110,15 +135,34 @@ export default function ProductComposer({
                     <div className="flex-1 overflow-y-auto no-scrollbar pb-24 lg:pb-0">
                         <div className="max-w-4xl mx-auto p-6 lg:p-8">
                             {activeStep === 'basics' && (
-                                <ProductBasicsStep form={form} setForm={setForm} categories={categories} suppliers={suppliers} />
+                                <ProductBasicsStep
+                                    form={form}
+                                    setForm={setForm}
+                                    categories={categories}
+                                    suppliers={suppliers}
+                                    branches={branches}
+                                    user={user}
+                                    can={can}
+                                    onCategoriesReload={onCategoriesReload}
+                                />
                             )}
                             {activeStep === 'pricing' && (
-                                <ProductPricingStep form={form} setForm={setForm} />
+                                <ProductPricingStep
+                                    form={form}
+                                    setForm={setForm}
+                                    branches={branches}
+                                    user={user}
+                                    mode={mode}
+                                    branchScopeId={branchScopeId}
+                                    mainBranchOption={mainBranchOption}
+                                    pricingErrors={pricingErrors}
+                                />
                             )}
                             {activeStep === 'media' && (
                                 <ProductMediaStep
                                     form={form}
                                     setForm={setForm}
+                                    branches={branches}
                                     productImages={productImages}
                                     pendingImages={pendingImages}
                                     onImagesChange={onImagesChange}
@@ -156,11 +200,17 @@ export default function ProductComposer({
                 {/* Sticky Footer Actions */}
                 <div className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 lg:p-6 sticky bottom-0 z-40">
                     <div className="max-w-7xl mx-auto flex items-center justify-between">
-                        <Button variant="ghost" onClick={onClose} disabled={loading}>
+                        <Button variant="ghost" onClick={handleCloseRequest} disabled={loading}>
                             إلغاء
                         </Button>
 
                         <div className="flex items-center gap-3">
+                            {mode === 'create' && typeof onSuspendDraft === 'function' && (
+                                <Button variant="outline" onClick={onSuspendDraft} disabled={loading}>
+                                    حفظ كغير مكتمل
+                                </Button>
+                            )}
+
                             {activeStep !== 'basics' && (
                                 <Button variant="outline" onClick={handlePrev} disabled={loading}>
                                     السابق
@@ -168,22 +218,40 @@ export default function ProductComposer({
                             )}
 
                             {!isLastStep ? (
-                                <Button variant="primary" onClick={handleNext}>
+                                <Button variant="primary" onClick={handleNext} disabled={loading}>
                                     التالي
                                 </Button>
                             ) : (
-                                <Button
-                                    variant={hasGlobalErrors ? 'danger' : 'primary'}
-                                    onClick={onSubmit}
-                                    loading={loading}
-                                    icon={hasGlobalErrors ? <AlertCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                                >
-                                    {mode === 'edit' ? 'حفظ التعديلات' : 'إضافة المنتج'}
-                                </Button>
+                                <>
+                                    {mode === 'create' && typeof onQuickSuspend === 'function' && (
+                                        <Button variant="warning" onClick={onQuickSuspend} disabled={loading}>
+                                            توقيف مؤقت
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant={hasGlobalErrors ? 'danger' : 'primary'}
+                                        onClick={onSubmit}
+                                        loading={loading}
+                                        icon={hasGlobalErrors ? <AlertCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                                    >
+                                        {loading
+                                            ? (mode === 'edit' ? 'جاري حفظ المنتج...' : 'جاري إضافة المنتج...')
+                                            : (mode === 'edit' ? 'حفظ التعديلات' : 'إضافة المنتج')}
+                                    </Button>
+                                </>
                             )}
                         </div>
                     </div>
                 </div>
+
+                {loading && (
+                    <div className="absolute inset-0 z-50 bg-white/55 dark:bg-gray-900/55 backdrop-blur-[1px] flex items-center justify-center">
+                        <div className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-lg flex items-center gap-2 text-sm font-bold">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary-500" />
+                            <span>{mode === 'edit' ? 'جاري حفظ المنتج...' : 'جاري إضافة المنتج...'}</span>
+                        </div>
+                    </div>
+                )}
             </div>
         </Modal>
     );

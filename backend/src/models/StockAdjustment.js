@@ -14,7 +14,12 @@ const stockAdjustmentSchema = new mongoose.Schema(
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User', 
+      ref: 'User',
+      required: true,
+    },
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
       required: true,
     },
     type: {
@@ -32,7 +37,7 @@ const stockAdjustmentSchema = new mongoose.Schema(
     },
     costAtAdjustment: {
       type: Number,
-      required: true, 
+      required: true,
       default: 0,
     },
   },

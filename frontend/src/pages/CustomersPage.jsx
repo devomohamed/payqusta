@@ -691,6 +691,16 @@ export default function CustomersPage() {
                       <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(selectedCustomer.financials?.creditLimit || 10000)}</p>
                     </div>
 
+                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
+                          <DollarSign className="w-4 h-4 text-purple-500" />
+                        </div>
+                        <p className="text-xs font-medium text-gray-400">رصيد المحفظة</p>
+                      </div>
+                      <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(selectedCustomer.wallet?.balance || 0)}</p>
+                    </div>
+
                     <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 shadow-sm col-span-2 lg:col-span-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
@@ -958,6 +968,8 @@ export default function CustomersPage() {
                   <div className="info-box"><label>إجمالي المشتريات</label><span>{fmt(selectedCustomer.financials?.totalPurchases)} ج.م</span></div>
                   <div className="info-box"><label>إجمالي المدفوع</label><span style={{ color: 'green' }}>{fmt(selectedCustomer.financials?.totalPaid)} ج.م</span></div>
                   <div className="info-box"><label>المتبقي</label><span style={{ color: (selectedCustomer.financials?.outstandingBalance || 0) > 0 ? 'red' : 'green' }}>{fmt(selectedCustomer.financials?.outstandingBalance)} ج.م</span></div>
+                  <div className="info-box"><label>الحد الائتماني</label><span>{fmt(selectedCustomer.financials?.creditLimit || 10000)} ج.م</span></div>
+                  <div className="info-box"><label>رصيد المحفظة</label><span>{fmt(selectedCustomer.wallet?.balance || 0)} ج.م</span></div>
                 </div>
                 <h3 style={{ marginTop: '20px', marginBottom: '10px' }}>سجل المعاملات</h3>
                 {customerTransactions.map((inv) => (

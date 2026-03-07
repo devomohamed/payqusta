@@ -208,6 +208,7 @@ const productSchema = new mongoose.Schema(
     barcode: { type: String },
     tags: [{ type: String }],
     isActive: { type: Boolean, default: true },
+    isSuspended: { type: Boolean, default: false },
     seoTitle: { type: String, trim: true, maxlength: 100 },
     seoDescription: { type: String, trim: true, maxlength: 300 },
 
@@ -252,6 +253,17 @@ const productSchema = new mongoose.Schema(
       enabled: { type: Boolean, default: false },
       quantity: { type: Number, default: 0 },
     },
+    // Metrics for AI Smart Alerts
+    metrics: {
+      dailyRunRate: { type: Number, default: 0 },
+      daysUntilStockOut: { type: Number, default: -1 }, // -1 means unknown or infinite
+      isSlowMoving: { type: Boolean, default: false },
+      lastTrendUpdate: { type: Date }
+    },
+    autoRestock: {
+      enabled: { type: Boolean, default: false },
+      quantity: { type: Number, default: 0 },
+    },
     // Back-in-stock notifications (C2)
     stockNotifications: [
       {
@@ -271,11 +283,18 @@ const productSchema = new mongoose.Schema(
 
 // Indexes
 productSchema.index({ tenant: 1, sku: 1 }, { unique: true, sparse: true });
-productSchema.index({ tenant: 1, barcode: 1 }, { unique: true, sparse: true });
+productSchema.index(
+  { tenant: 1, barcode: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { barcode: { $type: 'string' } }
+  }
+);
 productSchema.index({ tenant: 1, name: 'text', description: 'text' });
 productSchema.index({ tenant: 1, category: 1 });
 productSchema.index({ tenant: 1, stockStatus: 1 });
 productSchema.index({ tenant: 1, supplier: 1 });
+productSchema.index({ tenant: 1, isSuspended: 1 });
 
 // Virtual: profit margin
 productSchema.virtual('profitMargin').get(function () {
@@ -290,9 +309,9 @@ productSchema.virtual('profitPerUnit').get(function () {
 
 // Pre-save: Update global stock from inventory and set status
 productSchema.pre('save', function (next) {
-  // Convert empty strings to undefined for sparse indexes
-  if (this.sku === '') this.sku = undefined;
-  if (this.barcode === '') this.barcode = undefined;
+  // Convert empty strings or null to undefined for sparse indexes
+  if (this.sku === '' || this.sku === null) this.sku = undefined;
+  if (this.barcode === '' || this.barcode === null) this.barcode = undefined;
 
   // Sync Inventory -> Global Stock
   if (this.inventory && this.inventory.length > 0) {

@@ -7,6 +7,7 @@ const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
 const Supplier = require('../models/Supplier');
+const SupplierPurchaseInvoice = require('../models/SupplierPurchaseInvoice');
 const Expense = require('../models/Expense');
 const PaymentTransaction = require('../models/PaymentTransaction');
 const mongoose = require('mongoose');
@@ -467,6 +468,75 @@ class DashboardController {
   });
 
   /**
+   * GET /api/v1/dashboard/supplier-aging-report
+   * Supplier AP Aging Report — 30/60/90 days breakdown
+   */
+  getSupplierAgingReport = catchAsync(async (req, res, next) => {
+    const tenantId = new mongoose.Types.ObjectId(req.tenantId);
+    const branchId = req.query.branch ? new mongoose.Types.ObjectId(req.query.branch) : null;
+    const today = new Date();
+
+    const suppliers = await Supplier.find({ tenant: tenantId, isActive: true, 'financials.outstandingBalance': { $gt: 0 } }).lean();
+
+    const invoiceFilter = { tenant: tenantId, outstandingAmount: { $gt: 0 }, status: { $nin: ['paid', 'cancelled'] } };
+    if (branchId) invoiceFilter.branch = branchId;
+
+    const agingData = await Promise.all(
+      suppliers.map(async (s) => {
+        const invoices = await SupplierPurchaseInvoice.find({
+          ...invoiceFilter,
+          supplier: s._id,
+        }).lean();
+
+        // If no active invoices, we could still fall back to financials if we wanted, 
+        // but tracking by invoice is more accurate for aging.
+        if (invoices.length === 0) return null;
+
+        let current = 0, days30 = 0, days60 = 0, days90 = 0, over90 = 0;
+
+        invoices.forEach((inv) => {
+          const daysDue = Math.floor((today - new Date(inv.createdAt)) / (1000 * 60 * 60 * 24));
+          const amt = inv.outstandingAmount || 0;
+          if (daysDue <= 30) current += amt;
+          else if (daysDue <= 60) days30 += amt;
+          else if (daysDue <= 90) days60 += amt;
+          else if (daysDue <= 120) days90 += amt;
+          else over90 += amt;
+        });
+
+        const total = current + days30 + days60 + days90 + over90;
+        let status = 'regular'; // منتظم
+        if (over90 > 0 || days90 > 0) status = 'critical'; // خطر
+        else if (days60 > 0) status = 'warning'; // متأخر
+        else if (days30 > 0) status = 'delayed'; // متأخر قليلاً
+
+        return {
+          _id: s._id, name: s.name, phone: s.phone,
+          current, days30, days60, days90, over90, total, status,
+          invoiceCount: invoices.length,
+        };
+      })
+    );
+
+    const filtered = agingData.filter((d) => d && d.total > 0);
+    filtered.sort((a, b) => b.total - a.total);
+
+    const summary = {
+      current: filtered.reduce((acc, d) => acc + d.current, 0),
+      days30: filtered.reduce((acc, d) => acc + d.days30, 0),
+      days60: filtered.reduce((acc, d) => acc + d.days60, 0),
+      days90: filtered.reduce((acc, d) => acc + d.days90, 0),
+      over90: filtered.reduce((acc, d) => acc + d.over90, 0),
+      total: filtered.reduce((acc, d) => acc + d.total, 0),
+      supplierCount: filtered.length,
+      critical: filtered.filter((d) => d.status === 'critical').length,
+      warning: filtered.filter((d) => d.status === 'warning').length,
+    };
+
+    ApiResponse.success(res, { suppliers: filtered, summary });
+  });
+
+  /**
    * GET /api/v1/dashboard/business-health
    * Business Health Score — overall business health metric
    */
@@ -785,18 +855,57 @@ class DashboardController {
       });
     }
 
-    // 5. Supplier payments due (Global)
-    const supplierPaymentsDue = await Supplier.find({
+    // 5. Short Term Stock Out Risk (AI Prediction)
+    const stockOutRiskProducts = await Product.find({
       tenant: tenantId,
-      'payments.dueDate': { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) },
-      'payments.status': 'pending',
+      isActive: true,
+      'metrics.daysUntilStockOut': { $gt: 0, $lte: 7 }
+    }).select('name metrics.daysUntilStockOut').limit(5).lean();
+
+    if (stockOutRiskProducts.length > 0) {
+      suggestions.push({
+        type: 'warning',
+        icon: '⏳',
+        title: 'نفاد مخزون وشيك',
+        message: `${stockOutRiskProducts.length} منتجات قد تنفد خلال 7 أيام بناءً على معدل البيع — اطلبها قريباً`,
+        action: 'products'
+      });
+    }
+
+    // 6. Slow Moving Inventory
+    const slowMovingProductsCount = await Product.countDocuments({
+      tenant: tenantId,
+      isActive: true,
+      'metrics.isSlowMoving': true
     });
+
+    if (slowMovingProductsCount > 0) {
+      suggestions.push({
+        type: 'info',
+        icon: '🐢',
+        title: 'مخزون راكد',
+        message: `يوجد ${slowMovingProductsCount} منتجات لم تُباع خلال 30 يوماً — فكر في عمل عروض ترويجية`,
+        action: 'products'
+      });
+    }
+
+    // 7. Supplier payments due (Global)
+    const supplierPaymentsDue = await SupplierPurchaseInvoice.find({
+      tenant: tenantId,
+      status: { $in: ['open', 'partial_paid'] },
+      installmentsSchedule: {
+        $elemMatch: {
+          status: { $in: ['pending', 'partially_paid', 'overdue'] },
+          dueDate: { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) },
+        },
+      },
+    }).select('_id');
     if (supplierPaymentsDue.length > 0) {
       suggestions.push({
         type: 'reminder',
         icon: '🚛',
         title: 'مدفوعات موردين',
-        message: `${supplierPaymentsDue.length} مورد لديه دفعات مستحقة قريباً`,
+        message: `${supplierPaymentsDue.length} فاتورة مشتريات مورد بها دفعات مستحقة قريباً`,
         action: 'suppliers',
       });
     }

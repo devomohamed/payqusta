@@ -79,50 +79,61 @@ supplierSchema.index({ tenant: 1, phone: 1 }, { unique: true });
 supplierSchema.index({ 'payments.dueDate': 1, 'payments.status': 1 });
 
 // Instance: Add a purchase and create payment schedule
-supplierSchema.methods.addPurchase = function (amount, paymentType = 'cash', installments = 1) {
-  this.financials.totalPurchases += amount;
+supplierSchema.methods.addPurchase = function (amount, paymentType = 'cash', installments = 1, options = {}) {
+  const normalizedAmount = Math.max(0, Number(amount || 0));
+  const normalizedInstallments = Math.max(1, Math.floor(Number(installments || 1)));
+  const skipPaymentSchedule = Boolean(options?.skipPaymentSchedule);
+
+  this.financials.totalPurchases += normalizedAmount;
 
   if (paymentType === 'cash') {
-    this.financials.totalPaid += amount;
+    this.financials.totalPaid += normalizedAmount;
   } else {
-    this.financials.outstandingBalance += amount;
+    this.financials.outstandingBalance += normalizedAmount;
 
-    // Create payment schedule
-    const installmentAmount = Math.ceil(amount / installments);
-    const now = new Date();
+    if (!skipPaymentSchedule) {
+      // Create payment schedule (legacy supplier payments)
+      const installmentAmount = Math.ceil(normalizedAmount / normalizedInstallments);
+      const now = new Date();
 
-    for (let i = 0; i < installments; i++) {
-      const dueDate = new Date(now);
+      for (let i = 0; i < normalizedInstallments; i++) {
+        const dueDate = new Date(now);
 
-      // Determine due date based on payment terms
-      switch (this.paymentTerms) {
-        case 'deferred_15':
-          dueDate.setDate(dueDate.getDate() + 15 * (i + 1));
-          break;
-        case 'deferred_30':
-          dueDate.setMonth(dueDate.getMonth() + (i + 1));
-          break;
-        case 'deferred_45':
-          dueDate.setDate(dueDate.getDate() + 45 * (i + 1));
-          break;
-        case 'deferred_60':
-          dueDate.setDate(dueDate.getDate() + 60 * (i + 1));
-          break;
-        default:
-          dueDate.setMonth(dueDate.getMonth() + (i + 1));
+        // Determine due date based on payment terms
+        switch (this.paymentTerms) {
+          case 'deferred_15':
+            dueDate.setDate(dueDate.getDate() + 15 * (i + 1));
+            break;
+          case 'deferred_30':
+            dueDate.setMonth(dueDate.getMonth() + (i + 1));
+            break;
+          case 'deferred_45':
+            dueDate.setDate(dueDate.getDate() + 45 * (i + 1));
+            break;
+          case 'deferred_60':
+            dueDate.setDate(dueDate.getDate() + 60 * (i + 1));
+            break;
+          default:
+            dueDate.setMonth(dueDate.getMonth() + (i + 1));
+        }
+
+        const amt = i === normalizedInstallments - 1
+          ? normalizedAmount - installmentAmount * (normalizedInstallments - 1)
+          : installmentAmount;
+
+        this.payments.push({
+          amount: amt,
+          dueDate,
+          status: 'pending',
+        });
       }
-
-      const amt = i === installments - 1
-        ? amount - installmentAmount * (installments - 1)
-        : installmentAmount;
-
-      this.payments.push({
-        amount: amt,
-        dueDate,
-        status: 'pending',
-      });
     }
   }
+
+  this.financials.outstandingBalance = Math.max(
+    0,
+    Number(this.financials.totalPurchases || 0) - Number(this.financials.totalPaid || 0)
+  );
 
   return this;
 };

@@ -3,6 +3,7 @@
  */
 
 const Supplier = require('../models/Supplier');
+const SupplierPurchaseInvoice = require('../models/SupplierPurchaseInvoice');
 const Product = require('../models/Product');
 const Tenant = require('../models/Tenant');
 const AppError = require('../utils/AppError');
@@ -11,6 +12,49 @@ const Helpers = require('../utils/helpers');
 const WhatsAppService = require('../services/WhatsAppService');
 const PDFService = require('../services/PDFService');
 const catchAsync = require('../utils/catchAsync');
+
+async function allocateSupplierPaymentToPurchaseInvoices({
+  tenantId,
+  supplierId,
+  amount,
+  paymentOptions = {},
+}) {
+  let remaining = Math.max(0, Number(amount || 0));
+  if (remaining <= 0) {
+    return { allocatedAmount: 0, invoicesAffected: 0, unallocatedAmount: 0 };
+  }
+
+  const invoices = await SupplierPurchaseInvoice.find({
+    tenant: tenantId,
+    supplier: supplierId,
+    status: { $in: ['open', 'partial_paid'] },
+    outstandingAmount: { $gt: 0 },
+  }).sort({ createdAt: 1 });
+
+  let allocatedAmount = 0;
+  let invoicesAffected = 0;
+
+  for (const invoice of invoices) {
+    if (remaining <= 0) break;
+
+    const outstanding = Math.max(0, Number(invoice.outstandingAmount || 0));
+    if (outstanding <= 0) continue;
+
+    const paidChunk = Math.min(remaining, outstanding);
+    invoice.recordPayment(paidChunk, paymentOptions);
+    await invoice.save();
+
+    remaining -= paidChunk;
+    allocatedAmount += paidChunk;
+    invoicesAffected += 1;
+  }
+
+  return {
+    allocatedAmount,
+    invoicesAffected,
+    unallocatedAmount: remaining,
+  };
+}
 
 class SupplierController {
   getAll = catchAsync(async (req, res, next) => {
@@ -23,7 +67,25 @@ class SupplierController {
         { contactPerson: { $regex: req.query.search, $options: 'i' } },
       ];
     }
-    if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
+
+    if (req.query.isActive !== undefined) {
+      filter.isActive = req.query.isActive === 'true';
+    } else if (req.query.tab) {
+      if (req.query.tab === 'active') filter.isActive = true;
+      if (req.query.tab === 'stopped') filter.isActive = false;
+      if (req.query.tab === 'balance') filter['financials.outstandingBalance'] = { $gt: 0 };
+    }
+
+    if (req.query.category && require('mongoose').Types.ObjectId.isValid(req.query.category)) {
+      const productSuppliers = await Product.distinct('supplier', {
+        tenant: req.tenantId,
+        $or: [
+          { category: req.query.category },
+          { subcategory: req.query.category }
+        ]
+      });
+      filter._id = { $in: productSuppliers };
+    }
 
     const [suppliers, total] = await Promise.all([
       Supplier.find(filter).sort(sort).skip(skip).limit(limit).lean(),
@@ -127,14 +189,26 @@ class SupplierController {
    * Record a payment to supplier
    */
   recordPayment = catchAsync(async (req, res, next) => {
-    const { amount } = req.body;
+    const { amount, method, reference, notes } = req.body;
     const supplier = await Supplier.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!supplier) return next(AppError.notFound('المورد غير موجود'));
 
     supplier.recordPayment(req.params.paymentId, amount);
     await supplier.save();
 
-    ApiResponse.success(res, supplier, 'تم تسجيل الدفعة للمورد');
+    const allocation = await allocateSupplierPaymentToPurchaseInvoices({
+      tenantId: req.tenantId,
+      supplierId: supplier._id,
+      amount,
+      paymentOptions: {
+        method: method || 'cash',
+        reference: reference || '',
+        notes: notes || '',
+        recordedBy: req.user?._id || null,
+      },
+    });
+
+    ApiResponse.success(res, { supplier, allocation }, 'تم تسجيل الدفعة للمورد');
   });
 
   /**
@@ -148,7 +222,19 @@ class SupplierController {
     const result = supplier.payAllOutstanding();
     await supplier.save();
 
-    ApiResponse.success(res, { ...result, supplier }, 'تم سداد كل المستحقات للمورد');
+    const allocation = await allocateSupplierPaymentToPurchaseInvoices({
+      tenantId: req.tenantId,
+      supplierId: supplier._id,
+      amount: result?.paidAmount || 0,
+      paymentOptions: {
+        method: 'cash',
+        reference: 'PAY_ALL',
+        notes: 'سداد كل مستحقات المورد',
+        recordedBy: req.user?._id || null,
+      },
+    });
+
+    ApiResponse.success(res, { ...result, supplier, allocation }, 'تم سداد كل المستحقات للمورد');
   });
 
   /**
@@ -281,6 +367,84 @@ class SupplierController {
       supplier: { _id: supplier._id, name: supplier.name, phone: supplier.phone },
       products: lowStockProducts,
       count: lowStockProducts.length,
+    });
+  });
+
+  /**
+   * GET /api/v1/suppliers/:id/statement
+   * Get chronological statement of account with running balance
+   */
+  getStatement = catchAsync(async (req, res, next) => {
+    const supplier = await Supplier.findOne({ _id: req.params.id, ...req.tenantFilter });
+    if (!supplier) return next(AppError.notFound('المورد غير موجود'));
+
+    const invoices = await SupplierPurchaseInvoice.find({ supplier: supplier._id })
+      .select('invoiceNumber totalAmount paidAmount outstandingAmount status paymentRecords createdAt purchaseOrder')
+      .populate('purchaseOrder', 'orderNumber')
+      .lean();
+
+    const transactions = [];
+
+    // Add invoices as charges
+    invoices.forEach(inv => {
+      if (inv.totalAmount > 0) {
+        transactions.push({
+          _id: `inv-${inv._id}`,
+          date: inv.createdAt,
+          type: 'invoice',
+          amount: inv.totalAmount,
+          description: `فاتورة مشتريات رقم ${inv.invoiceNumber}`,
+          reference: inv.purchaseOrder ? `PO: ${inv.purchaseOrder.orderNumber}` : '',
+        });
+      }
+
+      // Add payments as deductions
+      (inv.paymentRecords || []).forEach(payment => {
+        transactions.push({
+          _id: `pay-${payment._id}`,
+          date: payment.date,
+          type: 'payment',
+          amount: payment.amount,
+          description: `سداد دفعة (فاتورة ${inv.invoiceNumber})`,
+          reference: payment.reference || payment.method,
+        });
+      });
+    });
+
+    // Extract legacy unallocated payments from supplier model (Optional, if they exist with paidDate but aren't in invoices)
+    (supplier.payments || []).forEach(sp => {
+      if (sp.paidAmount > 0 && sp.paidDate) {
+        // Considered but skipping to avoid duplication with invoice payments
+      }
+    });
+
+    // Sort chronologically
+    transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate running balance
+    let runningBalance = 0;
+    const statement = transactions.map(t => {
+      if (t.type === 'invoice') runningBalance += t.amount;
+      if (t.type === 'payment') runningBalance -= t.amount;
+      return { ...t, runningBalance };
+    });
+
+    ApiResponse.success(res, {
+      supplier: {
+        _id: supplier._id,
+        name: supplier.name,
+        phone: supplier.phone,
+        contactPerson: supplier.contactPerson,
+        financials: supplier.financials,
+        paymentTerms: supplier.paymentTerms
+      },
+      statement: statement.reverse(), // most recent first for UI
+      summary: {
+        totalInvoices: invoices.length,
+        totalPurchases: supplier.financials?.totalPurchases || 0,
+        totalPaid: supplier.financials?.totalPaid || 0,
+        outstandingBalance: supplier.financials?.outstandingBalance || 0
+      }
     });
   });
 }

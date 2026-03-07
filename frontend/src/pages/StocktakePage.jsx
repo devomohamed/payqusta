@@ -4,12 +4,14 @@ import toast from 'react-hot-toast';
 import { productsApi, useAuthStore } from '../store';
 import { Button, Card, LoadingSpinner, EmptyState, Badge } from '../components/UI';
 import { confirm } from '../components/ConfirmDialog';
+import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 
 export default function StocktakePage() {
     const { user } = useAuthStore();
-    const branchId = user?.branch;
+    const [selectedBranchId, setSelectedBranchId] = useState(user?.branch || '');
 
     const [products, setProducts] = useState([]);
+    const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
@@ -44,19 +46,35 @@ export default function StocktakePage() {
             setProducts(data);
             setCategories(catRes.data.data || []);
 
+            // Fetch branches if not locked to one
+            if (!user?.branch) {
+                const branchRes = await api.get('/settings/branches');
+                const fetchedBranches = branchRes.data.data || [];
+                setBranches(fetchedBranches);
+
+                // Set default branch if clear
+                if (!selectedBranchId && fetchedBranches.length > 0) {
+                    // Update state, the actual data load will rely on the next effect cycle, 
+                    // but we can compute counts here manually if needed.
+                    setSelectedBranchId(fetchedBranches[0]._id);
+                }
+            }
+
             // Initialize stockCounts with current system quantities (branch-aware)
+            // Use the currently targeted branch for counts
             setStockCounts((prev) => {
                 const newCounts = { ...prev };
                 data.forEach((p) => {
-                    if (newCounts[p._id] === undefined) {
-                        if (branchId) {
-                            const branchInv = p.inventory?.find(inv =>
-                                (inv.branch?._id || inv.branch) === branchId
-                            );
-                            newCounts[p._id] = branchInv ? branchInv.quantity : 0;
-                        } else {
-                            newCounts[p._id] = p.stock?.quantity || 0;
-                        }
+                    const currentTargetBranch = selectedBranchId || (branches.length > 0 ? branches[0]._id : null);
+
+                    if (currentTargetBranch) {
+                        const branchInv = p.inventory?.find(inv =>
+                            (inv.branch?._id || inv.branch) === currentTargetBranch
+                        );
+                        newCounts[p._id] = branchInv ? branchInv.quantity : 0;
+                    } else {
+                        // Fallback if absolutely no branch is set yet globally
+                        newCounts[p._id] = p.stock?.quantity || 0;
                     }
                 });
                 return newCounts;
@@ -73,7 +91,7 @@ export default function StocktakePage() {
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, categoryFilter, branchId]);
+    }, [debouncedSearch, categoryFilter, selectedBranchId, user?.branch]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -82,15 +100,15 @@ export default function StocktakePage() {
     };
 
     const handleSaveStocktake = async () => {
+        if (!selectedBranchId) {
+            return toast.error('يرجى تحديد الفرع أولاً قبل حفظ الجرد.');
+        }
+
         // Find products where actual quantity differs from system quantity
         const discrepancies = products.map((p) => {
-            let current;
-            if (branchId) {
-                const branchInv = p.inventory?.find(inv => inv.branch === branchId || inv.branch?._id === branchId);
-                current = branchInv ? branchInv.quantity : 0;
-            } else {
-                current = p.stock?.quantity || 0;
-            }
+            let current = 0;
+            const branchInv = p.inventory?.find(inv => inv.branch === selectedBranchId || inv.branch?._id === selectedBranchId);
+            current = branchInv ? branchInv.quantity : 0;
 
             const actual = stockCounts[p._id];
             if (actual !== undefined && current !== actual) {
@@ -110,7 +128,7 @@ export default function StocktakePage() {
         const loadToast = toast.loading('جاري تحديث المخزون...');
 
         try {
-            const res = await productsApi.stocktake({ items: discrepancies, branchId });
+            const res = await productsApi.stocktake({ items: discrepancies, branchId: selectedBranchId });
             toast.success(res.data.message || 'تم تحديث المخزون بنجاح', { id: loadToast });
             // Reset local counts so they sync back with server
             setStockCounts({});
@@ -123,16 +141,16 @@ export default function StocktakePage() {
     };
 
     const hasChanges = products.some(p => {
+        if (!selectedBranchId) return false;
+
         const act = stockCounts[p._id];
-        let current;
-        if (branchId) {
-            const branchInv = p.inventory?.find(inv => inv.branch === branchId || inv.branch?._id === branchId);
-            current = branchInv ? branchInv.quantity : 0;
-        } else {
-            current = p.stock?.quantity || 0;
-        }
+        const branchInv = p.inventory?.find(inv => inv.branch === selectedBranchId || inv.branch?._id === selectedBranchId);
+        const current = branchInv ? branchInv.quantity : 0;
+
         return act !== undefined && act !== current;
     });
+
+    useUnsavedWarning(hasChanges, 'stocktake');
 
     return (
         <div className="space-y-5 animate-fade-in relative pb-20">
@@ -147,6 +165,18 @@ export default function StocktakePage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+                {!user?.branch && branches.length > 0 && (
+                    <select
+                        value={selectedBranchId}
+                        onChange={(e) => setSelectedBranchId(e.target.value)}
+                        className="px-4 py-2.5 rounded-xl border-2 border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 font-bold text-primary-700 dark:text-primary-400 text-sm cursor-pointer min-w-[150px]"
+                    >
+                        <option value="" disabled>🏪 اختر الفرع לגرد</option>
+                        {branches.map(b => (
+                            <option key={b._id} value={b._id}>{b.name}</option>
+                        ))}
+                    </select>
+                )}
                 <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -205,7 +235,8 @@ export default function StocktakePage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
                                 {products.map((p) => {
-                                    const systemQty = p.stock?.quantity || 0;
+                                    const branchInv = p.inventory?.find(inv => inv.branch === selectedBranchId || inv.branch?._id === selectedBranchId);
+                                    const systemQty = branchInv ? branchInv.quantity : 0;
                                     const actualQty = stockCounts[p._id] !== undefined ? stockCounts[p._id] : systemQty;
                                     const diff = actualQty - systemQty;
 

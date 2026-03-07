@@ -37,6 +37,8 @@ const notificationSchema = new mongoose.Schema(
         'low_stock',             // مخزون منخفض
         'out_of_stock',          // نفاد مخزون
         'supplier_payment_due',  // دفعة مورد مستحقة
+        'supplier_payment_overdue', // دفعة مورد متأخرة
+        'supplier_payment_recorded', // تسجيل دفعة مورد
         'restock_request',       // طلب إعادة تخزين
         'new_customer',          // عميل جديد
         'customer_vip',          // عميل ترقى لـ VIP
@@ -77,7 +79,7 @@ const notificationSchema = new mongoose.Schema(
     // Related entity
     relatedModel: {
       type: String,
-      enum: ['Invoice', 'Product', 'Customer', 'Supplier', null],
+      enum: ['Invoice', 'Product', 'Customer', 'Supplier', 'PurchaseOrder', 'SupplierPurchaseInvoice', null],
     },
     relatedId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -139,6 +141,8 @@ function getDefaultIcon(type) {
     low_stock: 'alert-triangle',
     out_of_stock: 'package-x',
     supplier_payment_due: 'truck',
+    supplier_payment_overdue: 'truck',
+    supplier_payment_recorded: 'credit-card',
     restock_request: 'package-plus',
     new_customer: 'user-plus',
     customer_vip: 'star',
@@ -161,6 +165,8 @@ function getDefaultColor(type) {
     low_stock: 'warning',
     out_of_stock: 'danger',
     supplier_payment_due: 'warning',
+    supplier_payment_overdue: 'danger',
+    supplier_payment_recorded: 'success',
     restock_request: 'primary',
     new_customer: 'success',
     customer_vip: 'warning',

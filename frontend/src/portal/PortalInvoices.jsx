@@ -253,7 +253,7 @@ export default function PortalInvoices() {
                     <button
                       onClick={() => {
                         setPayAmount(String(selectedInvoice.remainingAmount));
-                        setPayMethod('cash');
+                        setPayMethod('online_card');
                         setPayNotes('');
                         setPayModalOpen(true);
                       }}
@@ -366,14 +366,14 @@ export default function PortalInvoices() {
         </div>
       )}
 
-      {/* Payment Modal */}
+      {/* Payment Modal — Gateway based */}
       {payModalOpen && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-primary-500" />
-                {t('invoices.pay_invoice', { num: selectedInvoice.invoiceNumber })}
+                <CreditCard className="w-5 h-5 text-primary-500" />
+                سداد الفاتورة #{selectedInvoice.invoiceNumber}
               </h3>
               <button onClick={() => setPayModalOpen(false)} disabled={payLoading} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                 <X className="w-5 h-5 text-gray-500" />
@@ -381,80 +381,67 @@ export default function PortalInvoices() {
             </div>
 
             <div className="p-5 space-y-4">
+              {/* Amount summary */}
               <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.remaining_amount')}</p>
-                <p className="text-2xl font-black text-primary-600 dark:text-primary-400">{selectedInvoice.remainingAmount?.toLocaleString()} {currency}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي</p>
+                <p className="text-2xl font-black text-primary-600 dark:text-primary-400">
+                  {selectedInvoice.remainingAmount?.toLocaleString('ar-EG')} ج.م
+                </p>
               </div>
 
+              {/* Gateway choice */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.pay_amount_label')}</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={selectedInvoice.remainingAmount}
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition text-center text-lg font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.payment_method')}</label>
-                <div className="grid grid-cols-3 gap-2">
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">اختر طريقة الدفع</label>
+                <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: 'cash', label: t('invoices.cash') },
-                    { value: 'card', label: t('invoices.card') },
-                    { value: 'transfer', label: t('invoices.transfer') },
-                  ].map((m) => (
+                    { id: 'paymob', label: 'Paymob', sub: 'فيزا / ماستركارد / محفظة', icon: '💳' },
+                    { id: 'fawry', label: 'Fawry', sub: 'دفع نقدي في المحلات', icon: '🏪' },
+                  ].map((g) => (
                     <button
-                      key={m.value}
-                      onClick={() => setPayMethod(m.value)}
-                      className={`py-2 rounded-xl text-sm font-bold transition ${payMethod === m.value
-                        ? 'bg-primary-500 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      key={g.id}
+                      onClick={() => setPayMethod(g.id)}
+                      className={`p-3 rounded-xl border-2 text-right transition-all ${payMethod === g.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
                         }`}
                     >
-                      {m.label}
+                      <div className="text-2xl mb-1">{g.icon}</div>
+                      <p className={`text-sm font-bold ${payMethod === g.id ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'}`}>{g.label}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{g.sub}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('invoices.notes_optional')}</label>
-                <input
-                  type="text"
-                  value={payNotes}
-                  onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder={t('invoices.notes_placeholder')}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
-                />
-              </div>
-
               <button
                 onClick={async () => {
-                  const amount = parseFloat(payAmount);
-                  if (!amount || amount <= 0 || amount > selectedInvoice.remainingAmount) {
-                    notify.error(t('invoices.invalid_amount'));
-                    return;
-                  }
                   setPayLoading(true);
-                  const res = await payInvoice(selectedInvoice._id, amount, payMethod, payNotes);
+                  const res = await payInvoice(selectedInvoice._id, payMethod, selectedInvoice.remainingAmount);
                   setPayLoading(false);
-                  if (res.success) {
-                    notify.success(t('invoices.pay_success'));
+                  if (res.success && res.data?.paymentLink) {
+                    window.open(res.data.paymentLink, '_blank');
                     setPayModalOpen(false);
-                    setSelectedInvoice(null);
-                    loadInvoices(pagination.page, statusFilter);
+                    notify.success('تم إنشاء رابط الدفع — أكمل عملية الدفع في النافذة الجديدة');
+                  } else if (res.success && res.data?.transaction) {
+                    // Paymob might need gateway not enabled yet
+                    notify.error(res.message || 'بوابة الدفع غير مفعلة. تواصل مع المتجر.');
                   } else {
-                    notify.error(res.message || t('invoices.pay_fail'));
+                    notify.error(res.message || 'فشل إنشاء رابط الدفع');
                   }
                 }}
-                disabled={payLoading}
-                className="w-full py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20 disabled:opacity-50"
+                disabled={payLoading || !payMethod}
+                className="w-full py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition shadow-lg shadow-primary-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {payLoading ? t('invoices.paying') : t('invoices.confirm_pay', { amount: parseFloat(payAmount || 0).toLocaleString() })}
+                {payLoading ? (
+                  <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> جاري الإنشاء...</>
+                ) : (
+                  <><CreditCard className="w-5 h-5" /> ادفع الآن</>
+                )}
               </button>
+
+              <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+                ستُفتح صفحة الدفع في نافذة جديدة آمنة
+              </p>
             </div>
           </div>
         </div>

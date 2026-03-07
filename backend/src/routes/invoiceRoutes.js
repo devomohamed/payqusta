@@ -22,6 +22,10 @@ router.post('/:id/pay-all', authorize('vendor', 'admin'), checkPermission('invoi
 router.post('/:id/send-whatsapp', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), invoiceController.sendWhatsApp);
 router.patch('/:id/order-status', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), invoiceController.updateOrderStatus);
 
+// --- Shipping (Bosta) ---
+router.post('/:id/shipping/bosta', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), invoiceController.createBostaWaybill);
+router.get('/:id/shipping/bosta/track', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'read'), invoiceController.trackBostaWaybill);
+
 // --- Payment Links ---
 router.post('/:id/payment-link', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), paymentLinkController.generateLink);
 

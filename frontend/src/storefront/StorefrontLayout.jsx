@@ -1,9 +1,9 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, ChevronDown, Package } from 'lucide-react';
-import { api } from '../store';
+import { ShoppingCart, User, Search, Menu, X, ChevronDown, Package, MessageCircle, PhoneCall } from 'lucide-react';
 import { usePortalStore } from '../store/portalStore';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import NotificationDropdown from '../components/NotificationDropdown';
 import { storefrontPath } from '../utils/storefrontHost';
 import { pickProductImage } from '../utils/media';
 import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
@@ -11,10 +11,6 @@ import {
   loadStorefrontProducts,
   loadStorefrontSettings,
 } from './storefrontDataClient';
-import {
-  captureStorefrontCampaignAttribution,
-  getStorefrontCampaignBanner,
-} from './storefrontCampaignAttribution';
 import { getStorefrontLandingPagePath } from './storefrontLandingPages';
 
 function mergeUniqueProducts(...lists) {
@@ -35,7 +31,6 @@ export default function StorefrontLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settings, setSettings] = useState(null);
   const [scrolled, setScrolled] = useState(false);
-  const [campaignBanner, setCampaignBanner] = useState(() => getStorefrontCampaignBanner());
 
   // Instant search
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,13 +53,13 @@ export default function StorefrontLayout({ children }) {
   const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const trackOrderPath = storefrontPath('/track-order');
   const seasonalLandingPath = getStorefrontLandingPagePath('seasonal');
-  const accountEntryPath = isAuthenticated ? '/portal/dashboard' : trackOrderPath;
-  const accountEntryLabel = isAuthenticated ? (customer?.name?.split(' ')[0] || 'حسابي') : 'تتبع الطلب';
-  const AccountEntryIcon = isAuthenticated ? User : Package;
+  const accountEntryPath = isAuthenticated ? '/portal/dashboard' : '/portal/login';
+  const accountEntryLabel = isAuthenticated ? (customer?.name?.split(' ')[0] || 'حسابي') : 'تسجيل الدخول';
+  const AccountEntryIcon = User;
+  const isProductDetailsPage = /\/products\/[^/]+$/.test(location.pathname);
 
-  // Check if user is an admin (has backoffice token)
-  const hasBackofficeToken = !!localStorage.getItem('payqusta_token');
-  const [isAdmin] = useState(hasBackofficeToken);
+  const directSupportPhone = settings?.store?.phone?.trim() || '';
+  const publicSupportHref = directSupportPhone ? `tel:${directSupportPhone}` : storefrontPath('/track-order');
   const headerSearchSuggestions = buildStorefrontSearchSuggestions({
     products: searchCatalog,
     categories,
@@ -80,16 +75,6 @@ export default function StorefrontLayout({ children }) {
     loadSearchCatalog();
     if (fetchCategories) fetchCategories();
   }, [fetchCategories]);
-
-  useEffect(() => {
-    const attribution = captureStorefrontCampaignAttribution({
-      search: location.search,
-      pathname: location.pathname,
-      href: typeof window !== 'undefined' ? window.location.href : '',
-    });
-
-    setCampaignBanner(getStorefrontCampaignBanner(attribution));
-  }, [location.pathname, location.search]);
 
   // Scroll listener for compact header
   useEffect(() => {
@@ -164,14 +149,6 @@ export default function StorefrontLayout({ children }) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* ─── HEADER ─── */}
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg shadow-black/5' : 'bg-white dark:bg-gray-800 shadow-sm'}`}>
-        {campaignBanner && (
-          <div className="border-b border-amber-100 bg-amber-50/90 backdrop-blur-sm dark:border-amber-900/60 dark:bg-amber-950/60">
-            <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 text-right sm:px-6 lg:px-8" dir="rtl">
-              <p className="text-xs font-black text-amber-900 dark:text-amber-100">{campaignBanner.title}</p>
-              <p className="text-[11px] font-medium text-amber-700 dark:text-amber-200">{campaignBanner.detail}</p>
-            </div>
-          </div>
-        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`flex justify-between items-center transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
             {/* Logo */}
@@ -301,6 +278,11 @@ export default function StorefrontLayout({ children }) {
                 <AccountEntryIcon className="w-4 h-4" /> {accountEntryLabel}
               </Link>
 
+              {/* Notifications */}
+              {isAuthenticated && (
+                <NotificationDropdown mode="portal" />
+              )}
+
               {/* Cart with animated badge */}
               <Link to={storefrontPath('/cart')} className="relative p-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors group">
                 <ShoppingCart className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-primary-600 transition-colors" />
@@ -420,20 +402,24 @@ export default function StorefrontLayout({ children }) {
         </div>
       </footer>
 
-      {/* Floating Admin Dashboard Button */}
-      {isAdmin && (
-        <a
-          href="/"
-          className="fixed bottom-6 left-6 z-[100] flex items-center gap-2 px-4 py-3 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 rounded-2xl shadow-2xl backdrop-blur-md hover:scale-105 transition-all font-bold group"
-          title="العودة للوحة تحكم التاجر"
-          dir="rtl"
+      {/* Floating Support Button */}
+      {!isProductDetailsPage && customer ? (
+        <Link
+          to="/portal/support"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
         >
-          <div className="bg-white/20 dark:bg-black/10 p-1.5 rounded-lg group-hover:rotate-180 transition-transform duration-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
-          </div>
-          <span className="text-sm">لوحة التحكم</span>
+          <MessageCircle className="w-5 h-5" />
+          <span className="font-bold text-sm">الدعم المباشر</span>
+        </Link>
+      ) : !isProductDetailsPage ? (
+        <a
+          href={publicSupportHref}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
+        >
+          {directSupportPhone ? <PhoneCall className="w-5 h-5" /> : <Package className="w-5 h-5" />}
+          <span className="font-bold text-sm">{directSupportPhone ? 'اتصل بالمتجر' : 'تتبع الطلب'}</span>
         </a>
-      )}
+      ) : null}
     </div>
   );
 }

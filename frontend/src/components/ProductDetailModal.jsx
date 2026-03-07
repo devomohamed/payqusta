@@ -1,9 +1,30 @@
 import React from 'react';
 import { Modal, Badge, Button, Card } from './UI';
 import { Package, Tag, Truck, Barcode, LayoutGrid, Store, ChevronLeft, MapPin } from 'lucide-react';
+import { useAuthStore } from '../store';
 
 export default function ProductDetailModal({ product, open, onClose }) {
     if (!product) return null;
+    const tenantId = useAuthStore((state) => state.tenant?._id || state.tenant?.id || '');
+
+    const resolveBranchName = (branchRef) => {
+        const branchId = typeof branchRef === 'string' ? branchRef : (branchRef?._id || '');
+        if (branchRef?.name) return branchRef.name;
+        if (branchId && tenantId && String(branchId) === String(tenantId)) return 'الفرع الرئيسي';
+        return branchId ? 'فرع غير معروف' : 'الفرع الرئيسي';
+    };
+
+    const availabilityRows = (Array.isArray(product.inventory) && product.inventory.length > 0)
+        ? product.inventory.map((inv) => ({
+            branchName: resolveBranchName(inv?.branch),
+            quantity: Number(inv?.quantity) || 0,
+            minQuantity: Number(inv?.minQuantity) || 5,
+        }))
+        : [{
+            branchName: 'الفرع الرئيسي',
+            quantity: Number(product.stock?.quantity) || 0,
+            minQuantity: Number(product.stock?.minQuantity) || 5,
+        }];
 
     const statusBadge = (s) => {
         if (s === 'in_stock') return <Badge variant="success" className="px-3 py-1.5 shadow-sm text-xs">متوفر بالمخزون</Badge>;
@@ -133,29 +154,27 @@ export default function ProductDetailModal({ product, open, onClose }) {
 
                         {/* Branch Distribution & Supplier */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-                            {product.inventory?.length > 0 && (
-                                <div className="space-y-4">
-                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <Store className="w-4 h-4 text-gray-400" /> توفر المخزون بالفروع
-                                    </h4>
-                                    <div className="space-y-3">
-                                        {product.inventory.map((inv, idx) => {
-                                            const isLow = inv.quantity <= (inv.minQuantity || 5);
-                                            return (
-                                                <div key={idx} className="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100/50 dark:border-gray-700/50 group hover:shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-all">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isLow ? 'bg-red-50 text-red-500 dark:bg-red-500/10' : 'bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10'}`}>
-                                                            <MapPin className="w-4 h-4" />
-                                                        </div>
-                                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{inv.branch?.name || 'فرع غير معروف'}</span>
+                            <div className="space-y-4">
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Store className="w-4 h-4 text-gray-400" /> توفر المخزون بالفروع
+                                </h4>
+                                <div className="space-y-3">
+                                    {availabilityRows.map((inv, idx) => {
+                                        const isLow = inv.quantity <= (inv.minQuantity || 5);
+                                        return (
+                                            <div key={idx} className="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100/50 dark:border-gray-700/50 group hover:shadow-sm hover:bg-white dark:hover:bg-gray-800 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isLow ? 'bg-red-50 text-red-500 dark:bg-red-500/10' : 'bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10'}`}>
+                                                        <MapPin className="w-4 h-4" />
                                                     </div>
-                                                    <span className={`text-base font-black px-2 ${isLow ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{inv.quantity}</span>
+                                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{inv.branchName}</span>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
+                                                <span className={`text-base font-black px-2 ${isLow ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{inv.quantity}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            )}
+                            </div>
 
                             {product.supplier && (
                                 <div className="space-y-4 lg:pl-4 lg:border-r border-gray-100 dark:border-gray-800">
@@ -181,3 +200,4 @@ export default function ProductDetailModal({ product, open, onClose }) {
         </Modal>
     );
 }
+

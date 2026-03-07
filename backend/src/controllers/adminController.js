@@ -16,6 +16,7 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const catchAsync = require('../utils/catchAsync');
+const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 
 class AdminController {
   /**
@@ -154,6 +155,10 @@ class AdminController {
         ], // Default categories
       }
     });
+
+    tenant.set('settings.categories', getStarterCategorySettings());
+    await tenant.save();
+    await seedStarterCatalogForTenant(tenant._id);
 
     // Create owner user
     const owner = await User.create({

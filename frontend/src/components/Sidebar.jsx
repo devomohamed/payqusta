@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import AnimatedBrandLogo from './AnimatedBrandLogo';
-import { storefrontPath, getStorefrontDomainUrl } from '../utils/storefrontHost';
+import { getStorefrontDomainUrl } from '../utils/storefrontHost';
 
 export default function Sidebar({ open, onClose }) {
   const { user, tenant, logout, permissions, can } = useAuthStore();
@@ -21,6 +21,7 @@ export default function Sidebar({ open, onClose }) {
   const isRTL = i18n.dir() === 'rtl';
   const isSystemSuperAdmin =
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
+  const storefrontUrl = getStorefrontDomainUrl(tenant?.slug);
 
   // Dropdown states
   const [dashboardOpen, setDashboardOpen] = useState(
@@ -33,7 +34,13 @@ export default function Sidebar({ open, onClose }) {
     location.pathname.startsWith('/products') || location.pathname === '/low-stock' || location.pathname === '/stocktake'
   );
   const [salesOpen, setSalesOpen] = useState(
-    location.pathname === '/quick-sale' || location.pathname === '/customers' || location.pathname === '/invoices'
+    location.pathname === '/quick-sale' || location.pathname === '/customers' || location.pathname === '/invoices' || location.pathname === '/installments'
+  );
+  const [suppliersOpen, setSuppliersOpen] = useState(
+    location.pathname === '/suppliers' ||
+    location.pathname === '/purchase-orders' ||
+    location.pathname === '/purchase-returns' ||
+    location.pathname === '/supplier-purchase-invoices'
   );
   const [portalOpen, setPortalOpen] = useState(
     location.pathname === '/portal-orders' ||
@@ -44,14 +51,13 @@ export default function Sidebar({ open, onClose }) {
     location.pathname === '/coupons'
   );
   const [storeOpen, setStoreOpen] = useState(
-    location.pathname === '/suppliers' ||
     location.pathname === '/expenses' ||
     location.pathname === '/branches' ||
     location.pathname === '/cameras' ||
     location.pathname === '/subscriptions'
   );
   const [reportsOpen, setReportsOpen] = useState(
-    location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/business-reports' || location.pathname === '/financials'
+    location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/supplier-aging-report' || location.pathname === '/business-reports' || location.pathname === '/financials'
   );
   const [toolsOpen, setToolsOpen] = useState(
     location.pathname === '/import' || location.pathname === '/backup'
@@ -69,7 +75,12 @@ export default function Sidebar({ open, onClose }) {
   const isDashboardActive = location.pathname === '/' || location.pathname === '/command-center';
   const isAdminActive = location.pathname.startsWith('/admin') && location.pathname !== '/admin/audit-logs';
   const isProductsActive = location.pathname.startsWith('/products') || location.pathname === '/low-stock' || location.pathname === '/stocktake';
-  const isSalesActive = location.pathname === '/quick-sale' || location.pathname === '/customers' || location.pathname === '/invoices';
+  const isSalesActive = location.pathname === '/quick-sale' || location.pathname === '/customers' || location.pathname === '/invoices' || location.pathname === '/installments';
+  const isSuppliersActive =
+    location.pathname === '/suppliers' ||
+    location.pathname === '/purchase-orders' ||
+    location.pathname === '/purchase-returns' ||
+    location.pathname === '/supplier-purchase-invoices';
   const isPortalActive =
     location.pathname === '/portal-orders' ||
     location.pathname === '/returns-management' ||
@@ -78,16 +89,75 @@ export default function Sidebar({ open, onClose }) {
     location.pathname === '/reviews' ||
     location.pathname === '/coupons';
   const isStoreActive =
-    location.pathname === '/suppliers' ||
     location.pathname === '/expenses' ||
     location.pathname === '/branches' ||
     location.pathname === '/cameras' ||
     location.pathname === '/subscriptions';
-  const isReportsActive = location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/business-reports';
+  const isReportsActive = location.pathname.startsWith('/reports') || location.pathname === '/aging-report' || location.pathname === '/supplier-aging-report' || location.pathname === '/business-reports';
   const isToolsActive = location.pathname === '/import' || location.pathname === '/backup';
   const isSettingsActive = location.pathname.startsWith('/settings') || location.pathname === '/admin/audit-logs';
+  const canAccessSuppliers = can('suppliers', 'read') || user?.role === 'admin';
 
-  const NavItem = ({ to, icon: Icon, label, end = false, badge = null }) => (
+  const iconTones = {
+    slate: {
+      icon: 'text-slate-500 dark:text-slate-300',
+      iconActive: 'text-primary-600 dark:text-primary-300',
+      bg: 'bg-slate-100 dark:bg-slate-800/80',
+      bgActive: 'bg-primary-100 dark:bg-primary-500/20',
+    },
+    sky: {
+      icon: 'text-sky-600 dark:text-sky-300',
+      iconActive: 'text-sky-700 dark:text-sky-200',
+      bg: 'bg-sky-100/90 dark:bg-sky-500/15',
+      bgActive: 'bg-sky-200/90 dark:bg-sky-500/25',
+    },
+    amber: {
+      icon: 'text-amber-600 dark:text-amber-300',
+      iconActive: 'text-amber-700 dark:text-amber-200',
+      bg: 'bg-amber-100/90 dark:bg-amber-500/15',
+      bgActive: 'bg-amber-200/90 dark:bg-amber-500/25',
+    },
+    emerald: {
+      icon: 'text-emerald-600 dark:text-emerald-300',
+      iconActive: 'text-emerald-700 dark:text-emerald-200',
+      bg: 'bg-emerald-100/90 dark:bg-emerald-500/15',
+      bgActive: 'bg-emerald-200/90 dark:bg-emerald-500/25',
+    },
+    indigo: {
+      icon: 'text-indigo-600 dark:text-indigo-300',
+      iconActive: 'text-indigo-700 dark:text-indigo-200',
+      bg: 'bg-indigo-100/90 dark:bg-indigo-500/15',
+      bgActive: 'bg-indigo-200/90 dark:bg-indigo-500/25',
+    },
+    violet: {
+      icon: 'text-violet-600 dark:text-violet-300',
+      iconActive: 'text-violet-700 dark:text-violet-200',
+      bg: 'bg-violet-100/90 dark:bg-violet-500/15',
+      bgActive: 'bg-violet-200/90 dark:bg-violet-500/25',
+    },
+    teal: {
+      icon: 'text-teal-600 dark:text-teal-300',
+      iconActive: 'text-teal-700 dark:text-teal-200',
+      bg: 'bg-teal-100/90 dark:bg-teal-500/15',
+      bgActive: 'bg-teal-200/90 dark:bg-teal-500/25',
+    },
+    rose: {
+      icon: 'text-rose-600 dark:text-rose-300',
+      iconActive: 'text-rose-700 dark:text-rose-200',
+      bg: 'bg-rose-100/90 dark:bg-rose-500/15',
+      bgActive: 'bg-rose-200/90 dark:bg-rose-500/25',
+    },
+    cyan: {
+      icon: 'text-cyan-600 dark:text-cyan-300',
+      iconActive: 'text-cyan-700 dark:text-cyan-200',
+      bg: 'bg-cyan-100/90 dark:bg-cyan-500/15',
+      bgActive: 'bg-cyan-200/90 dark:bg-cyan-500/25',
+    },
+  };
+
+  const resolveTone = (tone = 'slate') => iconTones[tone] || iconTones.slate;
+
+  const NavItem = ({ to, icon: Icon, label, end = false, badge = null, tone = 'slate' }) => (
     <NavLink
       to={to}
       end={end}
@@ -98,17 +168,26 @@ export default function Sidebar({ open, onClose }) {
         }`
       }
     >
-      <Icon className="w-5 h-5 flex-shrink-0" />
-      <span className="flex-1">{label}</span>
-      {badge && (
-        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
-          {badge}
-        </span>
-      )}
+      {({ isActive }) => {
+        const toneClasses = resolveTone(tone);
+        return (
+          <>
+            <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? toneClasses.bgActive : toneClasses.bg}`}>
+              <Icon className={`w-4 h-4 ${isActive ? toneClasses.iconActive : toneClasses.icon}`} />
+            </span>
+            <span className="flex-1">{label}</span>
+            {badge && (
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                {badge}
+              </span>
+            )}
+          </>
+        );
+      }}
     </NavLink>
   );
 
-  const SubNavItem = ({ to, icon: Icon, label }) => (
+  const SubNavItem = ({ to, icon: Icon, label, tone = 'slate' }) => (
     <NavLink
       to={to}
       className={({ isActive }) =>
@@ -118,12 +197,21 @@ export default function Sidebar({ open, onClose }) {
         }`
       }
     >
-      <Icon className="w-4 h-4 flex-shrink-0" />
-      <span>{label}</span>
+      {({ isActive }) => {
+        const toneClasses = resolveTone(tone);
+        return (
+          <>
+            <span className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? toneClasses.bgActive : toneClasses.bg}`}>
+              <Icon className={`w-3.5 h-3.5 ${isActive ? toneClasses.iconActive : toneClasses.icon}`} />
+            </span>
+            <span>{label}</span>
+          </>
+        );
+      }}
     </NavLink>
   );
 
-  const DropdownButton = ({ isOpen, isActive, onClick, icon: Icon, label }) => (
+  const DropdownButton = ({ isOpen, isActive, onClick, icon: Icon, label, tone = 'slate' }) => (
     <button
       onClick={onClick}
       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
@@ -132,7 +220,9 @@ export default function Sidebar({ open, onClose }) {
         }`}
     >
       <div className="flex items-center gap-3">
-        <Icon className="w-5 h-5 flex-shrink-0" />
+        <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? resolveTone(tone).bgActive : resolveTone(tone).bg}`}>
+          <Icon className={`w-4 h-4 ${isActive ? resolveTone(tone).iconActive : resolveTone(tone).icon}`} />
+        </span>
         <span>{label}</span>
       </div>
       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -176,9 +266,9 @@ export default function Sidebar({ open, onClose }) {
                 <span>{t('sidebar.super_admin')}</span>
               </div>
             </div>
-            <NavItem to="/super-admin/plans" icon={Crown} label={t('sidebar.plan_management')} />
-            <NavItem to="/super-admin/requests" icon={FileText} label={t('sidebar.subscription_requests')} />
-            <NavItem to="/tenant-management" icon={Building2} label={t('sidebar.store_management')} />
+            <NavItem to="/super-admin/plans" icon={Crown} label={t('sidebar.plan_management')} tone="amber" />
+            <NavItem to="/super-admin/requests" icon={FileText} label={t('sidebar.subscription_requests')} tone="amber" />
+            <NavItem to="/tenant-management" icon={Building2} label={t('sidebar.store_management')} tone="amber" />
             <div className="my-3 border-t border-gray-200 dark:border-gray-700"></div>
           </>
         )}
@@ -193,8 +283,8 @@ export default function Sidebar({ open, onClose }) {
               </div>
             </div>
 
-            <NavItem to="/admin/users" icon={Shield} label={isSystemSuperAdmin ? t('sidebar.system_admins') : t('sidebar.employees')} />
-            <NavItem to="/roles" icon={Shield} label={t('sidebar.roles_permissions')} />
+            <NavItem to="/admin/users" icon={Shield} label={isSystemSuperAdmin ? t('sidebar.system_admins') : t('sidebar.employees')} tone="indigo" />
+            <NavItem to="/roles" icon={Shield} label={t('sidebar.roles_permissions')} tone="indigo" />
 
             <div className="my-3 border-t border-gray-200 dark:border-gray-700" />
           </>
@@ -208,12 +298,13 @@ export default function Sidebar({ open, onClose }) {
             onClick={() => setDashboardOpen(!dashboardOpen)}
             icon={LayoutDashboard}
             label={t('sidebar.dashboard')}
+            tone="sky"
           />
           <div className={`overflow-hidden transition-all duration-200 ${dashboardOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
-              <SubNavItem to="/" icon={LayoutDashboard} label={t('sidebar.overview')} />
+              <SubNavItem to="/" icon={LayoutDashboard} label={t('sidebar.overview')} tone="sky" />
               {!isSystemSuperAdmin && (
-                <SubNavItem to="/command-center" icon={Target} label={t('sidebar.command_center')} />
+                <SubNavItem to="/command-center" icon={Target} label={t('sidebar.command_center')} tone="sky" />
               )}
             </div>
           </div>
@@ -226,18 +317,23 @@ export default function Sidebar({ open, onClose }) {
               isActive={isSalesActive}
               onClick={() => setSalesOpen(!salesOpen)}
               icon={Zap}
+              tone="amber"
               label="المبيعات"
             />
-            <div className={`overflow-hidden transition-all duration-200 ${salesOpen ? 'max-h-52 mt-1' : 'max-h-0'}`}>
+            <div className={`overflow-hidden transition-all duration-200 ${salesOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
                 {can('invoices', 'create') && (
-                  <SubNavItem to="/quick-sale" icon={Zap} label={t('sidebar.quick_sale')} />
+                  <SubNavItem to="/quick-sale" icon={Zap} label={t('sidebar.quick_sale')} tone="amber" />
                 )}
                 {can('customers', 'read') && (
-                  <SubNavItem to="/customers" icon={Users} label={t('sidebar.customers')} />
+                  <SubNavItem to="/customers" icon={Users} label={t('sidebar.customers')} tone="amber" />
                 )}
                 {can('invoices', 'read') && (
-                  <SubNavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} />
+                  <>
+                    <SubNavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} tone="amber" />
+                    <SubNavItem to="/installments" icon={Clock} label="دفتر الأقساط والآجل" tone="amber" />
+                    <SubNavItem to="/shift" icon={Clock} label="إدارة الورديات" tone="amber" />
+                  </>
                 )}
               </div>
             </div>
@@ -252,26 +348,49 @@ export default function Sidebar({ open, onClose }) {
               isActive={isProductsActive}
               onClick={() => setProductsOpen(!productsOpen)}
               icon={Package}
+              tone="emerald"
               label={t('sidebar.products')}
             />
             <div className={`overflow-y-auto transition-all duration-200 ${productsOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
                 {can('products', 'read') && (
                   <>
-                    <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} />
-                    <SubNavItem to="/categories" icon={FolderTree} label="التصنيفات" />
-                    <SubNavItem to="/stock-search" icon={Search} label="بحث عن توفر منتج" />
-                    <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} />
-                    <SubNavItem to="/stocktake" icon={CheckSquare} label="الجرد الشامل" />
+                    <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} tone="emerald" />
+                    <SubNavItem to="/categories" icon={FolderTree} label="الأقسام" tone="emerald" />
+                    <SubNavItem to="/stock-search" icon={Search} label="بحث عن توفر منتج" tone="emerald" />
+                    <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} tone="emerald" />
+                    <SubNavItem to="/stocktake" icon={CheckSquare} label="الجرد الشامل" tone="emerald" />
                   </>
                 )}
                 {can('stock_adjustments', 'read') && (
-                  <SubNavItem to="/stock-adjustments" icon={Archive} label={t('sidebar.stock_adjustments')} />
+                  <SubNavItem to="/stock-adjustments" icon={Archive} label={t('sidebar.stock_adjustments')} tone="emerald" />
                 )}
               </div>
             </div>
           </div>
         )}
+
+        {!isSystemSuperAdmin && canAccessSuppliers && (
+          <div>
+            <DropdownButton
+              isOpen={suppliersOpen}
+              isActive={isSuppliersActive}
+              onClick={() => setSuppliersOpen(!suppliersOpen)}
+              icon={Truck}
+              tone="indigo"
+              label={t('sidebar.suppliers')}
+            />
+            <div className={`overflow-hidden transition-all duration-200 ${suppliersOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
+              <div className="space-y-1 py-1">
+                <SubNavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} tone="indigo" />
+                <SubNavItem to="/purchase-orders" icon={ShoppingCart} label="أوامر الشراء" tone="indigo" />
+                <SubNavItem to="/supplier-purchase-invoices" icon={Receipt} label="فواتير مشتريات المورد" tone="indigo" />
+                <SubNavItem to="/purchase-returns" icon={RefreshCcw} label="مرتجعات الشراء" tone="indigo" />
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {!isSystemSuperAdmin && (
           <div>
@@ -280,20 +399,21 @@ export default function Sidebar({ open, onClose }) {
               isActive={isPortalActive}
               onClick={() => setPortalOpen(!portalOpen)}
               icon={ShoppingBag}
+              tone="violet"
               label="البوابة"
             />
             <div className={`overflow-hidden transition-all duration-200 ${portalOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
                 {user?.role === 'admin' && (
-                  <SubNavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} />
+                  <SubNavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} tone="violet" />
                 )}
                 {(user?.role === 'admin' || user?.role === 'vendor' || can('settings', 'read')) && (
                   <>
-                    <SubNavItem to="/returns-management" icon={RefreshCcw} label={t('sidebar.returns')} />
-                    <SubNavItem to="/kyc-review" icon={FileCheck} label={t('sidebar.kyc_documents')} />
-                    <SubNavItem to="/support-messages" icon={MessageCircle} label={t('sidebar.support_messages')} />
-                    <SubNavItem to="/reviews" icon={Star} label={t('sidebar.reviews')} />
-                    <SubNavItem to="/coupons" icon={Tag} label={t('sidebar.coupons')} />
+                    <SubNavItem to="/returns-management" icon={RefreshCcw} label={t('sidebar.returns')} tone="violet" />
+                    <SubNavItem to="/kyc-review" icon={FileCheck} label={t('sidebar.kyc_documents')} tone="violet" />
+                    <SubNavItem to="/support-messages" icon={MessageCircle} label={t('sidebar.support_messages')} tone="violet" />
+                    <SubNavItem to="/reviews" icon={Star} label={t('sidebar.reviews')} tone="violet" />
+                    <SubNavItem to="/coupons" icon={Tag} label={t('sidebar.coupons')} tone="violet" />
                   </>
                 )}
               </div>
@@ -304,8 +424,8 @@ export default function Sidebar({ open, onClose }) {
         {/* My Store Quick Link - visible to tenant admins only */}
         {!isSystemSuperAdmin && user?.role === 'admin' && (
           <div className="my-2">
-            <Link
-              to={storefrontPath('/')}
+            <a
+              href={storefrontUrl}
               onClick={onClose}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-primary-600 to-primary-500 shadow-md shadow-primary-500/30 hover:shadow-lg hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all duration-200"
             >
@@ -313,32 +433,30 @@ export default function Sidebar({ open, onClose }) {
                 <Store className="w-5 h-5 flex-shrink-0" />
               </div>
               <span className="flex-1">تصفح متجري</span>
-            </Link>
+            </a>
           </div>
         )}
 
-        {!isSystemSuperAdmin && (can('suppliers', 'read') || can('expenses', 'read') || user?.role === 'admin') && (
+        {!isSystemSuperAdmin && (can('expenses', 'read') || user?.role === 'admin') && (
           <div>
             <DropdownButton
               isOpen={storeOpen}
               isActive={isStoreActive}
               onClick={() => setStoreOpen(!storeOpen)}
               icon={Building2}
+              tone="teal"
               label="إدارة المتجر"
             />
-            <div className={`overflow-hidden transition-all duration-200 ${storeOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
+            <div className={`overflow-hidden transition-all duration-200 ${storeOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
-                {can('suppliers', 'read') && (
-                  <SubNavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} />
-                )}
                 {can('expenses', 'read') && (
-                  <SubNavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} />
+                  <SubNavItem to="/expenses" icon={Receipt} label={t('sidebar.expenses')} tone="teal" />
                 )}
                 {user?.role === 'admin' && (
                   <>
-                    <SubNavItem to="/branches" icon={Building2} label={t('sidebar.branches')} />
-                    <SubNavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} />
-                    <SubNavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} />
+                    <SubNavItem to="/branches" icon={Building2} label={t('sidebar.branches')} tone="teal" />
+                    <SubNavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} tone="teal" />
+                    <SubNavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} tone="teal" />
                   </>
                 )}
               </div>
@@ -354,23 +472,25 @@ export default function Sidebar({ open, onClose }) {
               isActive={isReportsActive}
               onClick={() => setReportsOpen(!reportsOpen)}
               icon={BarChart3}
+              tone="rose"
               label={isSystemSuperAdmin ? t('sidebar.system_analytics') : t('sidebar.reports')}
             />
             <div className={`overflow-y-auto transition-all duration-200 ${reportsOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
                 {isSystemSuperAdmin ? (
                   <>
-                    <SubNavItem to="/super-admin/analytics" icon={PieChart} label={t('sidebar.store_revenue')} />
-                    <SubNavItem to="/admin/statistics" icon={TrendingUp} label={t('sidebar.system_stats')} />
+                    <SubNavItem to="/super-admin/analytics" icon={PieChart} label={t('sidebar.store_revenue')} tone="rose" />
+                    <SubNavItem to="/admin/statistics" icon={TrendingUp} label={t('sidebar.system_stats')} tone="rose" />
                   </>
                 ) : (
                   <>
-                    <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} />
-                    <SubNavItem to="/financials" icon={DollarSign} label="المالية والأرباح" />
-                    <SubNavItem to="/staff-performance" icon={Award} label="أداء الموظفين" />
-                    <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} />
-                    <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} />
-                    <SubNavItem to="/admin/audit-logs" icon={Shield} label="سجلات الأمان" />
+                    <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} tone="rose" />
+                    <SubNavItem to="/financials" icon={DollarSign} label="المالية والأرباح" tone="rose" />
+                    <SubNavItem to="/staff-performance" icon={Award} label="أداء الموظفين" tone="rose" />
+                    <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} tone="rose" />
+                    <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} tone="rose" />
+                    <SubNavItem to="/supplier-aging-report" icon={Truck} label="أعمار ديون الموردين" tone="rose" />
+                    <SubNavItem to="/admin/audit-logs" icon={Shield} label="سجلات الأمان" tone="rose" />
                   </>
                 )}
               </div>
@@ -388,12 +508,13 @@ export default function Sidebar({ open, onClose }) {
                 isActive={isToolsActive}
                 onClick={() => setToolsOpen(!toolsOpen)}
                 icon={Database}
+                tone="cyan"
                 label={t('sidebar.tools')}
               />
               <div className={`overflow-hidden transition-all duration-200 ${toolsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
                 <div className="space-y-1 py-1">
-                  <SubNavItem to="/import" icon={Upload} label={t('sidebar.import_data')} />
-                  <SubNavItem to="/backup" icon={Database} label={t('sidebar.backup')} />
+                  <SubNavItem to="/import" icon={Upload} label={t('sidebar.import_data')} tone="cyan" />
+                  <SubNavItem to="/backup" icon={Database} label={t('sidebar.backup')} tone="cyan" />
                 </div>
               </div>
             </div>
@@ -407,13 +528,14 @@ export default function Sidebar({ open, onClose }) {
             isActive={isSettingsActive}
             onClick={() => setSettingsOpen(!settingsOpen)}
             icon={Settings}
+            tone="slate"
             label={t('sidebar.settings')}
           />
           <div className={`overflow-hidden transition-all duration-200 ${settingsOpen ? 'max-h-40 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
-              <SubNavItem to="/settings" icon={Settings} label={t('sidebar.general_settings')} />
+              <SubNavItem to="/settings" icon={Settings} label={t('sidebar.general_settings')} tone="slate" />
               {(user?.role === 'admin' || isSystemSuperAdmin) && (
-                <SubNavItem to="/admin/audit-logs" icon={Activity} label={t('sidebar.activity_log')} />
+                <SubNavItem to="/admin/audit-logs" icon={Activity} label={t('sidebar.activity_log')} tone="slate" />
               )}
             </div>
           </div>

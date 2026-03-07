@@ -254,22 +254,77 @@ class NotificationService {
 
   /**
    * Supplier payment due
+   * Supports legacy signature (supplierName, amount, dueDate) and payload object.
    */
-  async onSupplierPaymentDue(tenantId, supplierName, amount, dueDate) {
+  async onSupplierPaymentDue(tenantId, supplierNameOrPayload, amount, dueDate) {
     const fmt = (n) => (n || 0).toLocaleString('ar-EG');
+    const payload = (typeof supplierNameOrPayload === 'object' && supplierNameOrPayload !== null)
+      ? supplierNameOrPayload
+      : {
+        supplierName: supplierNameOrPayload,
+        amount,
+        dueDate,
+      };
+
+    const normalizedDueDate = payload.dueDate ? new Date(payload.dueDate) : null;
+    const dueDateText = normalizedDueDate && !Number.isNaN(normalizedDueDate.getTime())
+      ? normalizedDueDate.toLocaleDateString('ar-EG')
+      : 'اليوم';
+
+    const contextParts = [];
+    if (payload.branchName) contextParts.push(`الفرع: ${payload.branchName}`);
+    if (payload.invoiceNumber) contextParts.push(`فاتورة: ${payload.invoiceNumber}`);
+    if (payload.purchaseOrderNumber) contextParts.push(`أمر شراء: ${payload.purchaseOrderNumber}`);
+    const context = contextParts.length > 0 ? ` (${contextParts.join(' • ')})` : '';
+
+    const isOverdue = Boolean(payload.isOverdue);
+    const dueLabel = payload.dueLabel || (isOverdue ? 'متأخر' : 'مستحق');
+    const remainingLabel = payload.outstandingAmount !== undefined
+      ? ` • المتبقي: ${fmt(payload.outstandingAmount)} ج.م`
+      : '';
+
     return this.notifyTenantAdmins(tenantId, {
-      type: 'supplier_payment_due',
-      title: 'خلي بالك! عليك قسط مورد 🚛',
-      message: `عليك قسط ${fmt(amount)} ج.م للمورد ${supplierName} مستحق ${new Date(dueDate).toLocaleDateString('ar-EG')}`,
+      type: isOverdue ? 'supplier_payment_overdue' : 'supplier_payment_due',
+      title: isOverdue ? 'تنبيه تأخير مستحق مورد ⚠️' : 'تذكير مستحق مورد ⏰',
+      message: `المورد ${payload.supplierName || '—'} عليه قسط ${fmt(payload.amount)} ج.م ${dueLabel} ${dueDateText}${remainingLabel}${context}`,
       icon: 'truck',
-      color: 'warning',
-      link: '/suppliers',
-    }, { roles: ['admin'] });
+      color: isOverdue ? 'danger' : 'warning',
+      link: '/supplier-purchase-invoices',
+      relatedModel: payload.relatedModel || undefined,
+      relatedId: payload.relatedId || undefined,
+    }, {
+      roles: payload.branchId ? ['admin', 'vendor'] : ['admin'],
+      targetBranchId: payload.branchId || null,
+    });
   }
 
-  /**
-   * New customer created
-   */
+  async onSupplierPaymentOverdue(tenantId, payload = {}) {
+    return this.onSupplierPaymentDue(tenantId, {
+      ...payload,
+      isOverdue: true,
+      dueLabel: payload.dueLabel || 'متأخر منذ',
+    });
+  }
+
+  async onSupplierPaymentRecorded(tenantId, payload = {}) {
+    const fmt = (n) => (n || 0).toLocaleString('ar-EG');
+    const branchLabel = payload.branchName ? ` • الفرع: ${payload.branchName}` : '';
+    const poLabel = payload.purchaseOrderNumber ? ` • أمر شراء: ${payload.purchaseOrderNumber}` : '';
+    const invoiceLabel = payload.invoiceNumber ? ` • فاتورة: ${payload.invoiceNumber}` : '';
+
+    return this.notifyTenantAdmins(tenantId, {
+      type: 'supplier_payment_recorded',
+      title: 'تم تسجيل دفعة للمورد ✅',
+      message: `تم سداد ${fmt(payload.amount)} ج.م للمورد ${payload.supplierName || '—'}${invoiceLabel}${branchLabel}${poLabel} • المتبقي: ${fmt(payload.outstandingAmount)} ج.م`,
+      icon: 'credit-card',
+      color: 'success',
+      link: '/supplier-purchase-invoices',
+    }, {
+      roles: payload.branchId ? ['admin', 'vendor'] : ['admin'],
+      targetBranchId: payload.branchId || null,
+    });
+  }
+
   async onNewCustomer(tenantId, customerName) {
     return this.notifyTenantAdmins(tenantId, {
       type: 'new_customer',

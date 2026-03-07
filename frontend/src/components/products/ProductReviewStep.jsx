@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '../UI';
 import { CheckCircle2, AlertCircle, FileText, Tag, Image as ImageIcon, Box } from 'lucide-react';
+import { analyzeSeoContent } from './SeoAnalyzer';
 
 export default function ProductReviewStep({
     form,
@@ -11,9 +12,14 @@ export default function ProductReviewStep({
     onStepClick
 }) {
     const hasErrors = Object.keys(stepErrors).some(k => stepErrors[k]);
-    const categoryName = categories.find(c => c._id === form.category)?.name || 'غير محدد';
+    const categoryName = categories.find(c => c._id === form.category)?.name || 'بدون قسم';
     const totalImages = productImages.length + pendingImages.length;
     const variantsCount = form.variants?.length || 0;
+    const seoTitle = (form.seoTitle || form.name || '').trim();
+    const seoText = form.seoDescription || form.description || '';
+    const seoScore = analyzeSeoContent({ title: seoTitle, text: seoText }).score;
+    const seoQualityVariant = seoScore >= 80 ? 'success' : seoScore >= 50 ? 'warning' : 'danger';
+    const seoQualityLabel = seoScore >= 80 ? 'ممتازة' : seoScore >= 50 ? 'متوسطة' : 'ضعيفة';
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
@@ -79,12 +85,18 @@ export default function ProductReviewStep({
                             <span className="font-bold">{form.name || '---'}</span>
                         </div>
                         <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
-                            <span className="text-gray-500">التصنيف</span>
+                            <span className="text-gray-500">القسم</span>
                             <span className="font-bold">{categoryName}</span>
                         </div>
                         <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
                             <span className="text-gray-500">SKU</span>
                             <span className="font-mono">{form.sku || 'تلقائي'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                            <span className="text-gray-500">جودة السيو</span>
+                            <Badge variant={seoQualityVariant}>
+                                {seoQualityLabel} ({seoScore}%)
+                            </Badge>
                         </div>
                         <div className="flex justify-between pb-2">
                             <span className="text-gray-500">الوصف الطويل</span>

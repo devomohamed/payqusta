@@ -14,6 +14,12 @@ import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
 import { transliterateArabicToEnglish } from '../../utils/textUtils';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMapper';
+import {
+  PLATFORM_ROOT_DOMAIN,
+  getPlatformStorefrontUrl,
+  getStorefrontDomainUrl,
+  isLocalStorefrontHost,
+} from '../../utils/storefrontHost';
 
 export default function SettingsStore() {
   const { tenant, getMe } = useAuthStore();
@@ -161,6 +167,12 @@ export default function SettingsStore() {
     }
   };
 
+  const isLocalEnvironment = isLocalStorefrontHost();
+  const localStoreUrl = getStorefrontDomainUrl(subdomain || tenant?.slug);
+  const productionStoreUrl = subdomain ? getPlatformStorefrontUrl(subdomain) : '';
+  const activeStoreUrl = tenant?.slug ? getStorefrontDomainUrl(tenant.slug) : '';
+  const activeProductionStoreUrl = tenant?.slug ? getPlatformStorefrontUrl(tenant.slug) : '';
+
   return (
     <div className="space-y-8">
       <section className="space-y-6">
@@ -272,7 +284,7 @@ export default function SettingsStore() {
                   className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-medium text-gray-400"
                   dir="ltr"
                 >
-                  .payqusta.store
+                  .{PLATFORM_ROOT_DOMAIN}
                 </div>
               </div>
               <Button
@@ -289,13 +301,24 @@ export default function SettingsStore() {
             <div className="mt-4 rounded-xl border border-dashed border-indigo-200 bg-white/50 px-4 py-3 text-sm dark:border-indigo-800 dark:bg-gray-900/50">
               <span className="text-gray-500 dark:text-gray-400">الرابط النهائي:</span>{' '}
               {subdomain ? (
-                <span
-                  className="inline-block font-semibold text-indigo-600 dark:text-indigo-400"
-                  dir="ltr"
-                  style={{ direction: 'ltr' }}
-                >
-                  https://{subdomain}.payqusta.store
-                </span>
+                <div className="mt-2 space-y-1.5">
+                  <span
+                    className="block font-semibold text-indigo-600 dark:text-indigo-400"
+                    dir="ltr"
+                    style={{ direction: 'ltr' }}
+                  >
+                    {isLocalEnvironment ? localStoreUrl : productionStoreUrl}
+                  </span>
+                  {isLocalEnvironment && productionStoreUrl && (
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      بعد النشر سيكون الرابط:
+                      {' '}
+                      <span dir="ltr" className="font-mono text-indigo-500 dark:text-indigo-300">
+                        {productionStoreUrl}
+                      </span>
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className="text-gray-400 dark:text-gray-500">
                   سيظهر الرابط هنا بعد كتابة اسم المتجر
@@ -325,15 +348,24 @@ export default function SettingsStore() {
               <div className="mt-6 border-t border-indigo-100 pt-6 dark:border-indigo-500/10">
                 <p className="mb-2 text-sm text-gray-500">رابط متجرك النشط حاليًا:</p>
                 <a
-                  href={`https://${tenant.slug}.payqusta.store`}
+                  href={activeStoreUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 font-bold text-indigo-600 hover:underline dark:bg-indigo-500/10 dark:text-indigo-400"
                 >
                   <Globe className="h-4 w-4" />
-                  {tenant.slug}.payqusta.store
+                  {isLocalEnvironment ? activeStoreUrl : activeProductionStoreUrl}
                   <ExternalLink className="h-3 w-3" />
                 </a>
+                {isLocalEnvironment && activeProductionStoreUrl && (
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    بعد النشر سيعمل المتجر على:
+                    {' '}
+                    <span dir="ltr" className="font-mono text-indigo-500 dark:text-indigo-300">
+                      {activeProductionStoreUrl}
+                    </span>
+                  </p>
+                )}
               </div>
             )}
           </div>

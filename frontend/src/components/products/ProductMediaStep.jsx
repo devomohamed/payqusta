@@ -80,8 +80,10 @@ const VARIANT_ACCENTS = ['rose', 'violet', 'blue', 'emerald', 'amber', 'pink', '
 export default function ProductMediaStep({
     form,
     setForm,
+    branches = [],
     productImages = [],
     pendingImages = [],
+    maxImageCount = 10,
     onImagesChange,
     onPrimaryImageSelect,
     onRemoveImage,
@@ -128,7 +130,7 @@ export default function ProductMediaStep({
             attributes: { 'الحجم': size, 'اللون': '' },
             sku: '', barcode: '',
             price: form.price || '', cost: form.costPrice || '',
-            stock: form.stock || '', expanded: true,
+            stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
         }));
         setForm({ ...form, variants: [...(form.variants || []), ...newVars] });
     };
@@ -139,7 +141,7 @@ export default function ProductMediaStep({
             attributes: { 'الحجم': '', 'اللون': color },
             sku: '', barcode: '',
             price: form.price || '', cost: form.costPrice || '',
-            stock: form.stock || '', expanded: true,
+            stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
         }));
         setForm({ ...form, variants: [...(form.variants || []), ...newVars] });
     };
@@ -148,7 +150,7 @@ export default function ProductMediaStep({
         attributes: { 'الحجم': '', 'اللون': '' },
         sku: '', barcode: '',
         price: form.price || '', cost: form.costPrice || '',
-        stock: form.stock || '', expanded: true,
+        stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
     });
 
     const getVariantLabel = (v) => {
@@ -189,7 +191,7 @@ export default function ProductMediaStep({
                                 <UploadCloud className="w-8 h-8" />
                             </div>
                             <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-1">اسحب الصور هنا أو اضغط للاختيار</h4>
-                            <p className="text-sm text-gray-500 mb-4">يدعم JPG, PNG, WEBP حتى 20 ميجابايت للصورة</p>
+                            <p className="text-sm text-gray-500 mb-4">يدعم JPG, PNG, WEBP حتى {maxImageCount} صور مع ضغط تلقائي قبل الحفظ</p>
                             <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={onImagesChange} />
                             <Button type="button" variant="outline" size="sm">تصفح الملفات</Button>
                         </div>
@@ -256,7 +258,7 @@ export default function ProductMediaStep({
                         {safePending.length > 0 && (
                             <p className="text-xs text-amber-600 dark:text-amber-500 mt-4 flex items-center gap-1.5">
                                 <AlertTriangle className="w-3.5 h-3.5" />
-                                سيتم رفع الصور المعلقة تلقائياً عند حفظ المنتج.
+                                سيتم ضغط الصور المعلقة ورفعها تلقائياً عند حفظ المنتج لتسريع الحفظ. الحد الأقصى {maxImageCount} صور.
                             </p>
                         )}
                     </div>
@@ -441,26 +443,89 @@ export default function ProductMediaStep({
                                                     </div>
                                                 </div>
 
-                                                {/* Stock */}
-                                                <div className="col-span-2 md:col-span-3 lg:col-span-6">
-                                                    <div className="flex items-end gap-4">
-                                                        <div className="max-w-xs">
-                                                            <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1">
-                                                                الكمية المتاحة <StockBadge stock={v.stock} />
+                                                {/* Variants Multi-Branch Stock */}
+                                                <div className="col-span-2 md:col-span-3 lg:col-span-6 mt-4">
+                                                    <div className="p-4 bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                                                مخزون الفروع للموديل <StockBadge stock={v.stock} />
                                                             </label>
-                                                            <input type="number" placeholder="0" value={v.stock || ''}
-                                                                onChange={e => onUpdateVariant(idx, 'stock', e.target.value)}
-                                                                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="text-xs h-7 px-2"
+                                                                onClick={() => {
+                                                                    const newInv = [...(v.inventory || []), { branch: '', quantity: 0, minQuantity: 5 }];
+                                                                    onUpdateVariant(idx, 'inventory', newInv);
+                                                                }}
+                                                            >
+                                                                <Plus className="w-3.5 h-3.5" /> أضف فرع
+                                                            </Button>
                                                         </div>
-                                                        {Number(v.stock) > 0 && (
-                                                            <div className="flex-1 pb-2">
-                                                                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                                                                    <div className={`h-full rounded-full transition-all ${Number(v.stock) <= 5 ? 'bg-amber-400' : 'bg-emerald-400'}`}
-                                                                        style={{ width: `${Math.min(100, (Number(v.stock) / 100) * 100)}%` }} />
+
+                                                        <div className="space-y-3">
+                                                            {(v.inventory || []).map((inv, invIdx) => (
+                                                                <div key={invIdx} className="flex flex-wrap md:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                                                                    <div className="flex-1 min-w-[150px]">
+                                                                        <select
+                                                                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                                            value={inv.branch?._id || inv.branch || ''}
+                                                                            onChange={(e) => {
+                                                                                const newInv = [...v.inventory];
+                                                                                newInv[invIdx].branch = e.target.value;
+                                                                                onUpdateVariant(idx, 'inventory', newInv);
+                                                                            }}
+                                                                        >
+                                                                            <option value="">-- اختر فرع --</option>
+                                                                            {branches.map(b => (
+                                                                                <option key={b._id} value={b._id} disabled={(v.inventory || []).some((i, iIdx) => iIdx !== invIdx && (i.branch === b._id || i.branch?._id === b._id))}>{b.name}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div className="w-24">
+                                                                        <input
+                                                                            type="number"
+                                                                            min="0"
+                                                                            placeholder="الكمية"
+                                                                            value={inv.quantity}
+                                                                            onChange={e => {
+                                                                                const newInv = [...v.inventory];
+                                                                                newInv[invIdx].quantity = Number(e.target.value);
+                                                                                const newStock = newInv.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+                                                                                const updatedVariant = { ...v, inventory: newInv, stock: newStock };
+                                                                                const newVariants = [...form.variants];
+                                                                                newVariants[idx] = updatedVariant;
+                                                                                setForm({ ...form, variants: newVariants });
+                                                                            }}
+                                                                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="w-10 flex justify-end">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const newInv = v.inventory.filter((_, i) => i !== invIdx);
+                                                                                const newStock = newInv.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+                                                                                const updatedVariant = { ...v, inventory: newInv, stock: newStock };
+                                                                                const newVariants = [...form.variants];
+                                                                                newVariants[idx] = updatedVariant;
+                                                                                setForm({ ...form, variants: newVariants });
+                                                                            }}
+                                                                            className="text-red-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
-                                                                <p className="text-[10px] text-gray-400 mt-1">{v.stock} وحدة متاحة</p>
-                                                            </div>
-                                                        )}
+                                                            ))}
+
+                                                            {(v.inventory || []).length === 0 && (
+                                                                <div className="text-center py-4 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                                                                    <p className="text-xs text-gray-400">لا يوجد فروع محددة. التتبع غير مفعل.</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

@@ -40,9 +40,10 @@ const TEMPLATE_PATTERNS = {
 class WhatsAppService {
   constructor() {
     this.apiUrl = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v21.0';
-    this.apiUrl = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v21.0';
     // Removed default global credentials to force per-request config
     this.templates = DEFAULT_TEMPLATES;
+    this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
+    this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
   }
 
   /**
@@ -55,6 +56,17 @@ class WhatsAppService {
       phoneId: config?.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID,
       isCustomCredentials: !!(config?.accessToken && config?.phoneNumberId),
     };
+  }
+
+  /**
+   * Backward-compatible credential cache refresh for legacy helper methods.
+   * Newer send methods use getCredentials(config) directly.
+   */
+  refreshCredentials(config = null) {
+    const { token, phoneId } = this.getCredentials(config);
+    this.accessToken = token || '';
+    this.phoneNumberId = phoneId || '';
+    return { token, phoneId };
   }
 
   /**
@@ -222,8 +234,6 @@ class WhatsAppService {
     const { token, phoneId } = this.getCredentials(config);
     return !!(phoneId && token && token !== 'your_access_token');
   }
-
-  // Removed refreshCredentials() as it is no longer needed with stateless approach
 
   /**
    * =====================================================
@@ -950,14 +960,47 @@ class WhatsAppService {
     return this.sendMessage(phone, message);
   }
 
-  async sendVendorSupplierPaymentReminder(vendorPhone, supplier, payment) {
-    let message = `⚠️ *تذكير — قسط مورد مستحق*\n\n`;
-    message += `خلي بالك! انت عليك قسط للمورد *${supplier.name}* ⏳\n\n`;
-    message += `💰 المبلغ المطلوب: *${Helpers.formatCurrency(payment.amount - payment.paidAmount)}*\n`;
-    message += `📅 تاريخ الاستحقاق: *${new Date(payment.dueDate).toLocaleDateString('ar-EG')}*\n\n`;
-    message += `\n— PayQusta 💙`;
+  async sendVendorSupplierPaymentReminder(vendorPhone, supplierOrPayload, payment = null, options = {}) {
+    const payload = (supplierOrPayload && typeof supplierOrPayload === 'object' && supplierOrPayload.supplierName)
+      ? supplierOrPayload
+      : {
+        supplierName: supplierOrPayload?.name || 'مورد',
+        amount: Number(payment?.amount || 0) - Number(payment?.paidAmount || 0),
+        dueDate: payment?.dueDate,
+      };
 
-    return this.sendMessage(vendorPhone, message);
+    const amountText = Helpers.formatCurrency(Math.max(0, Number(payload.amount || 0)));
+    const dueDateText = payload?.dueDate
+      ? new Date(payload.dueDate).toLocaleDateString('ar-EG')
+      : 'اليوم';
+
+    const recipientName = options?.recipientName || payload?.recipientName || 'صاحب المتجر';
+    const statusText = payload.isOverdue
+      ? 'متأخر السداد'
+      : (payload.isTomorrow ? 'مستحق غدًا' : 'مستحق اليوم');
+
+    let message = `⚠️ *تذكير مستحق مورد*\n\n`;
+    message += `مرحبًا ${recipientName}\n`;
+    message += `المورد: *${payload.supplierName || '—'}*\n`;
+    message += `الحالة: *${statusText}*\n`;
+    message += `المبلغ المطلوب: *${amountText}*\n`;
+    message += `تاريخ الاستحقاق: *${dueDateText}*\n`;
+
+    if (payload.invoiceNumber) {
+      message += `فاتورة مشتريات: *${payload.invoiceNumber}*\n`;
+    }
+    if (payload.purchaseOrderNumber) {
+      message += `أمر الشراء: *${payload.purchaseOrderNumber}*\n`;
+    }
+    if (payload.branchName) {
+      message += `الفرع: *${payload.branchName}*\n`;
+    }
+    if (payload.outstandingAmount !== undefined) {
+      message += `إجمالي المتبقي: *${Helpers.formatCurrency(payload.outstandingAmount)}*\n`;
+    }
+
+    message += `\n— PayQusta`;
+    return this.sendMessage(vendorPhone, message, options?.tenantWhatsapp || null);
   }
 
   async sendLowStockAlert(phone, product, isOutOfStock = false) {

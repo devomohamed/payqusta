@@ -74,7 +74,7 @@ const markCustomDomainConnected = (tenantId) => {
         customDomainLastCheckedAt: new Date(),
       },
     }
-  ).catch(() => {});
+  ).catch(() => { });
 };
 
 // Helper to resolve tenant from slug, header, subdomain, or custom domain
@@ -410,7 +410,8 @@ class PortalController {
     // Get Featured/Recent Products
     const recentProducts = await Product.find({
       tenant: tenantId,
-      isActive: true
+      isActive: true,
+      isSuspended: { $ne: true }
     })
       .sort('-createdAt')
       .limit(8)
@@ -437,7 +438,11 @@ class PortalController {
     };
 
     // Product count for store
-    const totalProducts = await Product.countDocuments({ tenant: customer.tenant._id || customer.tenant, isActive: true });
+    const totalProducts = await Product.countDocuments({
+      tenant: customer.tenant._id || customer.tenant,
+      isActive: true,
+      isSuspended: { $ne: true }
+    });
     // Total customers in same store
     const totalCustomers = await Customer.countDocuments({ tenant: customer.tenant._id || customer.tenant, isActive: true });
 
@@ -529,6 +534,49 @@ class PortalController {
     }
 
     ApiResponse.success(res, invoice);
+  });
+
+  /**
+   * POST /api/v1/portal/invoices/:id/pay
+   * Create an online payment link for the customer's own invoice
+   */
+  payInvoice = catchAsync(async (req, res, next) => {
+    const customerId = req.user.id;
+    const { gateway = 'paymob', amount } = req.body;
+
+    // Verify the invoice belongs to this customer
+    const invoice = await Invoice.findOne({
+      _id: req.params.id,
+      customer: customerId
+    }).populate('customer', 'name phone email');
+
+    if (!invoice) {
+      return next(AppError.notFound('الفاتورة غير موجودة'));
+    }
+
+    if (invoice.status === 'paid') {
+      return next(AppError.badRequest('هذه الفاتورة مدفوعة بالكامل بالفعل'));
+    }
+
+    if (invoice.remainingAmount <= 0) {
+      return next(AppError.badRequest('لا يوجد مبلغ متبقي لهذه الفاتورة'));
+    }
+
+    // Use the PaymentGatewayService to create a link
+    const PaymentGatewayService = require('../services/PaymentGatewayService');
+
+    const result = await PaymentGatewayService.createPaymentLink(
+      invoice._id.toString(),
+      gateway,
+      {
+        amount: amount || invoice.remainingAmount,
+        customerPhone: invoice.customer.phone,
+        customerEmail: invoice.customer.email,
+        userId: customerId,
+      }
+    );
+
+    ApiResponse.success(res, result, 'تم إنشاء رابط الدفع');
   });
 
   // ═══════════════════════════════════════════
@@ -933,6 +981,45 @@ class PortalController {
     });
   });
 
+  /**
+   * GET /api/v1/portal/points/history
+   * Returns paginated points ledger for the logged-in customer
+   */
+  getPointsHistory = catchAsync(async (req, res, next) => {
+    const customer = await Customer.findById(req.user.id)
+      .select('gamification financials');
+    if (!customer) return next(AppError.notFound('العميل غير موجود'));
+
+    // Build history from gamification.history array if present, otherwise derive from invoices
+    const history = (customer.gamification?.history || []).slice().reverse();
+
+    // Fallback: derive from recent invoices if gamification history is empty
+    if (history.length === 0) {
+      const invoices = await Invoice.find({ customer: req.user.id, status: 'paid' })
+        .select('invoiceNumber totalAmount createdAt')
+        .sort('-createdAt')
+        .limit(50);
+
+      const fallback = invoices.map(inv => ({
+        type: 'earned',
+        points: Math.floor(inv.totalAmount / 10), // 1 point per 10 EGP
+        description: `شراء فاتورة #${inv.invoiceNumber}`,
+        date: inv.createdAt,
+        invoiceId: inv._id,
+      }));
+
+      return ApiResponse.success(res, {
+        current: customer.gamification?.points || 0,
+        history: fallback,
+      });
+    }
+
+    ApiResponse.success(res, {
+      current: customer.gamification?.points || 0,
+      history,
+    });
+  });
+
   // ═══════════════════════════════════════════
   //  PRODUCTS & SHOPPING
   // ═══════════════════════════════════════════
@@ -953,6 +1040,7 @@ class PortalController {
     const filter = {
       tenant: customer.tenant._id || customer.tenant,
       isActive: true,
+      isSuspended: { $ne: true },
       stockStatus: { $ne: 'out_of_stock' }
     };
 
@@ -972,7 +1060,11 @@ class PortalController {
         .limit(Number(limit))
         .sort('-createdAt'),
       Product.countDocuments(filter),
-      Product.distinct('category', { tenant: customer.tenant._id || customer.tenant, isActive: true })
+      Product.distinct('category', {
+        tenant: customer.tenant._id || customer.tenant,
+        isActive: true,
+        isSuspended: { $ne: true }
+      })
     ]);
 
     logger.info(`[PORTAL_GET_PRODUCTS] Filter: ${JSON.stringify(filter)}`);
@@ -1003,7 +1095,8 @@ class PortalController {
     const product = await Product.findOne({
       _id: id,
       tenant: tenantId,
-      isActive: true
+      isActive: true,
+      isSuspended: { $ne: true }
     }).select('-cost -supplier'); // Exclude sensitive fields
 
     if (!product) {
@@ -1041,7 +1134,12 @@ class PortalController {
     const productUpdates = [];
 
     for (const item of items) {
-      const product = await Product.findOne({ _id: item.productId, tenant: customer.tenant._id || customer.tenant, isActive: true });
+      const product = await Product.findOne({
+        _id: item.productId,
+        tenant: customer.tenant._id || customer.tenant,
+        isActive: true,
+        isSuspended: { $ne: true }
+      });
       if (!product) return next(AppError.badRequest(`المنتج غير متوفر`));
 
       const qty = Number(item.quantity) || 1;
@@ -1204,21 +1302,31 @@ class PortalController {
       customer.financials.outstandingBalance += finalTotalAmount;
     }
     await customer.save();
-
-    // Notify Admin
+    // Notify Admin/Owner users
     try {
       const Notification = require('../models/Notification');
-      await Notification.create({
-        tenant: customer.tenant._id || customer.tenant,
-        type: 'order',
-        title: 'طلب جديد من البوابة',
-        message: `طلب جديد رقم #${invoice.invoiceNumber} بقيمة ${finalTotalAmount.toLocaleString()} من العميل ${customer.name}`,
-        data: {
-          invoiceId: invoice._id,
-          customerId: customer._id,
-          actionUrl: `/invoices/${invoice._id}`
-        }
-      });
+      const User = require('../models/User');
+      const tenantId = customer.tenant._id || customer.tenant;
+      const admins = await User.find({
+        tenant: tenantId,
+        role: { $in: ['admin', 'vendor', 'coordinator'] },
+        isActive: true,
+      }).select('_id');
+
+      if (admins.length > 0) {
+        await Notification.insertMany(
+          admins.map((admin) => ({
+            tenant: tenantId,
+            recipient: admin._id,
+            type: 'order',
+            title: 'طلب جديد من البوابة',
+            message: `طلب جديد رقم #${invoice.invoiceNumber} بقيمة ${finalTotalAmount.toLocaleString()} من العميل ${customer.name}`,
+            icon: 'shopping-bag',
+            color: 'primary',
+            link: `/invoices/${invoice._id}`,
+          }))
+        );
+      }
     } catch (e) {
       // Don't fail the order if notification fails
     }
@@ -1333,7 +1441,14 @@ class PortalController {
     const Notification = require('../models/Notification');
     const customer = await Customer.findById(customerId);
 
-    const filter = { tenant: customer.tenant, customerRecipient: customerId };
+    const filter = {
+      tenant: customer.tenant,
+      customerRecipient: customerId,
+      $or: [
+        { recipient: { $exists: false } },
+        { recipient: null },
+      ],
+    };
 
     const [notifications, total, unreadCount] = await Promise.all([
       Notification.find(filter)
@@ -1360,6 +1475,10 @@ class PortalController {
     const count = await Notification.countDocuments({
       tenant: customer.tenant,
       customerRecipient: req.user.id,
+      $or: [
+        { recipient: { $exists: false } },
+        { recipient: null },
+      ],
       isRead: false
     });
     ApiResponse.success(res, { count });
@@ -1370,8 +1489,17 @@ class PortalController {
    */
   markNotificationRead = catchAsync(async (req, res, next) => {
     const Notification = require('../models/Notification');
+    const customer = await Customer.findById(req.user.id);
     const notif = await Notification.findOneAndUpdate(
-      { _id: req.params.id, customerRecipient: req.user.id },
+      {
+        _id: req.params.id,
+        tenant: customer.tenant,
+        customerRecipient: req.user.id,
+        $or: [
+          { recipient: { $exists: false } },
+          { recipient: null },
+        ],
+      },
       { isRead: true, readAt: new Date() },
       { new: true }
     );
@@ -1386,7 +1514,15 @@ class PortalController {
     const Notification = require('../models/Notification');
     const customer = await Customer.findById(req.user.id);
     await Notification.updateMany(
-      { tenant: customer.tenant, customerRecipient: req.user.id, isRead: false },
+      {
+        tenant: customer.tenant,
+        customerRecipient: req.user.id,
+        $or: [
+          { recipient: { $exists: false } },
+          { recipient: null },
+        ],
+        isRead: false,
+      },
       { isRead: true, readAt: new Date() }
     );
     ApiResponse.success(res, null, 'تم تعليم جميع الإشعارات كمقروءة');
@@ -1485,7 +1621,8 @@ class PortalController {
     const product = await Product.findOne({
       _id: productId,
       tenant: customer.tenant,
-      isActive: true
+      isActive: true,
+      isSuspended: { $ne: true }
     });
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
 
@@ -1511,7 +1648,7 @@ class PortalController {
     const customer = await Customer.findById(req.user.id).populate({
       path: 'wishlist',
       select: 'name price images thumbnail category stockStatus stock.quantity',
-      match: { isActive: true }
+      match: { isActive: true, isSuspended: { $ne: true } }
     });
     if (!customer) return next(AppError.notFound('العميل غير موجود'));
     ApiResponse.success(res, { products: (customer.wishlist || []).filter(Boolean) });
@@ -1682,13 +1819,13 @@ class PortalController {
     const invoice = await Invoice.findOne({
       _id: req.params.id,
       customer: customerId
-    }).populate('items.product', 'name price images isActive stock.quantity');
+    }).populate('items.product', 'name price images isActive isSuspended stock.quantity');
 
     if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
 
     const reorderItems = [];
     for (const item of invoice.items) {
-      if (item.product && item.product.isActive && item.product.stock?.quantity >= 1) {
+      if (item.product && item.product.isActive && !item.product.isSuspended && item.product.stock?.quantity >= 1) {
         reorderItems.push({
           product: {
             _id: item.product._id,
@@ -1708,137 +1845,6 @@ class PortalController {
     }
 
     ApiResponse.success(res, { items: reorderItems }, `تمت إضافة ${reorderItems.length} منتج للسلة`);
-  });
-
-  // ═══════════════════════════════════════════
-  //  POINTS HISTORY
-  // ═══════════════════════════════════════════
-
-  /**
-   * GET /api/v1/portal/points/history
-   */
-  getPointsHistory = catchAsync(async (req, res, next) => {
-    const customer = await Customer.findById(req.user.id);
-    if (!customer) return next(AppError.notFound('العميل غير موجود'));
-
-    const invoices = await Invoice.find({ customer: req.user.id })
-      .select('invoiceNumber totalAmount paidAmount createdAt status payments')
-      .sort('-createdAt')
-      .limit(50);
-
-    const history = [];
-
-    invoices.forEach(inv => {
-      const purchasePoints = Math.floor(inv.totalAmount / 1000) * 10;
-      if (purchasePoints > 0) {
-        history.push({
-          date: inv.createdAt,
-          type: 'earned',
-          points: purchasePoints,
-          description: `نقاط شراء - فاتورة #${inv.invoiceNumber}`,
-        });
-      }
-
-      (inv.payments || []).forEach(payment => {
-        history.push({
-          date: payment.date,
-          type: 'earned',
-          points: 5,
-          description: `نقاط سداد - فاتورة #${inv.invoiceNumber}`,
-        });
-      });
-    });
-
-    history.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    ApiResponse.success(res, {
-      currentPoints: customer.gamification?.points || 0,
-      totalEarned: customer.gamification?.totalEarnedPoints || 0,
-      redeemed: customer.gamification?.redeemedPoints || 0,
-      history,
-    });
-  });
-
-  /**
-   * POST /api/v1/portal/invoices/:id/pay
-   * Pay invoice (full or partial payment)
-   */
-  payInvoice = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const { amount, paymentMethod, notes } = req.body;
-    const customer = await Customer.findById(req.customer._id);
-
-    if (!amount || amount <= 0) {
-      return next(AppError.badRequest('يرجى إدخال مبلغ الدفع'));
-    }
-
-    // Get invoice
-    const invoice = await Invoice.findOne({
-      _id: id,
-      customer: customer._id,
-      tenant: customer.tenant
-    });
-
-    if (!invoice) {
-      return next(AppError.notFound('الفاتورة غير موجودة'));
-    }
-
-    // Check if invoice is already fully paid
-    if (invoice.status === 'paid' || invoice.paid >= invoice.total) {
-      return next(AppError.badRequest('هذه الفاتورة مدفوعة بالكامل'));
-    }
-
-    const remaining = invoice.total - invoice.paid;
-
-    // Validate amount
-    if (amount > remaining) {
-      return next(AppError.badRequest(`المبلغ أكبر من المبلغ المتبقي (${remaining.toFixed(2)} ج.م)`));
-    }
-
-    // Update invoice paid amount
-    invoice.paid += amount;
-
-    // Add payment to history
-    if (!invoice.payments) invoice.payments = [];
-    invoice.payments.push({
-      amount,
-      paymentMethod: paymentMethod || 'online',
-      paidAt: new Date(),
-      notes: notes || 'دفع من بوابة العملاء',
-      paidBy: customer.name
-    });
-
-    // Check if fully paid
-    if (invoice.paid >= invoice.total) {
-      invoice.status = 'paid';
-      invoice.paidAt = new Date();
-    } else {
-      invoice.status = 'partial';
-    }
-
-    await invoice.save();
-
-    // Update customer outstanding balance
-    customer.outstanding = customer.outstanding - amount;
-    await customer.save();
-
-    // Create notification for vendor
-    const Notification = require('../models/Notification');
-    await Notification.create({
-      recipient: invoice.createdBy, // Assuming createdBy is the vendor user
-      type: 'payment',
-      title: 'دفعة جديدة',
-      message: `قام العميل ${customer.name} بدفع ${amount.toFixed(2)} ج.م من فاتورة ${invoice.invoiceNumber}`,
-      link: `/invoices/${invoice._id}`,
-      tenant: customer.tenant
-    });
-
-    ApiResponse.success(res, {
-      invoice,
-      paid: amount,
-      remaining: invoice.total - invoice.paid,
-      status: invoice.status
-    }, 'تم الدفع بنجاح');
   });
 
   // ──────────────────────────────────────────
@@ -2042,6 +2048,7 @@ class PortalController {
 }
 
 module.exports = new PortalController();
+
 
 
 

@@ -17,7 +17,7 @@ const IMPORT_TYPES = [
     bgColor: 'bg-blue-50 dark:bg-blue-500/10',
     textColor: 'text-blue-600 dark:text-blue-400',
     description: 'استيراد المنتجات من ملف Excel أو CSV',
-    columns: ['اسم المنتج', 'SKU', 'السعر', 'سعر الشراء', 'الكمية', 'التصنيف', 'الباركود'],
+    columns: ['اسم المنتج', 'SKU', 'السعر', 'سعر الشراء', 'الكمية', 'القسم', 'الباركود'],
   },
   {
     id: 'customers',

@@ -3,6 +3,7 @@ import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter,
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
 import { invoicesApi, customersApi, productsApi } from '../store';
+import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState, OwnerTableSkeleton } from '../components/UI';
 import Pagination from '../components/Pagination';
 
@@ -135,6 +136,8 @@ export default function InvoicesPage() {
   const remaining = cartTotal - (Number(downPayment) || 0);
   const monthlyAmount = installments > 0 ? Math.ceil(remaining / installments) : 0;
 
+  useUnsavedWarning(showCreate && cart.length > 0, 'invoices');
+
   const handleCreate = async () => {
     if (!selectedCustomer) return toast.error('اختر العميل');
     if (cart.length === 0) return toast.error('أضف منتجات للفاتورة');
@@ -221,6 +224,28 @@ export default function InvoicesPage() {
         toast.success('تم الإرسال ✅', { id: tid });
       }
     } catch { toast.error('فشل الإرسال', { id: tid }); }
+  };
+
+  const handleCreateWaybill = async (inv) => {
+    const tid = toast.loading('جاري إنشاء بوليصة الشحن (Bosta)...');
+    try {
+      const res = await invoicesApi.createBostaWaybill(inv._id, {});
+      toast.success(`تم إنشاء البوليصة: ${res.data.data.waybillNumber}`, { id: tid });
+      loadInvoices();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'فشل إنشاء بوليصة الشحن', { id: tid });
+    }
+  };
+
+  const handleTrackWaybill = async (inv) => {
+    const tid = toast.loading('جاري تحديث حالة الشحنة (Bosta)...');
+    try {
+      const res = await invoicesApi.trackBostaWaybill(inv._id);
+      toast.success(`حالة الشحنة: ${res.data.data.status}`, { id: tid });
+      loadInvoices();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'فشل تحديث التتبع', { id: tid });
+    }
   };
 
   const fmt = (n) => (n || 0).toLocaleString('ar-EG');
@@ -375,6 +400,23 @@ export default function InvoicesPage() {
                             </>
                           ) : (
                             <span className="text-emerald-500"><Check className="w-5 h-5" /></span>
+                          )}
+                          {!inv.shippingDetails?.waybillNumber ? (
+                            <button
+                              onClick={() => handleCreateWaybill(inv)}
+                              className="p-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 transition-colors"
+                              title="إنشاء بوليصة شحن (Bosta)"
+                            >
+                              <Send className="w-4 h-4" /> {/* Or a Truck icon if imported */}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleTrackWaybill(inv)}
+                              className="p-2 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 transition-colors"
+                              title={`تتبع الشحنة: ${inv.shippingDetails.waybillNumber}`}
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
                           )}
                           <button
                             onClick={() => handleSendWhatsApp(inv)}

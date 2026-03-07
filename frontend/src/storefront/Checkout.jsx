@@ -376,14 +376,20 @@ export default function Checkout() {
         clearStorefrontCoupon();
 
         if (form.paymentMethod === 'online') {
-          const paymentRes = await api.post('/payments/create-link', {
+          const paymentRes = await api.post('/storefront/payments/create-link', {
             invoiceId: invoice._id,
             amount: invoice.totalAmount,
-            customerName: form.customerName,
             customerPhone: form.phone,
-            customerEmail: form.email
+            customerEmail: form.email,
+            source: 'online_store',
+          }, {
+            headers: { 'x-source': 'online_store' },
           });
-          window.location.href = paymentRes.data.data.paymentUrl;
+          const paymentUrl = paymentRes?.data?.data?.paymentUrl || paymentRes?.data?.data?.paymentLink;
+          if (!paymentUrl) {
+            throw new Error('PAYMENT_URL_MISSING');
+          }
+          window.location.href = paymentUrl;
         } else {
           navigate(storefrontPath(`/order/${invoice._id}`));
         }

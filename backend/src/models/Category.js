@@ -10,7 +10,7 @@ const categorySchema = new mongoose.Schema(
         },
         name: {
             type: String,
-            required: [true, 'اسم التصنيف مطلوب'],
+            required: [true, 'اسم القسم مطلوب'],
             trim: true,
         },
         slug: {

@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Flame, Trophy, CreditCard, Megaphone, ShoppingCart, Sparkles,
 } from 'lucide-react';
-import { api } from '../store';
 import { Card, Badge, Button, LoadingSpinner } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import { useCommerceStore } from '../store/commerceStore';
@@ -19,6 +18,10 @@ import {
   selectStorefrontLandingProducts,
   trackStorefrontLandingPageView,
 } from './storefrontLandingPages';
+import {
+  loadStorefrontProducts,
+  loadStorefrontSettings,
+} from './storefrontDataClient';
 
 function getLandingIcon(slug) {
   if (slug === 'seasonal') return Flame;
@@ -203,8 +206,8 @@ export default function StorefrontLandingPage() {
       setLoading(true);
       try {
         const [productsRes, settingsRes] = await Promise.all([
-          api.get('/products?isActive=true&limit=80'),
-          api.get('/settings'),
+          loadStorefrontProducts({ isActive: true, limit: 80 }, { ttlMs: 15000 }),
+          loadStorefrontSettings(),
         ]);
 
         if (cancelled) return;

@@ -10,6 +10,9 @@ const fs = require('fs');
 const crypto = require('crypto');
 const AppError = require('../utils/AppError');
 
+const PRODUCT_IMAGE_UPLOAD_LIMIT = 10;
+const EDITOR_IMAGE_UPLOAD_LIMIT = 5;
+
 /**
  * Sanitize filename to prevent path traversal attacks
  */
@@ -29,6 +32,51 @@ const ensureDirectoryExists = (dirPath) => {
 };
 
 let cachedBucket = null;
+
+const normalizeUploadKey = (value = '') => (
+  String(value || '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((segment) => segment && segment !== '.' && segment !== '..')
+    .join('/')
+);
+
+const getUploadStorageMode = () => {
+  const explicitMode = String(process.env.UPLOAD_STORAGE || '').trim().toLowerCase();
+
+  if (explicitMode === 'gcs' || explicitMode === 'google') return 'gcs';
+  if (explicitMode === 'mongodb' || explicitMode === 'mongo' || explicitMode === 'db') return 'mongodb';
+  if (explicitMode === 'local' || explicitMode === 'filesystem' || explicitMode === 'fs') return 'local';
+
+  if (process.env.GCS_BUCKET_NAME) return 'gcs';
+  if (process.env.K_SERVICE) return 'mongodb';
+
+  return 'local';
+};
+
+const getStoredUploadModel = () => require('../models/StoredUpload');
+
+const extractUploadKey = (filepath) => {
+  if (typeof filepath !== 'string') return null;
+
+  const normalizedPath = filepath.split('?')[0].split('#')[0];
+  const uploadsIndex = normalizedPath.indexOf('/uploads/');
+
+  if (uploadsIndex >= 0) {
+    return normalizeUploadKey(normalizedPath.slice(uploadsIndex + '/uploads/'.length));
+  }
+
+  return null;
+};
+
+const getLocalUploadPath = (filepathOrKey) => {
+  const uploadKey = filepathOrKey?.startsWith?.('/uploads/')
+    ? extractUploadKey(filepathOrKey)
+    : normalizeUploadKey(filepathOrKey);
+
+  if (!uploadKey) return null;
+  return path.join(__dirname, '../../uploads', uploadKey);
+};
 
 const getCloudBucket = () => {
   if (!process.env.GCS_BUCKET_NAME) return null;
@@ -71,6 +119,85 @@ const extractCloudObjectPath = (filepath) => {
   }
 
   return null;
+};
+
+const saveUploadToDatabase = async ({ key, folder, filename, buffer, contentType }) => {
+  const StoredUpload = getStoredUploadModel();
+
+  await StoredUpload.findOneAndUpdate(
+    { key },
+    {
+      key,
+      folder,
+      filename,
+      contentType,
+      size: buffer.length,
+      data: buffer,
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  return `/uploads/${key}`;
+};
+
+const readUploadedFile = async (filepath) => {
+  const cloudBucket = getCloudBucket();
+  const cloudObjectPath = extractCloudObjectPath(filepath);
+
+  if (cloudBucket && cloudObjectPath) {
+    const [buffer] = await cloudBucket.file(cloudObjectPath).download();
+    return { buffer, contentType: 'application/octet-stream', source: 'gcs' };
+  }
+
+  const uploadKey = extractUploadKey(filepath);
+  if (!uploadKey) return null;
+
+  const localPath = getLocalUploadPath(uploadKey);
+  if (localPath && fs.existsSync(localPath)) {
+    const buffer = await fs.promises.readFile(localPath);
+    return { buffer, contentType: 'application/octet-stream', source: 'local' };
+  }
+
+  const StoredUpload = getStoredUploadModel();
+  const storedUpload = await StoredUpload.findOne({ key: uploadKey }).select('data contentType size');
+  if (!storedUpload) return null;
+
+  return {
+    buffer: storedUpload.data,
+    contentType: storedUpload.contentType || 'application/octet-stream',
+    size: storedUpload.size,
+    source: 'mongodb',
+  };
+};
+
+const serveUploadedFile = async (req, res, next) => {
+  try {
+    if (!['GET', 'HEAD'].includes(req.method)) return next();
+
+    const uploadKey = normalizeUploadKey(req.params[0] || req.path || '');
+    if (!uploadKey) return next();
+
+    const StoredUpload = getStoredUploadModel();
+    const storedUpload = await StoredUpload.findOne({ key: uploadKey }).select('data contentType size');
+    if (!storedUpload) return next();
+
+    res.setHeader('Content-Type', storedUpload.contentType || 'application/octet-stream');
+    res.setHeader('Content-Length', String(storedUpload.size || storedUpload.data.length || 0));
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+
+    if (req.method === 'HEAD') {
+      return res.status(200).end();
+    }
+
+    return res.status(200).end(storedUpload.data);
+  } catch (error) {
+    console.error('Upload fallback read error:', error);
+    return next();
+  }
 };
 
 // Memory storage (we'll process with Sharp before saving)
@@ -157,9 +284,16 @@ const processImage = async (buffer, filename, folder = 'products', mimetype = 'i
       .webp({ quality: 85 })
       .toBuffer();
 
-    const cloudBucket = getCloudBucket();
-    if (cloudBucket) {
-      const objectPath = `${folder}/${secureFilename}`;
+    const normalizedFolder = normalizeUploadKey(folder);
+    const storageMode = getUploadStorageMode();
+
+    if (storageMode === 'gcs') {
+      const cloudBucket = getCloudBucket();
+      if (!cloudBucket) {
+        throw new Error('GCS upload mode selected without GCS bucket configuration');
+      }
+
+      const objectPath = `${normalizedFolder}/${secureFilename}`;
       const cloudFile = cloudBucket.file(objectPath);
 
       await cloudFile.save(processedBuffer, {
@@ -174,16 +308,27 @@ const processImage = async (buffer, filename, folder = 'products', mimetype = 'i
         await cloudFile.makePublic();
       }
 
-      return getCloudPublicUrl(folder, secureFilename);
+      return getCloudPublicUrl(normalizedFolder, secureFilename);
     }
 
-    const uploadDir = path.join(__dirname, '../../uploads', folder);
+    if (storageMode === 'mongodb') {
+      const uploadKey = normalizeUploadKey(`${normalizedFolder}/${secureFilename}`);
+      return saveUploadToDatabase({
+        key: uploadKey,
+        folder: normalizedFolder,
+        filename: secureFilename,
+        buffer: processedBuffer,
+        contentType: 'image/webp',
+      });
+    }
+
+    const uploadDir = path.join(__dirname, '../../uploads', normalizedFolder);
     ensureDirectoryExists(uploadDir);
 
     const filepath = path.join(uploadDir, secureFilename);
     await fs.promises.writeFile(filepath, processedBuffer);
 
-    return `/uploads/${folder}/${secureFilename}`;
+    return `/uploads/${normalizedFolder}/${secureFilename}`;
   } catch (error) {
     console.error('Image processing error:', error);
     throw AppError.badRequest('فشل معالجة الصورة - الملف قد يكون تالفاً');
@@ -203,11 +348,15 @@ const deleteFile = async (filepath) => {
       return;
     }
 
-    if (typeof filepath === 'string' && filepath.startsWith('/uploads/')) {
-      const fullPath = path.join(__dirname, '../..', filepath);
-      if (fs.existsSync(fullPath)) {
+    const uploadKey = extractUploadKey(filepath);
+    if (uploadKey) {
+      const fullPath = getLocalUploadPath(uploadKey);
+      if (fullPath && fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
       }
+
+      const StoredUpload = getStoredUploadModel();
+      await StoredUpload.deleteOne({ key: uploadKey });
     }
   } catch (error) {
     console.error('Error deleting file:', error);
@@ -218,6 +367,15 @@ module.exports = {
   upload,
   processImage,
   deleteFile,
+  readUploadedFile,
+  serveUploadedFile,
+  getUploadStorageMode,
   uploadSingle: upload.single('image'),
-  uploadMultiple: upload.array('images', 5),
+  uploadMultiple: upload.array('images', PRODUCT_IMAGE_UPLOAD_LIMIT),
+  uploadEditorImages: upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'images', maxCount: EDITOR_IMAGE_UPLOAD_LIMIT },
+  ]),
+  PRODUCT_IMAGE_UPLOAD_LIMIT,
+  EDITOR_IMAGE_UPLOAD_LIMIT,
 };

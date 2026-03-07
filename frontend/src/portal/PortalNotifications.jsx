@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { Bell, CheckCircle, Clock, ShoppingBag, CreditCard, AlertTriangle, MessageCircle, Star, Check, CheckCheck } from 'lucide-react';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
+import { resolvePortalNotificationLink } from './utils/notificationLinks';
 
 const iconMap = {
   'shopping-bag': ShoppingBag,
@@ -28,12 +29,14 @@ const colorMap = {
 
 export default function PortalNotifications() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { fetchNotifications, markNotificationRead, markAllNotificationsRead, unreadCount } = usePortalStore();
   const { dark } = useThemeStore();
   const { t, i18n } = useTranslation('portal');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pages: 1 });
+  const portalBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
 
   useEffect(() => {
     loadNotifications();
@@ -59,11 +62,14 @@ export default function PortalNotifications() {
       handleMarkRead(notif._id);
     }
     if (notif.link) {
-      let targetLink = notif.link;
-      if (!targetLink.startsWith('/portal/')) {
-        targetLink = `/portal${targetLink.startsWith('/') ? targetLink : '/' + targetLink}`;
+      const targetLink = resolvePortalNotificationLink(notif.link, portalBasePath);
+      if (targetLink) {
+        if (/^https?:\/\//i.test(targetLink)) {
+          window.location.assign(targetLink);
+        } else {
+          navigate(targetLink);
+        }
       }
-      navigate(targetLink);
     }
   };
 

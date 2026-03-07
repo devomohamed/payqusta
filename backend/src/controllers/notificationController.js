@@ -1,6 +1,6 @@
 /**
- * Notification Controller — In-App Notifications API
- * Handles fetching, marking as read, and SSE streaming
+ * Notification Controller
+ * Handles fetching, marking as read, deleting, and SSE streaming for backoffice users.
  */
 
 const Notification = require('../models/Notification');
@@ -8,20 +8,39 @@ const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const NotificationService = require('../services/NotificationService');
 
+const isSuperAdminUser = (user = {}) =>
+  Boolean(
+    user.isSuperAdmin ||
+    user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase()
+  );
+
+// Keep owner/admin notifications isolated from customer notifications.
+const buildOwnerNotificationFilter = (req, extra = {}) => {
+  const filter = {
+    recipient: req.user._id,
+    $or: [
+      { customerRecipient: { $exists: false } },
+      { customerRecipient: null },
+    ],
+    ...extra,
+  };
+
+  if (!isSuperAdminUser(req.user) && req.tenantId) {
+    filter.tenant = req.tenantId;
+  }
+
+  return filter;
+};
+
 class NotificationController {
   /**
    * GET /api/v1/notifications
-   * Get paginated notifications for current user
+   * Get paginated notifications for current backoffice user.
    */
   async getAll(req, res, next) {
     try {
-      const { page, limit, skip, sort } = Helpers.getPaginationParams(req.query);
-      const isSuperAdmin = req.user.isSuperAdmin ||
-        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
-
-      // Build filter — super admin has no tenant, see all their own notifications
-      const filter = { recipient: req.user._id };
-      if (!isSuperAdmin && req.tenantId) filter.tenant = req.tenantId;
+      const { page, limit, skip } = Helpers.getPaginationParams(req.query);
+      const filter = buildOwnerNotificationFilter(req);
 
       if (req.query.unread === 'true') filter.isRead = false;
       if (req.query.type) filter.type = req.query.type;
@@ -42,10 +61,8 @@ class NotificationController {
    */
   async getUnreadCount(req, res, next) {
     try {
-      const isSuperAdmin = req.user.isSuperAdmin ||
-        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
-      const tenantId = isSuperAdmin ? null : req.tenantId;
-      const count = await Notification.getUnreadCount(tenantId, req.user._id);
+      const filter = buildOwnerNotificationFilter(req, { isRead: false });
+      const count = await Notification.countDocuments(filter);
       ApiResponse.success(res, { count });
     } catch (error) {
       next(error);
@@ -57,11 +74,7 @@ class NotificationController {
    */
   async markAsRead(req, res, next) {
     try {
-      const isSuperAdmin = req.user.isSuperAdmin ||
-        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
-      const filter = { _id: req.params.id, recipient: req.user._id };
-      if (!isSuperAdmin && req.tenantId) filter.tenant = req.tenantId;
-
+      const filter = buildOwnerNotificationFilter(req, { _id: req.params.id });
       await Notification.findOneAndUpdate(filter, { isRead: true, readAt: new Date() });
       ApiResponse.success(res, null, 'تم التعليم كمقروء');
     } catch (error) {
@@ -74,10 +87,8 @@ class NotificationController {
    */
   async markAllAsRead(req, res, next) {
     try {
-      const isSuperAdmin = req.user.isSuperAdmin ||
-        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
-      const tenantId = isSuperAdmin ? null : req.tenantId;
-      await Notification.markAllRead(tenantId, req.user._id);
+      const filter = buildOwnerNotificationFilter(req, { isRead: false });
+      await Notification.updateMany(filter, { isRead: true, readAt: new Date() });
       ApiResponse.success(res, null, 'تم تعليم الكل كمقروء');
     } catch (error) {
       next(error);
@@ -89,11 +100,7 @@ class NotificationController {
    */
   async deleteOne(req, res, next) {
     try {
-      const isSuperAdmin = req.user.isSuperAdmin ||
-        req.user.email?.toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || 'super@payqusta.com').toLowerCase();
-      const filter = { _id: req.params.id, recipient: req.user._id };
-      if (!isSuperAdmin && req.tenantId) filter.tenant = req.tenantId;
-
+      const filter = buildOwnerNotificationFilter(req, { _id: req.params.id });
       await Notification.findOneAndDelete(filter);
       ApiResponse.success(res, null, 'تم حذف الإشعار');
     } catch (error) {
@@ -103,34 +110,29 @@ class NotificationController {
 
   /**
    * GET /api/v1/notifications/stream
-   * Server-Sent Events (SSE) endpoint for real-time notifications
+   * Server-Sent Events (SSE) endpoint for real-time notifications.
    */
   async stream(req, res, next) {
     try {
-      // SSE headers - Need specific headers to bypass Nginx/Render buffering
       res.writeHead(200, {
         'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no', // For Nginx
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
       });
 
-      // Send initial connection event
       res.write(`data: ${JSON.stringify({ type: 'connected', message: 'متصل بنظام الإشعارات' })}\n\n`);
 
-      // Flush response headers/body if express compression allows it
       if (res.flush) {
         res.flush();
       }
 
-      // Register this client for SSE
       NotificationService.addSSEClient(req.user._id.toString(), res);
 
-      // Keep alive every 30 seconds
       const keepAlive = setInterval(() => {
         try {
           if (!res.writableEnded) {
-            res.write(`:\n\n`); // Standard SSE comment ping
+            res.write(':\n\n');
             if (res.flush) res.flush();
           } else {
             clearInterval(keepAlive);
@@ -140,11 +142,8 @@ class NotificationController {
         }
       }, 30000);
 
-      // Cleanup on close, error or finish
       const cleanup = () => {
         clearInterval(keepAlive);
-        // Assuming NotificationService has a way to remove disconnected clients if needed
-        // Some implementations just rely on the next write failing to clean them up.
       };
 
       req.on('close', cleanup);

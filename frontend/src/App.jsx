@@ -11,6 +11,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
+import AnimatedBrandLogo from './components/AnimatedBrandLogo';
 import { storefrontPath } from './utils/storefrontHost';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -39,7 +40,9 @@ import CashDrawerPage from './pages/CashDrawerPage';
 import RolesPage from './pages/RolesPage';
 import ActivityLogsPage from './pages/ActivityLogsPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
+import SupplierPurchaseInvoicesPage from './pages/SupplierPurchaseInvoicesPage';
 import AgingReportPage from './pages/AgingReportPage';
+import InstallmentsDashboardPage from './pages/InstallmentsDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminTenantsPage from './pages/AdminTenantsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -62,6 +65,9 @@ import ReferralPage from './pages/ReferralPage';
 import RevenueAnalyticsPage from './pages/RevenueAnalyticsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import StockSearchPage from './pages/StockSearchPage';
+import ShiftManagementPage from './pages/ShiftManagementPage';
+import SupplierAgingReportPage from './pages/SupplierAgingReportPage';
+import PurchaseReturnsPage from './pages/PurchaseReturnsPage';
 
 // Storefront Pages
 import StorefrontLayout from './storefront/StorefrontLayout';
@@ -96,6 +102,7 @@ import PortalPointsHistory from './portal/PortalPointsHistory';
 import PortalReviews from './portal/PortalReviews';
 import PortalProducts from './portal/PortalProducts';
 import PortalProductDetails from './portal/PortalProductDetails';
+import PortalPaymentResult from './portal/PortalPaymentResult';
 
 
 // Protected Route wrapper
@@ -209,11 +216,15 @@ function MainLayout() {
                 <Route path="/staff-performance" element={<StaffPerformancePage />} />
                 <Route path="/invoices" element={<InvoicesPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/supplier-purchase-invoices" element={<SupplierPurchaseInvoicesPage />} />
+                <Route path="/purchase-returns" element={<PurchaseReturnsPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/expenses" element={<ExpensesPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/business-reports" element={<BusinessReportsPage />} />
                 <Route path="/aging-report" element={<AgingReportPage />} />
+                <Route path="/supplier-aging-report" element={<SupplierAgingReportPage />} />
+                <Route path="/installments" element={<InstallmentsDashboardPage />} />
                 <Route path="/addon-store" element={<AddonStorePage />} />
                 <Route path="/referrals" element={<ReferralPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
@@ -229,6 +240,8 @@ function MainLayout() {
                 <Route path="/super-admin/analytics" element={<SuperAdminRoute><RevenueAnalyticsPage /></SuperAdminRoute>} />
                 <Route path="/tenant-management" element={<SuperAdminRoute><TenantManagementPage /></SuperAdminRoute>} />
                 <Route path="/cash-drawer" element={<CashDrawerPage />} />
+                <Route path="/shift" element={<ShiftManagementPage />} />
+
                 <Route path="/roles" element={<RolesPage />} />
                 <Route path="/activity-logs" element={<ActivityLogsPage />} />
                 <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
@@ -353,7 +366,9 @@ export default function App() {
             <Route path="products/:id" element={<PortalProductDetails />} />
             <Route path="cart" element={<ShoppingCart />} />
             <Route path="checkout" element={<PortalCheckout />} />
+            <Route path="payment/result" element={<PortalPaymentResult />} />
           </Route>
+
 
           {/* Storefront Routes (Public) */}
           <Route path={storefrontPath('/')} element={<StorefrontLayout><StorefrontHome /></StorefrontLayout>} />

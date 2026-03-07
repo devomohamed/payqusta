@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, X, Heart, Package, Star, Tag, SlidersHorizontal, ShoppingCart, ArrowLeft, ShieldCheck } from 'lucide-react';
-import { api } from '../store';
 import { portalApi } from '../store/portalStore';
 import { useCommerceStore } from '../store/commerceStore';
 import { notify } from '../components/AnimatedNotification';
@@ -11,6 +10,13 @@ import { createBuyNowItem } from './buyNowItem';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
 import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
 import { STOREFRONT_VOLUME_OFFER_TIERS } from './storefrontVolumeOffers';
+import {
+  loadStorefrontCategories,
+  loadStorefrontProducts,
+} from './storefrontDataClient';
+import {
+  buildStorefrontCategorySections,
+} from './storefrontShowcase';
 
 const priceRanges = [
   { value: 'all', label: 'جميع الأسعار' },
@@ -73,8 +79,8 @@ export default function ProductCatalog() {
         setCategories(res.data.data.categories || []);
       } else {
         const [productsRes, categoriesRes] = await Promise.all([
-          api.get('/products?isActive=true&limit=100'),
-          api.get('/products/categories'),
+          loadStorefrontProducts({ isActive: true, limit: 100 }, { ttlMs: 12000 }),
+          loadStorefrontCategories(),
         ]);
         setProducts(productsRes.data.data || []);
         setCategories(categoriesRes.data.data || []);
@@ -86,10 +92,13 @@ export default function ProductCatalog() {
     }
   };
 
-  const searchRankedPool = search.trim() ? rankStorefrontProducts(products, search) : products;
+  const catalogCategories = buildStorefrontCategorySections(categories).map((category) => ({ ...category, _id: category.id }));
+  const catalogProducts = products;
+  const usingShowcaseFallback = false;
+  const searchRankedPool = search.trim() ? rankStorefrontProducts(catalogProducts, search) : catalogProducts;
   const searchSuggestions = buildStorefrontSearchSuggestions({
-    products,
-    categories,
+    products: catalogProducts,
+    categories: catalogCategories,
     query: search,
     limit: 6,
   });
@@ -110,6 +119,11 @@ export default function ProductCatalog() {
   const handleAddToCart = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
+    if (product.isShowcasePlaceholder) {
+      notify.info('هذا العنصر غير متاح للطلب المباشر حالياً.');
+      navigate(detailPath(product));
+      return;
+    }
     if (product.stock?.quantity === 0) { notify.error('المنتج غير متوفر حالياً'); return; }
     if (product.hasVariants) {
       notify.info('اختر المواصفات أولاً من صفحة المنتج');
@@ -128,17 +142,15 @@ export default function ProductCatalog() {
     }
     notify.success(isPortal ? `تمت إضافة "${product.name}" للسلة` : `تمت إضافة "${product.name}" للسلة. يمكنك إكمال الطلب كضيف في أي وقت.`);
     setTimeout(() => setAddingId(null), 600);
-    return;
-    if (product.stock?.quantity === 0) { notify.error('المنتج غير متوفر حالياً'); return; }
-    setAddingId(product._id);
-    addToCart(product, 1);
-    notify.success(`تمت إضافة "${product.name}" للسلة 🛒`);
-    setTimeout(() => setAddingId(null), 600);
   };
 
   const handleWishlist = async (e, product) => {
     e.preventDefault();
     e.stopPropagation();
+    if (product.isShowcasePlaceholder) {
+      notify.info('هذا العنصر غير متاح للمفضلة حالياً.');
+      return;
+    }
     setWishlistLoading(prev => ({ ...prev, [product._id]: true }));
     const res = await toggleWishlist(product._id);
     if (res.success) {
@@ -147,12 +159,24 @@ export default function ProductCatalog() {
     setWishlistLoading(prev => ({ ...prev, [product._id]: false }));
   };
 
-  const detailPath = (product) =>
-    isPortal ? `/portal/products/${product._id}` : `/store/products/${product._id}`;
+  const detailPath = (product) => {
+    if (product?.isShowcasePlaceholder) {
+      const categoryId = typeof product.category === 'object' ? product.category?._id : product.category;
+      return `${isPortal ? '/portal/products' : storefrontPath('/products')}?category=${encodeURIComponent(categoryId || '')}`;
+    }
+
+    return isPortal ? `/portal/products/${product._id}` : `/store/products/${product._id}`;
+  };
 
   const handleBuyNow = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (product.isShowcasePlaceholder) {
+      notify.info('افتح القسم لمشاهدة المنتجات المتاحة حالياً.');
+      navigate(detailPath(product));
+      return;
+    }
 
     if (product.stock?.quantity === 0) {
       notify.error('المنتج غير متوفر حالياً');
@@ -194,35 +218,38 @@ export default function ProductCatalog() {
         <div>
           <h2 className="text-xl font-black text-gray-900 dark:text-white">🛍️ المنتجات</h2>
           <p className="text-sm text-gray-400">
-            {filteredProducts.length} منتج متاح • {categories.length} قسم
+            {filteredProducts.length} منتج متاح • {catalogCategories.length} قسم
           </p>
         </div>
       ) : (
         <div>
           <h1 className="text-3xl font-black mb-2">جميع المنتجات</h1>
-          <p className="text-gray-500">تصفح مجموعتنا الكاملة من المنتجات</p>
+          <p className="text-gray-500">
+            {usingShowcaseFallback ? 'عرض تجريبي يملأ المتجر مؤقتًا حتى تضيف منتجاتك الفعلية.' : 'تصفح مجموعتنا الكاملة من المنتجات'}
+          </p>
         </div>
       )}
 
       {/* ═══ SEARCH BAR ═══ */}
       {!isPortal && (
-        <div className="rounded-3xl border border-primary-100 bg-white dark:bg-gray-900 dark:border-gray-800 p-5 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="text-right">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                شراء كضيف
+        <div className="rounded-2xl border border-primary-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center justify-end gap-2 text-right">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
+                <ShieldCheck className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-sm font-black text-gray-900 dark:text-white">تسوق كضيف بدون خطوات إضافية</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">أضف للسلة وأكمل الطلب في أي وقت.</p>
               </div>
-              <p className="mt-3 text-lg font-black text-gray-900 dark:text-white">أضف منتجاتك مباشرة من هنا وأكمل الطلب بدون تسجيل دخول.</p>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">كل منتج تضيفه يذهب للسلة فورًا، ويمكنك مراجعة الطلب أو المتابعة لاحقًا.</p>
             </div>
             <button
               onClick={() => navigate(storefrontPath('/cart'))}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary-500/20 hover:bg-primary-500 transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-500"
             >
-              مراجعة السلة
+              السلة
               <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">{cartCount}</span>
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -309,6 +336,12 @@ export default function ProductCatalog() {
       </div>
 
       {/* ═══ CATEGORIES SCROLL ═══ */}
+      {usingShowcaseFallback && !isPortal && (
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-right text-xs font-bold text-amber-800">
+          يتم عرض أقسام ومنتجات افتراضية مؤقتًا حتى لا يظهر المتجر فارغًا للعميل.
+        </div>
+      )}
+
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         <button
           onClick={() => setSelectedCategory('')}
@@ -316,10 +349,10 @@ export default function ProductCatalog() {
         >
           الكل
         </button>
-        {categories.map(cat => {
-          const catId = typeof cat === 'object' ? cat._id : cat;
-          const catName = typeof cat === 'object' ? cat.name : cat;
-          const catIcon = typeof cat === 'object' ? cat.icon : null;
+        {catalogCategories.map(cat => {
+          const catId = cat._id || cat.id || cat.name;
+          const catName = cat.name;
+          const catIcon = cat.icon;
           return (
             <button
               key={catId || catName}
@@ -352,7 +385,7 @@ export default function ProductCatalog() {
 
       {/* ═══ RESULTS COUNT ═══ */}
       <p className="text-xs text-gray-400">
-        عرض <span className="font-bold text-gray-700 dark:text-gray-300">{filteredProducts.length}</span> من {products.length} منتج
+        عرض <span className="font-bold text-gray-700 dark:text-gray-300">{filteredProducts.length}</span> من {catalogProducts.length} منتج
       </p>
 
       {/* ═══ PRODUCTS GRID ═══ */}
@@ -373,6 +406,7 @@ export default function ProductCatalog() {
             const isAdding = addingId === product._id;
             const loadingHeart = wishlistLoading[product._id];
             const outOfStock = product.stock?.quantity === 0;
+            const isShowcasePlaceholder = Boolean(product.isShowcasePlaceholder);
             const imageUrl = pickProductImage(product);
             const discount = product.compareAtPrice && product.compareAtPrice > product.price
               ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : null;
@@ -384,16 +418,9 @@ export default function ProductCatalog() {
                 style={{
                   opacity: 0,
                   animation: `fadeSlideUp 0.4s ease forwards ${index * 55}ms`,
-                  transition: 'transform 0.15s ease, box-shadow 0.3s ease',
+                  transition: 'box-shadow 0.3s ease',
                 }}
                 onClick={() => navigate(detailPath(product))}
-                onMouseMove={(e) => {
-                  const r = e.currentTarget.getBoundingClientRect();
-                  const x = ((e.clientX - r.left) / r.width - 0.5) * 14;
-                  const y = ((e.clientY - r.top) / r.height - 0.5) * -14;
-                  e.currentTarget.style.transform = `perspective(700px) rotateX(${y}deg) rotateY(${x}deg) scale(1.025)`;
-                }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) scale(1)'; }}
               >
                 {/* Image */}
                 <div className="aspect-[4/3] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
@@ -426,19 +453,21 @@ export default function ProductCatalog() {
                   )}
 
                   {/* ❤ Wishlist (portal + storefront guests) */}
-                  <button
-                    onClick={(e) => handleWishlist(e, product)}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                  >
-                    {loadingHeart ? (
-                      <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
-                    ) : (
-                      <Heart className={`w-4 h-4 transition-colors ${inWishlist ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-                    )}
-                  </button>
+                  {!isShowcasePlaceholder && (
+                    <button
+                      onClick={(e) => handleWishlist(e, product)}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                    >
+                      {loadingHeart ? (
+                        <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
+                      ) : (
+                        <Heart className={`w-4 h-4 transition-colors ${inWishlist ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
+                      )}
+                    </button>
+                  )}
 
                   {/* 🛒 Add to cart floating button */}
-                  {!outOfStock && (
+                  {false && !outOfStock && !isShowcasePlaceholder && (
                     <button
                       onClick={(e) => handleAddToCart(e, product)}
                       className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/30 flex items-center justify-center transition-all hover:bg-primary-600 hover:scale-110 active:scale-95 translate-y-10 group-hover:translate-y-0 duration-300"
@@ -484,12 +513,14 @@ export default function ProductCatalog() {
                         </p>
                       )}
                     </div>
-                    {product.stock?.quantity > 5 && (
+                    {isShowcasePlaceholder ? (
+                      <span className="text-[10px] rounded-full bg-amber-50 px-2 py-0.5 font-bold text-amber-700">عرض توضيحي</span>
+                    ) : product.stock?.quantity > 5 && (
                       <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">متوفر</span>
                     )}
                   </div>
 
-                  {!isPortal && !product.hasVariants && (
+                  {false && !isPortal && !product.hasVariants && !isShowcasePlaceholder && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {STOREFRONT_VOLUME_OFFER_TIERS.map((tier) => (
                         <span key={tier.minQuantity} className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-700">
@@ -502,10 +533,12 @@ export default function ProductCatalog() {
                   {/* Add to cart row (always visible button below price) */}
                   <button
                     onClick={(e) => handleAddToCart(e, product)}
-                    disabled={outOfStock}
-                    className={`w-full mt-2.5 h-10 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm ${outOfStock ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary-500 text-white hover:bg-primary-600 shadow-primary-500/20'}`}
+                    disabled={outOfStock && !isShowcasePlaceholder}
+                    className={`w-full mt-2.5 h-10 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm ${(outOfStock && !isShowcasePlaceholder) ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary-500 text-white hover:bg-primary-600 shadow-primary-500/20'}`}
                   >
-                    {outOfStock ? (
+                    {isShowcasePlaceholder ? (
+                      'استعرض القسم'
+                    ) : outOfStock ? (
                       'نفذت الكمية'
                     ) : isAdding ? (
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -517,7 +550,7 @@ export default function ProductCatalog() {
                     )}
                   </button>
 
-                  {!isPortal && !outOfStock && (
+                  {false && !isPortal && !outOfStock && !isShowcasePlaceholder && (
                     <button
                       onClick={(e) => handleBuyNow(e, product)}
                       className="w-full mt-2 h-9 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:border-primary-300 hover:text-primary-600 transition-colors"

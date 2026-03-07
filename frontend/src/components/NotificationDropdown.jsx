@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Bell, Check, CheckCheck, Clock, AlertTriangle, CreditCard,
-  FileText, Package, Truck, UserPlus, Star, X, Trash2, ChevronDown,
+  Bell, CheckCheck, Clock, AlertTriangle, CreditCard,
+  FileText, Package, Truck, UserPlus, Star, X, Trash2,
   Store, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { api, API_URL } from '../store';
+import { usePortalStore, portalApi } from '../store/portalStore';
+import { resolvePortalNotificationLink } from '../portal/utils/notificationLinks';
 
 const iconMap = {
   clock: Clock,
@@ -32,40 +34,72 @@ const colorMap = {
   gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-500', ring: 'ring-gray-500/20' },
 };
 
-export default function NotificationDropdown() {
+export default function NotificationDropdown({ mode = 'admin' }) {
+  const isPortalMode = mode === 'portal';
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const location = useLocation();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation('admin');
+  const { t, i18n } = useTranslation(isPortalMode ? 'portal' : 'admin');
+  const portalBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
 
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
 
+  const getToken = useCallback(() => {
+    if (isPortalMode) {
+      return localStorage.getItem('portal_token') || usePortalStore.getState().token;
+    }
+    return localStorage.getItem('payqusta_token');
+  }, [isPortalMode]);
+
   // Fetch unread count periodically
   const fetchUnreadCount = useCallback(async () => {
-    if (!localStorage.getItem('payqusta_token')) return;
+    const token = getToken();
+    if (!token) return;
     try {
-      const { data } = await api.get('/notifications/unread-count');
-      setUnreadCount(data.data?.count || 0);
+      const client = isPortalMode ? portalApi : api;
+      const endpoint = isPortalMode ? '/portal/notifications/unread-count' : '/notifications/unread-count';
+      const { data } = await client.get(endpoint);
+      const nextCount = data.data?.count || 0;
+      setUnreadCount(nextCount);
+      if (isPortalMode) {
+        usePortalStore.setState({ unreadCount: nextCount });
+      }
     } catch (e) { }
-  }, []);
+  }, [getToken, isPortalMode]);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
-    if (!localStorage.getItem('payqusta_token')) return;
+    const token = getToken();
+    if (!token) return;
     setLoading(true);
     try {
-      const { data } = await api.get('/notifications', { params: { limit: 20 } });
-      setNotifications(data.data || []);
+      const client = isPortalMode ? portalApi : api;
+      const endpoint = isPortalMode ? '/portal/notifications' : '/notifications';
+      const { data } = await client.get(endpoint, {
+        params: isPortalMode ? { page: 1, limit: 20 } : { limit: 20 },
+      });
+
+      if (isPortalMode) {
+        const payload = data.data || {};
+        setNotifications(payload.notifications || []);
+        const nextCount = payload.unreadCount || 0;
+        setUnreadCount(nextCount);
+        usePortalStore.setState({ unreadCount: nextCount });
+      } else {
+        setNotifications(data.data || []);
+      }
     } catch (e) { }
     setLoading(false);
-  }, []);
+  }, [getToken, isPortalMode]);
 
   // SSE real-time connection with auto-reconnect
   useEffect(() => {
-    const token = localStorage.getItem('payqusta_token');
+    if (isPortalMode) return;
+    const token = getToken();
     if (!token) return;
 
     let eventSource;
@@ -123,7 +157,7 @@ export default function NotificationDropdown() {
       clearTimeout(retryTimeout);
       eventSource?.close();
     };
-  }, []);
+  }, [getToken, isPortalMode]);
 
   // Poll unread count periodically (every 60s), only if visible
   useEffect(() => {
@@ -152,9 +186,11 @@ export default function NotificationDropdown() {
     };
   }, [fetchUnreadCount]);
 
-  // Load notifications when dropdown opens
+  // Fetch notifications when dropdown opens
   useEffect(() => {
-    if (open) fetchNotifications();
+    if (open) {
+      fetchNotifications();
+    }
   }, [open, fetchNotifications]);
 
   // Close on outside click
@@ -177,23 +213,45 @@ export default function NotificationDropdown() {
 
   const markAsRead = async (id) => {
     try {
-      await api.patch(`/notifications/${id}/read`);
+      const client = isPortalMode ? portalApi : api;
+      const endpoint = isPortalMode ? `/portal/notifications/${id}/read` : `/notifications/${id}/read`;
+      if (isPortalMode) {
+        await client.put(endpoint);
+      } else {
+        await client.patch(endpoint);
+      }
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setUnreadCount((prev) => {
+        const nextCount = Math.max(0, prev - 1);
+        if (isPortalMode) {
+          usePortalStore.setState({ unreadCount: nextCount });
+        }
+        return nextCount;
+      });
     } catch (e) { }
   };
 
   const markAllRead = async () => {
     try {
-      await api.patch('/notifications/read-all');
+      const client = isPortalMode ? portalApi : api;
+      const endpoint = isPortalMode ? '/portal/notifications/read-all' : '/notifications/read-all';
+      if (isPortalMode) {
+        await client.put(endpoint);
+      } else {
+        await client.patch(endpoint);
+      }
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
+      if (isPortalMode) {
+        usePortalStore.setState({ unreadCount: 0 });
+      }
     } catch (e) { }
   };
 
   const deleteNotification = async (id) => {
+    if (isPortalMode) return;
     try {
       await api.delete(`/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
@@ -203,9 +261,18 @@ export default function NotificationDropdown() {
   const handleClick = (notification) => {
     if (!notification.isRead) markAsRead(notification._id);
     if (notification.link) {
-      const navLink = notification.link === '/admin/subscriptions'
-        ? '/super-admin/requests'
-        : notification.link;
+      let navLink = notification.link;
+      if (isPortalMode) {
+        navLink = resolvePortalNotificationLink(navLink, portalBasePath);
+        if (!navLink) return;
+        if (/^https?:\/\//i.test(navLink)) {
+          window.location.assign(navLink);
+          setOpen(false);
+          return;
+        }
+      } else if (navLink === '/admin/subscriptions') {
+        navLink = '/super-admin/requests';
+      }
       navigate(navLink);
       setOpen(false);
     }
@@ -215,10 +282,10 @@ export default function NotificationDropdown() {
     const now = new Date();
     const d = new Date(date);
     const diff = Math.floor((now - d) / 1000);
-    if (diff < 60) return t('notifications.just_now');
-    if (diff < 3600) return t('notifications.minutes_ago', { count: Math.floor(diff / 60) });
-    if (diff < 86400) return t('notifications.hours_ago', { count: Math.floor(diff / 3600) });
-    if (diff < 604800) return t('notifications.days_ago', { count: Math.floor(diff / 86400) });
+    if (diff < 60) return isPortalMode ? t('notifications.time_now') : t('notifications.just_now');
+    if (diff < 3600) return isPortalMode ? t('notifications.time_minutes', { count: Math.floor(diff / 60) }) : t('notifications.minutes_ago', { count: Math.floor(diff / 60) });
+    if (diff < 86400) return isPortalMode ? t('notifications.time_hours', { count: Math.floor(diff / 3600) }) : t('notifications.hours_ago', { count: Math.floor(diff / 3600) });
+    if (diff < 604800) return isPortalMode ? t('notifications.time_days', { count: Math.floor(diff / 86400) }) : t('notifications.days_ago', { count: Math.floor(diff / 86400) });
     return d.toLocaleDateString(locale);
   };
 
@@ -268,7 +335,7 @@ export default function NotificationDropdown() {
             ) : notifications.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 font-medium">{t('notifications.no_notifications')}</p>
+                <p className="text-sm text-gray-400 font-medium">{isPortalMode ? t('notifications.empty_title') : t('notifications.no_notifications')}</p>
               </div>
             ) : (
               notifications.map((n) => {
@@ -302,12 +369,14 @@ export default function NotificationDropdown() {
                     </div>
 
                     {/* Actions (on hover) */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteNotification(n._id); }}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-300 hover:text-red-500 transition-all flex-shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {!isPortalMode && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteNotification(n._id); }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-300 hover:text-red-500 transition-all flex-shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 );
               })

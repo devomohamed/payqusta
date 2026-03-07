@@ -24,6 +24,7 @@ class StockAdjustmentController {
           .limit(limit)
           .populate('product', 'name sku price cost')
           .populate('user', 'name')
+          .populate('branch', 'name')
           .lean(),
         StockAdjustment.countDocuments(filter),
       ]);
@@ -36,11 +37,11 @@ class StockAdjustmentController {
 
   async create(req, res, next) {
     try {
-      const { productId, type, quantity, reason } = req.body;
+      const { productId, type, quantity, reason, branchId } = req.body;
       const tenantId = req.tenantId; // From auth/tenant middleware
 
-      if (!productId || !type || !quantity) {
-        return next(AppError.badRequest('جميع الحقول مطلوبة (المنتج، النوع، الكمية)'));
+      if (!productId || !type || !quantity || !branchId) {
+        return next(AppError.badRequest('جميع الحقول مطلوبة (المنتج، النوع، الكمية، الفرع)'));
       }
 
       const product = await Product.findOne({ _id: productId, ...req.tenantFilter });
@@ -56,15 +57,16 @@ class StockAdjustmentController {
         return next(AppError.badRequest('نوع تسوية غير صالح'));
       }
 
-      // Check if trying to reduce stock below 0 (optional based on business rule, usually allowed for corrections but warned)
-      // For damage/theft, we assume user is recording reality, so we allow negative if counting mismatch, 
-      // but usually we want to ensure we don't go negative if strict tracking.
-      // Let's allow it but maybe warn? For now standard logic.
-      
-      const newStock = (product.stock?.quantity || 0) + stockChange;
+      if (!product.inventory) product.inventory = [];
+      let branchStock = product.inventory.find(inv => inv.branch.toString() === branchId.toString());
 
-      // Update Product
-      product.stock = { ...product.stock, quantity: newStock };
+      if (!branchStock) {
+        branchStock = { branch: branchId, quantity: 0, minQuantity: 5 };
+        product.inventory.push(branchStock);
+        branchStock = product.inventory[product.inventory.length - 1];
+      }
+
+      branchStock.quantity += stockChange;
       await product.save();
 
       // Create Record
@@ -72,6 +74,7 @@ class StockAdjustmentController {
         tenant: tenantId,
         product: productId,
         user: req.user._id, // From auth middleware
+        branch: branchId,
         type,
         quantity: Math.abs(quantity),
         reason,

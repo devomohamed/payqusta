@@ -15,6 +15,7 @@ const crypto = require('crypto');
 const emailService = require('../services/EmailService');
 const catchAsync = require('../utils/catchAsync');
 const { getUserPermissions } = require('../middleware/checkPermission');
+const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 
 class AuthController {
   /**
@@ -41,6 +42,9 @@ class AuthController {
         email,
         address: storeAddress || '',
       },
+      settings: {
+        categories: getStarterCategorySettings(),
+      },
       subscription: {
         plan: freePlan ? freePlan._id : null,
         status: 'active',
@@ -64,6 +68,7 @@ class AuthController {
     // Link tenant to owner
     tenant.owner = user._id;
     await tenant.save();
+    await seedStarterCatalogForTenant(tenant._id);
 
     // Generate token
     const token = user.generateAuthToken();

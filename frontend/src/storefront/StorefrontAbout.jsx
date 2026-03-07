@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CreditCard, Mail, MapPin, PhoneCall, ShieldCheck, Store, Truck } from 'lucide-react';
-import { api } from '../store';
 import { Card } from '../components/UI';
 import { storefrontPath } from '../utils/storefrontHost';
+import { loadStorefrontSettings } from './storefrontDataClient';
 
 const HIGHLIGHTS = [
   {
@@ -31,7 +31,7 @@ export default function StorefrontAbout() {
 
     const loadSettings = async () => {
       try {
-        const res = await api.get('/settings');
+        const res = await loadStorefrontSettings();
         if (mounted) {
           setSettings(res.data?.data || null);
         }

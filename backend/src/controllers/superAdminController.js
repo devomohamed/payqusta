@@ -14,6 +14,7 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const NotificationService = require('../services/NotificationService');
+const { getStarterCategorySettings } = require('../services/starterCatalogService');
 
 class SuperAdminController {
   /**
@@ -187,7 +188,14 @@ class SuperAdminController {
       }
 
       // Create tenant
-      const tenant = await Tenant.create({ name, businessInfo });
+      const tenant = await Tenant.create({
+        name,
+        businessInfo,
+        settings: {
+          categories: getStarterCategorySettings(),
+        },
+      });
+      await require('../services/starterCatalogService').seedStarterCatalogForTenant(tenant._id);
 
       // Create admin user for this tenant
       const admin = await User.create({

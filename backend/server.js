@@ -20,6 +20,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const connectDB = require('./src/config/database');
 const { errorHandler, notFound } = require('./src/middleware/errorHandler');
+const { serveUploadedFile } = require('./src/middleware/upload');
 const logger = require('./src/utils/logger');
 const routes = require('./src/routes');
 const swaggerSpec = require('./src/config/swagger');
@@ -28,6 +29,11 @@ const swaggerUi = require('swagger-ui-express');
 // Import scheduled jobs
 const InstallmentScheduler = require('./src/jobs/InstallmentScheduler');
 const StockMonitorJob = require('./src/jobs/StockMonitorJob');
+const ProductTrendsJob = require('./src/jobs/ProductTrendsJob');
+const {
+  migrateLocalUploadsToDatabase,
+  shouldRunLocalUploadMigration,
+} = require('./src/services/uploadMigrationService');
 
 class PayQustaServer {
   constructor() {
@@ -79,6 +85,21 @@ class PayQustaServer {
     } catch (err) {
       logger.error(`❌ Data migration failed: ${err.message}`);
     }
+
+    this._scheduleLocalUploadMigration();
+  }
+
+  _scheduleLocalUploadMigration() {
+    if (!shouldRunLocalUploadMigration()) {
+      return;
+    }
+
+    setImmediate(() => {
+      migrateLocalUploadsToDatabase({ logger })
+        .catch((error) => {
+          logger.error(`[UPLOAD_MIGRATION] Failed during startup: ${error.message}`);
+        });
+    });
   }
 
   /**
@@ -140,6 +161,7 @@ class PayQustaServer {
 
     // Static files
     this.app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+    this.app.get('/uploads/*', serveUploadedFile);
   }
 
   /**
@@ -179,8 +201,38 @@ class PayQustaServer {
     // Serve frontend in production
     if (process.env.NODE_ENV === 'production') {
       const frontendDistPath = path.join(__dirname, '../frontend/dist');
-      this.app.use(express.static(frontendDistPath));
+      const setFrontendCacheHeaders = (res, filePath) => {
+        const normalizedPath = String(filePath || '').replace(/\\/g, '/');
+        const fileName = path.basename(normalizedPath);
+
+        const mustRevalidateFiles = (
+          fileName === 'index.html' ||
+          fileName === 'sw.js' ||
+          fileName === 'manifest.webmanifest' ||
+          fileName.startsWith('workbox-')
+        );
+
+        if (mustRevalidateFiles) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+          return;
+        }
+
+        const isHashedAsset = /\/assets\/.+\.[a-f0-9]{8,}\./i.test(normalizedPath);
+        if (isHashedAsset) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          return;
+        }
+
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+      };
+
+      this.app.use(express.static(frontendDistPath, { setHeaders: setFrontendCacheHeaders }));
       this.app.get('*', (req, res) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         res.sendFile(path.join(frontendDistPath, 'index.html'));
       });
     }
@@ -223,6 +275,9 @@ class PayQustaServer {
 
     const stockMonitor = new StockMonitorJob();
     stockMonitor.start();
+
+    const productTrends = new ProductTrendsJob();
+    productTrends.start();
 
     logger.info('✅ Scheduled jobs started');
   }

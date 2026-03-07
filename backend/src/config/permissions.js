@@ -46,7 +46,7 @@ module.exports = {
     COORDINATOR: {
       name: 'Coordinator',
       permissions: [
-        { resource: 'products', actions: ['read', 'update'] },
+        { resource: 'products', actions: ['create', 'read', 'update'] },
         { resource: 'customers', actions: ['read'] },
         { resource: 'suppliers', actions: ['read'] },
         { resource: 'invoices', actions: ['create', 'read'] },

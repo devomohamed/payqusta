@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { productsApi, customersApi, invoicesApi } from '../store';
+import { productsApi, customersApi, invoicesApi, useAuthStore } from '../store';
 import { Button, Badge, LoadingSpinner } from '../components/UI';
 import BarcodeScanner, { useBarcodeScanner } from '../components/BarcodeScanner';
+import db, { syncProductsToLocal, syncCustomersToLocal, searchLocalProducts, searchLocalCustomers, savePendingInvoice } from '../db/posDatabase';
+import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 export default function QuickSalePage() {
   const [mode, setMode] = useState('sale'); // 'sale' | 'return'
@@ -34,16 +37,115 @@ export default function QuickSalePage() {
 
   const searchRef = useRef(null);
 
+  // Sync status
+  const [syncStatus, setSyncStatus] = useState('online'); // online, offline, syncing
+
+  // Real-time pending invoices count from Dexie
+  const pendingInvoicesCount = useLiveQuery(() => db.pendingInvoices.count(), []);
+
+  // Background Sync Function
+  const syncPendingInvoices = async () => {
+    if (!navigator.onLine) return;
+
+    try {
+      setSyncStatus('syncing');
+      const pending = await db.pendingInvoices.toArray();
+      if (pending.length === 0) {
+        setSyncStatus('online');
+        return;
+      }
+
+      console.log(`[POS SYNC] Attempting to sync ${pending.length} invoices...`);
+      let successCount = 0;
+
+      for (const invoice of pending) {
+        try {
+          // Remove local-only fields before sending to API
+          const { id, createdAt, status, totalAmount, ...apiPayload } = invoice;
+
+          await invoicesApi.create(apiPayload);
+          await db.pendingInvoices.delete(invoice.id);
+          successCount++;
+        } catch (err) {
+          console.error(`[POS SYNC] Failed to sync invoice ${invoice.id}:`, err);
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`تمت مزامنة ${successCount} فاتورة بنجاح ☁️`);
+        productsApi.getAll({ limit: 200 }).then((r) => setProducts(r.data.data || []));
+      }
+    } catch (error) {
+      console.error('[POS SYNC] Sync process error:', error);
+    } finally {
+      setSyncStatus('online');
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      productsApi.getAll({ limit: 200 }),
-      customersApi.getAll({ limit: 200 }),
-    ]).then(([pRes, cRes]) => {
-      setProducts(pRes.data.data || []);
-      setCustomers(cRes.data.data || []);
-    }).catch(() => toast.error('خطأ في التحميل'))
-      .finally(() => setLoading(false));
+    const handleOnline = () => {
+      setSyncStatus('online');
+      syncPendingInvoices();
+    };
+    const handleOffline = () => setSyncStatus('offline');
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setSyncStatus(navigator.onLine ? 'online' : 'offline');
+
+    // Interval check every minute for pending invoices
+    const syncInterval = setInterval(() => {
+      if (navigator.onLine) syncPendingInvoices();
+    }, 60000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(syncInterval);
+    };
   }, []);
+
+  useEffect(() => {
+    // Attempt to load from API, fallback to local DB if offline
+    if (navigator.onLine) {
+      Promise.all([
+        productsApi.getAll({ limit: 500 }),
+        customersApi.getAll({ limit: 500 }),
+      ]).then(([pRes, cRes]) => {
+        const prods = pRes.data.data || [];
+        const custs = cRes.data.data || [];
+        setProducts(prods);
+        setCustomers(custs);
+        // Background sync to local DB
+        syncProductsToLocal(prods);
+        syncCustomersToLocal(custs);
+      }).catch(() => toast.error('خطأ في التحميل من الخادم. يتم استخدام البيانات المحلية.'))
+        .finally(() => setLoading(false));
+    } else {
+      // Offline: load exactly from local IndexedDB
+      Promise.all([
+        db.products.limit(200).toArray(),
+        db.customers.limit(200).toArray()
+      ]).then(([pRes, cRes]) => {
+        setProducts(pRes);
+        setCustomers(cRes);
+        toast.success('تم تحميل البيانات المحلية (وضع عدم الاتصال)');
+      }).finally(() => setLoading(false));
+    }
+  }, []);
+
+  // Update local search
+  useEffect(() => {
+    if (!navigator.onLine) {
+      searchLocalProducts(search).then(setProducts);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    if (!navigator.onLine) {
+      searchLocalCustomers(custSearch).then(setCustomers);
+    }
+  }, [custSearch]);
 
   useEffect(() => { searchRef.current?.focus(); }, []);
 
@@ -55,6 +157,8 @@ export default function QuickSalePage() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [cart, selectedCustomer, mode]);
+
+  useUnsavedWarning(cart.length > 0, 'quick-sale');
 
   const addToCart = (product, variant = null) => {
     if (product.variants?.length > 0 && !variant) {
@@ -144,27 +248,55 @@ export default function QuickSalePage() {
     if (!selectedCustomer) return toast.error('اختر العميل أولاً');
     if (selectedCustomer.salesBlocked) return toast.error(`⛔ البيع ممنوع لهذا العميل: ${selectedCustomer.salesBlockedReason || 'تم منع البيع'}`);
     if (cart.length === 0) return toast.error('السلة فارغة');
+
     setCreating(true);
-    try {
-      const { user } = useAuthStore.getState();
-      await invoicesApi.create({
-        customerId: selectedCustomer._id,
-        items: cart.map((c) => ({
-          productId: c.productId,
-          variantId: c.variantId,
-          quantity: c.quantity
-        })),
-        paymentMethod,
-        numberOfInstallments: paymentMethod === 'installment' ? installments : undefined,
-        branchId: user?.branch, // Pass user's branch
-        sendWhatsApp: false,
-      });
-      toast.success('تم البيع بنجاح! 🎉', { icon: '⚡' });
-      setCart([]); setSelectedCustomer(null); setPaymentMethod('cash');
-      searchRef.current?.focus();
+    const { user } = useAuthStore.getState();
+    const invoicePayload = {
+      customerId: selectedCustomer._id,
+      items: cart.map((c) => ({
+        productId: c.productId,
+        variantId: c.variantId,
+        quantity: c.quantity
+      })),
+      paymentMethod,
+      numberOfInstallments: paymentMethod === 'installment' ? installments : undefined,
+      branchId: user?.branch,
+      sendWhatsApp: false,
+      totalAmount: total, // Helper for local display
+    };
+
+    if (navigator.onLine) {
+      try {
+        await invoicesApi.create(invoicePayload);
+        toast.success('تم البيع بنجاح! 🎉', { icon: '⚡' });
+        finishSale();
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'خطأ في إنشاء الفاتورة');
+      } finally {
+        setCreating(false);
+      }
+    } else {
+      // Offline mode: save locally
+      try {
+        await savePendingInvoice(invoicePayload);
+        toast.success('تم حفظ الفاتورة محلياً (وضع عدم الاتصال) 💾', { icon: '⚡' });
+        finishSale();
+      } catch (err) {
+        toast.error('خطأ في حفظ الفاتورة محلياً');
+      } finally {
+        setCreating(false);
+      }
+    }
+  };
+
+  const finishSale = () => {
+    setCart([]); setSelectedCustomer(null); setPaymentMethod('cash');
+    searchRef.current?.focus();
+    if (navigator.onLine) {
       productsApi.getAll({ limit: 200 }).then((r) => setProducts(r.data.data || []));
-    } catch (err) { toast.error(err.response?.data?.message || 'خطأ في إنشاء الفاتورة'); }
-    finally { setCreating(false); }
+    } else {
+      searchLocalProducts('').then(setProducts);
+    }
   };
 
   const handleQuickAddCustomer = async () => {
@@ -241,26 +373,47 @@ export default function QuickSalePage() {
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      {/* Mode Tabs */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setMode('sale')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${mode === 'sale'
-            ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'
-            }`}
-        >
-          <Zap className="w-4 h-4" /> بيع سريع
-        </button>
-        <button
-          onClick={() => setMode('return')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${mode === 'return'
-            ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/30'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'
-            }`}
-        >
-          <RotateCcw className="w-4 h-4" /> استرجاع
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Mode Tabs */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setMode('sale')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${mode === 'sale'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'
+              }`}
+          >
+            <Zap className="w-4 h-4" /> بيع سريع
+          </button>
+          <button
+            onClick={() => setMode('return')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${mode === 'return'
+              ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/30'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200'
+              }`}
+          >
+            <RotateCcw className="w-4 h-4" /> استرجاع
+          </button>
+        </div>
+
+        {/* Sync Status Badge */}
+        <div className="flex items-center gap-3">
+          {pendingInvoicesCount > 0 && (
+            <button
+              onClick={syncPendingInvoices}
+              disabled={syncStatus !== 'online'}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="مزامنة الآن"
+            >
+              <Clock className={`w-3 h-3 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+              {pendingInvoicesCount} معلقة
+            </button>
+          )}
+          <Badge variant={syncStatus === 'online' ? 'success' : syncStatus === 'syncing' ? 'warning' : 'danger'} className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${syncStatus === 'online' ? 'bg-emerald-500' : syncStatus === 'syncing' ? 'bg-amber-500 animate-pulse' : 'bg-red-500'}`} />
+            {syncStatus === 'online' ? 'متصل بالخادم' : syncStatus === 'syncing' ? 'جاري المزامنة...' : 'وضع عدم الاتصال (محلي)'}
+          </Badge>
+        </div>
       </div>
 
       {/* SALE MODE */}

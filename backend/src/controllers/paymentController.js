@@ -5,11 +5,23 @@
 
 const paymentGatewayService = require('../services/PaymentGatewayService');
 const PaymentTransaction = require('../models/PaymentTransaction');
+const Invoice = require('../models/Invoice');
 const catchAsync = require('../utils/catchAsync');
 const ApiResponse = require('../utils/ApiResponse');
 const AppError = require('../utils/AppError');
 
 class PaymentController {
+  resolveGateway = (gateway) => {
+    if (gateway) return gateway;
+
+    const enabledGateways = paymentGatewayService.getEnabledGateways();
+    if (!enabledGateways.length) {
+      throw AppError.badRequest('لا توجد بوابة دفع مفعلة حالياً');
+    }
+
+    return enabledGateways[0].id;
+  };
+
   /**
    * Get all enabled payment gateways
    * GET /api/v1/payments/gateways
@@ -29,13 +41,23 @@ class PaymentController {
   createLink = catchAsync(async (req, res, next) => {
     const { invoiceId, gateway, amount, applyDiscount } = req.body;
 
-    if (!invoiceId || !gateway) {
-      return next(AppError.badRequest('رقم الفاتورة وبوابة الدفع مطلوبان'));
+    if (!invoiceId) {
+      return next(AppError.badRequest('رقم الفاتورة مطلوب'));
     }
 
+    const invoice = await Invoice.findOne({
+      _id: invoiceId,
+      tenant: req.user.tenant,
+    }).select('_id');
+
+    if (!invoice) {
+      return next(AppError.notFound('الفاتورة غير موجودة'));
+    }
+
+    const resolvedGateway = this.resolveGateway(gateway);
     const result = await paymentGatewayService.createPaymentLink(
       invoiceId,
-      gateway,
+      resolvedGateway,
       {
         amount,
         applyDiscount,
@@ -43,9 +65,69 @@ class PaymentController {
       }
     );
 
-    res.status(201).json(
-      ApiResponse.success(result, 'تم إنشاء رابط الدفع')
+    const responsePayload = {
+      ...result,
+      paymentUrl: result.paymentLink,
+    };
+
+    return ApiResponse.success(res, responsePayload, 'تم إنشاء رابط الدفع', 201);
+  });
+
+  /**
+   * Create payment link for public storefront checkout
+   * POST /api/v1/storefront/payments/create-link
+   */
+  createStorefrontLink = catchAsync(async (req, res, next) => {
+    const {
+      invoiceId,
+      gateway,
+      amount,
+      applyDiscount,
+      customerPhone,
+      customerEmail,
+    } = req.body;
+
+    const source = req.headers['x-source'] || req.body.source;
+    if (source !== 'online_store') {
+      return next(AppError.forbidden('هذا المسار مخصص لطلبات المتجر فقط'));
+    }
+
+    if (!invoiceId) {
+      return next(AppError.badRequest('رقم الفاتورة مطلوب'));
+    }
+
+    const invoice = await Invoice.findOne({
+      _id: invoiceId,
+      tenant: req.tenantId,
+      source: 'online_store',
+    }).select('_id status');
+
+    if (!invoice) {
+      return next(AppError.notFound('الفاتورة غير موجودة'));
+    }
+
+    if (invoice.status === 'paid') {
+      return next(AppError.badRequest('الفاتورة مدفوعة بالفعل'));
+    }
+
+    const resolvedGateway = this.resolveGateway(gateway);
+    const result = await paymentGatewayService.createPaymentLink(
+      invoice._id,
+      resolvedGateway,
+      {
+        amount,
+        applyDiscount,
+        customerPhone,
+        customerEmail,
+      }
     );
+
+    const responsePayload = {
+      ...result,
+      paymentUrl: result.paymentLink,
+    };
+
+    return ApiResponse.success(res, responsePayload, 'تم إنشاء رابط الدفع', 201);
   });
 
   /**

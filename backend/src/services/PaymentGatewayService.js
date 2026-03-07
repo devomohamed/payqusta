@@ -12,6 +12,15 @@ const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
 class PaymentGatewayService {
+  getGatewayConfig(gateway) {
+    const normalizedGateway = String(gateway || '').toLowerCase();
+
+    if (normalizedGateway === 'vodafone') return gateways.vodafoneCash;
+    if (normalizedGateway === 'instapay') return gateways.instaPay;
+
+    return gateways[normalizedGateway];
+  }
+
   /**
    * Create a payment link for an invoice
    */
@@ -24,8 +33,10 @@ class PaymentGatewayService {
       customerEmail
     } = options;
 
+    const gatewayConfig = this.getGatewayConfig(gateway);
+
     // Validate gateway
-    if (!gateways[gateway] || !gateways[gateway].enabled) {
+    if (!gatewayConfig || !gatewayConfig.enabled) {
       throw AppError.badRequest(`بوابة الدفع ${gateway} غير مفعلة`);
     }
 
@@ -53,7 +64,7 @@ class PaymentGatewayService {
     }
 
     // Calculate fees
-    const feePercentage = gateways[gateway].fees;
+    const feePercentage = gatewayConfig.fees;
     let fees = (paymentAmount * feePercentage) / 100;
     
     // If fees on merchant, set to 0 for customer

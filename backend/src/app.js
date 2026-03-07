@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const swaggerUi = require('swagger-ui-express');
 
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { serveUploadedFile } = require('./middleware/upload');
 const logger = require('./utils/logger');
 const routes = require('./routes');
 const swaggerSpec = require('./config/swagger');
@@ -57,6 +58,7 @@ function createApp() {
   }));
 
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  app.get('/uploads/*', serveUploadedFile);
 
   app.get('/api/health', (req, res) => {
     res.json({
@@ -88,8 +90,38 @@ function createApp() {
 
   if (process.env.NODE_ENV === 'production') {
     const frontendDistPath = path.join(__dirname, '../../frontend/dist');
-    app.use(express.static(frontendDistPath));
+    const setFrontendCacheHeaders = (res, filePath) => {
+      const normalizedPath = String(filePath || '').replace(/\\/g, '/');
+      const fileName = path.basename(normalizedPath);
+
+      const mustRevalidateFiles = (
+        fileName === 'index.html' ||
+        fileName === 'sw.js' ||
+        fileName === 'manifest.webmanifest' ||
+        fileName.startsWith('workbox-')
+      );
+
+      if (mustRevalidateFiles) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        return;
+      }
+
+      const isHashedAsset = /\/assets\/.+\.[a-f0-9]{8,}\./i.test(normalizedPath);
+      if (isHashedAsset) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return;
+      }
+
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    };
+
+    app.use(express.static(frontendDistPath, { setHeaders: setFrontendCacheHeaders }));
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(frontendDistPath, 'index.html'));
     });
   }

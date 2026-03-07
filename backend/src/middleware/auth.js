@@ -58,7 +58,7 @@ const markCustomDomainConnected = (Tenant, tenantId) => {
         customDomainLastCheckedAt: new Date(),
       },
     }
-  ).catch(() => {});
+  ).catch(() => { });
 };
 
 /**
@@ -174,6 +174,27 @@ const tenantScope = (req, res, next) => {
  */
 const publicTenantScope = async (req, res, next) => {
   try {
+    // Optionally authenticate to recognize dashboard admins making public requests
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        if (token) {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          if (decoded && decoded.id) {
+            const user = await User.findById(decoded.id);
+            if (user && user.isActive) {
+              req.user = user;
+              if (!req.tenantId) {
+                req.tenantId = decoded.tenant || user.tenant;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Ignore token errors here to allow fallback to public access
+      }
+    }
+
     if (req.tenantId) {
       req.tenantFilter = { tenant: req.tenantId };
       return next();
@@ -184,6 +205,7 @@ const publicTenantScope = async (req, res, next) => {
     const requestHost = getRequestHost(req);
     const hostSlug = getPlatformSubdomain(requestHost);
 
+    // If still no tenantId, the token might have been malformed or missing user
     if (!tenantId && !slug && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       try {
         const token = req.headers.authorization.split(' ')[1];

@@ -13,8 +13,15 @@ export function Modal({
   headerClassName = '',
   stickyFooter = false,
   showCloseButton = true,
+  closeOnOutsideClick = true,
 }) {
   if (open === false) return null;
+
+  const handleBackdropClick = (e) => {
+    if (closeOnOutsideClick && onClose) {
+      onClose();
+    }
+  };
 
   const widths = {
     sm: 'max-w-md',
@@ -22,7 +29,7 @@ export function Modal({
     lg: 'max-w-3xl',
     xl: 'max-w-5xl',
     '2xl': 'max-w-6xl',
-    fullscreen: 'max-w-none',
+    'fullscreen': 'max-w-none',
   };
   const isFullscreen = size === 'fullscreen';
   const containerClass = isFullscreen
@@ -36,7 +43,7 @@ export function Modal({
     : `overflow-y-auto ${stickyFooter ? 'flex-1 min-h-0' : 'max-h-[calc(85vh-130px)]'}`;
 
   return (
-    <div className={containerClass} onClick={onClose}>
+    <div className={containerClass} onClick={handleBackdropClick}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
       <div
         className={`relative ${panelSizeClass} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col ${contentClassName}`}
@@ -229,12 +236,13 @@ export function EmptyState({ icon, title, description, action }) {
   // Support both icon={Package} (component) and icon={<Package />} (element)
   const renderIcon = () => {
     if (!icon) return null;
-    // If it's a React element (already rendered JSX like <Package />)
-    if (typeof icon === 'object' && icon !== null && '$$typeof' in icon) {
+    // React elements and component types from forwardRef/memo both expose $$typeof.
+    // `React.isValidElement` distinguishes an already-created element from a component type.
+    if (React.isValidElement(icon)) {
       return icon;
     }
-    // If it's a component function/class
-    if (typeof icon === 'function') {
+    // Accept component functions/classes as well as forwardRef/memo component objects.
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in icon)) {
       const Icon = icon;
       return <Icon className="w-8 h-8" />;
     }

@@ -15,12 +15,15 @@ const settingsController = require('../controllers/settingsController');
 const adminController = require('../controllers/adminController');
 const tenantController = require('../controllers/tenantController');
 const supplierController = require('../controllers/supplierController');
+const supplierPurchaseInvoiceController = require('../controllers/supplierPurchaseInvoiceController');
 const productController = require('../controllers/productController');
 const customerController = require('../controllers/customerController');
 const invoiceController = require('../controllers/invoiceController');
+const paymentController = require('../controllers/paymentController');
 const couponController = require('../controllers/couponController');
 const addonController = require('../controllers/addonController');
 const referralController = require('../controllers/referralController');
+const purchaseReturnController = require('../controllers/purchaseReturnController');
 const ownerMgmt = require('../controllers/ownerManagementController');
 const roleController = require('../controllers/roleController');
 const purchaseOrderController = require('../controllers/purchaseOrderController');
@@ -28,6 +31,7 @@ const revenueAnalyticsController = require('../controllers/revenueAnalyticsContr
 const planController = require('../controllers/planController');
 const reviewController = require('../controllers/reviewController');
 const { uploadSingle } = require('../middleware/upload');
+const { supplierValidations } = require('../middleware/validation');
 
 // ============ APP INFO ============
 router.get('/health', async (req, res) => {
@@ -80,6 +84,7 @@ router.post('/invoices', (req, res, next) => {
   protect(req, res, next);
 }, publicTenantScope, invoiceController.create);
 router.post('/coupons/validate', publicTenantScope, couponController.validate);
+router.post('/storefront/payments/create-link', publicTenantScope, paymentController.createStorefrontLink);
 
 // ============ SUPER ADMIN ROUTES ============
 router.use('/super-admin', protect, require('./superAdminRoutes'));
@@ -113,6 +118,7 @@ router.get('/dashboard/profit-intelligence', authorize('vendor', 'admin'), dashb
 router.get('/dashboard/risk-scoring', authorize('vendor', 'admin'), dashboardController.getRiskScoring);
 router.get('/dashboard/daily-collections', authorize('vendor', 'admin', 'coordinator'), dashboardController.getDailyCollections);
 router.get('/dashboard/aging-report', authorize('vendor', 'admin', 'coordinator'), dashboardController.getAgingReport);
+router.get('/dashboard/supplier-aging-report', authorize('vendor', 'admin', 'coordinator'), dashboardController.getSupplierAgingReport);
 router.get('/dashboard/business-health', authorize('vendor', 'admin'), dashboardController.getBusinessHealth);
 router.get('/dashboard/cash-flow-forecast', authorize('vendor', 'admin'), dashboardController.getCashFlowForecast);
 router.get('/dashboard/smart-assistant', authorize('vendor', 'admin'), dashboardController.getSmartAssistant);
@@ -131,8 +137,9 @@ router.use('/bi', require('./biRoutes'));
 router.get('/suppliers', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getAll);
 router.get('/suppliers/upcoming-payments', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getUpcomingPayments);
 router.get('/suppliers/:id', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getById);
+router.get('/suppliers/:id/statement', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getStatement);
 router.get('/suppliers/:id/low-stock-products', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), supplierController.getLowStockProducts);
-router.post('/suppliers', authorize('vendor', 'admin'), checkPermission('suppliers', 'create'), auditLog('create', 'supplier'), supplierController.create);
+router.post('/suppliers', authorize('vendor', 'admin'), checkPermission('suppliers', 'create'), supplierValidations.create, auditLog('create', 'supplier'), supplierController.create);
 router.put('/suppliers/:id', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('update', 'supplier'), supplierController.update);
 router.delete('/suppliers/:id', authorize('vendor', 'admin'), checkPermission('suppliers', 'delete'), auditLog('delete', 'supplier'), supplierController.delete);
 router.post('/suppliers/:id/purchase', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('payment', 'supplier'), supplierController.recordPurchase);
@@ -140,6 +147,45 @@ router.post('/suppliers/:id/payments/:paymentId/pay', authorize('vendor', 'admin
 router.post('/suppliers/:id/pay-all', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), auditLog('payment', 'supplier'), supplierController.payAllOutstanding);
 router.post('/suppliers/:id/send-reminder', authorize('vendor', 'admin'), checkPermission('suppliers', 'read'), supplierController.sendReminder);
 router.post('/suppliers/:id/request-restock', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'update'), supplierController.requestRestock);
+
+// --- Purchase Returns ---
+router.get('/purchase-returns', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), purchaseReturnController.getAll);
+router.get('/purchase-returns/:id', authorize('vendor', 'admin', 'coordinator'), checkPermission('suppliers', 'read'), purchaseReturnController.getById);
+router.post('/purchase-returns', authorize('vendor', 'admin'), checkPermission('suppliers', 'update'), purchaseReturnController.create);
+
+// --- Supplier Purchase Invoices ---
+router.get(
+  '/supplier-purchase-invoices/upcoming-installments',
+  authorize('vendor', 'admin', 'coordinator'),
+  checkPermission('suppliers', 'read'),
+  supplierPurchaseInvoiceController.getUpcomingInstallments
+);
+router.post(
+  '/supplier-purchase-invoices/sync-from-purchase-orders',
+  authorize('vendor', 'admin'),
+  checkPermission('suppliers', 'update'),
+  auditLog('sync', 'supplier_purchase_invoice'),
+  supplierPurchaseInvoiceController.syncFromPurchaseOrders
+);
+router.get(
+  '/supplier-purchase-invoices',
+  authorize('vendor', 'admin', 'coordinator'),
+  checkPermission('suppliers', 'read'),
+  supplierPurchaseInvoiceController.getAll
+);
+router.get(
+  '/supplier-purchase-invoices/:id',
+  authorize('vendor', 'admin', 'coordinator'),
+  checkPermission('suppliers', 'read'),
+  supplierPurchaseInvoiceController.getById
+);
+router.post(
+  '/supplier-purchase-invoices/:id/pay',
+  authorize('vendor', 'admin'),
+  checkPermission('suppliers', 'update'),
+  auditLog('payment', 'supplier_purchase_invoice'),
+  supplierPurchaseInvoiceController.pay
+);
 
 // --- Notifications ---
 router.get('/notifications', notificationController.getAll);
@@ -211,13 +257,13 @@ router.put('/roles/:id', authorize('vendor', 'admin'), roleController.update);
 router.delete('/roles/:id', authorize('vendor', 'admin'), roleController.delete);
 
 // --- Purchase Orders ---
-router.get('/purchase-orders', authorize('vendor', 'admin'), purchaseOrderController.getAll);
-router.get('/purchase-orders/:id', authorize('vendor', 'admin'), purchaseOrderController.getById);
-router.get('/purchase-orders/:id/pdf', authorize('vendor', 'admin'), purchaseOrderController.generatePDF);
-router.post('/purchase-orders', authorize('vendor', 'admin'), purchaseOrderController.create);
-router.put('/purchase-orders/:id', authorize('vendor', 'admin'), purchaseOrderController.update);
-router.post('/purchase-orders/:id/receive', authorize('vendor', 'admin'), purchaseOrderController.receive);
-router.delete('/purchase-orders/:id', authorize('vendor', 'admin'), purchaseOrderController.delete);
+router.get('/purchase-orders', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'read'), purchaseOrderController.getAll);
+router.get('/purchase-orders/:id', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'read'), purchaseOrderController.getById);
+router.get('/purchase-orders/:id/pdf', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'read'), purchaseOrderController.generatePDF);
+router.post('/purchase-orders', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'create'), purchaseOrderController.create);
+router.put('/purchase-orders/:id', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'update'), purchaseOrderController.update);
+router.post('/purchase-orders/:id/receive', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'update'), purchaseOrderController.receive);
+router.delete('/purchase-orders/:id', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'delete'), purchaseOrderController.delete);
 
 // --- Payment Gateway ---
 router.use('/payments', require('./paymentRoutes'));

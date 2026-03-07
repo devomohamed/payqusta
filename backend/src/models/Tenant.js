@@ -68,12 +68,23 @@ const tenantSchema = new mongoose.Schema(
       lowStockThreshold: { type: Number, default: 5 },
       autoRestockAlert: { type: Boolean, default: true },
       enableGamification: { type: Boolean, default: true },
+      loyalty: {
+        pointsPerPurchase: { type: Number, default: 10 }, // النقاط لكل 1000 جنيه (أو الوحدة المحددة)
+        pointsPerOnTime: { type: Number, default: 50 },
+        vipThreshold: { type: Number, default: 2000 },
+        premiumThreshold: { type: Number, default: 1000 },
+        redemptionRate: { type: Number, default: 0.1 }, // قيمة النقطة
+      },
       categories: {
         type: [{
           name: String,
           isVisible: { type: Boolean, default: true }
         }],
         default: []
+      },
+      catalogSeededAt: {
+        type: Date,
+        default: null,
       },
       watermark: {
         enabled: { type: Boolean, default: false },

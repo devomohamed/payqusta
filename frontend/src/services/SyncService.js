@@ -6,12 +6,18 @@
 import offlineStorage, { STORES } from './OfflineStorageService';
 import { api } from '../store';
 
+const isNetworkError = (error) =>
+  error?.code === 'ERR_NETWORK' ||
+  (!error?.response && /network error/i.test(String(error?.message || '')));
+
 class SyncService {
   constructor() {
     this.isSyncing = false;
     this.syncInterval = null;
     this.listeners = [];
     this.lastSyncTime = null;
+    this.lastSyncAttemptAt = 0;
+    this.rateLimitedUntil = 0;
     this.pendingCount = 0;
   }
 
@@ -73,11 +79,23 @@ class SyncService {
    * Main sync function
    */
   async sync() {
+    const now = Date.now();
+
     if (this.isSyncing || !navigator.onLine) {
       return;
     }
 
+    if (this.rateLimitedUntil && now < this.rateLimitedUntil) {
+      console.warn('[SyncService] Sync skipped temporarily due to rate limit');
+      return;
+    }
+
+    if (now - this.lastSyncAttemptAt < 10000) {
+      return;
+    }
+
     this.isSyncing = true;
+    this.lastSyncAttemptAt = now;
     this.notifyListeners('sync-start');
 
     try {
@@ -94,6 +112,10 @@ class SyncService {
 
       console.log('[SyncService] Sync completed successfully');
     } catch (error) {
+      if (error?.response?.status === 429) {
+        const retryAfterSeconds = Number(error.response?.headers?.['retry-after']) || 30;
+        this.rateLimitedUntil = Date.now() + (retryAfterSeconds * 1000);
+      }
       console.error('[SyncService] Sync failed:', error);
       this.notifyListeners('sync-error', { error });
     } finally {
@@ -253,8 +275,21 @@ class SyncService {
         console.log('[SyncService] Invoices synced');
       }
     } catch (error) {
-      console.error('[SyncService] Failed to pull latest data:', error);
-      // Don't throw - partial sync is better than no sync
+      if (error?.response?.status === 429) {
+        const retryAfterSeconds = Number(error.response?.headers?.['retry-after']) || 30;
+        this.rateLimitedUntil = Date.now() + (retryAfterSeconds * 1000);
+        console.warn(`[SyncService] Pull skipped due to rate limit. Retry after ${retryAfterSeconds}s`);
+        return;
+      }
+
+      if (isNetworkError(error)) {
+        console.warn('[SyncService] Pull failed due to network connectivity issue; sync will retry');
+      } else {
+        console.error('[SyncService] Failed to pull latest data:', error);
+      }
+
+      // Let main sync handle the failure state instead of reporting "success".
+      throw error;
     }
   }
 

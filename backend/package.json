@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "payqusta",
   "version": "1.0.0",
   "description": "PayQusta â€” Multi-Vendor SaaS CRM for Sales, Inventory & Installment Management",
@@ -7,8 +7,10 @@
     "start": "node --max-http-header-size=81920 server.js",
     "dev": "nodemon --max-http-header-size=81920 server.js",
     "seed": "node src/utils/seeder.js",
+    "migrate:uploads": "node scripts/migrate-local-uploads-to-db.js",
     "test": "jest --coverage",
     "test:api": "jest --runInBand tests/integration tests/e2e",
+    "test:smoke": "jest --runInBand tests/smoke",
     "client:install": "cd ../frontend && npm install --include=dev --no-package-lock",
     "client:dev": "cd ../frontend && npm run dev",
     "client:build": "cd ../frontend && npm run build",
@@ -57,5 +59,3 @@
   "author": "PayQusta Team",
   "license": "PROPRIETARY"
 }
-
-

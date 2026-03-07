@@ -78,7 +78,7 @@ export default function ProductSearchModal({ open, onClose, onSelect }) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-bold text-sm truncate">{p.name}</h4>
-                                    <p className="text-xs text-gray-500 truncate">SKU: {p.sku || '—'} · {p.category?.name || 'بدون تصنيف'}</p>
+                                    <p className="text-xs text-gray-500 truncate">SKU: {p.sku || '—'} · {p.category?.name || 'بدون قسم'}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm font-black text-primary-600">{(p.price || 0).toLocaleString('ar-EG')} ج.م</p>
@@ -99,7 +99,7 @@ export default function ProductSearchModal({ open, onClose, onSelect }) {
                         <Package className="w-4 h-4 text-amber-600" />
                     </div>
                     <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                        💡 <strong>نصيحة:</strong> اختيار منتج موجود سيقوم بتعبئة كافة البيانات (الاسم، التصنيف، الوصف، السعر، والتكلفة) تلقائياً لتوفير وقتك.
+                        💡 <strong>نصيحة:</strong> اختيار منتج موجود سيقوم بتعبئة كافة البيانات (الاسم، القسم، الوصف، السعر، والتكلفة) تلقائياً لتوفير وقتك.
                     </p>
                 </div>
             </div>

@@ -2,6 +2,7 @@ const Category = require('../models/Category');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
+const { seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 
 /**
  * Category Controller
@@ -11,15 +12,23 @@ class CategoryController {
      * Get all categories for a tenant
      */
     getAll = catchAsync(async (req, res) => {
-        // We can fetch categories with their children populated for a tree view
-        const categories = await Category.find({
+        const loadCategories = () => Category.find({
             ...req.tenantFilter,
-            parent: null, // Start with top-level
+            parent: null,
             isActive: true,
         }).populate({
             path: 'children',
-            populate: { path: 'children' } // Support up to 3 levels for now
+            populate: { path: 'children' }
         });
+
+        let categories = await loadCategories();
+
+        if (categories.length === 0) {
+            const seedResult = await seedStarterCatalogForTenant(req.tenantId);
+            if (seedResult.seeded) {
+                categories = await loadCategories();
+            }
+        }
 
         ApiResponse.success(res, categories);
     });
@@ -34,7 +43,7 @@ class CategoryController {
         };
 
         const category = await Category.create(categoryData);
-        ApiResponse.created(res, category, 'تم إضافة التصنيف بنجاح');
+        ApiResponse.created(res, category, 'تم إضافة القسم بنجاح');
     });
 
     /**
@@ -48,10 +57,10 @@ class CategoryController {
         );
 
         if (!category) {
-            return next(AppError.notFound('التصنيف غير موجود'));
+            return next(AppError.notFound('القسم غير موجود'));
         }
 
-        ApiResponse.success(res, category, 'تم تحديث التصنيف بنجاح');
+        ApiResponse.success(res, category, 'تم تحديث القسم بنجاح');
     });
 
     /**
@@ -67,7 +76,7 @@ class CategoryController {
         });
 
         if (productCount > 0) {
-            return next(AppError.badRequest('لا يمكن حذف التصنيف لوجود منتجات مرتبطة به'));
+            return next(AppError.badRequest('لا يمكن حذف القسم لوجود منتجات مرتبطة به'));
         }
 
         const category = await Category.findOneAndDelete({
@@ -76,24 +85,33 @@ class CategoryController {
         });
 
         if (!category) {
-            return next(AppError.notFound('التصنيف غير موجود'));
+            return next(AppError.notFound('القسم غير موجود'));
         }
 
-        ApiResponse.success(res, null, 'تم حذف التصنيف بنجاح');
+        ApiResponse.success(res, null, 'تم حذف القسم بنجاح');
     });
 
     /**
      * Get category tree (hierarchical)
      */
     getTree = catchAsync(async (req, res) => {
-        const categories = await Category.find({
+        const loadCategories = () => Category.find({
             ...req.tenantFilter,
             parent: null,
             isActive: true,
         }).populate({
             path: 'children',
-            populate: { path: 'children' } // Support up to 3 levels
+            populate: { path: 'children' }
         }).sort({ name: 1 });
+
+        let categories = await loadCategories();
+
+        if (categories.length === 0) {
+            const seedResult = await seedStarterCatalogForTenant(req.tenantId);
+            if (seedResult.seeded) {
+                categories = await loadCategories();
+            }
+        }
 
         ApiResponse.success(res, categories);
     });

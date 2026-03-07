@@ -1,4 +1,4 @@
-const PLATFORM_ROOT_DOMAIN = (import.meta.env.VITE_PLATFORM_ROOT_DOMAIN || 'payqusta.store')
+export const PLATFORM_ROOT_DOMAIN = (import.meta.env.VITE_PLATFORM_ROOT_DOMAIN || 'payqusta.store')
   .trim()
   .toLowerCase();
 
@@ -9,11 +9,20 @@ const RESERVED_PLATFORM_SUBDOMAINS = new Set(
     .filter(Boolean)
 );
 
-export function getStorefrontTenantSlugFromHost(hostname = window.location.hostname) {
-  const normalizedHost = String(hostname || '')
+const normalizeHostname = (hostname = window.location.hostname) =>
+  String(hostname || '')
     .trim()
     .toLowerCase()
+    .split(',')[0]
     .split(':')[0];
+
+export function isLocalStorefrontHost(hostname = window.location.hostname) {
+  const normalizedHost = normalizeHostname(hostname);
+  return normalizedHost === 'localhost' || normalizedHost === '127.0.0.1' || normalizedHost === '0.0.0.0';
+}
+
+export function getStorefrontTenantSlugFromHost(hostname = window.location.hostname) {
+  const normalizedHost = normalizeHostname(hostname);
 
   if (!normalizedHost || normalizedHost === PLATFORM_ROOT_DOMAIN) return null;
   if (!normalizedHost.endsWith(`.${PLATFORM_ROOT_DOMAIN}`)) return null;
@@ -48,14 +57,31 @@ export function storefrontPath(path = '/', hostname = window.location.hostname) 
   return `${basePath}${normalizedPath}`;
 }
 
-export function getStorefrontDomainUrl(tenantSlug, hostname = window.location.hostname) {
-  if (!tenantSlug) return '/store';
+export function getPlatformStorefrontUrl(tenantSlug) {
+  if (!tenantSlug || !PLATFORM_ROOT_DOMAIN) return null;
+  return `https://${tenantSlug}.${PLATFORM_ROOT_DOMAIN}`;
+}
 
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+export function getStorefrontDomainUrl(
+  tenantSlug,
+  hostname = window.location.hostname,
+  origin = window.location.origin
+) {
+  const normalizedOrigin = String(origin || '').trim().replace(/\/+$/, '');
+  const normalizedHost = normalizeHostname(hostname);
+  const fallbackPath = storefrontPath('/', normalizedHost);
 
-  if (isLocalhost) {
-    return '/store';
+  if (isLocalStorefrontHost(normalizedHost)) {
+    return normalizedOrigin ? `${normalizedOrigin}${fallbackPath}` : fallbackPath;
   }
 
-  return `https://${tenantSlug}.${PLATFORM_ROOT_DOMAIN}/`;
+  if (tenantSlug) {
+    return getPlatformStorefrontUrl(tenantSlug) || fallbackPath;
+  }
+
+  if (isStorefrontSubdomainHost(normalizedHost)) {
+    return normalizedOrigin || `https://${normalizedHost}`;
+  }
+
+  return normalizedOrigin ? `${normalizedOrigin}${fallbackPath}` : fallbackPath;
 }

@@ -285,31 +285,19 @@ export const usePortalStore = create((set, get) => ({
     }
   },
 
-  payInvoice: async (id, amount, paymentMethod, notes) => {
+  payInvoice: async (id, gateway = 'paymob', amount) => {
     set({ loading: true });
     try {
       const res = await portalApi.post(`/portal/invoices/${id}/pay`, {
+        gateway,
         amount,
-        paymentMethod: paymentMethod || 'online',
-        notes
       });
       set({ loading: false });
-
-      // Update customer balance
-      const currentCustomer = get().customer;
-      if (currentCustomer) {
-        const updatedCustomer = {
-          ...currentCustomer,
-          outstanding: currentCustomer.outstanding - amount
-        };
-        localStorage.setItem('portal_customer', JSON.stringify(updatedCustomer));
-        set({ customer: updatedCustomer });
-      }
-
+      // Return the paymentLink so the UI can open Paymob or redirect
       return { success: true, data: res.data.data, message: res.data.message };
     } catch (err) {
       set({ loading: false });
-      return { success: false, message: err.response?.data?.message || 'فشل الدفع' };
+      return { success: false, message: err.response?.data?.message || 'فشل إنشاء رابط الدفع' };
     }
   },
 

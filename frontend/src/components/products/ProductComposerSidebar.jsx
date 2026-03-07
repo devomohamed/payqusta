@@ -4,7 +4,7 @@ import { Badge } from '../UI';
 
 export default function ProductComposerSidebar({ form, categories = [] }) {
     // Find category name
-    const categoryName = categories.find(c => c._id === form.category)?.name || 'غير محدد';
+    const categoryName = categories.find(c => c._id === form.category)?.name || 'بدون قسم';
 
     // Calculate Profit
     const price = Number(form.price) || 0;
@@ -43,7 +43,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                     <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
                         <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">التصنيف</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">القسم</span>
                         </div>
                         <span className="text-sm font-bold truncate max-w-[120px]">{categoryName}</span>
                     </div>
