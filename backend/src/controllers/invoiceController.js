@@ -70,6 +70,7 @@ class InvoiceController {
       Invoice.find(filter)
         .populate('customer', 'name phone balance creditLimit')
         .populate('createdBy', 'name')
+        .populate('branch', 'name')
         .sort(sortBy)
         .skip(skip)
         .limit(parseInt(limit))
@@ -98,7 +99,8 @@ class InvoiceController {
     })
       .populate('customer', 'name phone address whatsapp balance creditLimit')
       .populate('createdBy', 'name')
-      .populate('items.product', 'name barcode')
+      .populate('branch', 'name')
+      .populate('items.product', 'name barcode internationalBarcode internationalBarcodeType localBarcode localBarcodeType')
       .lean();
 
     if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));

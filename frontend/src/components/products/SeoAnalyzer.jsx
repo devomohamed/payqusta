@@ -19,14 +19,14 @@ export const analyzeSeoContent = ({ text = '', title = '' } = {}) => {
 
     // Description Length
     const plainText = text.replace(/<[^>]*>/g, '');
-    if (plainText.length > 150) {
-        results.push({ text: 'وصف المنتج غني بالمعلومات', type: 'success' });
+    if (plainText.length > 60) {
+        results.push({ text: 'وصف المنتج مثالي لمحركات البحث', type: 'success' });
         score += 30;
-    } else if (plainText.length > 50) {
-        results.push({ text: 'الوصف جيد ولكن يمكن التوسع فيه أكثر', type: 'warning' });
+    } else if (plainText.length > 20) {
+        results.push({ text: 'الوصف جيد ولكن يفضل زيادته قليلاً', type: 'warning' });
         score += 15;
     } else {
-        results.push({ text: 'الوصف قصير جداً لمجركات البحث', type: 'error' });
+        results.push({ text: 'الوصف قصير جداً لمحركات البحث', type: 'error' });
     }
 
     // Keyword usage

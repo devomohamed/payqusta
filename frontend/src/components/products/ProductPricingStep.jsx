@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input, Badge, Button } from '../UI';
 import { DollarSign, TrendingUp, AlertTriangle, Truck, Plus, Trash2 } from 'lucide-react';
 
@@ -12,6 +13,8 @@ export default function ProductPricingStep({
     mainBranchOption = null,
     pricingErrors = {}
 }) {
+    const { t } = useTranslation('admin');
+    const getErrorText = (errKey) => errKey ? t(`products.validation.${errKey}`, errKey) : undefined;
     const price = Number(form.price) || 0;
     const cost = Number(form.costPrice) || 0;
     const profit = price - cost;
@@ -19,9 +22,13 @@ export default function ProductPricingStep({
     const compareAtPrice = Number(form.compareAtPrice) || 0;
     const discount = compareAtPrice > price ? ((compareAtPrice - price) / compareAtPrice) * 100 : 0;
     const currentUserBranchId = branchScopeId || user?.branch?._id || user?.branch || '';
-    const isAdminLikeUser = user?.role === 'admin' || !!user?.isSuperAdmin;
-    const isBranchScopedUser = mode === 'create' && Boolean(currentUserBranchId) && !isAdminLikeUser;
     const mainBranchId = mainBranchOption?._id ? String(mainBranchOption._id) : '';
+
+    // Determine if the user should be restricted to a single branch.
+    // If they have a currentUserBranchId AND it is NOT the main branch (or they are not admin)
+    const isAdminLikeUser = user?.role === 'admin' || !!user?.isSuperAdmin;
+    const isBranchScopedUser = Boolean(currentUserBranchId) && (!isAdminLikeUser || String(currentUserBranchId) !== mainBranchId);
+
     const hasMainSelected = Boolean(mainBranchId) && (form.inventory || []).some((item) => String(item?.branch?._id || item?.branch || '') === mainBranchId);
     const branchOptions = [
         ...(mainBranchOption ? [mainBranchOption] : []),
@@ -29,30 +36,40 @@ export default function ProductPricingStep({
     ];
 
     useEffect(() => {
-        if (!isBranchScopedUser) return;
-
         setForm((prev) => {
             const currentInventory = Array.isArray(prev.inventory) ? prev.inventory : [];
-            if (currentInventory.length === 1) {
-                const onlyBranchId = currentInventory[0]?.branch?._id || currentInventory[0]?.branch || '';
-                if (String(onlyBranchId) === String(currentUserBranchId)) {
-                    return prev;
+            let needsUpdate = false;
+            let newInventory = [...currentInventory];
+
+            // 1. If branch scoped, FORCE exactly one row for their branch
+            if (isBranchScopedUser) {
+                if (newInventory.length !== 1 || String(newInventory[0]?.branch?._id || newInventory[0]?.branch || '') !== String(currentUserBranchId)) {
+                    const totalQuantity = newInventory.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0);
+                    const resolvedMinQuantity = Math.max(0, Number(prev.minStockAlert ?? 5) || 5);
+                    newInventory = [{
+                        branch: currentUserBranchId,
+                        quantity: Math.max(0, totalQuantity),
+                        minQuantity: resolvedMinQuantity
+                    }];
+                    needsUpdate = true;
                 }
             }
+            // 2. If NOT branch scoped (admin/main), but inventory is empty, auto-add main branch
+            else if (newInventory.length === 0) {
+                newInventory = [{
+                    branch: mainBranchId,
+                    quantity: 0,
+                    minQuantity: 5
+                }];
+                needsUpdate = true;
+            }
 
-            const totalQuantity = currentInventory.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0);
-            const resolvedMinQuantity = Math.max(0, Number(prev.minStockAlert ?? 5) || 5);
-
-            return {
-                ...prev,
-                inventory: [{
-                    branch: currentUserBranchId,
-                    quantity: Math.max(0, totalQuantity),
-                    minQuantity: resolvedMinQuantity
-                }]
-            };
+            if (needsUpdate) {
+                return { ...prev, inventory: newInventory };
+            }
+            return prev;
         });
-    }, [isBranchScopedUser, currentUserBranchId, setForm]);
+    }, [isBranchScopedUser, currentUserBranchId, mainBranchId, setForm]);
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
@@ -71,7 +88,7 @@ export default function ProductPricingStep({
                         value={form.price}
                         onChange={e => setForm({ ...form, price: e.target.value })}
                         placeholder="0.00"
-                        error={pricingErrors.price}
+                        error={getErrorText(pricingErrors.price)}
                         className="md:col-span-1"
                     />
                     <Input
@@ -81,7 +98,7 @@ export default function ProductPricingStep({
                         value={form.compareAtPrice}
                         onChange={e => setForm({ ...form, compareAtPrice: e.target.value })}
                         placeholder="0.00"
-                        error={pricingErrors.compareAtPrice}
+                        error={getErrorText(pricingErrors.compareAtPrice)}
                         tooltip="سيظهر مشطوباً لإظهار الخصم للعملاء."
                     />
                 </div>
@@ -94,7 +111,7 @@ export default function ProductPricingStep({
                         value={form.costPrice}
                         onChange={e => setForm({ ...form, costPrice: e.target.value })}
                         placeholder="0.00"
-                        error={pricingErrors.costPrice}
+                        error={getErrorText(pricingErrors.costPrice)}
                         tooltip="لحساب الأرباح بدقة. هذا الحقل مخفي عن العملاء."
                     />
                     <Input
@@ -104,7 +121,7 @@ export default function ProductPricingStep({
                         value={form.wholesalePrice}
                         onChange={e => setForm({ ...form, wholesalePrice: e.target.value })}
                         placeholder="0.00"
-                        error={pricingErrors.wholesalePrice}
+                        error={getErrorText(pricingErrors.wholesalePrice)}
                         tooltip="الحدود الدنيا وسعر الجملة للموديلات يمكن تخصيصها في صفحة إعدادات المنتجات."
                     />
                 </div>
@@ -141,15 +158,15 @@ export default function ProductPricingStep({
 
             {/* 2. Inventory & Stock Section */}
             <section className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
-                    <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-amber-500" />
-                        المخزون والكميات
-                    </h3>
-                    {isBranchScopedUser && (
-                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl text-sm font-medium text-blue-700 dark:text-blue-300">
-                            سيتم ربط المنتج تلقائيًا بالفرع الخاص بحسابك.
-                        </div>
-                    )}
+                <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    المخزون والكميات
+                </h3>
+                {isBranchScopedUser && (
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl text-sm font-medium text-blue-700 dark:text-blue-300">
+                        سيتم ربط المنتج تلقائيًا بالفرع الخاص بحسابك.
+                    </div>
+                )}
 
                 {form.hasVariants ? (
                     <div className="p-4 bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-300 text-sm font-medium">
@@ -164,7 +181,7 @@ export default function ProductPricingStep({
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    disabled={hasMainSelected}
+                                    disabled={(form.inventory || []).length >= branchOptions.length}
                                     onClick={() => {
                                         setForm({
                                             ...form,
@@ -185,7 +202,7 @@ export default function ProductPricingStep({
                                     <select
                                         className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                                         value={inv.branch?._id || inv.branch || ''}
-                                        disabled={isBranchScopedUser}
+                                        disabled={isBranchScopedUser || (String(inv.branch?._id || inv.branch || '') === mainBranchId && isAdminLikeUser)}
                                         onChange={(e) => {
                                             const newInv = [...form.inventory];
                                             newInv[index].branch = e.target.value;
@@ -234,7 +251,7 @@ export default function ProductPricingStep({
                                         placeholder="5"
                                     />
                                 </div>
-                                {!isBranchScopedUser && (
+                                {!isBranchScopedUser && form.inventory.length > 1 && (
                                     <div className="md:col-span-1 flex justify-end pb-3">
                                         <button
                                             type="button"

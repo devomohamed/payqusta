@@ -2,8 +2,10 @@ const Product = require('../models/Product');
 const Customer = require('../models/Customer');
 const Invoice = require('../models/Invoice');
 const Supplier = require('../models/Supplier');
+const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
+const { findProductByCode } = require('../services/barcodeService');
 
 /**
  * Global Search Controller
@@ -14,7 +16,7 @@ class SearchController {
    * GET /api/v1/search?q=...
    * Global search across products, customers, invoices, suppliers
    */
-  globalSearch = catchAsync(async (req, res, next) => {
+  globalSearch = catchAsync(async (req, res) => {
     const { q } = req.query;
 
     if (!q || q.trim().length < 2) {
@@ -29,13 +31,9 @@ class SearchController {
 
     const searchTerm = q.trim();
     const filter = req.tenantFilter;
-
-    // Create search regex (case-insensitive)
     const regex = new RegExp(searchTerm, 'i');
 
-    // Search in parallel for better performance
     const [products, customers, invoices, suppliers] = await Promise.all([
-      // Search Products
       Product.find({
         ...filter,
         isActive: true,
@@ -43,15 +41,20 @@ class SearchController {
           { name: regex },
           { sku: regex },
           { barcode: regex },
+          { internationalBarcode: regex },
+          { localBarcode: regex },
+          { 'variants.sku': regex },
+          { 'variants.barcode': regex },
+          { 'variants.internationalBarcode': regex },
+          { 'variants.localBarcode': regex },
           { category: regex },
           { tags: regex },
         ],
       })
         .limit(10)
-        .select('name sku barcode category price stock thumbnail')
+        .select('name sku barcode internationalBarcode localBarcode category price stock thumbnail')
         .lean(),
 
-      // Search Customers
       Customer.find({
         ...filter,
         isActive: true,
@@ -66,12 +69,11 @@ class SearchController {
         .select('name phone email totalSpent remainingBalance')
         .lean(),
 
-      // Search Invoices
       Invoice.find({
         ...filter,
         $or: [
           { invoiceNumber: regex },
-          { 'customer.name': regex }, // This won't work without populate, but we'll populate below
+          { 'customer.name': regex },
         ],
       })
         .limit(10)
@@ -80,7 +82,6 @@ class SearchController {
         .sort('-createdAt')
         .lean(),
 
-      // Search Suppliers
       Supplier.find({
         ...filter,
         isActive: true,
@@ -96,34 +97,33 @@ class SearchController {
         .lean(),
     ]);
 
-    // Calculate total results
     const total = products.length + customers.length + invoices.length + suppliers.length;
 
     ApiResponse.success(res, {
       query: searchTerm,
-      products: products.map(p => ({
-        ...p,
+      products: products.map((product) => ({
+        ...product,
         type: 'product',
-        displayText: `${p.name} (${p.sku})`,
-        link: `/products`,
+        displayText: `${product.name} (${product.sku})`,
+        link: '/products',
       })),
-      customers: customers.map(c => ({
-        ...c,
+      customers: customers.map((customer) => ({
+        ...customer,
         type: 'customer',
-        displayText: `${c.name} - ${c.phone}`,
-        link: `/customers`,
+        displayText: `${customer.name} - ${customer.phone}`,
+        link: '/customers',
       })),
-      invoices: invoices.map(i => ({
-        ...i,
+      invoices: invoices.map((invoice) => ({
+        ...invoice,
         type: 'invoice',
-        displayText: `${i.invoiceNumber} - ${i.customer?.name || 'عميل محذوف'}`,
-        link: `/invoices`,
+        displayText: `${invoice.invoiceNumber} - ${invoice.customer?.name || 'عميل محذوف'}`,
+        link: '/invoices',
       })),
-      suppliers: suppliers.map(s => ({
-        ...s,
+      suppliers: suppliers.map((supplier) => ({
+        ...supplier,
         type: 'supplier',
-        displayText: `${s.name} - ${s.phone}`,
-        link: `/suppliers`,
+        displayText: `${supplier.name} - ${supplier.phone}`,
+        link: '/suppliers',
       })),
       total,
     });
@@ -133,7 +133,7 @@ class SearchController {
    * GET /api/v1/search/suggestions?q=...
    * Quick search suggestions (autocomplete)
    */
-  getSearchSuggestions = catchAsync(async (req, res, next) => {
+  getSearchSuggestions = catchAsync(async (req, res) => {
     const { q } = req.query;
 
     if (!q || q.trim().length < 2) {
@@ -144,15 +144,24 @@ class SearchController {
     const filter = req.tenantFilter;
     const regex = new RegExp(searchTerm, 'i');
 
-    // Get top 5 from each category
     const [products, customers, invoices] = await Promise.all([
       Product.find({
         ...filter,
         isActive: true,
-        $or: [{ name: regex }, { sku: regex }, { barcode: regex }],
+        $or: [
+          { name: regex },
+          { sku: regex },
+          { barcode: regex },
+          { internationalBarcode: regex },
+          { localBarcode: regex },
+          { 'variants.sku': regex },
+          { 'variants.barcode': regex },
+          { 'variants.internationalBarcode': regex },
+          { 'variants.localBarcode': regex },
+        ],
       })
         .limit(5)
-        .select('name sku')
+        .select('name sku barcode internationalBarcode localBarcode')
         .lean(),
 
       Customer.find({
@@ -174,23 +183,22 @@ class SearchController {
         .lean(),
     ]);
 
-    // Format suggestions
     const suggestions = [
-      ...products.map(p => ({
-        id: p._id,
-        text: `${p.name} (${p.sku})`,
+      ...products.map((product) => ({
+        id: product._id,
+        text: `${product.name} (${product.sku})`,
         type: 'product',
         icon: '📦',
       })),
-      ...customers.map(c => ({
-        id: c._id,
-        text: `${c.name} - ${c.phone}`,
+      ...customers.map((customer) => ({
+        id: customer._id,
+        text: `${customer.name} - ${customer.phone}`,
         type: 'customer',
         icon: '👤',
       })),
-      ...invoices.map(i => ({
-        id: i._id,
-        text: `${i.invoiceNumber} - ${i.customer?.name || 'عميل محذوف'}`,
+      ...invoices.map((invoice) => ({
+        id: invoice._id,
+        text: `${invoice.invoiceNumber} - ${invoice.customer?.name || 'عميل محذوف'}`,
         type: 'invoice',
         icon: '📄',
       })),
@@ -207,19 +215,17 @@ class SearchController {
     const { barcode } = req.query;
 
     if (!barcode) {
-      return ApiResponse.badRequest('الباركود مطلوب');
+      return next(AppError.badRequest('الباركود مطلوب'));
     }
 
-    const product = await Product.findOne({
-      ...req.tenantFilter,
-      isActive: true,
-      $or: [{ barcode }, { sku: barcode }],
-    })
-      .populate('supplier', 'name phone')
-      .lean();
+    const product = await findProductByCode({
+      tenantFilter: req.tenantFilter,
+      code: barcode,
+      includeSuspended: true,
+    });
 
     if (!product) {
-      return ApiResponse.notFound('المنتج غير موجود');
+      return next(AppError.notFound('المنتج غير موجود'));
     }
 
     ApiResponse.success(res, product);

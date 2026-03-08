@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -8,14 +8,168 @@ import {
   PieChart, TrendingUp, Crown, Building2, Shield, Activity,
   Upload, Database, Archive, DollarSign, ShoppingCart, Video, Bell,
   ShoppingBag, RefreshCcw, MessageCircle, FileCheck, Star, Tag, CheckSquare, Award,
-  Store, ExternalLink,
+  Store, ExternalLink, Plus
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import AnimatedBrandLogo from './AnimatedBrandLogo';
 import { getStorefrontDomainUrl } from '../utils/storefrontHost';
 
+const iconTones = {
+  slate: {
+    icon: 'text-slate-500 dark:text-slate-300',
+    iconActive: 'text-primary-600 dark:text-primary-300',
+    bg: 'bg-slate-100 dark:bg-slate-800/80',
+    bgActive: 'bg-primary-100 dark:bg-primary-500/20',
+  },
+  sky: {
+    icon: 'text-sky-600 dark:text-sky-300',
+    iconActive: 'text-sky-700 dark:text-sky-200',
+    bg: 'bg-sky-100/90 dark:bg-sky-500/15',
+    bgActive: 'bg-sky-200/90 dark:bg-sky-500/25',
+  },
+  amber: {
+    icon: 'text-amber-600 dark:text-amber-300',
+    iconActive: 'text-amber-700 dark:text-amber-200',
+    bg: 'bg-amber-100/90 dark:bg-amber-500/15',
+    bgActive: 'bg-amber-200/90 dark:bg-amber-500/25',
+  },
+  emerald: {
+    icon: 'text-emerald-600 dark:text-emerald-300',
+    iconActive: 'text-emerald-700 dark:text-emerald-200',
+    bg: 'bg-emerald-100/90 dark:bg-emerald-500/15',
+    bgActive: 'bg-emerald-200/90 dark:bg-emerald-500/25',
+  },
+  indigo: {
+    icon: 'text-indigo-600 dark:text-indigo-300',
+    iconActive: 'text-indigo-700 dark:text-indigo-200',
+    bg: 'bg-indigo-100/90 dark:bg-indigo-500/15',
+    bgActive: 'bg-indigo-200/90 dark:bg-indigo-500/25',
+  },
+  violet: {
+    icon: 'text-violet-600 dark:text-violet-300',
+    iconActive: 'text-violet-700 dark:text-violet-200',
+    bg: 'bg-violet-100/90 dark:bg-violet-500/15',
+    bgActive: 'bg-violet-200/90 dark:bg-violet-500/25',
+  },
+  teal: {
+    icon: 'text-teal-600 dark:text-teal-300',
+    iconActive: 'text-teal-700 dark:text-teal-200',
+    bg: 'bg-teal-100/90 dark:bg-teal-500/15',
+    bgActive: 'bg-teal-200/90 dark:bg-teal-500/25',
+  },
+  rose: {
+    icon: 'text-rose-600 dark:text-rose-300',
+    iconActive: 'text-rose-700 dark:text-rose-200',
+    bg: 'bg-rose-100/90 dark:bg-rose-500/15',
+    bgActive: 'bg-rose-200/90 dark:bg-rose-500/25',
+  },
+  cyan: {
+    icon: 'text-cyan-600 dark:text-cyan-300',
+    iconActive: 'text-cyan-700 dark:text-cyan-200',
+    bg: 'bg-cyan-100/90 dark:bg-cyan-500/15',
+    bgActive: 'bg-cyan-200/90 dark:bg-cyan-500/25',
+  },
+};
+
+const resolveTone = (tone = 'slate') => iconTones[tone] || iconTones.slate;
+
+const NavItem = ({ to, icon: Icon, label, end = false, badge = null, tone = 'slate' }) => {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+          ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 shadow-sm'
+          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-300'
+        }`
+      }
+    >
+      {({ isActive }) => {
+        const toneClasses = resolveTone(tone);
+        return (
+          <>
+            <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? toneClasses.bgActive : toneClasses.bg}`}>
+              <Icon className={`w-4 h-4 ${isActive ? toneClasses.iconActive : toneClasses.icon}`} />
+            </span>
+            <span className="flex-1">{label}</span>
+            {badge && (
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                {badge}
+              </span>
+            )}
+          </>
+        );
+      }}
+    </NavLink>
+  );
+};
+
+const SubNavItem = ({ to, icon: Icon, label, tone = 'slate', end }) => {
+  const { i18n } = useTranslation('admin');
+  const isRTL = i18n.dir() === 'rtl';
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-2.5 ${isRTL ? 'pr-12' : 'pl-12'} rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+          ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400'
+          : 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-600 dark:hover:text-gray-300'
+        }`
+      }
+    >
+      {({ isActive }) => {
+        const toneClasses = resolveTone(tone);
+        return (
+          <>
+            <span className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? toneClasses.bgActive : toneClasses.bg}`}>
+              <Icon className={`w-3.5 h-3.5 ${isActive ? toneClasses.iconActive : toneClasses.icon}`} />
+            </span>
+            <span>{label}</span>
+          </>
+        );
+      }}
+    </NavLink>
+  );
+};
+
+const DropdownButton = ({ isOpen, isActive, onClick, icon: Icon, label, tone = 'slate' }) => {
+  const handleClick = (e) => {
+    onClick();
+    if (!isOpen) {
+      const parent = e.currentTarget.parentElement;
+      setTimeout(() => {
+        parent.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 250);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
+        ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 shadow-sm'
+        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-300'
+        }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? resolveTone(tone).bgActive : resolveTone(tone).bg}`}>
+          <Icon className={`w-4 h-4 ${isActive ? resolveTone(tone).iconActive : resolveTone(tone).icon}`} />
+        </span>
+        <span>{label}</span>
+      </div>
+      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+    </button>
+  );
+};
+
 export default function Sidebar({ open, onClose }) {
-  const { user, tenant, logout, permissions, can } = useAuthStore();
+  const user = useAuthStore(state => state.user);
+  const tenant = useAuthStore(state => state.tenant);
+  const logout = useAuthStore(state => state.logout);
+  const permissions = useAuthStore(state => state.permissions);
+  const can = useAuthStore(state => state.can);
   const location = useLocation();
   const { t, i18n } = useTranslation('admin');
   const isRTL = i18n.dir() === 'rtl';
@@ -98,138 +252,7 @@ export default function Sidebar({ open, onClose }) {
   const isSettingsActive = location.pathname.startsWith('/settings') || location.pathname === '/admin/audit-logs';
   const canAccessSuppliers = can('suppliers', 'read') || user?.role === 'admin';
 
-  const iconTones = {
-    slate: {
-      icon: 'text-slate-500 dark:text-slate-300',
-      iconActive: 'text-primary-600 dark:text-primary-300',
-      bg: 'bg-slate-100 dark:bg-slate-800/80',
-      bgActive: 'bg-primary-100 dark:bg-primary-500/20',
-    },
-    sky: {
-      icon: 'text-sky-600 dark:text-sky-300',
-      iconActive: 'text-sky-700 dark:text-sky-200',
-      bg: 'bg-sky-100/90 dark:bg-sky-500/15',
-      bgActive: 'bg-sky-200/90 dark:bg-sky-500/25',
-    },
-    amber: {
-      icon: 'text-amber-600 dark:text-amber-300',
-      iconActive: 'text-amber-700 dark:text-amber-200',
-      bg: 'bg-amber-100/90 dark:bg-amber-500/15',
-      bgActive: 'bg-amber-200/90 dark:bg-amber-500/25',
-    },
-    emerald: {
-      icon: 'text-emerald-600 dark:text-emerald-300',
-      iconActive: 'text-emerald-700 dark:text-emerald-200',
-      bg: 'bg-emerald-100/90 dark:bg-emerald-500/15',
-      bgActive: 'bg-emerald-200/90 dark:bg-emerald-500/25',
-    },
-    indigo: {
-      icon: 'text-indigo-600 dark:text-indigo-300',
-      iconActive: 'text-indigo-700 dark:text-indigo-200',
-      bg: 'bg-indigo-100/90 dark:bg-indigo-500/15',
-      bgActive: 'bg-indigo-200/90 dark:bg-indigo-500/25',
-    },
-    violet: {
-      icon: 'text-violet-600 dark:text-violet-300',
-      iconActive: 'text-violet-700 dark:text-violet-200',
-      bg: 'bg-violet-100/90 dark:bg-violet-500/15',
-      bgActive: 'bg-violet-200/90 dark:bg-violet-500/25',
-    },
-    teal: {
-      icon: 'text-teal-600 dark:text-teal-300',
-      iconActive: 'text-teal-700 dark:text-teal-200',
-      bg: 'bg-teal-100/90 dark:bg-teal-500/15',
-      bgActive: 'bg-teal-200/90 dark:bg-teal-500/25',
-    },
-    rose: {
-      icon: 'text-rose-600 dark:text-rose-300',
-      iconActive: 'text-rose-700 dark:text-rose-200',
-      bg: 'bg-rose-100/90 dark:bg-rose-500/15',
-      bgActive: 'bg-rose-200/90 dark:bg-rose-500/25',
-    },
-    cyan: {
-      icon: 'text-cyan-600 dark:text-cyan-300',
-      iconActive: 'text-cyan-700 dark:text-cyan-200',
-      bg: 'bg-cyan-100/90 dark:bg-cyan-500/15',
-      bgActive: 'bg-cyan-200/90 dark:bg-cyan-500/25',
-    },
-  };
-
-  const resolveTone = (tone = 'slate') => iconTones[tone] || iconTones.slate;
-
-  const NavItem = ({ to, icon: Icon, label, end = false, badge = null, tone = 'slate' }) => (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-          ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 shadow-sm'
-          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-300'
-        }`
-      }
-    >
-      {({ isActive }) => {
-        const toneClasses = resolveTone(tone);
-        return (
-          <>
-            <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? toneClasses.bgActive : toneClasses.bg}`}>
-              <Icon className={`w-4 h-4 ${isActive ? toneClasses.iconActive : toneClasses.icon}`} />
-            </span>
-            <span className="flex-1">{label}</span>
-            {badge && (
-              <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
-                {badge}
-              </span>
-            )}
-          </>
-        );
-      }}
-    </NavLink>
-  );
-
-  const SubNavItem = ({ to, icon: Icon, label, tone = 'slate' }) => (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-2.5 ${isRTL ? 'pr-12' : 'pl-12'} rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-          ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400'
-          : 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-600 dark:hover:text-gray-300'
-        }`
-      }
-    >
-      {({ isActive }) => {
-        const toneClasses = resolveTone(tone);
-        return (
-          <>
-            <span className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? toneClasses.bgActive : toneClasses.bg}`}>
-              <Icon className={`w-3.5 h-3.5 ${isActive ? toneClasses.iconActive : toneClasses.icon}`} />
-            </span>
-            <span>{label}</span>
-          </>
-        );
-      }}
-    </NavLink>
-  );
-
-  const DropdownButton = ({ isOpen, isActive, onClick, icon: Icon, label, tone = 'slate' }) => (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-        ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 shadow-sm'
-        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-300'
-        }`}
-    >
-      <div className="flex items-center gap-3">
-        <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isActive ? resolveTone(tone).bgActive : resolveTone(tone).bg}`}>
-          <Icon className={`w-4 h-4 ${isActive ? resolveTone(tone).iconActive : resolveTone(tone).icon}`} />
-        </span>
-        <span>{label}</span>
-      </div>
-      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-    </button>
-  );
-
-  const SidebarContent = () => (
+  const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-100 dark:border-gray-800">
@@ -256,7 +279,7 @@ export default function Sidebar({ open, onClose }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto no-scrollbar">
+      <nav className="flex-1 px-3 pt-4 pb-24 space-y-1 overflow-y-auto no-scrollbar">
         {/* Super Admin Section - Only for Super Admin */}
         {isSystemSuperAdmin && (
           <>
@@ -355,7 +378,8 @@ export default function Sidebar({ open, onClose }) {
               <div className="space-y-1 py-1">
                 {can('products', 'read') && (
                   <>
-                    <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} tone="emerald" />
+                    <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} tone="emerald" end />
+                    <SubNavItem to="/products?action=add" icon={Plus} label="إضافة منتج" tone="emerald" />
                     <SubNavItem to="/categories" icon={FolderTree} label="الأقسام" tone="emerald" />
                     <SubNavItem to="/stock-search" icon={Search} label="بحث عن توفر منتج" tone="emerald" />
                     <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} tone="emerald" />
@@ -568,7 +592,7 @@ export default function Sidebar({ open, onClose }) {
     <>
       {/* Desktop Sidebar */}
       <aside className={`hidden md:flex w-64 flex-shrink-0 ${isRTL ? 'border-l' : 'border-r'} border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex-col`}>
-        <SidebarContent />
+        {renderSidebarContent()}
       </aside>
 
       {/* Mobile Overlay */}
@@ -582,7 +606,7 @@ export default function Sidebar({ open, onClose }) {
             >
               <X className="w-5 h-5" />
             </button>
-            <SidebarContent />
+            {renderSidebarContent()}
           </aside>
         </div>
       )}

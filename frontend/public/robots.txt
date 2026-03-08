@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /portal/
+Disallow: /admin/
+Disallow: /super-admin/
+Disallow: /api/
+Disallow: /api-docs
+Disallow: /store/cart
+Disallow: /store/checkout
+Disallow: /store/track-order
+Disallow: /store/order/
+
+Sitemap: https://payqusta.store/sitemap.xml

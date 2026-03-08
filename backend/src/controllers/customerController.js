@@ -149,13 +149,14 @@ class CustomerController {
     const skip = (page - 1) * limit;
 
     const [invoices, total] = await Promise.all([
-      Invoice.find({ customer: customer._id })
+      Invoice.find({ customer: customer._id, ...req.tenantFilter })
         .sort('-createdAt')
         .skip(skip)
         .limit(limit)
         .populate('items.product', 'name sku images')
-        .select('invoiceNumber items totalAmount paidAmount remainingAmount status paymentMethod installments installmentConfig createdAt notes'),
-      Invoice.countDocuments({ customer: customer._id }),
+        .populate('payments.recordedBy', 'name')
+        .select('invoiceNumber items totalAmount paidAmount remainingAmount status paymentMethod installments installmentConfig payments dueDate createdAt notes'),
+      Invoice.countDocuments({ customer: customer._id, ...req.tenantFilter }),
     ]);
 
     ApiResponse.success(res, {

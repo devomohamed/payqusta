@@ -20,6 +20,7 @@ export default function ProductComposer({
     open,
     onClose,
     mode = 'create',
+    productId = '',
     loading = false,
     form,
     setForm,
@@ -138,6 +139,8 @@ export default function ProductComposer({
                                 <ProductBasicsStep
                                     form={form}
                                     setForm={setForm}
+                                    mode={mode}
+                                    productId={productId}
                                     categories={categories}
                                     suppliers={suppliers}
                                     branches={branches}
@@ -229,7 +232,7 @@ export default function ProductComposer({
                                         </Button>
                                     )}
                                     <Button
-                                        variant={hasGlobalErrors ? 'danger' : 'primary'}
+                                        variant={hasGlobalErrors ? 'danger' : 'success'}
                                         onClick={onSubmit}
                                         loading={loading}
                                         icon={hasGlobalErrors ? <AlertCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}

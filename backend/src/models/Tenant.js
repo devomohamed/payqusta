@@ -92,6 +92,26 @@ const tenantSchema = new mongoose.Schema(
         position: { type: String, enum: ['center', 'northwest', 'northeast', 'southwest', 'southeast'], default: 'southeast' },
         opacity: { type: Number, min: 0, max: 100, default: 50 },
       },
+      barcode: {
+        mode: {
+          type: String,
+          enum: ['none', 'international_only', 'local_only', 'both'],
+          default: 'both',
+        },
+        autoGenerateLocalBarcode: { type: Boolean, default: false },
+        receiptBarcodeSource: {
+          type: String,
+          enum: ['none', 'international', 'local'],
+          default: 'none',
+        },
+        deliveryBarcodeSource: {
+          type: String,
+          enum: ['none', 'international', 'local'],
+          default: 'none',
+        },
+        storefrontBarcodeSearchEnabled: { type: Boolean, default: false },
+        localBarcodeCounter: { type: Number, default: 0, min: 0 },
+      },
     },
     // WhatsApp configuration
     whatsapp: {

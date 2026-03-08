@@ -32,6 +32,9 @@ const ensureDirectoryExists = (dirPath) => {
 };
 
 let cachedBucket = null;
+let cachedWatermarkFontCss = null;
+
+const WATERMARK_FONT_PATH = path.join(__dirname, '../fonts/Cairo-Regular.ttf');
 
 const normalizeUploadKey = (value = '') => (
   String(value || '')
@@ -40,6 +43,74 @@ const normalizeUploadKey = (value = '') => (
     .filter((segment) => segment && segment !== '.' && segment !== '..')
     .join('/')
 );
+
+const escapeSvgText = (value = '') => (
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+);
+
+const hasRtlCharacters = (value = '') => /[\u0590-\u08FF]/.test(String(value ?? ''));
+
+const getWatermarkFontCss = () => {
+  if (cachedWatermarkFontCss !== null) {
+    return cachedWatermarkFontCss;
+  }
+
+  if (!fs.existsSync(WATERMARK_FONT_PATH)) {
+    cachedWatermarkFontCss = '';
+    return cachedWatermarkFontCss;
+  }
+
+  const fontBase64 = fs.readFileSync(WATERMARK_FONT_PATH).toString('base64');
+  cachedWatermarkFontCss = `
+    @font-face {
+      font-family: 'PayQustaWatermark';
+      src: url("data:font/ttf;base64,${fontBase64}") format('truetype');
+      font-style: normal;
+      font-weight: 400;
+    }
+  `.trim();
+
+  return cachedWatermarkFontCss;
+};
+
+const buildWatermarkSvg = (text, opacityText) => {
+  const normalizedText = String(text ?? '').trim();
+  if (!normalizedText) return '';
+
+  const escapedText = escapeSvgText(normalizedText);
+  const embeddedFontCss = getWatermarkFontCss();
+  const fontFamily = embeddedFontCss
+    ? "'PayQustaWatermark', 'Cairo', sans-serif"
+    : "'Segoe UI', Arial, sans-serif";
+  const direction = hasRtlCharacters(normalizedText) ? 'rtl' : 'ltr';
+  const fontSize = Math.max(24, Math.min(44, Math.round(520 / Math.max(normalizedText.length, 12))));
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
+      <style>
+        ${embeddedFontCss}
+        .watermark-text {
+          font-family: ${fontFamily};
+          font-size: ${fontSize}px;
+          font-weight: 700;
+          white-space: pre;
+          unicode-bidi: plaintext;
+        }
+        .title { fill: rgba(255, 255, 255, ${opacityText}); }
+        .shadow { fill: rgba(0, 0, 0, ${opacityText}); }
+      </style>
+      <g transform="translate(400 100)">
+        <text x="2" y="2" text-anchor="middle" dominant-baseline="middle" direction="${direction}" class="watermark-text shadow">${escapedText}</text>
+        <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" direction="${direction}" class="watermark-text title">${escapedText}</text>
+      </g>
+    </svg>
+  `.trim();
+};
 
 const getUploadStorageMode = () => {
   const explicitMode = String(process.env.UPLOAD_STORAGE || '').trim().toLowerCase();
@@ -262,22 +333,14 @@ const processImage = async (buffer, filename, folder = 'products', mimetype = 'i
       const gravity = gravityMap[watermarkOptions.position] || 'southeast';
       const opacityText = Math.max(0.1, Math.min(1, (watermarkOptions.opacity || 50) / 100));
 
-      // Create SVG text buffer for watermark
-      const svgWatermark = `
-        <svg width="800" height="800">
-          <style>
-            .title { fill: rgba(255, 255, 255, ${opacityText}); font-size: 36px; font-weight: bold; font-family: sans-serif; }
-            .shadow { fill: rgba(0, 0, 0, ${opacityText}); font-size: 36px; font-weight: bold; font-family: sans-serif; }
-          </style>
-          <text x="50%" y="50%" text-anchor="middle" class="shadow" dx="2" dy="2">${watermarkOptions.text}</text>
-          <text x="50%" y="50%" text-anchor="middle" class="title">${watermarkOptions.text}</text>
-        </svg>
-      `;
+      const svgWatermark = buildWatermarkSvg(watermarkOptions.text, opacityText);
 
-      imageProcessor = imageProcessor.composite([{
-        input: Buffer.from(svgWatermark),
-        gravity: gravity,
-      }]);
+      if (svgWatermark) {
+        imageProcessor = imageProcessor.composite([{
+          input: Buffer.from(svgWatermark),
+          gravity: gravity,
+        }]);
+      }
     }
 
     const processedBuffer = await imageProcessor

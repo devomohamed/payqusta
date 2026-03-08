@@ -34,6 +34,7 @@ const {
   migrateLocalUploadsToDatabase,
   shouldRunLocalUploadMigration,
 } = require('./src/services/uploadMigrationService');
+const { ensureIdentifierIndexes } = require('./src/services/productSkuIndexMigrationService');
 
 class PayQustaServer {
   constructor() {
@@ -84,6 +85,12 @@ class PayQustaServer {
       logger.info('✅ Data migration for WhatsApp fields completed');
     } catch (err) {
       logger.error(`❌ Data migration failed: ${err.message}`);
+    }
+
+    try {
+      await ensureIdentifierIndexes({ logger });
+    } catch (err) {
+      logger.error(`[PRODUCT_IDENTIFIER_INDEX] Migration failed: ${err.message}`);
     }
 
     this._scheduleLocalUploadMigration();

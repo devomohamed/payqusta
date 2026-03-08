@@ -18,4 +18,9 @@ describe('Products API Smoke Tests', () => {
         const res = await api.get('/api/v1/products/65d5f8c9b3a4a00012345678');
         expect(res.status).not.toBe(500);
     });
+
+    test('GET /api/v1/products/barcode/:code should not return 500', async () => {
+        const res = await api.get('/api/v1/products/barcode/123456789012');
+        expect(res.status).not.toBe(500);
+    });
 });

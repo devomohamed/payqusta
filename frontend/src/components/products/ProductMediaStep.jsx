@@ -128,7 +128,7 @@ export default function ProductMediaStep({
     const addSizeSet = () => {
         const newVars = SIZE_PRESETS.map(size => ({
             attributes: { 'الحجم': size, 'اللون': '' },
-            sku: '', barcode: '',
+            sku: '', barcode: '', internationalBarcode: '', internationalBarcodeType: 'UNKNOWN', localBarcode: '', localBarcodeType: 'CODE128',
             price: form.price || '', cost: form.costPrice || '',
             stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
         }));
@@ -139,7 +139,7 @@ export default function ProductMediaStep({
         const colors = ['أسود', 'أبيض', 'أحمر', 'أزرق', 'أخضر'];
         const newVars = colors.map(color => ({
             attributes: { 'الحجم': '', 'اللون': color },
-            sku: '', barcode: '',
+            sku: '', barcode: '', internationalBarcode: '', internationalBarcodeType: 'UNKNOWN', localBarcode: '', localBarcodeType: 'CODE128',
             price: form.price || '', cost: form.costPrice || '',
             stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
         }));
@@ -148,7 +148,7 @@ export default function ProductMediaStep({
 
     const addBlankVariant = () => onAddVariant({
         attributes: { 'الحجم': '', 'اللون': '' },
-        sku: '', barcode: '',
+        sku: '', barcode: '', internationalBarcode: '', internationalBarcodeType: 'UNKNOWN', localBarcode: '', localBarcodeType: 'CODE128',
         price: form.price || '', cost: form.costPrice || '',
         stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
     });
@@ -411,11 +411,19 @@ export default function ProductMediaStep({
                                                         className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
                                                 </div>
 
-                                                {/* Barcode */}
+                                                {/* International Barcode */}
                                                 <div className="lg:col-span-1">
-                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">الباركود</label>
-                                                    <input type="text" placeholder="6001234..." value={v.barcode || ''}
-                                                        onChange={e => onUpdateVariant(idx, 'barcode', e.target.value)}
+                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">الباركود الدولي</label>
+                                                    <input type="text" placeholder="6001234..." value={v.internationalBarcode || v.barcode || ''}
+                                                        onChange={e => onUpdateVariant(idx, 'internationalBarcode', e.target.value)}
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                </div>
+
+                                                {/* Local Barcode */}
+                                                <div className="lg:col-span-1">
+                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">الباركود المحلي</label>
+                                                    <input type="text" placeholder="000000000001" value={v.localBarcode || ''}
+                                                        onChange={e => onUpdateVariant(idx, 'localBarcode', e.target.value)}
                                                         className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
                                                 </div>
 

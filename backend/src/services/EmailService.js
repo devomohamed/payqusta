@@ -11,7 +11,23 @@ class EmailService {
   constructor() {
     this.transporter = null;
     this.initialized = false;
-    this.from = process.env.EMAIL_FROM || 'noreply@payqusta.com';
+  }
+
+  getFromHeader() {
+    const configuredFrom = (process.env.EMAIL_FROM || '').trim();
+
+    if (configuredFrom) {
+      if (configuredFrom.includes('<') && configuredFrom.includes('>')) {
+        return configuredFrom;
+      }
+
+      if (configuredFrom.includes('@')) {
+        return `"PayQusta" <${configuredFrom}>`;
+      }
+    }
+
+    const fallbackAddress = (process.env.EMAIL_USER || 'noreply@payqusta.com').trim();
+    return `"PayQusta" <${fallbackAddress}>`;
   }
 
   /**
@@ -62,7 +78,7 @@ class EmailService {
 
     try {
       const mailOptions = {
-        from: `"PayQusta" <${this.from}>`,
+        from: this.getFromHeader(),
         to,
         subject,
         text,

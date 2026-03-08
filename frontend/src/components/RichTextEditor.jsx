@@ -3,6 +3,8 @@ import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import * as Emoji from 'quill-emoji';
+import 'quill-emoji/dist/quill-emoji.css';
 
 import { api } from '../store';
 import { getUserFriendlyErrorMessage } from '../utils/errorMapper';
@@ -11,6 +13,7 @@ import { resolveMediaUrl } from '../utils/media';
 const SizeAttributor = Quill.import('attributors/class/size');
 SizeAttributor.whitelist = ['small', 'large', 'huge'];
 Quill.register(SizeAttributor, true);
+Quill.register('modules/emoji', Emoji);
 
 const TOOLBAR_LAYOUT = [
   [{ header: [1, 2, 3, false] }, { size: ['small', false, 'large', 'huge'] }],
@@ -18,7 +21,7 @@ const TOOLBAR_LAYOUT = [
   [{ color: [] }, { background: [] }],
   [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
   [{ direction: 'rtl' }, { align: [] }],
-  ['link', 'image', 'video'],
+  ['link', 'image', 'video', 'emoji'],
   [{ script: 'sub' }, { script: 'super' }],
   ['clean'],
 ];
@@ -41,6 +44,7 @@ const SUPPORTED_FORMATS = [
   'link',
   'image',
   'video',
+  'emoji',
   'script',
 ];
 
@@ -246,8 +250,9 @@ export default function RichTextEditor({ value, onChange, label, className = '',
     '.ql-clean': t('editor.clean'),
     '.ql-color': t('editor.color', { defaultValue: 'لون الخط' }),
     '.ql-background': t('editor.background', { defaultValue: 'لون الخلفية' }),
-    '.ql-size': t('editor.size'),
-    '.ql-header': t('editor.header'),
+    '.ql-size': t('editor.size', { defaultValue: 'حجم الخط' }),
+    '.ql-header': t('editor.header', { defaultValue: 'نوع النص' }),
+    '.ql-emoji': t('editor.emoji', { defaultValue: 'ملصقات وفيسات' })
   }), [t]);
 
   const handlers = useMemo(() => ({
@@ -353,7 +358,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
 
           toast.error(
             error?.response?.data?.message ||
-              t('editor.image_upload_failed', { defaultValue: 'فشل رفع الصورة' }),
+            t('editor.image_upload_failed', { defaultValue: 'فشل رفع الصورة' }),
             { id: loadingToast }
           );
         }
@@ -417,11 +422,14 @@ export default function RichTextEditor({ value, onChange, label, className = '',
     clipboard: {
       matchVisual: false,
     },
+    'emoji-toolbar': true,
+    'emoji-textarea': false,
+    'emoji-shortname': true,
   }), [handlers]);
 
   useEffect(() => {
     let frameId = 0;
-    let cleanup = () => {};
+    let cleanup = () => { };
 
     const setupToolbar = () => {
       const quill = quillRef.current?.getEditor();
@@ -435,25 +443,9 @@ export default function RichTextEditor({ value, onChange, label, className = '',
       quill.root.setAttribute('dir', 'rtl');
       quill.root.setAttribute('lang', i18n.language || 'ar');
 
-      const applyPickerLabels = (picker, labels) => {
+      const initializePickerItems = (picker, labels) => {
         if (!picker) return;
-
-        const pickerLabelElement = picker.querySelector('.ql-picker-label');
         const pickerItems = picker.querySelectorAll('.ql-picker-item');
-        const currentValue = pickerLabelElement?.getAttribute('data-value');
-        const currentKey = currentValue === '' || currentValue == null ? 'false' : currentValue;
-        const currentLabel = labels[currentKey] || labels.false || '';
-        const pickerPrefix = picker.classList.contains('ql-size')
-          ? t('editor.size', { defaultValue: 'حجم الخط' })
-          : picker.classList.contains('ql-header')
-            ? t('editor.header', { defaultValue: 'نوع النص' })
-            : '';
-
-        if (pickerLabelElement) {
-          pickerLabelElement.setAttribute('data-label', currentLabel);
-          pickerLabelElement.setAttribute('data-prefix', pickerPrefix);
-        }
-
         pickerItems.forEach((item) => {
           const itemValue = item.getAttribute('data-value');
           const itemKey = itemValue === '' || itemValue == null ? 'false' : itemValue;
@@ -461,20 +453,64 @@ export default function RichTextEditor({ value, onChange, label, className = '',
         });
       };
 
-      const syncToolbarLabels = () => {
-        applyPickerLabels(toolbar.querySelector('.ql-picker.ql-header'), headerPickerLabels);
-        applyPickerLabels(toolbar.querySelector('.ql-picker.ql-size'), sizePickerLabels);
+      const syncPickerLabel = (picker, labels) => {
+        if (!picker) return;
+
+        const pickerLabelElement = picker.querySelector('.ql-picker-label');
+        if (!pickerLabelElement) return;
+
+        const currentValue = pickerLabelElement.getAttribute('data-value');
+        const currentKey = currentValue === '' || currentValue == null ? 'false' : currentValue;
+        const currentLabel = labels[currentKey] || labels.false || '';
+        const pickerPrefix = picker.classList.contains('ql-size')
+          ? t('editor.size_prefix', { defaultValue: 'حجم الخط: ' })
+          : picker.classList.contains('ql-header')
+            ? t('editor.header_prefix', { defaultValue: 'نوع النص: ' })
+            : '';
+
+        // Only update if changed to prevent reflows
+        if (pickerLabelElement.getAttribute('data-label') !== currentLabel) {
+          pickerLabelElement.setAttribute('data-label', currentLabel);
+        }
+        if (pickerLabelElement.getAttribute('data-prefix') !== pickerPrefix) {
+          pickerLabelElement.setAttribute('data-prefix', pickerPrefix);
+        }
       };
+
+      const syncToolbarLabels = () => {
+        syncPickerLabel(toolbar.querySelector('.ql-picker.ql-header'), headerPickerLabels);
+        syncPickerLabel(toolbar.querySelector('.ql-picker.ql-size'), sizePickerLabels);
+      };
+
+      // Initialize items once
+      initializePickerItems(toolbar.querySelector('.ql-picker.ql-header'), headerPickerLabels);
+      initializePickerItems(toolbar.querySelector('.ql-picker.ql-size'), sizePickerLabels);
 
       Object.entries(toolbarLabels).forEach(([selector, text]) => {
         toolbar.querySelectorAll(selector).forEach((element) => {
-          element.setAttribute('title', text);
-          element.setAttribute('aria-label', text);
-          element.setAttribute('data-tooltip', text);
+          if (element.classList.contains('ql-picker')) {
+            element.removeAttribute('title');
+            element.removeAttribute('aria-label');
+            element.removeAttribute('data-tooltip');
+            const labelEl = element.querySelector('.ql-picker-label');
+            if (labelEl) {
+              labelEl.setAttribute('title', text);
+              labelEl.setAttribute('aria-label', text);
+              labelEl.setAttribute('data-tooltip', text);
+            }
+          } else {
+            element.setAttribute('title', text);
+            element.setAttribute('aria-label', text);
+            element.setAttribute('data-tooltip', text);
+          }
         });
       });
 
       toolbar.querySelectorAll('.ql-picker').forEach((picker) => {
+        picker.removeAttribute('title');
+        picker.removeAttribute('aria-label');
+        picker.removeAttribute('data-tooltip');
+
         const pickerLabelElement = picker.querySelector('.ql-picker-label');
         const label = picker.classList.contains('ql-size')
           ? t('editor.size')
@@ -484,10 +520,10 @@ export default function RichTextEditor({ value, onChange, label, className = '',
               ? t('editor.align')
               : '';
 
-        if (label) {
-          pickerLabelElement?.setAttribute('title', label);
-          pickerLabelElement?.setAttribute('aria-label', label);
-          pickerLabelElement?.setAttribute('data-tooltip', label);
+        if (label && pickerLabelElement) {
+          pickerLabelElement.setAttribute('title', label);
+          pickerLabelElement.setAttribute('aria-label', label);
+          pickerLabelElement.setAttribute('data-tooltip', label);
         }
       });
 
@@ -728,52 +764,37 @@ export default function RichTextEditor({ value, onChange, label, className = '',
 
         .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label,
         .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label {
-          height: 40px;
-          align-items: flex-start;
-          justify-content: center;
-          gap: 2px;
-          padding: 5px 24px 5px 10px !important;
+          height: 30px;
+          align-items: center;
+          justify-content: flex-start;
+          padding: 0 24px 0 10px !important;
         }
 
         .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label::before,
         .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label::before {
-          content: attr(data-prefix) !important;
+          content: attr(data-prefix) ": " attr(data-label) !important;
           font-family: 'Cairo', sans-serif !important;
-          font-size: 10px;
+          font-size: 12px;
           font-weight: 700;
-          line-height: 1;
-          color: #94a3b8;
+          color: #334155;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
         }
 
         .dark .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label::before,
         .dark .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label::before {
-          color: #94a3b8;
+          color: #e2e8f0;
         }
 
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label::after,
-        .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label::after,
         .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-item::before,
         .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-item::before {
           content: attr(data-label) !important;
           font-family: 'Cairo', sans-serif !important;
-          font-size: 12px;
-          font-weight: 800;
-          line-height: 1.15;
+          font-size: 13px;
+          font-weight: 700;
           white-space: nowrap;
-        }
-
-        .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label::after,
-        .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label::after {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 88px;
-          color: #334155;
-        }
-
-        .dark .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-label::after,
-        .dark .rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label::after {
-          color: #e2e8f0;
         }
 
         .rich-text-editor .ql-snow .ql-picker.ql-header .ql-picker-item,
@@ -894,7 +915,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
           border-radius: 0 0 26px 26px;
           min-height: ${minHeight}px;
           font-family: 'Cairo', sans-serif !important;
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+          background: transparent !important;
         }
 
         .rich-text-editor .ql-editor {
@@ -909,7 +930,6 @@ export default function RichTextEditor({ value, onChange, label, className = '',
 
         .dark .rich-text-editor .ql-editor {
           color: #f1f5f9;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.35) 100%);
         }
 
         .rich-text-editor .ql-editor p {

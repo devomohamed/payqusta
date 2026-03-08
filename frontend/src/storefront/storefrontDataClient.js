@@ -223,3 +223,10 @@ export function loadStorefrontProducts(params = {}, options = {}) {
     params,
   });
 }
+
+export function loadStorefrontProductByBarcode(code, options = {}) {
+  return storefrontGet(`/products/barcode/${encodeURIComponent(code)}`, {
+    ttlMs: 0,
+    ...options,
+  });
+}

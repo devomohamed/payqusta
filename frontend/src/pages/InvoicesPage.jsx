@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter, Link as LinkIcon, Copy, ExternalLink } from 'lucide-react';
+import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter, Link as LinkIcon, Copy, ExternalLink, Printer, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
-import { invoicesApi, customersApi, productsApi } from '../store';
+import { invoicesApi, customersApi, productsApi, settingsApi } from '../store';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState, OwnerTableSkeleton } from '../components/UI';
 import Pagination from '../components/Pagination';
+import { printDeliveryTicket, printReceiptDocument } from '../utils/invoicePrint';
 
 export default function InvoicesPage() {
   const FILTERS_STORAGE_KEY = 'owner_invoices_filters_v1';
@@ -248,6 +249,55 @@ export default function InvoicesPage() {
     }
   };
 
+  const handlePrintDocument = async (invoiceSummary, type = 'receipt') => {
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=980');
+    if (!printWindow) {
+      toast.error('Ø§Ù„Ù…ØªØµÙØ­ Ù…Ù†Ø¹ Ù†Ø§ÙØ°Ø© Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©');
+      return;
+    }
+
+    printWindow.document.write('<!doctype html><html dir="rtl" lang="ar"><head><title>Loading...</title></head><body style="font-family:Segoe UI,Tahoma,Arial,sans-serif;padding:24px">Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² Ù‚Ø§Ù„Ø¨ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©...</body></html>');
+    printWindow.document.close();
+
+    const loadingToast = toast.loading(type === 'receipt' ? 'Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø¥ÙŠØµØ§Ù„...' : 'Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² ØªÙŠÙƒÙŠØª Ø§Ù„ØªÙˆØµÙŠÙ„...');
+
+    try {
+      const [invoiceResponse, settingsResponse] = await Promise.all([
+        invoicesApi.getById(invoiceSummary._id),
+        settingsApi.get(),
+      ]);
+
+      const invoice = invoiceResponse?.data?.data;
+      const tenant = settingsResponse?.data?.data?.tenant;
+      const barcodeSettings = tenant?.settings?.barcode || {};
+
+      if (!invoice?._id) {
+        throw new Error('INVOICE_NOT_FOUND');
+      }
+
+      if (type === 'receipt') {
+        printReceiptDocument({
+          invoice,
+          tenant,
+          barcodeSource: barcodeSettings.receiptBarcodeSource || 'none',
+          printWindow,
+        });
+      } else {
+        printDeliveryTicket({
+          invoice,
+          tenant,
+          barcodeSource: barcodeSettings.deliveryBarcodeSource || 'none',
+          printWindow,
+        });
+      }
+
+      toast.success(type === 'receipt' ? 'ØªÙ… ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø¥ÙŠØµØ§Ù„ Ù„Ù„Ø·Ø¨Ø§Ø¹Ø©' : 'ØªÙ… ØªØ¬Ù‡ÙŠØ² ØªÙŠÙƒÙŠØª Ø§Ù„ØªÙˆØµÙŠÙ„ Ù„Ù„Ø·Ø¨Ø§Ø¹Ø©', { id: loadingToast });
+    } catch (err) {
+      printWindow.close();
+      toast.error(err.response?.data?.message || 'ØªØ¹Ø°Ø± ØªØ¬Ù‡ÙŠØ² Ù…Ø³ØªÙ†Ø¯ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©', { id: loadingToast });
+    }
+  };
+
   const fmt = (n) => (n || 0).toLocaleString('ar-EG');
   const statusBadge = (s) => ({
     paid: <Badge variant="success">مدفوع</Badge>,
@@ -418,6 +468,20 @@ export default function InvoicesPage() {
                               <ExternalLink className="w-4 h-4" />
                             </button>
                           )}
+                          <button
+                            onClick={() => handlePrintDocument(inv, 'receipt')}
+                            className="p-2 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-500/10 dark:text-slate-300 dark:hover:bg-slate-500/20 transition-colors"
+                            title="طباعة الإيصال"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handlePrintDocument(inv, 'delivery')}
+                            className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 dark:bg-cyan-500/10 dark:text-cyan-300 dark:hover:bg-cyan-500/20 transition-colors"
+                            title="طباعة تيكيت التوصيل"
+                          >
+                            <Truck className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleSendWhatsApp(inv)}
                             className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-400 dark:hover:bg-green-500/20 transition-colors"

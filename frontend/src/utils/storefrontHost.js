@@ -85,3 +85,17 @@ export function getStorefrontDomainUrl(
 
   return normalizedOrigin ? `${normalizedOrigin}${fallbackPath}` : fallbackPath;
 }
+
+export function getBackofficeDashboardUrl(
+  hostname = window.location.hostname,
+  protocol = window.location.protocol
+) {
+  const normalizedHost = normalizeHostname(hostname);
+  const normalizedProtocol = protocol === 'http:' || protocol === 'https:' ? protocol : 'https:';
+
+  if (!normalizedHost || isLocalStorefrontHost(normalizedHost)) {
+    return '/';
+  }
+
+  return `${normalizedProtocol}//${PLATFORM_ROOT_DOMAIN}/`;
+}

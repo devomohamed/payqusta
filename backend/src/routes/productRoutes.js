@@ -22,6 +22,7 @@ router.put('/:id', authorize('vendor', 'admin'), checkPermission('products', 'up
 router.delete('/:id', authorize('vendor', 'admin'), checkPermission('products', 'delete'), auditLog('delete', 'product'), productController.delete);
 router.patch('/:id/suspend', authorize('vendor', 'admin'), checkPermission('products', 'update'), auditLog('update', 'product'), productController.setSuspended);
 router.patch('/:id/stock', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'update'), auditLog('stock_change', 'product'), productController.updateStock);
+router.post('/:id/generate-local-barcode', authorize('vendor', 'admin'), checkPermission('products', 'update'), auditLog('update', 'product'), productController.generateLocalBarcode);
 router.post('/:id/upload-image', authorize('vendor', 'admin'), checkPermission('products', 'update'), uploadMultiple, productController.uploadImage);
 router.post('/upload-image', authorize('vendor', 'admin', 'coordinator'), checkPermission('products', 'create'), uploadEditorImages, productController.uploadEditorImages);
 

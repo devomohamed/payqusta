@@ -1,13 +1,16 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, ChevronDown, Package, MessageCircle, PhoneCall } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, ChevronDown, Package, MessageCircle, PhoneCall, Camera, LayoutDashboard } from 'lucide-react';
 import { usePortalStore } from '../store/portalStore';
+import { useAuthStore } from '../store';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import NotificationDropdown from '../components/NotificationDropdown';
-import { storefrontPath } from '../utils/storefrontHost';
+import BarcodeScanner from '../components/BarcodeScanner';
+import { getBackofficeDashboardUrl, storefrontPath } from '../utils/storefrontHost';
 import { pickProductImage } from '../utils/media';
 import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
 import {
+  loadStorefrontProductByBarcode,
   loadStorefrontProducts,
   loadStorefrontSettings,
 } from './storefrontDataClient';
@@ -38,17 +41,19 @@ export default function StorefrontLayout({ children }) {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchCatalog, setSearchCatalog] = useState([]);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const searchRef = useRef(null);
   const searchTimeout = useRef(null);
   const bootstrappedRef = useRef(false);
 
-  const { categories, fetchCategories, isAuthenticated, customer, cart } = usePortalStore((state) => ({
-    categories: state.categories,
-    fetchCategories: state.fetchCategories,
-    isAuthenticated: state.isAuthenticated,
-    customer: state.customer,
-    cart: state.cart,
-  }));
+  const categories = usePortalStore(state => state.categories);
+  const fetchCategories = usePortalStore(state => state.fetchCategories);
+  const isAuthenticated = usePortalStore(state => state.isAuthenticated);
+  const customer = usePortalStore(state => state.customer);
+  const cart = usePortalStore(state => state.cart);
+
+  const isAdminAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const adminUser = useAuthStore(state => state.user);
 
   const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const trackOrderPath = storefrontPath('/track-order');
@@ -57,9 +62,17 @@ export default function StorefrontLayout({ children }) {
   const accountEntryLabel = isAuthenticated ? (customer?.name?.split(' ')[0] || 'حسابي') : 'تسجيل الدخول';
   const AccountEntryIcon = User;
   const isProductDetailsPage = /\/products\/[^/]+$/.test(location.pathname);
+  const canAccessBackoffice = isAdminAuthenticated && (
+    adminUser?.role === 'admin' ||
+    adminUser?.isSuperAdmin ||
+    adminUser?.email?.toLowerCase() === 'super@payqusta.com'
+  );
+  const backofficeDashboardUrl = getBackofficeDashboardUrl();
+  const showSupportFab = !isProductDetailsPage;
 
   const directSupportPhone = settings?.store?.phone?.trim() || '';
   const publicSupportHref = directSupportPhone ? `tel:${directSupportPhone}` : storefrontPath('/track-order');
+  const storefrontBarcodeSearchEnabled = settings?.settings?.barcode?.storefrontBarcodeSearchEnabled === true;
   const headerSearchSuggestions = buildStorefrontSearchSuggestions({
     products: searchCatalog,
     categories,
@@ -145,6 +158,25 @@ export default function StorefrontLayout({ children }) {
     }
   };
 
+  const handleBarcodeLookup = async (payload) => {
+    const code = payload?.value || payload;
+    if (!code) return;
+
+    try {
+      const response = await loadStorefrontProductByBarcode(code, { ttlMs: 0 });
+      const product = response?.data?.data;
+      if (!product?._id) throw new Error('PRODUCT_NOT_FOUND');
+
+      setShowBarcodeScanner(false);
+      setSearchOpen(false);
+      setSearchQuery('');
+      setSearchResults([]);
+      navigate(storefrontPath(`/products/${product._id}`));
+    } catch (_) {
+      setShowBarcodeScanner(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* ─── HEADER ─── */}
@@ -220,6 +252,16 @@ export default function StorefrontLayout({ children }) {
                       placeholder="ابحث عن منتج..."
                       className="flex-1 py-2 pr-1 pl-3 bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none placeholder-gray-400 min-w-0"
                     />
+                    {storefrontBarcodeSearchEnabled ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowBarcodeScanner(true)}
+                        className="p-1 text-gray-400 hover:text-primary-600 flex-shrink-0"
+                        title="بحث بالباركود"
+                      >
+                        <Camera className="w-4 h-4" />
+                      </button>
+                    ) : null}
                     {searchQuery && <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(true); }} className="p-1 ml-1 text-gray-400 hover:text-gray-600 flex-shrink-0"><X className="w-3 h-3" /></button>}
                   </div>
                 </form>
@@ -274,6 +316,21 @@ export default function StorefrontLayout({ children }) {
 
               <LanguageSwitcher />
 
+              {!canAccessBackoffice ? (
+                <Link to="/portal/register" className="relative group hidden md:inline-flex items-center justify-center mr-2">
+                  <span className="absolute inset-0 w-full h-full rounded-full bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600 opacity-60 blur-sm animate-pulse group-hover:opacity-100 transition-opacity duration-300"></span>
+                  <span className="relative z-10 font-bold text-xs text-white bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 rounded-full shadow-md transform group-hover:-translate-y-0.5 transition-all duration-300">
+                    انشاء متجرك
+                  </span>
+                </Link>
+              ) : null}
+
+              {canAccessBackoffice && (
+                <a href={backofficeDashboardUrl} className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50 rounded-xl transition-colors text-sm font-bold border border-primary-200 dark:border-primary-800">
+                  لوحة التحكم
+                </a>
+              )}
+
               <Link to={accountEntryPath} className="hidden sm:flex items-center gap-1.5 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm text-gray-700 dark:text-gray-300 font-medium">
                 <AccountEntryIcon className="w-4 h-4" /> {accountEntryLabel}
               </Link>
@@ -307,6 +364,11 @@ export default function StorefrontLayout({ children }) {
                 <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-2xl px-3 py-2.5 border-2 border-transparent focus-within:border-primary-300">
                   <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <input type="text" value={searchQuery} onFocus={() => setSearchOpen(true)} onChange={e => handleSearch(e.target.value)} placeholder="ابحث عن منتج..." className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none placeholder-gray-400" />
+                  {storefrontBarcodeSearchEnabled ? (
+                    <button type="button" onClick={() => setShowBarcodeScanner(true)} className="text-gray-400 hover:text-primary-600">
+                      <Camera className="w-4 h-4" />
+                    </button>
+                  ) : null}
                 </div>
                 {searchOpen && (searchResults.length > 0 || headerSearchSuggestions.categories.length > 0) && (
                   <div className="mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -345,6 +407,11 @@ export default function StorefrontLayout({ children }) {
                 )}
               </form>
               <nav className="flex flex-col gap-2">
+                {canAccessBackoffice && (
+                  <a href={backofficeDashboardUrl} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2.5 rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-bold border border-primary-200 dark:border-primary-800 transition-colors">
+                    لوحة التحكم
+                  </a>
+                )}
                 {[{ to: storefrontPath('/'), label: 'الرئيسية' }, { to: storefrontPath('/products'), label: 'المنتجات' }, { to: seasonalLandingPath, label: 'العروض' }, { to: storefrontPath('/about'), label: 'من نحن' }, { to: accountEntryPath, label: accountEntryLabel }].map(item => (
                   <Link key={item.to} to={item.to} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2.5 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-600 font-medium transition-colors">
                     {item.label}
@@ -372,6 +439,13 @@ export default function StorefrontLayout({ children }) {
         {children}
       </main>
 
+      {showBarcodeScanner ? (
+        <BarcodeScanner
+          onScan={handleBarcodeLookup}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      ) : null}
+
       {/* ─── FOOTER ─── */}
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -396,14 +470,41 @@ export default function StorefrontLayout({ children }) {
               </div>
             </div>
           </div>
-          <div className="border-t border-gray-100 dark:border-gray-700 mt-8 pt-6 text-center text-sm text-gray-400">
-            © {new Date().getFullYear()} {settings?.store?.name || 'PayQusta'}. جميع الحقوق محفوظة.
+          <div className="border-t border-gray-100 dark:border-gray-700 mt-8 pt-8 flex flex-col items-center gap-5">
+            {!canAccessBackoffice ? (
+              <Link to="/portal/register" className="relative group inline-flex items-center justify-center">
+                <span className="absolute inset-0 w-full h-full rounded-full bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600 opacity-60 blur-md animate-pulse group-hover:opacity-100 transition-opacity duration-500"></span>
+                <span className="relative z-10 font-black text-sm text-white bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-2.5 rounded-full shadow-lg transform group-hover:scale-105 transition-all duration-300">
+                  انشاء متجرك
+                </span>
+              </Link>
+            ) : null}
+            <div className="text-center text-sm font-bold text-gray-500 dark:text-gray-400">
+              جميع الحقوق محفوظة منصة PAYQUSTA للمتاجر الاكترونية برمجة FREE SOFT
+            </div>
           </div>
         </div>
       </footer>
 
+      {canAccessBackoffice ? (
+        <a
+          href={backofficeDashboardUrl}
+          className={`fixed right-6 z-50 flex items-center justify-center gap-3 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-[0_18px_44px_rgba(15,23,42,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-[0_22px_54px_rgba(15,23,42,0.2)] dark:border-slate-700/80 dark:bg-slate-900/95 ${showSupportFab ? 'bottom-24 sm:bottom-28' : 'bottom-6'} ${mobileMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+          title="العودة إلى لوحة التحكم"
+          aria-label="العودة إلى لوحة التحكم"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 via-primary-500 to-slate-900 text-white shadow-lg shadow-primary-500/20">
+            <LayoutDashboard className="w-5 h-5" />
+          </span>
+          <span className="hidden sm:flex flex-col text-right leading-tight">
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">إدارة المتجر</span>
+            <span className="text-sm font-black text-slate-900 dark:text-white">لوحة التحكم</span>
+          </span>
+        </a>
+      ) : null}
+
       {/* Floating Support Button */}
-      {!isProductDetailsPage && customer ? (
+      {showSupportFab && customer ? (
         <Link
           to="/portal/support"
           className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"
@@ -411,7 +512,7 @@ export default function StorefrontLayout({ children }) {
           <MessageCircle className="w-5 h-5" />
           <span className="font-bold text-sm">الدعم المباشر</span>
         </Link>
-      ) : !isProductDetailsPage ? (
+      ) : showSupportFab ? (
         <a
           href={publicSupportHref}
           className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-primary-600 text-white px-4 py-3 rounded-full shadow-2xl hover:bg-primary-500 transition-colors"

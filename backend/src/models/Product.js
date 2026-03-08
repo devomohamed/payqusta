@@ -5,6 +5,12 @@
 
 const mongoose = require('mongoose');
 const { STOCK_STATUS } = require('../config/constants');
+const {
+  normalizeBarcodeValue,
+  normalizeInternationalBarcodeType,
+  normalizeProductBarcodeFields,
+  normalizeSkuValue,
+} = require('../utils/barcodeHelpers');
 const logger = require('../utils/logger');
 
 async function dispatchBackInStockNotifications(product) {
@@ -119,6 +125,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       trim: true,
       uppercase: true,
+      set: normalizeSkuValue,
     },
     description: { type: String, maxlength: 10000 },
     category: {
@@ -205,7 +212,19 @@ const productSchema = new mongoose.Schema(
     images: [{ type: String }],
     thumbnail: { type: String },
     // Metadata
-    barcode: { type: String },
+    barcode: { type: String, set: normalizeBarcodeValue },
+    internationalBarcode: { type: String, set: normalizeBarcodeValue },
+    internationalBarcodeType: {
+      type: String,
+      enum: ['UPC_A', 'UPC_E', 'EAN_8', 'EAN_13', 'QR_CODE', 'UNKNOWN'],
+      set: (value) => (value ? normalizeInternationalBarcodeType(value) : undefined),
+    },
+    localBarcode: { type: String, set: normalizeBarcodeValue },
+    localBarcodeType: {
+      type: String,
+      enum: ['CODE128'],
+      default: undefined,
+    },
     tags: [{ type: String }],
     isActive: { type: Boolean, default: true },
     isSuspended: { type: Boolean, default: false },
@@ -216,7 +235,7 @@ const productSchema = new mongoose.Schema(
     hasVariants: { type: Boolean, default: false },
     variants: [
       {
-        sku: { type: String, trim: true, uppercase: true },
+        sku: { type: String, trim: true, uppercase: true, set: normalizeSkuValue },
         attributes: {
           type: Map,
           of: String,
@@ -240,7 +259,19 @@ const productSchema = new mongoose.Schema(
             ],
           }
         ],
-        barcode: { type: String },
+        barcode: { type: String, set: normalizeBarcodeValue },
+        internationalBarcode: { type: String, set: normalizeBarcodeValue },
+        internationalBarcodeType: {
+          type: String,
+          enum: ['UPC_A', 'UPC_E', 'EAN_8', 'EAN_13', 'QR_CODE', 'UNKNOWN'],
+          set: (value) => (value ? normalizeInternationalBarcodeType(value) : undefined),
+        },
+        localBarcode: { type: String, set: normalizeBarcodeValue },
+        localBarcodeType: {
+          type: String,
+          enum: ['CODE128'],
+          default: undefined,
+        },
         isActive: { type: Boolean, default: true },
       },
     ],
@@ -282,12 +313,38 @@ const productSchema = new mongoose.Schema(
 );
 
 // Indexes
-productSchema.index({ tenant: 1, sku: 1 }, { unique: true, sparse: true });
+const NON_EMPTY_STRING_FILTER = { $type: 'string', $gt: '' };
+
+productSchema.index(
+  { tenant: 1, sku: 1 },
+  {
+    name: 'tenant_1_sku_1',
+    unique: true,
+    partialFilterExpression: { sku: NON_EMPTY_STRING_FILTER },
+  }
+);
 productSchema.index(
   { tenant: 1, barcode: 1 },
   {
+    name: 'tenant_1_barcode_1',
     unique: true,
-    partialFilterExpression: { barcode: { $type: 'string' } }
+    partialFilterExpression: { barcode: NON_EMPTY_STRING_FILTER }
+  }
+);
+productSchema.index(
+  { tenant: 1, internationalBarcode: 1 },
+  {
+    name: 'tenant_1_internationalBarcode_1',
+    unique: true,
+    partialFilterExpression: { internationalBarcode: NON_EMPTY_STRING_FILTER }
+  }
+);
+productSchema.index(
+  { tenant: 1, localBarcode: 1 },
+  {
+    name: 'tenant_1_localBarcode_1',
+    unique: true,
+    partialFilterExpression: { localBarcode: NON_EMPTY_STRING_FILTER }
   }
 );
 productSchema.index({ tenant: 1, name: 'text', description: 'text' });
@@ -309,9 +366,7 @@ productSchema.virtual('profitPerUnit').get(function () {
 
 // Pre-save: Update global stock from inventory and set status
 productSchema.pre('save', function (next) {
-  // Convert empty strings or null to undefined for sparse indexes
-  if (this.sku === '' || this.sku === null) this.sku = undefined;
-  if (this.barcode === '' || this.barcode === null) this.barcode = undefined;
+  normalizeProductBarcodeFields(this);
 
   // Sync Inventory -> Global Stock
   if (this.inventory && this.inventory.length > 0) {

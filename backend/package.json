@@ -8,6 +8,7 @@
     "dev": "nodemon --max-http-header-size=81920 server.js",
     "seed": "node src/utils/seeder.js",
     "migrate:uploads": "node scripts/migrate-local-uploads-to-db.js",
+    "migrate:barcodes": "node scripts/migrate-legacy-barcodes.js",
     "test": "jest --coverage",
     "test:api": "jest --runInBand tests/integration tests/e2e",
     "test:smoke": "jest --runInBand tests/smoke",

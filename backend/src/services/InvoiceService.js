@@ -152,6 +152,11 @@ class InvoiceService {
           variant: item.variantId,
           productName: product.name,
           sku: variant ? variant.sku : product.sku,
+          barcode: variant?.internationalBarcode || variant?.barcode || product.internationalBarcode || product.barcode,
+          internationalBarcode: variant?.internationalBarcode || variant?.barcode || product.internationalBarcode || product.barcode,
+          internationalBarcodeType: variant?.internationalBarcodeType || product.internationalBarcodeType || undefined,
+          localBarcode: variant?.localBarcode || product.localBarcode,
+          localBarcodeType: variant?.localBarcodeType || product.localBarcodeType,
           quantity: item.quantity,
           unitPrice: itemPrice,
           totalPrice,
@@ -335,7 +340,7 @@ class InvoiceService {
           }
         } else {
           if (variant) {
-            variant.stock.quantity -= quantity;
+            variant.stock = Math.max(0, (Number(variant.stock) || 0) - quantity);
           } else {
             product.stock.quantity -= quantity;
           }

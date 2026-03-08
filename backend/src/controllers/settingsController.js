@@ -9,6 +9,10 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const WhatsAppService = require('../services/WhatsAppService');
 const catchAsync = require('../utils/catchAsync');
+const {
+  applyTenantBarcodeSettings,
+  getTenantBarcodeSettings,
+} = require('../utils/barcodeHelpers');
 const logger = require('../utils/logger');
 
 const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
@@ -182,6 +186,9 @@ class SettingsController {
       name: tenant.name,
       businessInfo: tenant.businessInfo,
       branding: tenant.branding,
+      settings: {
+        barcode: getTenantBarcodeSettings(tenant),
+      },
       currency: 'EGP', // Default
       taxRate: 14 // Default
     });
@@ -206,6 +213,12 @@ class SettingsController {
         position: settings.watermark.position,
         opacity: settings.watermark.opacity
       };
+    }
+
+    if (settings?.barcode) {
+      const tenant = await Tenant.findById(req.tenantId).select('settings.barcode');
+      if (!tenant) return next(AppError.notFound('Ø§Ù„Ù…ØªØ¬Ø± ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯'));
+      updateData['settings.barcode'] = applyTenantBarcodeSettings(settings.barcode, tenant);
     }
 
     const tenant = await Tenant.findByIdAndUpdate(

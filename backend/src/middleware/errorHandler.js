@@ -33,6 +33,8 @@ const handleDuplicateKey = (err) => {
 
   const translations = {
     barcode: 'الباركود',
+    internationalBarcode: 'الباركود الدولي',
+    localBarcode: 'الباركود المحلي',
     sku: 'كود SKU',
     phone: 'رقم الهاتف',
     email: 'البريد الإلكتروني',

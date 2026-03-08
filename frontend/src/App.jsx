@@ -9,11 +9,13 @@ import Header from './components/Header';
 import AnimatedNotification from './components/AnimatedNotification';
 import ConfirmDialog from './components/ConfirmDialog';
 import ErrorBoundary from './components/ErrorBoundary';
+import RouteMetadata from './components/RouteMetadata';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
 import AnimatedBrandLogo from './components/AnimatedBrandLogo';
 import { storefrontPath } from './utils/storefrontHost';
 import LoginPage from './pages/LoginPage';
+import PublicLandingPage from './pages/PublicLandingPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
@@ -315,6 +317,7 @@ export default function App() {
   return (
     <div className={dark ? 'dark' : ''}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <RouteMetadata />
         {/* Beautiful Animated Notifications */}
         <AnimatedNotification />
         {/* Global Confirm Dialog */}
@@ -386,6 +389,15 @@ export default function App() {
           } />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/" element={
+            isAuthenticated ? (
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            ) : (
+              <PublicLandingPage />
+            )
+          } />
 
           {/* Main App Routes (Protected) - Must be last */}
           <Route path="/*" element={

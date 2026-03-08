@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { getBarcodeSearchText } from '../utils/barcodeUtils';
 
 // Define the database and its schema
 const db = new Dexie('PayQustaPOS');
@@ -56,7 +57,7 @@ export const searchLocalProducts = async (term) => {
         return (
             (p.name && p.name.toLowerCase().includes(lowerTerm)) ||
             (p.sku && p.sku.toLowerCase().includes(lowerTerm)) ||
-            (p.barcode && p.barcode.includes(term))
+            getBarcodeSearchText(p).includes(term)
         );
     }).limit(50).toArray();
 };

@@ -350,6 +350,7 @@ export const productsApi = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
   getByBarcode: (code) => api.get(`/products/barcode/${code}`),
+  generateLocalBarcode: (id) => api.post(`/products/${id}/generate-local-barcode`),
   create: (data, config = {}) => api.post('/products', data, config),
   update: (id, data, config = {}) => api.put(`/products/${id}`, data, config),
   delete: (id) => api.delete(`/products/${id}`),
@@ -362,7 +363,7 @@ export const productsApi = {
   requestRestockBulk: () => api.post('/products/request-restock-bulk'),
   uploadImage: (id, formData, config = {}) => api.post(`/products/${id}/upload-image`, formData, config),
   deleteImage: (id, imageUrl) => api.delete(`/products/${id}/images/${encodeURIComponent(imageUrl)}`),
-  stocktake: (items) => api.post('/products/stocktake', { items }),
+  stocktake: (payload) => api.post('/products/stocktake', payload),
 };
 
 // Categories API

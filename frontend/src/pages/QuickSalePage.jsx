@@ -7,6 +7,25 @@ import BarcodeScanner, { useBarcodeScanner } from '../components/BarcodeScanner'
 import db, { syncProductsToLocal, syncCustomersToLocal, searchLocalProducts, searchLocalCustomers, savePendingInvoice } from '../db/posDatabase';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { getBarcodeSearchText } from '../utils/barcodeUtils';
+
+function findMatchedVariant(product, code) {
+  const normalizedCode = String(code || '').trim();
+  if (!normalizedCode || !Array.isArray(product?.variants)) return null;
+
+  return product.variants.find((variant) => (
+    [
+      variant?.localBarcode,
+      variant?.internationalBarcode,
+      variant?.barcode,
+      variant?.sku,
+    ].filter(Boolean).includes(normalizedCode)
+  )) || null;
+}
+
+function getAvailableStock(entry) {
+  return Number(entry?.stock?.quantity ?? entry?.stockQuantity ?? entry?.stock) || 0;
+}
 
 export default function QuickSalePage() {
   const [mode, setMode] = useState('sale'); // 'sale' | 'return'
@@ -167,7 +186,7 @@ export default function QuickSalePage() {
     }
 
     const target = variant || product;
-    const stockQty = target.stock?.quantity ?? target.stockQuantity ?? 0;
+    const stockQty = getAvailableStock(target);
     if (stockQty <= 0) return toast.error('المنتج نفذ من المخزون');
 
     const cartKey = variant ? `${product._id}-${variant._id}` : product._id;
@@ -195,21 +214,23 @@ export default function QuickSalePage() {
   };
 
   // Handle barcode scan — shows full product info toast
-  const handleBarcodeScan = async (barcode) => {
+  const handleBarcodeScan = async (payload) => {
+    const barcode = payload?.value || payload;
     try {
       const res = await productsApi.getByBarcode(barcode);
       const product = res.data.data;
+      const matchedVariant = findMatchedVariant(product, barcode);
       const stockQty = product.stock?.quantity ?? 0;
 
       // Show full product details
       toast.success(
         `📦 ${product.name}\n` +
         `السعر: ${product.price?.toLocaleString('ar-EG')} ج.م | المخزون: ${stockQty} ${product.stock?.unit || 'قطعة'}` +
-        (product.sku ? ` | ${product.sku}` : ''),
+        ((matchedVariant?.sku || product.sku) ? ` | ${matchedVariant?.sku || product.sku}` : ''),
         { duration: 3000 }
       );
 
-      addToCart(product);
+      addToCart(product, matchedVariant);
       setShowScanner(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'المنتج غير موجود');
@@ -217,8 +238,8 @@ export default function QuickSalePage() {
   };
 
   // USB Barcode Scanner Hook (works globally)
-  useBarcodeScanner((barcode) => {
-    if (!showScanner && mode === 'sale') handleBarcodeScan(barcode);
+  useBarcodeScanner((payload) => {
+    if (!showScanner && mode === 'sale') handleBarcodeScan(payload);
   }, !showScanner && mode === 'sale');
 
   const updateQty = (key, qty) => {
@@ -237,7 +258,9 @@ export default function QuickSalePage() {
   const totalProfit = cart.reduce((s, i) => s + (i.price - i.cost) * i.quantity, 0);
 
   const filteredProducts = search.length > 0 ? products.filter((p) =>
-    p.name.includes(search) || (p.sku || '').toLowerCase().includes(search.toLowerCase()) || (p.barcode || '').includes(search)
+    p.name.includes(search) ||
+    (p.sku || '').toLowerCase().includes(search.toLowerCase()) ||
+    getBarcodeSearchText(p).toLowerCase().includes(search.toLowerCase())
   ).slice(0, 8) : [];
 
   const filteredCustomers = custSearch.length > 0 ? customers.filter((c) =>
@@ -809,7 +832,7 @@ export default function QuickSalePage() {
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
               {variantPicker.product?.variants.map((v) => {
-                const stock = v.stock?.quantity || 0;
+                const stock = getAvailableStock(v);
                 const attrText = Object.values(v.attributes || {}).join(' - ');
                 return (
                   <button

@@ -31,6 +31,11 @@ export default function SettingsStore() {
     watermarkEnabled: false,
     watermarkText: '',
     watermarkPosition: 'southeast',
+    barcodeMode: 'both',
+    autoGenerateLocalBarcode: false,
+    receiptBarcodeSource: 'none',
+    deliveryBarcodeSource: 'none',
+    storefrontBarcodeSearchEnabled: false,
   });
   const [saving, setSaving] = useState(false);
   const [applyingWatermark, setApplyingWatermark] = useState(false);
@@ -54,6 +59,11 @@ export default function SettingsStore() {
       watermarkEnabled: tenant.settings?.watermark?.enabled || false,
       watermarkText: tenant.settings?.watermark?.text || '',
       watermarkPosition: tenant.settings?.watermark?.position || 'southeast',
+      barcodeMode: tenant.settings?.barcode?.mode || 'both',
+      autoGenerateLocalBarcode: tenant.settings?.barcode?.autoGenerateLocalBarcode || false,
+      receiptBarcodeSource: tenant.settings?.barcode?.receiptBarcodeSource || 'none',
+      deliveryBarcodeSource: tenant.settings?.barcode?.deliveryBarcodeSource || 'none',
+      storefrontBarcodeSearchEnabled: tenant.settings?.barcode?.storefrontBarcodeSearchEnabled || false,
     });
     setSubdomain(tenant.slug || '');
   }, [tenant]);
@@ -79,6 +89,13 @@ export default function SettingsStore() {
             text: storeForm.watermarkText,
             position: storeForm.watermarkPosition,
             opacity: 50,
+          },
+          barcode: {
+            mode: storeForm.barcodeMode,
+            autoGenerateLocalBarcode: storeForm.autoGenerateLocalBarcode,
+            receiptBarcodeSource: storeForm.receiptBarcodeSource,
+            deliveryBarcodeSource: storeForm.deliveryBarcodeSource,
+            storefrontBarcodeSearchEnabled: storeForm.storefrontBarcodeSearchEnabled,
           },
         },
       });
@@ -212,6 +229,77 @@ export default function SettingsStore() {
             onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
             placeholder="المعادي، القاهرة"
           />
+        </div>
+
+        <div className="rounded-2xl border border-primary-100 bg-primary-50/40 p-5 dark:border-primary-900/30 dark:bg-primary-900/10">
+          <div className="mb-4">
+            <h3 className="text-base font-bold text-primary-700 dark:text-primary-300">إعدادات الباركود</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              التحكم في واجهات الباركود المحلي والدولي، والبحث بالكاميرا، ومصادر الباركود المطبوعة.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">وضع الباركود</label>
+              <select
+                value={storeForm.barcodeMode}
+                onChange={(e) => setStoreForm({ ...storeForm, barcodeMode: e.target.value })}
+                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <option value="none">إخفاء واجهات الباركود</option>
+                <option value="international_only">دولي فقط</option>
+                <option value="local_only">محلي فقط</option>
+                <option value="both">محلي + دولي</option>
+              </select>
+            </div>
+
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+              <input
+                type="checkbox"
+                checked={storeForm.autoGenerateLocalBarcode}
+                onChange={(e) => setStoreForm({ ...storeForm, autoGenerateLocalBarcode: e.target.checked })}
+                className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium">توليد الباركود المحلي تلقائيًا عند إنشاء المنتج</span>
+            </label>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">باركود الإيصال</label>
+              <select
+                value={storeForm.receiptBarcodeSource}
+                onChange={(e) => setStoreForm({ ...storeForm, receiptBarcodeSource: e.target.value })}
+                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <option value="none">بدون باركود</option>
+                <option value="international">الباركود الدولي</option>
+                <option value="local">الباركود المحلي</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">باركود تيكيت التوصيل</label>
+              <select
+                value={storeForm.deliveryBarcodeSource}
+                onChange={(e) => setStoreForm({ ...storeForm, deliveryBarcodeSource: e.target.value })}
+                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <option value="none">بدون باركود</option>
+                <option value="international">الباركود الدولي</option>
+                <option value="local">الباركود المحلي</option>
+              </select>
+            </div>
+          </div>
+
+          <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+            <input
+              type="checkbox"
+              checked={storeForm.storefrontBarcodeSearchEnabled}
+              onChange={(e) => setStoreForm({ ...storeForm, storefrontBarcodeSearchEnabled: e.target.checked })}
+              className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm font-medium">تفعيل البحث بالكاميرا داخل المتجر الأمامي</span>
+          </label>
         </div>
 
         <div className="flex justify-end">
