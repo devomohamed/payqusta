@@ -180,26 +180,33 @@ export function downloadBarcodePng(svgMarkup, filename = 'barcode.png') {
 export function printBarcodeLabel({ svgMarkup, title = 'Barcode Label', subtitle = '', caption = '' }) {
   if (!svgMarkup || typeof window === 'undefined') return;
 
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=420,height=640');
-  if (!printWindow) return;
+  // Create a hidden iframe for printing to avoid popup blockers and about:blank issues
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
 
-  printWindow.document.write(`
+  const htmlContent = `
     <!doctype html>
-    <html>
+    <html dir="rtl">
       <head>
         <title>${title}</title>
         <style>
-          body { margin: 0; font-family: Arial, sans-serif; background: #f3f4f6; }
-          .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-          .label { width: 320px; background: #fff; border: 1px solid #d1d5db; border-radius: 16px; padding: 20px; text-align: center; }
+          body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #fff; }
+          .page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+          .label { width: 100%; max-width: 320px; background: #fff; text-align: center; }
           h1 { margin: 0 0 6px; font-size: 18px; }
           p { margin: 0; color: #6b7280; font-size: 12px; }
-          .svg { margin: 16px 0 10px; }
-          .caption { margin-top: 10px; font-size: 12px; font-weight: 700; letter-spacing: .08em; color: #111827; }
+          .svg { margin: 16px 0 10px; display: flex; justify-content: center; }
+          .caption { margin-top: 10px; font-size: 14px; font-weight: 700; letter-spacing: .08em; color: #111827; }
           @media print {
             body { background: #fff; }
-            .page { padding: 0; }
-            .label { border: 0; border-radius: 0; width: 100%; }
+            .page { padding: 0; display: block; min-height: auto; }
+            .label { max-width: none; }
           }
         </style>
       </head>
@@ -212,13 +219,32 @@ export function printBarcodeLabel({ svgMarkup, title = 'Barcode Label', subtitle
             ${caption ? `<div class="caption">${caption}</div>` : ''}
           </div>
         </div>
-        <script>
-          window.onload = function () { window.print(); };
-        </script>
       </body>
     </html>
-  `);
-  printWindow.document.close();
+  `;
+
+  const doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
+
+  doc.document.open();
+  doc.document.write(htmlContent);
+  doc.document.close();
+
+  // Wait a moment for the DOM to render inside the iframe before printing
+  setTimeout(() => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch (err) {
+      console.error('Failed to trigger print:', err);
+    } finally {
+      // Clean up the iframe after printing (with a delay so print dialog doesn't close prematurely on some browsers)
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }
+  }, 300);
 }
 
 export function getBarcodeSearchText(product = {}) {

@@ -12,7 +12,7 @@ import PortalMobileNav from './components/layout/PortalMobileNav';
 import PortalCartDrawer from './components/layout/PortalCartDrawer';
 
 export default function PortalLayout() {
-  const { customer, logout, isAuthenticated, fetchDashboard, cart, isCartOpen, toggleCart, removeFromCart, unreadCount, fetchUnreadCount } = usePortalStore();
+  const { customer, tenant, logout, isAuthenticated, fetchDashboard, cart, isCartOpen, toggleCart, removeFromCart, unreadCount, fetchUnreadCount } = usePortalStore();
   const { dark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,7 +58,9 @@ export default function PortalLayout() {
     { icon: RefreshCcw, label: t('nav.returns'), path: `${accountBasePath}/returns` },
     { icon: Award, label: t('nav.points'), path: `${accountBasePath}/points` },
     { icon: Star, label: t('nav.reviews'), path: `${accountBasePath}/reviews` },
-    { icon: Calculator, label: t('nav.calculator'), path: `${accountBasePath}/calculator` },
+    ...(tenant?.settings?.installments?.enabled !== false
+      ? [{ icon: Calculator, label: t('nav.calculator'), path: `${accountBasePath}/calculator` }]
+      : []),
     { icon: FileText, label: t('nav.documents'), path: `${accountBasePath}/documents` },
     { icon: MapPin, label: t('nav.addresses'), path: `${accountBasePath}/addresses` },
     { icon: ShoppingCart, label: t('nav.cart'), path: `${accountBasePath}/cart`, badge: cart.length, isCart: true },

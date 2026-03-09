@@ -5,10 +5,17 @@ import {
   getStorefrontBasePath,
   isStorefrontSubdomainHost,
 } from '../utils/storefrontHost';
+import {
+  brandArabicName,
+  brandDisplayName,
+  brandName,
+  publicPageMeta,
+} from '../publicSite/content';
 import { applySeoMetadata } from '../utils/seo';
 
-const PLATFORM_NAME = 'PayQusta';
-const PLATFORM_DESCRIPTION = 'PayQusta منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد.';
+const PLATFORM_NAME = brandName;
+const PRIMARY_PUBLIC_ORIGIN = 'https://payqusta.store';
+const PLATFORM_DESCRIPTION = `${brandName} ${brandArabicName} منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد.`;
 
 function normalizePath(pathname = '/') {
   if (!pathname) return '/';
@@ -39,27 +46,36 @@ export default function RouteMetadata() {
     const search = location.search || '';
     const currentUrl = `${origin}${pathname}${search}`;
     const rootUrl = `${origin}/`;
+    const publicRootUrl = `${PRIMARY_PUBLIC_ORIGIN}/`;
     const storeBasePath = normalizePath(getStorefrontBasePath(window.location.hostname) || '/store');
     const onStorefront =
       isStorefrontSubdomainHost(window.location.hostname) ||
       pathname === storeBasePath ||
       pathname.startsWith(`${storeBasePath}/`);
 
-    const logoUrl = `${origin}/favicon.svg`;
-    const socialImage = `${origin}/hero-banner.png`;
+    const logoUrl = `${PRIMARY_PUBLIC_ORIGIN}/logo-square.png`;
+    const socialImage = `${PRIMARY_PUBLIC_ORIGIN}/hero-banner.png`;
+    const publicCanonicalUrl =
+      pathname === '/' ? publicRootUrl : `${PRIMARY_PUBLIC_ORIGIN}${pathname}`;
 
-    if (pathname === '/' && !isAuthenticated) {
+    const publicMeta = publicPageMeta[pathname];
+
+    if (publicMeta && !(pathname === '/' && isAuthenticated)) {
       applySeoMetadata({
-        title: 'PayQusta | إنشاء متجر إلكتروني وإدارة المبيعات والأقساط',
-        description: PLATFORM_DESCRIPTION,
+        title: publicMeta.title,
+        description: publicMeta.description,
         robots: 'index,follow',
-        canonical: rootUrl,
+        canonical: publicCanonicalUrl,
         openGraph: {
-          url: rootUrl,
+          title: publicMeta.title,
+          description: publicMeta.description,
+          url: publicCanonicalUrl,
           image: socialImage,
           siteName: PLATFORM_NAME,
         },
         twitter: {
+          title: publicMeta.title,
+          description: publicMeta.description,
           image: socialImage,
         },
         structuredData: [
@@ -67,29 +83,39 @@ export default function RouteMetadata() {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: PLATFORM_NAME,
-            url: rootUrl,
+            alternateName: [brandArabicName, brandDisplayName],
+            url: publicRootUrl,
             logo: logoUrl,
+            image: [logoUrl, socialImage],
+            description: PLATFORM_DESCRIPTION,
           },
           {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: PLATFORM_NAME,
-            url: rootUrl,
+            alternateName: [brandArabicName, brandDisplayName],
+            url: publicRootUrl,
             description: PLATFORM_DESCRIPTION,
+            image: logoUrl,
           },
-          {
-            '@context': 'https://schema.org',
-            '@type': 'SoftwareApplication',
-            name: PLATFORM_NAME,
-            applicationCategory: 'BusinessApplication',
-            operatingSystem: 'Web',
-            offers: {
-              '@type': 'Offer',
-              price: '0',
-              priceCurrency: 'EGP',
-            },
-            description: PLATFORM_DESCRIPTION,
-          },
+          ...(pathname === '/'
+            ? [{
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: PLATFORM_NAME,
+              alternateName: [brandArabicName, brandDisplayName],
+              url: publicRootUrl,
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'EGP',
+              },
+              description: PLATFORM_DESCRIPTION,
+              image: [socialImage, logoUrl],
+            }]
+            : []),
         ],
       });
       return;

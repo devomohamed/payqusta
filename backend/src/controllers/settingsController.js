@@ -188,6 +188,7 @@ class SettingsController {
       branding: tenant.branding,
       settings: {
         barcode: getTenantBarcodeSettings(tenant),
+        installments: tenant.settings?.installments,
       },
       currency: 'EGP', // Default
       taxRate: 14 // Default
@@ -626,6 +627,32 @@ class SettingsController {
       whatsapp: tenant.whatsapp,
     }, 'تم تطبيق إعدادات القوالب بنجاح');
   });
+
+  /**
+   * PUT /api/v1/settings/installments
+   * Update storefront installment calculator settings
+   */
+  updateInstallments = catchAsync(async (req, res, next) => {
+    const { enabled, installmentConfigs } = req.body;
+
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.tenantId,
+      {
+        $set: {
+          'settings.installments.enabled': enabled !== undefined ? enabled : true,
+          'settings.installments.installmentConfigs': installmentConfigs || [],
+        }
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    ApiResponse.success(res, {
+      installments: tenant.settings.installments,
+    }, 'تم تحديث إعدادات نظام التقسيط بنجاح');
+  });
+
   /**
    * PUT /api/v1/settings/categories
    * Update product categories list

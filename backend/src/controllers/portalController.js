@@ -12,6 +12,11 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const Helpers = require('../utils/helpers');
+const {
+  collectUniqueBranchIds,
+  deductInventoryAllocation,
+  resolveInventoryAllocation,
+} = require('../utils/inventoryAllocation');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -1112,6 +1117,9 @@ class PortalController {
   checkout = catchAsync(async (req, res, next) => {
     const { items, shippingAddress, notes, signature, couponCode } = req.body;
     const customer = await Customer.findById(req.user.id).populate('tenant', 'settings');
+    const installmentSettings = customer?.tenant?.settings?.installments || {};
+    const preferredBranchId = customer?.branch || null;
+    const strictPreferredBranch = Boolean(preferredBranchId);
 
     if (customer.salesBlocked) {
       return next(AppError.forbidden(`عذراً، الشراء موقوف حالياً: ${customer.salesBlockedReason || 'يرجى مراجعة الإدارة'}`));
@@ -1143,7 +1151,13 @@ class PortalController {
       if (!product) return next(AppError.badRequest(`المنتج غير متوفر`));
 
       const qty = Number(item.quantity) || 1;
-      if (product.stock.quantity < qty) {
+      const stockAllocation = resolveInventoryAllocation({
+        product,
+        quantity: qty,
+        preferredBranchId,
+        strictPreferredBranch,
+      });
+      if (stockAllocation.availableQuantity < qty) {
         return next(AppError.badRequest(`الكمية المطلوبة من "${product.name}" غير متوفرة`));
       }
 
@@ -1157,7 +1171,7 @@ class PortalController {
         totalPrice: product.price * qty,
       });
 
-      productUpdates.push({ product, qty });
+      productUpdates.push({ product, qty, branchId: stockAllocation.branchId });
     }
 
     let finalTotalAmount = totalAmount;
@@ -1212,6 +1226,7 @@ class PortalController {
     const months = parseInt(req.body.months) || installmentSettings.defaultMonths || 6;
 
     let installments = [];
+    let monthlyAmount = 0;
 
     if (paymentMethod === 'deferred') {
       // 1. Check Credit Limit
@@ -1234,7 +1249,7 @@ class PortalController {
       }
 
       // 3. Create Installments
-      const monthlyAmount = Math.ceil(finalTotalAmount / months);
+      monthlyAmount = Math.ceil(finalTotalAmount / months);
       const today = new Date();
 
       for (let i = 1; i <= months; i++) {
@@ -1249,8 +1264,9 @@ class PortalController {
       }
     }
 
-    // Resolve branch — use customer's branch if available (optional for portal orders)
-    const branchId = customer.branch || undefined;
+    // Resolve branch from the customer's scoped branch or the inventory row used during allocation.
+    const uniqueBranchIds = collectUniqueBranchIds(productUpdates);
+    const branchId = uniqueBranchIds.length === 1 ? uniqueBranchIds[0] : undefined;
 
     const invoice = await Invoice.create({
       tenant: customer.tenant._id || customer.tenant,
@@ -1291,7 +1307,12 @@ class PortalController {
 
     // Update Stock
     for (const update of productUpdates) {
-      await Product.findByIdAndUpdate(update.product._id, { $inc: { 'stock.quantity': -update.qty } });
+      deductInventoryAllocation({
+        product: update.product,
+        branchId: update.branchId,
+        quantity: update.qty,
+      });
+      await update.product.save();
     }
 
     // Update Customer Balance

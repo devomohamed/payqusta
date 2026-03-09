@@ -12,7 +12,10 @@ import { storefrontPath } from '../utils/storefrontHost';
 import { createBuyNowItem } from './buyNowItem';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
 import { loadStorefrontGuestProfile } from './storefrontGuestProfile';
-import { loadStorefrontProducts } from './storefrontDataClient';
+import {
+  loadStorefrontProducts,
+  loadStorefrontSettings,
+} from './storefrontDataClient';
 import {
   calculateStorefrontVolumeDiscountForLine,
   getStorefrontVolumeOfferForQuantity,
@@ -151,6 +154,7 @@ export default function ProductDetails() {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [crossSellAddingId, setCrossSellAddingId] = useState(null);
+  const [storeSettings, setStoreSettings] = useState(null);
 
   // UI states
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -172,6 +176,7 @@ export default function ProductDetails() {
     setNotifyDone(false);
     loadProduct();
     loadReviews();
+    loadStorefrontSettings().then((res) => setStoreSettings(res?.data?.data));
     window.scrollTo({ top: 0 });
   }, [id]);
 
@@ -218,6 +223,14 @@ export default function ProductDetails() {
       }
     }
   }, [product, isPortal]);
+
+  useEffect(() => {
+    if (selectedVariant?.image) {
+      setActiveImage(selectedVariant.image);
+    } else if (product) {
+      setActiveImage(pickProductImage(product));
+    }
+  }, [selectedVariant, product]);
 
   const loadRelated = async (currentProduct, currentId) => {
     if (!currentProduct) return;
@@ -766,6 +779,14 @@ export default function ProductDetails() {
               </div>
             )}
 
+            {/* Variant Description Component */}
+            {selectedVariant?.description && (
+              <div className="p-4 bg-gray-50/80 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2 mt-2">
+                <span className="text-xs font-black text-primary-600 block">تفاصيل الموديل المُحدد:</span>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedVariant.description}</p>
+              </div>
+            )}
+
             {/* Quantity + Add to Cart */}
             <div ref={addToCartRef} className="pt-4 border-t border-gray-100 dark:border-gray-800">
               {!isOutOfStock ? (
@@ -932,9 +953,11 @@ export default function ProductDetails() {
         </div>
 
         {/* Installment Calculator */}
-        <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
-          <PortalInstallmentCalculator />
-        </div>
+        {storeSettings?.settings?.installments?.enabled !== false && (
+          <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+            <PortalInstallmentCalculator />
+          </div>
+        )}
 
         {/* Reviews */}
         <div id="reviews-section" className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">

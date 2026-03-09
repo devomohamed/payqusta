@@ -9,6 +9,11 @@ const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
 const AppError = require('../utils/AppError');
 const Helpers = require('../utils/helpers');
+const {
+  collectUniqueBranchIds,
+  deductInventoryAllocation,
+  resolveInventoryAllocation,
+} = require('../utils/inventoryAllocation');
 const NotificationService = require('./NotificationService');
 const GamificationService = require('./GamificationService');
 const WhatsAppService = require('./WhatsAppService');
@@ -95,6 +100,9 @@ class InvoiceService {
         user = await userQuery;
       }
 
+      const preferredBranchId = data.branchId || (user ? user.branch : null);
+      const strictPreferredBranch = Boolean(preferredBranchId);
+
       for (const item of items) {
         const productQuery = Product.findOne({
           _id: item.productId,
@@ -109,38 +117,27 @@ class InvoiceService {
           throw AppError.notFound(`المنتج غير موجود: ${item.productId}`);
         }
 
-        // Check branch stock if branchId is provided
-        // Use provided branchId, or logged in user's branch, or fallback to first branch if none
-        let targetBranchId = data.branchId || (user ? user.branch : null);
-
-        if (!targetBranchId) {
-          const Branch = require('../models/Branch');
-          const firstBranch = await Branch.findOne({ tenant: tenantId, isActive: true }).select('_id');
-          targetBranchId = firstBranch ? firstBranch._id : null;
-        }
-
         const variant = item.variantId ? product.variants.id(item.variantId) : null;
+        const stockAllocation = resolveInventoryAllocation({
+          product,
+          variant,
+          quantity: item.quantity,
+          preferredBranchId,
+          strictPreferredBranch,
+        });
 
-        if (targetBranchId) {
-          if (variant) {
-            const branchStock = variant.inventory?.find(inv => inv.branch.toString() === targetBranchId.toString());
-            if (!branchStock || branchStock.quantity < item.quantity) {
-              throw AppError.badRequest(`الكمية المطلوبة من "${product.name} - ${variant.sku}" غير متوفرة (المتاح: ${branchStock?.quantity || 0})`);
-            }
-          } else {
-            const branchStock = product.inventory?.find(inv => inv.branch.toString() === targetBranchId.toString());
-            if (!branchStock || branchStock.quantity < item.quantity) {
-              throw AppError.badRequest(`الكمية المطلوبة من "${product.name}" غير متوفرة (المتاح: ${branchStock?.quantity || 0})`);
-            }
-          }
-          productsToUpdate.push({ product, quantity: item.quantity, branchId: targetBranchId, variantId: item.variantId });
-        } else {
-          const availableQty = variant ? (variant.stock?.quantity || 0) : (product.stock.quantity || 0);
-          if (availableQty < item.quantity) {
-            throw AppError.badRequest(`الكمية المطلوبة من "${product.name}${variant ? ' (' + variant.sku + ')' : ''}" أكبر من المخزون (${availableQty})`);
-          }
-          productsToUpdate.push({ product, quantity: item.quantity, variantId: item.variantId });
+        if (stockAllocation.availableQuantity < item.quantity) {
+          throw AppError.badRequest(
+            `الكمية المطلوبة من "${product.name}${variant ? ` - ${variant.sku}` : ''}" غير متوفرة (المتاح: ${stockAllocation.availableQuantity})`
+          );
         }
+
+        productsToUpdate.push({
+          product,
+          quantity: item.quantity,
+          branchId: stockAllocation.branchId,
+          variantId: item.variantId,
+        });
 
         const itemPrice = (variant && variant.price) ? variant.price : product.price;
         const totalPrice = itemPrice * item.quantity;
@@ -262,6 +259,11 @@ class InvoiceService {
         source: source || 'pos',
       };
 
+      const uniqueBranchIds = collectUniqueBranchIds(productsToUpdate);
+      if (uniqueBranchIds.length === 1) {
+        invoiceData.branch = uniqueBranchIds[0];
+      }
+
       if (normalizedCampaignAttribution) {
         invoiceData.campaignAttribution = normalizedCampaignAttribution;
       }
@@ -311,9 +313,9 @@ class InvoiceService {
       }
 
       if (user && user.commissionRate > 0) {
-        // Calculate commission from total profit minus any discounts spread proportionally, 
-        // or simply from raw profit for simplicity 
-        // Simplified: Just use raw total profit. Discounts might reduce profit, but typically commission on raw item profit is standard, 
+        // Calculate commission from total profit minus any discounts spread proportionally,
+        // or simply from raw profit for simplicity
+        // Simplified: Just use raw total profit. Discounts might reduce profit, but typically commission on raw item profit is standard,
         // or we can adjust: totalProfit = Math.max(0, totalProfit - discount)
         const adjustedProfit = Math.max(0, totalProfit - discountAmount);
         invoiceData.commission = {
@@ -330,23 +332,14 @@ class InvoiceService {
       for (const { product, quantity, branchId, variantId } of productsToUpdate) {
         const variant = variantId ? product.variants.id(variantId) : null;
 
-        if (branchId) {
-          if (variant) {
-            const branchStock = variant.inventory.find(inv => inv.branch.toString() === branchId.toString());
-            if (branchStock) branchStock.quantity -= quantity;
-          } else {
-            const branchStock = product.inventory.find(inv => inv.branch.toString() === branchId.toString());
-            if (branchStock) branchStock.quantity -= quantity;
-          }
-        } else {
-          if (variant) {
-            variant.stock = Math.max(0, (Number(variant.stock) || 0) - quantity);
-          } else {
-            product.stock.quantity -= quantity;
-          }
-        }
+        deductInventoryAllocation({
+          product,
+          variant,
+          branchId,
+          quantity,
+        });
 
-        // Product.pre('save') will automatically sync the global stock.quantity 
+        // Product.pre('save') will automatically sync the global stock.quantity
         // if inventory is changed, and update stockStatus.
         await product.save(createOptions);
 

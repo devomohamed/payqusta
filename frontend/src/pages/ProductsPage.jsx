@@ -1410,13 +1410,36 @@ export default function ProductsPage() {
                     )}
 
                     {/* Actions */}
-                    <div className="grid grid-cols-3 gap-2 pt-1">
+                    <div className="grid grid-cols-4 gap-2 pt-1">
                       <button
                         onClick={() => openEdit(prod)}
                         className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
                       >
                         <Edit className="w-3.5 h-3.5" />
                         {t('products.edit')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const payload = resolveBarcodePayload(prod, barcodeMode === 'local_only' ? 'local' : 'international');
+                          if (payload?.value) {
+                            const svgMarkup = buildBarcodeSvg(
+                              payload.value,
+                              payload.type === 'QR_CODE' ? 'QR_CODE' : 'CODE128'
+                            );
+                            printBarcodeLabel({
+                              svgMarkup,
+                              title: prod.name || 'Barcode Label',
+                              subtitle: payload.source === 'local' ? 'Local Barcode' : 'International Barcode',
+                              caption: payload.value,
+                            });
+                          } else {
+                            toast.error('لا يوجد باركود متاح لهذا المنتج');
+                          }
+                        }}
+                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-600 hover:bg-purple-100 transition-colors"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        طباعة
                       </button>
                       <button
                         onClick={() => handleToggleSuspension(prod, !isSuspendedTab)}
@@ -1431,7 +1454,7 @@ export default function ProductsPage() {
                         ) : (
                           <PauseCircle className={`w-3.5 h-3.5 ${togglingSuspendId === prod._id ? 'animate-spin' : ''}`} />
                         )}
-                        {isSuspendedTab ? 'إلغاء التعليق' : 'تعليق'}
+                        {isSuspendedTab ? 'تنشيط' : 'تعليق'}
                       </button>
                       <button
                         onClick={() => handleDelete(prod._id)}

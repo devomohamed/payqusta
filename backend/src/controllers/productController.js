@@ -44,6 +44,43 @@ function normalizeInventoryItems(rawInventory = [], fallbackMinQuantity = 5) {
     .filter(Boolean);
 }
 
+function mapImagesToOriginals(currentImages = [], currentOriginalImages = [], selectedImages = []) {
+  const originalByImage = new Map();
+
+  currentImages.forEach((imageUrl, index) => {
+    originalByImage.set(imageUrl, currentOriginalImages[index] || '');
+  });
+
+  return (Array.isArray(selectedImages) ? selectedImages : []).map((imageUrl) => (
+    originalByImage.get(imageUrl) || ''
+  ));
+}
+
+async function createStoredProductImages(files = [], processImage, watermarkOptions = null) {
+  return Promise.all((Array.isArray(files) ? files : []).map(async (file) => {
+    const seed = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+    const originalImage = await processImage(
+      file.buffer,
+      `product-source-${seed}.webp`,
+      'products/originals',
+      file.mimetype,
+      null
+    );
+    const visibleImage = await processImage(
+      file.buffer,
+      `product-${seed}.webp`,
+      'products',
+      file.mimetype,
+      watermarkOptions
+    );
+
+    return {
+      image: visibleImage,
+      original: originalImage,
+    };
+  }));
+}
+
 function parseVariantsPayload(rawVariants) {
   if (!rawVariants) return [];
   try {
@@ -271,6 +308,7 @@ class ProductController {
     product.stockNotifications = product.stockNotifications || [];
     product.stockNotifications.push({ email: email || undefined, phone: phone || undefined });
     await product.save();
+
     ApiResponse.success(res, {}, 'تم تسجيل طلب الإشعار بنجاح');
   });
 
@@ -286,10 +324,9 @@ class ProductController {
     const barcodeSettings = getTenantBarcodeSettings(tenant);
     const watermarkOptions = tenant?.settings?.watermark || {};
     const { processImage } = require('../middleware/upload');
-    const uploadedImages = await Promise.all((req.files || []).map((file) => {
-      const filename = `product-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
-      return processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
-    }));
+    const uploadedImagePairs = await createStoredProductImages(req.files || [], processImage, watermarkOptions);
+    const uploadedImages = uploadedImagePairs.map((entry) => entry.image);
+    const uploadedOriginalImages = uploadedImagePairs.map((entry) => entry.original);
     const existingImages = req.body.existingImages
       ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]).flat(Infinity)
       : [];
@@ -303,6 +340,7 @@ class ProductController {
       variants: parseVariantsPayload(req.body.variants),
       inventory: resolvedInventory.inventory,
       images: [...existingImages, ...uploadedImages],
+      originalImages: [...existingImages.map(() => ''), ...uploadedOriginalImages],
       thumbnail: req.body.primaryImage || existingImages[0] || uploadedImages[0] || undefined,
     };
     normalizeProductBarcodeFields(productData);
@@ -319,18 +357,30 @@ class ProductController {
     if (req.body.inventory) product.inventory = normalizeInventoryItems(parseInventoryPayload(req.body.inventory), product.stock?.minQuantity || 5);
     const tenant = await loadTenantForWrite(req.tenantId);
     const watermarkOptions = tenant?.settings?.watermark || {};
-    const { processImage } = require('../middleware/upload');
-    const uploadedImages = await Promise.all((req.files || []).map((file) => {
-      const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
-      return processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions);
-    }));
+    const { processImage, deleteFile } = require('../middleware/upload');
+    const uploadedImagePairs = await createStoredProductImages(req.files || [], processImage, watermarkOptions);
+    const uploadedImages = uploadedImagePairs.map((entry) => entry.image);
+    const uploadedOriginalImages = uploadedImagePairs.map((entry) => entry.original);
+    const currentImages = Array.isArray(product.images) ? product.images : [];
+    const currentOriginalImages = Array.isArray(product.originalImages) ? product.originalImages : [];
     const hasExistingImagesField = Object.prototype.hasOwnProperty.call(req.body, 'existingImages');
     const existingImages = hasExistingImagesField
       ? (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]).flat(Infinity).filter(Boolean)
       : null;
+    const removedImagePairs = hasExistingImagesField
+      ? currentImages
+        .map((imageUrl, index) => ({ image: imageUrl, original: currentOriginalImages[index] || '' }))
+        .filter(({ image }) => !existingImages.includes(image))
+      : [];
     if (hasExistingImagesField || uploadedImages.length > 0) {
-      product.images = [...(existingImages || []), ...uploadedImages];
-      product.thumbnail = req.body.primaryImage || uploadedImages[0] || existingImages?.[0] || undefined;
+      const retainedImages = hasExistingImagesField ? existingImages : currentImages;
+      const retainedOriginalImages = hasExistingImagesField
+        ? mapImagesToOriginals(currentImages, currentOriginalImages, existingImages)
+        : currentOriginalImages;
+
+      product.images = [...retainedImages, ...uploadedImages];
+      product.originalImages = [...retainedOriginalImages, ...uploadedOriginalImages];
+      product.thumbnail = req.body.primaryImage || uploadedImages[0] || retainedImages[0] || undefined;
     }
     [
       'name', 'sku', 'description', 'category', 'price', 'compareAtPrice', 'cost', 'wholesalePrice',
@@ -359,6 +409,15 @@ class ProductController {
     normalizeProductBarcodeFields(product);
     await assertProductIdentifiersUnique({ tenantId: req.tenantId, product, excludeProductId: product._id });
     await product.save();
+    if (removedImagePairs.length > 0) {
+      const pathsToDelete = [...new Set(removedImagePairs.flatMap(({ image, original }) => (
+        [image, original].filter((path) => path)
+      )))];
+
+      for (const imagePath of pathsToDelete) {
+        await deleteFile(imagePath);
+      }
+    }
     ApiResponse.success(res, product, 'تم تحديث المنتج بنجاح');
   });
 
@@ -515,12 +574,11 @@ class ProductController {
     const { processImage } = require('../middleware/upload');
     const tenant = await Tenant.findById(req.tenantId);
     const watermarkOptions = tenant?.settings?.watermark || {};
-    const uploadedImages = [];
-    for (const file of files) {
-      const filename = `product-${product._id}-${Date.now()}-${Math.round(Math.random() * 1000)}.webp`;
-      uploadedImages.push(await processImage(file.buffer, filename, 'products', file.mimetype, watermarkOptions));
-    }
+    const uploadedImagePairs = await createStoredProductImages(files, processImage, watermarkOptions);
+    const uploadedImages = uploadedImagePairs.map((entry) => entry.image);
+    const uploadedOriginalImages = uploadedImagePairs.map((entry) => entry.original);
     product.images = [...(product.images || []), ...uploadedImages];
+    product.originalImages = [...(product.originalImages || []), ...uploadedOriginalImages];
     if (req.body.setAsThumbnail === 'true' || !product.thumbnail) product.thumbnail = uploadedImages[0];
     await product.save();
     ApiResponse.success(res, { images: uploadedImages, product }, 'تم رفع الصور بنجاح');
@@ -530,11 +588,19 @@ class ProductController {
     const product = await Product.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
     const decodedUrl = decodeURIComponent(req.params.imageUrl);
+    const imageIndex = (product.images || []).findIndex((image) => image === decodedUrl);
+    const originalImageUrl = imageIndex >= 0 ? ((product.originalImages || [])[imageIndex] || '') : '';
     product.images = (product.images || []).filter((image) => image !== decodedUrl);
+    if (imageIndex >= 0) {
+      product.originalImages = (product.originalImages || []).filter((_, index) => index !== imageIndex);
+    }
     if (product.thumbnail === decodedUrl) product.thumbnail = product.images[0] || null;
     await product.save();
     const { deleteFile } = require('../middleware/upload');
     await deleteFile(decodedUrl);
+    if (originalImageUrl && originalImageUrl !== decodedUrl) {
+      await deleteFile(originalImageUrl);
+    }
     ApiResponse.success(res, product, 'تم حذف الصورة بنجاح');
   });
 

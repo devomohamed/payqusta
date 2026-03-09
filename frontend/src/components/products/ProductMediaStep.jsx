@@ -94,6 +94,35 @@ export default function ProductMediaStep({
     const fileInputRef = useRef(null);
     const [allExpanded, setAllExpanded] = useState(true);
 
+    const handleVariantImageUpload = (idx, file) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxDim = 600;
+                let width = img.width;
+                let height = img.height;
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const base64Str = canvas.toDataURL('image/jpeg', 0.8);
+                onUpdateVariant(idx, 'image', base64Str);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
     const handleDrop = (e) => {
         e.preventDefault(); e.stopPropagation();
@@ -130,7 +159,8 @@ export default function ProductMediaStep({
             attributes: { 'الحجم': size, 'اللون': '' },
             sku: '', barcode: '', internationalBarcode: '', internationalBarcodeType: 'UNKNOWN', localBarcode: '', localBarcodeType: 'CODE128',
             price: form.price || '', cost: form.costPrice || '',
-            stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
+            stock: form.stock || '', expanded: true,
+            description: '', image: '',
         }));
         setForm({ ...form, variants: [...(form.variants || []), ...newVars] });
     };
@@ -141,7 +171,8 @@ export default function ProductMediaStep({
             attributes: { 'الحجم': '', 'اللون': color },
             sku: '', barcode: '', internationalBarcode: '', internationalBarcodeType: 'UNKNOWN', localBarcode: '', localBarcodeType: 'CODE128',
             price: form.price || '', cost: form.costPrice || '',
-            stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
+            stock: form.stock || '', expanded: true,
+            description: '', image: '',
         }));
         setForm({ ...form, variants: [...(form.variants || []), ...newVars] });
     };
@@ -150,7 +181,8 @@ export default function ProductMediaStep({
         attributes: { 'الحجم': '', 'اللون': '' },
         sku: '', barcode: '', internationalBarcode: '', internationalBarcodeType: 'UNKNOWN', localBarcode: '', localBarcodeType: 'CODE128',
         price: form.price || '', cost: form.costPrice || '',
-        stock: form.stock || '', inventory: form.inventory ? JSON.parse(JSON.stringify(form.inventory)) : [], expanded: true,
+        stock: form.stock || '', expanded: true,
+        description: '', image: '',
     });
 
     const getVariantLabel = (v) => {
@@ -451,89 +483,51 @@ export default function ProductMediaStep({
                                                     </div>
                                                 </div>
 
-                                                {/* Variants Multi-Branch Stock */}
+                                                {/* Variant Stock */}
+                                                <div className="lg:col-span-1">
+                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1">
+                                                        المخزون
+                                                    </label>
+                                                    <input type="number" placeholder="0" value={v.stock || ''}
+                                                        onChange={e => onUpdateVariant(idx, 'stock', Number(e.target.value))}
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                </div>
+
+                                                {/* Variant Description */}
                                                 <div className="col-span-2 md:col-span-3 lg:col-span-6 mt-4">
-                                                    <div className="p-4 bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                                                مخزون الفروع للموديل <StockBadge stock={v.stock} />
-                                                            </label>
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="text-xs h-7 px-2"
-                                                                onClick={() => {
-                                                                    const newInv = [...(v.inventory || []), { branch: '', quantity: 0, minQuantity: 5 }];
-                                                                    onUpdateVariant(idx, 'inventory', newInv);
-                                                                }}
-                                                            >
-                                                                <Plus className="w-3.5 h-3.5" /> أضف فرع
-                                                            </Button>
-                                                        </div>
+                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1">
+                                                        وصف الموديل (اختياري)
+                                                    </label>
+                                                    <textarea rows={3} placeholder="أضف وصفاً خاصاً بهذا الموديل للعملاء.." value={v.description || ''}
+                                                        onChange={e => onUpdateVariant(idx, 'description', e.target.value)}
+                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" />
+                                                </div>
 
-                                                        <div className="space-y-3">
-                                                            {(v.inventory || []).map((inv, invIdx) => (
-                                                                <div key={invIdx} className="flex flex-wrap md:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
-                                                                    <div className="flex-1 min-w-[150px]">
-                                                                        <select
-                                                                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                                                            value={inv.branch?._id || inv.branch || ''}
-                                                                            onChange={(e) => {
-                                                                                const newInv = [...v.inventory];
-                                                                                newInv[invIdx].branch = e.target.value;
-                                                                                onUpdateVariant(idx, 'inventory', newInv);
-                                                                            }}
-                                                                        >
-                                                                            <option value="">-- اختر فرع --</option>
-                                                                            {branches.map(b => (
-                                                                                <option key={b._id} value={b._id} disabled={(v.inventory || []).some((i, iIdx) => iIdx !== invIdx && (i.branch === b._id || i.branch?._id === b._id))}>{b.name}</option>
-                                                                            ))}
-                                                                        </select>
+                                                {/* Variant Image */}
+                                                <div className="col-span-2 md:col-span-3 lg:col-span-6 mt-4">
+                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1">
+                                                        صورة الموديل (تظهر عند اختيار هذا الموديل)
+                                                    </label>
+                                                    <div className="flex items-start gap-4">
+                                                        {v.image ? (
+                                                            <div className="w-20 h-20 rounded-xl border-2 border-primary-100 dark:border-primary-900 overflow-hidden relative group">
+                                                                <img src={v.image} className="w-full h-full object-cover" alt="Variant" />
+                                                                <button type="button" onClick={() => onUpdateVariant(idx, 'image', '')} className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex-1 max-w-sm">
+                                                                <label className="flex items-center justify-center w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
+                                                                    <div className="flex flex-col items-center gap-1">
+                                                                        <UploadCloud className="w-5 h-5 text-gray-400" />
+                                                                        <span className="text-xs text-gray-500 font-semibold">اضغط لرفع صورة الموديل</span>
                                                                     </div>
-                                                                    <div className="w-24">
-                                                                        <input
-                                                                            type="number"
-                                                                            min="0"
-                                                                            placeholder="الكمية"
-                                                                            value={inv.quantity}
-                                                                            onChange={e => {
-                                                                                const newInv = [...v.inventory];
-                                                                                newInv[invIdx].quantity = Number(e.target.value);
-                                                                                const newStock = newInv.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-                                                                                const updatedVariant = { ...v, inventory: newInv, stock: newStock };
-                                                                                const newVariants = [...form.variants];
-                                                                                newVariants[idx] = updatedVariant;
-                                                                                setForm({ ...form, variants: newVariants });
-                                                                            }}
-                                                                            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                                                        />
-                                                                    </div>
-                                                                    <div className="w-10 flex justify-end">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const newInv = v.inventory.filter((_, i) => i !== invIdx);
-                                                                                const newStock = newInv.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-                                                                                const updatedVariant = { ...v, inventory: newInv, stock: newStock };
-                                                                                const newVariants = [...form.variants];
-                                                                                newVariants[idx] = updatedVariant;
-                                                                                setForm({ ...form, variants: newVariants });
-                                                                            }}
-                                                                            className="text-red-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-
-                                                            {(v.inventory || []).length === 0 && (
-                                                                <div className="text-center py-4 bg-white dark:bg-gray-900 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-                                                                    <p className="text-xs text-gray-400">لا يوجد فروع محددة. التتبع غير مفعل.</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleVariantImageUpload(idx, e.target.files[0])} />
+                                                                </label>
+                                                                <p className="text-[10px] text-gray-400 mt-1">يُنصح بصورة مربعة (مثل 600x600)</p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

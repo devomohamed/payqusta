@@ -60,6 +60,12 @@ const commonValidations = {
       .matches(/^[\u0600-\u06FFa-zA-Z\s]+$/)
       .withMessage('الاسم يجب أن يحتوي على حروف عربية أو إنجليزية فقط'),
 
+  productName: (fieldName = 'name') =>
+    body(fieldName)
+      .trim()
+      .isLength({ min: 2, max: 200 })
+      .withMessage('اسم المنتج يجب أن يكون بين 2 و 200 حرف'),
+
   // Number (positive)
   positiveNumber: (fieldName) =>
     body(fieldName)
@@ -138,7 +144,7 @@ const authValidations = {
 // Product validations
 const productValidations = {
   create: [
-    commonValidations.name('name'),
+    commonValidations.productName('name'),
     body('sku').optional({ checkFalsy: true }).trim(),
     commonValidations.positiveNumber('cost'),
     commonValidations.positiveNumber('price'),
@@ -152,7 +158,7 @@ const productValidations = {
 
   update: [
     commonValidations.mongoId('id'),
-    commonValidations.name('name').optional(),
+    commonValidations.productName('name').optional(),
     commonValidations.positiveNumber('cost').optional(),
     commonValidations.positiveNumber('price').optional(),
     handleValidationErrors,

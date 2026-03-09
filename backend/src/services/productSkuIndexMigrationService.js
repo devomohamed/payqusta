@@ -29,7 +29,7 @@ function buildPartialFilter(field) {
   };
 }
 
-function buildIndexOptions(field, name) {
+function buildIndexOptions(field, name) { 
   return {
     name,
     unique: true,

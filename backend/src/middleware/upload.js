@@ -285,12 +285,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer configuration
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max
+    fileSize: 50 * 1024 * 1024, // 50MB max file size
+    fieldSize: 10 * 1024 * 1024, // 10MB max form field size (to accommodate Base64 variant images)
   },
 });
 
@@ -426,9 +426,66 @@ const deleteFile = async (filepath) => {
   }
 };
 
+const processBase64Document = async (base64String, folder = 'documents') => {
+  const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!matches || matches.length !== 3) {
+    throw new Error('Invalid base64 string');
+  }
+
+  const contentType = matches[1];
+  const buffer = Buffer.from(matches[2], 'base64');
+
+  let ext = '.bin';
+  if (contentType === 'application/pdf') ext = '.pdf';
+  else if (contentType === 'image/jpeg') ext = '.jpg';
+  else if (contentType === 'image/png') ext = '.png';
+  else if (contentType === 'image/webp') ext = '.webp';
+  else if (contentType.startsWith('image/')) ext = '.' + contentType.replace('image/', '');
+
+  const randomName = crypto.randomBytes(16).toString('hex');
+  const secureFilename = `${randomName}${ext}`;
+  const normalizedFolder = normalizeUploadKey(folder);
+  const storageMode = getUploadStorageMode();
+
+  if (storageMode === 'gcs') {
+    const cloudBucket = getCloudBucket();
+    if (!cloudBucket) throw new Error('GCS upload mode selected without GCS bucket configuration');
+    const objectPath = `${normalizedFolder}/${secureFilename}`;
+    const cloudFile = cloudBucket.file(objectPath);
+
+    await cloudFile.save(buffer, {
+      resumable: false,
+      metadata: { contentType, cacheControl: 'public, max-age=31536000, immutable' },
+    });
+
+    if (process.env.GCS_MAKE_UPLOADS_PUBLIC === 'true') {
+      await cloudFile.makePublic();
+    }
+    return getCloudPublicUrl(normalizedFolder, secureFilename);
+  }
+
+  if (storageMode === 'mongodb') {
+    const uploadKey = normalizeUploadKey(`${normalizedFolder}/${secureFilename}`);
+    return saveUploadToDatabase({
+      key: uploadKey,
+      folder: normalizedFolder,
+      filename: secureFilename,
+      buffer,
+      contentType,
+    });
+  }
+
+  const uploadDir = path.join(__dirname, '../../uploads', normalizedFolder);
+  ensureDirectoryExists(uploadDir);
+  const filepath = path.join(uploadDir, secureFilename);
+  await fs.promises.writeFile(filepath, buffer);
+  return `/uploads/${normalizedFolder}/${secureFilename}`;
+};
+
 module.exports = {
   upload,
   processImage,
+  processBase64Document,
   deleteFile,
   readUploadedFile,
   serveUploadedFile,

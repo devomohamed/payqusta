@@ -210,6 +210,7 @@ const productSchema = new mongoose.Schema(
     },
     // Media
     images: [{ type: String }],
+    originalImages: [{ type: String }],
     thumbnail: { type: String },
     // Metadata
     barcode: { type: String, set: normalizeBarcodeValue },
@@ -236,6 +237,8 @@ const productSchema = new mongoose.Schema(
     variants: [
       {
         sku: { type: String, trim: true, uppercase: true, set: normalizeSkuValue },
+        description: { type: String, maxlength: 10000 },
+        image: { type: String },
         attributes: {
           type: Map,
           of: String,

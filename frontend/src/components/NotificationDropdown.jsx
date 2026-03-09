@@ -306,7 +306,7 @@ export default function NotificationDropdown({ mode = 'admin' }) {
 
       {/* Dropdown */}
       {open && (
-        <div className={`absolute ${i18n.dir() === 'rtl' ? 'left-0' : 'right-0'} top-full mt-2 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50 animate-slide-up`}>
+        <div className={`fixed inset-x-4 top-[4.5rem] mt-0 w-auto max-w-[calc(100vw-2rem)] sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:w-[380px] ${i18n.dir() === 'rtl' ? 'sm:left-0' : 'sm:right-0'} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50 animate-slide-up`}>
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800">
             <h4 className="font-bold text-base">{t('notifications.title')}</h4>

@@ -13,9 +13,14 @@ import RouteMetadata from './components/RouteMetadata';
 import SplashScreen from './components/SplashScreen';
 import InstallPrompt from './components/InstallPrompt';
 import AnimatedBrandLogo from './components/AnimatedBrandLogo';
+import PublicSiteLayout from './publicSite/PublicSiteLayout';
 import { storefrontPath } from './utils/storefrontHost';
 import LoginPage from './pages/LoginPage';
 import PublicLandingPage from './pages/PublicLandingPage';
+import PublicFeaturesPage from './pages/PublicFeaturesPage';
+import PublicUseCasesPage from './pages/PublicUseCasesPage';
+import PublicHowItWorksPage from './pages/PublicHowItWorksPage';
+import PublicFaqPage from './pages/PublicFaqPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
@@ -395,9 +400,15 @@ export default function App() {
                 <MainLayout />
               </ProtectedRoute>
             ) : (
-              <PublicLandingPage />
+              <PublicSiteLayout>
+                <PublicLandingPage />
+              </PublicSiteLayout>
             )
           } />
+          <Route path="/features" element={<PublicSiteLayout><PublicFeaturesPage /></PublicSiteLayout>} />
+          <Route path="/use-cases" element={<PublicSiteLayout><PublicUseCasesPage /></PublicSiteLayout>} />
+          <Route path="/how-it-works" element={<PublicSiteLayout><PublicHowItWorksPage /></PublicSiteLayout>} />
+          <Route path="/faq" element={<PublicSiteLayout><PublicFaqPage /></PublicSiteLayout>} />
 
           {/* Main App Routes (Protected) - Must be last */}
           <Route path="/*" element={

@@ -118,9 +118,13 @@ export default function SettingsStore() {
     setApplyResult(null);
     try {
       const res = await api.post('/settings/watermark/apply-to-all');
-      const { processed, failed, totalProducts } = res.data?.data || {};
-      setApplyResult({ processed, failed, totalProducts });
-      notify.success(`تم تطبيق العلامة المائية على ${processed} صورة من ${totalProducts} منتج`);
+      const { processed, failed, skippedLegacy, totalProducts } = res.data?.data || {};
+      setApplyResult({ processed, failed, skippedLegacy, totalProducts });
+      notify.success(
+        skippedLegacy > 0
+          ? `تم تحديث ${processed} صورة، وتخطي ${skippedLegacy} صورة قديمة تحتاج إعادة رفع`
+          : `تم تطبيق العلامة المائية على ${processed} صورة من ${totalProducts} منتج`
+      );
     } catch (err) {
       notify.error('فشل تطبيق العلامة المائية — تأكد من حفظ الإعدادات أولاً');
     } finally {
@@ -604,6 +608,7 @@ export default function SettingsStore() {
           {applyResult && (
             <p className="mt-3 text-sm text-teal-700 dark:text-teal-300 font-medium text-left">
               ✅ تم معالجة {applyResult.processed} صورة من {applyResult.totalProducts} منتج
+              {applyResult.skippedLegacy > 0 && ` (${applyResult.skippedLegacy} صورة قديمة تحتاج إعادة رفع)`}
               {applyResult.failed > 0 && ` (${applyResult.failed} فشلت)`}
             </p>
           )}

@@ -112,6 +112,14 @@ const tenantSchema = new mongoose.Schema(
         storefrontBarcodeSearchEnabled: { type: Boolean, default: false },
         localBarcodeCounter: { type: Number, default: 0, min: 0 },
       },
+      installments: {
+        enabled: { type: Boolean, default: true },
+        installmentConfigs: [{
+          months: { type: Number, default: 0 },
+          minAmount: { type: Number, default: 0 },
+          interestRate: { type: Number, default: 0 },
+        }],
+      },
     },
     // WhatsApp configuration
     whatsapp: {

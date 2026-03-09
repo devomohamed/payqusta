@@ -223,6 +223,7 @@ router.get('/settings/subdomain-availability', authorize('vendor', 'admin'), che
 router.put('/settings/subdomain', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateSubdomain);
 router.put('/settings/user', settingsController.updateUser);
 router.put('/settings/password', settingsController.changePassword);
+router.put('/settings/installments', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateInstallments);
 router.put('/settings/categories', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateCategories);
 router.delete('/settings/categories/:name', authorize('vendor', 'admin'), checkPermission('settings', 'delete'), settingsController.deleteCategory);
 router.post('/settings/watermark/apply-to-all', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.applyWatermarkToAll);

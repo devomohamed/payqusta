@@ -29,6 +29,7 @@ import {
 } from './storefrontCampaignAttribution';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
 import { calculateStorefrontVolumeDiscountForItems } from './storefrontVolumeOffers';
+import { getStorefrontTenantRequestConfig } from './storefrontDataClient';
 
 const FREE_SHIPPING_THRESHOLD = 500;
 const DEFAULT_PORTAL_SHIPPING_FEE = 50;
@@ -64,6 +65,7 @@ export default function Checkout() {
   const { customer, isAuthenticated } = usePortalStore();
 
   const [savedGuestProfile, setSavedGuestProfile] = useState(() => (!isPortal ? loadStorefrontGuestProfile() : null));
+  const withStorefrontContext = (options = {}) => getStorefrontTenantRequestConfig(options);
   const [form, setForm] = useState(() => ({
     customerName: savedGuestProfile?.customerName || '',
     phone: savedGuestProfile?.phone || '',
@@ -289,10 +291,13 @@ export default function Checkout() {
             phone: form.phone,
             email: form.email || undefined,
             address: form.address || undefined
-          }, { headers: { 'x-source': 'online_store' } });
+          }, withStorefrontContext({ headers: { 'x-source': 'online_store' } }));
           customerId = customerRes.data.data._id;
         } catch (err) {
-          const searchRes = await api.get(`/customers?search=${form.phone}`, { headers: { 'x-source': 'online_store' } });
+          const searchRes = await api.get('/customers', withStorefrontContext({
+            params: { search: form.phone },
+            headers: { 'x-source': 'online_store' },
+          }));
           if (searchRes.data.data.length > 0) {
             customerId = searchRes.data.data[0]._id;
           } else {
@@ -307,9 +312,9 @@ export default function Checkout() {
               code: couponData.coupon.code,
               orderTotal: Math.max(0, subtotal - volumeDiscount),
               customerId,
-            }, {
+            }, withStorefrontContext({
               headers: { 'x-source': 'online_store' },
-            });
+            }));
 
             validatedCouponData = couponRes.data.data;
             setCouponData(couponRes.data.data);
@@ -348,7 +353,7 @@ export default function Checkout() {
           ...(campaignAttribution ? { campaignAttribution } : {})
         };
 
-        const invoiceRes = await api.post('/invoices', invoiceData);
+        const invoiceRes = await api.post('/invoices', invoiceData, withStorefrontContext());
         const invoice = invoiceRes.data.data;
         trackStorefrontFunnelEvent('order_complete', {
           orderId: invoice?._id,
@@ -382,9 +387,9 @@ export default function Checkout() {
             customerPhone: form.phone,
             customerEmail: form.email,
             source: 'online_store',
-          }, {
+          }, withStorefrontContext({
             headers: { 'x-source': 'online_store' },
-          });
+          }));
           const paymentUrl = paymentRes?.data?.data?.paymentUrl || paymentRes?.data?.data?.paymentLink;
           if (!paymentUrl) {
             throw new Error('PAYMENT_URL_MISSING');
