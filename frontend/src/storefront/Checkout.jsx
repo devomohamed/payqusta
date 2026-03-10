@@ -7,7 +7,7 @@ import {
   Info
 } from 'lucide-react';
 import { api } from '../store';
-import { Card, Button, Input, LoadingSpinner, Badge } from '../components/UI';
+import { Card, Button, Input, LoadingSpinner, Badge, EmptyState } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import { usePortalStore } from '../store/portalStore';
 import { storefrontPath } from '../utils/storefrontHost';
@@ -101,11 +101,6 @@ export default function Checkout() {
   };
 
   useEffect(() => {
-    if (checkoutItems.length === 0) {
-      navigate(isPortal ? '/portal/cart' : storefrontPath('/cart'));
-      return;
-    }
-
     if (isPortal && isAuthenticated && customer) {
       setForm(prev => ({
         ...prev,
@@ -407,7 +402,25 @@ export default function Checkout() {
     }
   };
 
-  if (checkoutItems.length === 0) return <LoadingSpinner />;
+  if (checkoutItems.length === 0) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12" dir="rtl">
+        <EmptyState
+          icon={ShoppingBag}
+          title={isPortal ? 'سلة البوابة فارغة الآن' : 'سلة المتجر فارغة الآن'}
+          description={isPortal
+            ? 'أضف منتجات إلى السلة أولًا ثم ارجع لإتمام الطلب من هذه الصفحة.'
+            : 'لم يتم العثور على عناصر جاهزة للشراء. ابدأ من صفحات المنتجات ثم ارجع لإتمام الطلب.'}
+          action={{
+            label: isPortal ? 'تصفح منتجات البوابة' : 'العودة إلى المتجر',
+            onClick: () => navigate(isPortal ? '/portal/products' : storefrontPath('/products')),
+            variant: 'primary',
+            size: 'md',
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto pb-20 px-4" dir="rtl">

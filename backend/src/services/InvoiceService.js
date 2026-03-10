@@ -284,6 +284,12 @@ class InvoiceService {
         invoiceData.paidAmount = totalAmount;
         invoiceData.remainingAmount = 0;
         invoiceData.status = INVOICE_STATUS.PAID;
+      } else if (paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY) {
+        invoiceData.paidAmount = 0;
+        invoiceData.remainingAmount = totalAmount;
+        invoiceData.status = INVOICE_STATUS.PENDING;
+        // Optionally set a short due date for COD
+        invoiceData.dueDate = data.dueDate ? new Date(data.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       } else if (paymentMethod === PAYMENT_METHODS.INSTALLMENT) {
         const dp = downPayment || 0;
         invoiceData.paidAmount = dp;

@@ -4,6 +4,7 @@ import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import { Receipt, Eye, X, Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight, Filter, Download, RefreshCcw, DollarSign } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
+import { LoadingSpinner } from '../components/UI';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
 
@@ -75,7 +76,7 @@ export default function PortalInvoices() {
   return (
     <div className="space-y-4 pb-20" dir={i18n.dir()}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Receipt className="w-6 h-6 text-primary-500" />
           {t('invoices.title')}
@@ -118,9 +119,9 @@ export default function PortalInvoices() {
               <div
                 key={inv._id}
                 onClick={() => openDetails(inv._id)}
-                className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:shadow-md hover:border-primary-200 dark:hover:border-primary-700 transition-all"
+                className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 sm:p-5 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:shadow-md hover:border-primary-200 dark:hover:border-primary-700 transition-all"
               >
-                <div className="flex justify-between items-start mb-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3">
                   <div>
                     <p className="font-bold text-gray-900 dark:text-white">{t('invoices.invoice_num', { num: inv.invoiceNumber })}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
@@ -128,28 +129,28 @@ export default function PortalInvoices() {
                       {new Date(inv.date).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${status.color}`}>
+                  <span className={`self-start px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${status.color}`}>
                     <StatusIcon className="w-3.5 h-3.5" />
                     {t(`invoices.statuses.${status.key}`)}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3">
-                  <div className="text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700">
+                  <div className="text-center p-3">
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.total')}</p>
                     <p className="font-bold text-sm text-gray-900 dark:text-white">{inv.totalAmount?.toLocaleString()}</p>
                   </div>
-                  <div className="text-center border-x border-gray-200 dark:border-gray-700">
+                  <div className="text-center p-3">
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.paid_amount')}</p>
                     <p className="font-bold text-sm text-green-600 dark:text-green-400">{inv.paidAmount?.toLocaleString()}</p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center p-3">
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.remaining')}</p>
                     <p className="font-bold text-sm text-red-600 dark:text-red-400">{inv.remainingAmount?.toLocaleString()}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-3 text-xs text-gray-500 dark:text-gray-400">
                   <span>{t('invoices.product_count', { count: inv.items?.length || 0 })}</span>
                   <span className="flex items-center gap-1 text-primary-500">
                     {t('invoices.view_details')} <ChevronLeft className="w-4 h-4" />
@@ -192,13 +193,13 @@ export default function PortalInvoices() {
             onClick={(e) => e.stopPropagation()}
           >
             {detailsLoading ? (
-              <div className="flex justify-center py-20">
-                <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+              <div className="px-4">
+                <LoadingSpinner size="lg" text="جاري تحميل تفاصيل الفاتورة..." />
               </div>
             ) : selectedInvoice && (
               <>
                 {/* Modal Header */}
-                <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-4 flex justify-between items-center z-10">
+                <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-4 flex items-start justify-between gap-3 z-10">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white">
                     {t('invoices.invoice_num', { num: selectedInvoice.invoiceNumber })}
                   </h3>
@@ -221,7 +222,7 @@ export default function PortalInvoices() {
 
                 <div className="p-4 space-y-4">
                   {/* Summary */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.date')}</p>
                       <p className="font-bold text-gray-900 dark:text-white text-sm mt-1">
@@ -268,7 +269,8 @@ export default function PortalInvoices() {
                   <div>
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm">{t('invoices.products')}</h4>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden">
-                      <table className="w-full text-sm">
+                      <div className="overflow-x-auto">
+                      <table className="w-full min-w-[580px] text-sm">
                         <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-700">
                             <th className="text-right p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.product')}</th>
@@ -283,20 +285,22 @@ export default function PortalInvoices() {
                               <td className="p-3 font-medium text-gray-900 dark:text-white">{item.productName || item.product?.name || '-'}</td>
                               <td className="p-3 text-center text-gray-600 dark:text-gray-400">{item.quantity}</td>
                               <td className="p-3 text-center text-gray-600 dark:text-gray-400">{item.price?.toLocaleString()}</td>
-                              <td className="p-3 text-left font-bold text-gray-900 dark:text-white flex items-center justify-between gap-2">
-                                <span>{item.total?.toLocaleString()}</span>
-                                <button
-                                  onClick={() => {
-                                    setReturnItem({ ...item, invoiceId: selectedInvoice._id });
-                                    setReturnQuantity(1);
-                                    setReturnReason('defective');
-                                    setReturnDesc('');
-                                  }}
-                                  className="p-1.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition"
-                                  title={t('invoices.return_title')}
-                                >
-                                  <RefreshCcw className="w-4 h-4" />
-                                </button>
+                              <td className="p-3 text-left font-bold text-gray-900 dark:text-white">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>{item.total?.toLocaleString()}</span>
+                                  <button
+                                    onClick={() => {
+                                      setReturnItem({ ...item, invoiceId: selectedInvoice._id });
+                                      setReturnQuantity(1);
+                                      setReturnReason('defective');
+                                      setReturnDesc('');
+                                    }}
+                                    className="p-1.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition"
+                                    title={t('invoices.return_title')}
+                                  >
+                                    <RefreshCcw className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -308,6 +312,7 @@ export default function PortalInvoices() {
                           </tr>
                         </tfoot>
                       </table>
+                      </div>
                     </div>
                   </div>
 
@@ -322,7 +327,7 @@ export default function PortalInvoices() {
                         {selectedInvoice.installments.map((inst, idx) => (
                           <div
                             key={idx}
-                            className={`flex justify-between items-center p-3 rounded-xl border ${inst.status === 'paid'
+                            className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-xl border ${inst.status === 'paid'
                               ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
                               : inst.status === 'overdue'
                                 ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
@@ -335,7 +340,7 @@ export default function PortalInvoices() {
                                 {new Date(inst.dueDate).toLocaleDateString(locale)}
                               </p>
                             </div>
-                            <div className="text-left">
+                            <div className="text-right sm:text-left">
                               <p className="font-bold text-sm text-gray-900 dark:text-white">{inst.amount?.toLocaleString()} {currency}</p>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${inst.status === 'paid'
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'

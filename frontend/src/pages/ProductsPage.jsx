@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight, PauseCircle, PlayCircle, Printer, Download, Hash, Sparkles } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight, PauseCircle, PlayCircle, Printer, Download, Hash, Sparkles, Barcode } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -1153,7 +1153,7 @@ export default function ProductsPage() {
             {t('products.total_count', { count: headerProductsCount })}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex w-full sm:w-auto items-stretch sm:items-center gap-2 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => setActivePageTab('categories')}>
             <Tag className="w-4 h-4" />
             {t('products.manage_categories')}
@@ -1174,10 +1174,10 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Tabs */}
-      <div className="inline-flex rounded-2xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-gray-900">
+      <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar rounded-2xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-gray-900">
         <button
           onClick={() => setProductTab('active')}
-          className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'active'
+          className={`flex-1 sm:flex-none whitespace-nowrap px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'active'
             ? 'bg-primary-600 text-white'
             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
@@ -1186,7 +1186,7 @@ export default function ProductsPage() {
         </button>
         <button
           onClick={() => setProductTab('suspended')}
-          className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'suspended'
+          className={`flex-1 sm:flex-none whitespace-nowrap px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'suspended'
             ? 'bg-amber-500 text-white'
             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
@@ -1195,7 +1195,7 @@ export default function ProductsPage() {
         </button>
         <button
           onClick={() => setProductTab('incomplete')}
-          className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'incomplete'
+          className={`flex-1 sm:flex-none whitespace-nowrap px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'incomplete'
             ? 'bg-slate-700 text-white'
             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
@@ -1220,7 +1220,7 @@ export default function ProductsPage() {
           <select
             value={stockFilter}
             onChange={e => setStockFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">{t('products.all_stock')}</option>
             <option value="out">{t('products.out_of_stock')}</option>
@@ -1230,7 +1230,7 @@ export default function ProductsPage() {
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">{t('products.all_categories')}</option>
             {categories.map(cat => (
@@ -1242,7 +1242,7 @@ export default function ProductsPage() {
 
       {/* Bulk actions */}
       {!isIncompleteTab && selectedIds.length > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-200 dark:border-primary-800">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-200 dark:border-primary-800">
           <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
             {t('products.selected_count', { count: selectedIds.length })}
           </span>
@@ -1410,7 +1410,7 @@ export default function ProductsPage() {
                     )}
 
                     {/* Actions */}
-                    <div className="grid grid-cols-4 gap-2 pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                       <button
                         onClick={() => openEdit(prod)}
                         className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
@@ -1419,6 +1419,7 @@ export default function ProductsPage() {
                         {t('products.edit')}
                       </button>
                       <button
+                        title="طباعة باركود"
                         onClick={() => {
                           const payload = resolveBarcodePayload(prod, barcodeMode === 'local_only' ? 'local' : 'international');
                           if (payload?.value) {
@@ -1438,7 +1439,7 @@ export default function ProductsPage() {
                         }}
                         className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-600 hover:bg-purple-100 transition-colors"
                       >
-                        <Printer className="w-3.5 h-3.5" />
+                        <Barcode className="w-3.5 h-3.5" />
                         طباعة
                       </button>
                       <button

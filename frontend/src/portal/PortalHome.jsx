@@ -71,7 +71,7 @@ export default function PortalHome() {
         </div>
 
         {/* Hero Banner (Premium Redesign) */}
-        <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl h-60 md:h-80 group">
+        <div className="relative rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl h-56 sm:h-60 md:h-80 group">
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] ease-out group-hover:scale-105"
             style={{
@@ -82,12 +82,12 @@ export default function PortalHome() {
           <div className="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent dark:from-black/95 dark:via-black/60" />
 
           {/* Glassmorphic Content Container */}
-          <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-center items-start text-white">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-3xl max-w-sm md:max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] transform transition-all duration-700 hover:-translate-y-1">
+          <div className="absolute inset-0 p-4 sm:p-6 md:p-10 flex flex-col justify-center items-start text-white">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-5 sm:p-6 rounded-3xl max-w-full sm:max-w-sm md:max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.12)] transform transition-all duration-700 hover:-translate-y-1">
               <span className="inline-block bg-gradient-to-r from-primary-500 to-indigo-500 text-white text-xs font-black px-4 py-1.5 rounded-full mb-4 shadow-lg">
                 {t('home.exclusive_offers')}
               </span>
-              <h1 className="text-3xl md:text-5xl font-black mb-3 leading-tight tracking-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-black mb-3 leading-tight tracking-tight">
                 {t('home.mega_sales')}
               </h1>
               <p className="text-white/80 mb-6 text-sm font-medium line-clamp-2 leading-relaxed">
@@ -95,7 +95,7 @@ export default function PortalHome() {
               </p>
               <button
                 onClick={() => navigate('/portal/products')}
-                className="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:scale-105 flex items-center gap-2 group/btn"
+                className="w-full sm:w-auto justify-center bg-white text-gray-900 px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:scale-105 flex items-center gap-2 group/btn"
               >
                 {t('home.shop_now')}
                 <div className="bg-gray-100 rounded-full p-1 group-hover/btn:bg-gray-200 transition-colors">
@@ -113,7 +113,7 @@ export default function PortalHome() {
 
           {/* Purchasing Power (Virtual Credit Card) */}
           {customer?.creditLimit > 0 && (
-            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white rounded-3xl p-6 shadow-2xl relative overflow-hidden group border border-gray-700/50">
+            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden group border border-gray-700/50">
               {/* Card Texture & Glows */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover:scale-110" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary-500/20 rounded-full blur-2xl -ml-20 -mb-20 transition-transform duration-1000 group-hover:scale-110" />
@@ -121,7 +121,7 @@ export default function PortalHome() {
               {/* NFC / Chip Icon overlay pattern */}
               <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent bg-[length:20px_20px]" />
 
-              <div className="relative z-10 flex justify-between items-start mb-6">
+              <div className="relative z-10 flex items-start justify-between gap-3 mb-6">
                 <div>
                   <h3 className="font-bold text-gray-300 text-sm tracking-wide">{t('home.purchasing_power')}</h3>
                   <div className="w-8 h-6 bg-yellow-400/20 rounded border border-yellow-500/30 flex items-center justify-center mt-2">
@@ -170,12 +170,12 @@ export default function PortalHome() {
 
           {/* Gamification / Loyalty Points (Premium) */}
           {customer?.points >= 0 && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden flex flex-col justify-center group hover:border-yellow-500/30 transition-colors">
+            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-3xl p-5 sm:p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden flex flex-col justify-center group hover:border-yellow-500/30 transition-colors">
 
               {/* Subtle ambient background glow */}
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/10 dark:bg-yellow-500/5 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150" />
 
-              <div className="flex items-center justify-between mb-5 relative z-10">
+              <div className="flex items-start justify-between gap-3 mb-5 relative z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-2xl flex items-center justify-center shadow-[0_4px_15px_rgba(234,179,8,0.3)]">
                     <Star className="w-6 h-6 text-white fill-white" />
@@ -231,7 +231,7 @@ export default function PortalHome() {
 
       {/* ═══════════════ CATEGORIES (Pill style) ═══════════════ */}
       <div>
-        <div className="flex items-center justify-between px-2 mb-4">
+        <div className="flex items-end justify-between gap-3 px-2 mb-4">
           <h3 className="font-black text-xl dark:text-white tracking-tight">{t('home.browse_categories')}</h3>
           <Link to="/portal/products" className="text-xs font-bold text-primary-600 hover:text-primary-700 transition flex items-center gap-1">
             {t('home.view_all')} <ArrowLeft className="w-3 h-3" />
@@ -262,7 +262,7 @@ export default function PortalHome() {
       <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200/50 dark:border-gray-800 -mx-4 px-4 py-8 rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
 
         {/* Quick Actions Grid (Refined) */}
-        <div className="grid grid-cols-4 gap-3 mb-10 px-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10 px-1">
           <button onClick={() => navigate('/portal/orders')} className="flex flex-col items-center gap-2 group">
             <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
               <Package className="w-6 h-6 text-blue-500" />
@@ -292,8 +292,8 @@ export default function PortalHome() {
           </button>
         </div>
 
-        <div className="flex items-center justify-between mb-6 px-1">
-          <h3 className="font-black text-2xl dark:text-white tracking-tight flex items-center gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 px-1">
+          <h3 className="font-black text-xl sm:text-2xl dark:text-white tracking-tight flex items-center gap-2">
             {t('home.featured_products')}
             <div className="bg-yellow-100 dark:bg-yellow-900/30 p-1.5 rounded-xl">
               <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
@@ -336,7 +336,7 @@ export default function PortalHome() {
             const hasOverdue = upcomingInstallments.some(inst => new Date(inst.dueDate) < new Date());
 
             return (
-              <div className={`rounded-3xl p-6 border shadow-xl relative overflow-hidden ${hasOverdue
+              <div className={`rounded-3xl p-5 sm:p-6 border shadow-xl relative overflow-hidden ${hasOverdue
                 ? 'bg-gradient-to-br from-red-50 to-white dark:from-red-900/20 dark:to-gray-900 border-red-200 dark:border-red-800/50 shadow-red-500/10'
                 : 'bg-gradient-to-br from-orange-50 to-white dark:from-orange-900/20 dark:to-gray-900 border-orange-200 dark:border-orange-800/50 shadow-orange-500/10'
                 }`}>
@@ -347,7 +347,7 @@ export default function PortalHome() {
                   <span className={`relative inline-flex rounded-full h-3 w-3 ${hasOverdue ? 'bg-red-500' : 'bg-orange-500'}`}></span>
                 </div>
 
-                <div className="flex items-center gap-4 mb-5">
+                <div className="flex items-start gap-3 sm:gap-4 mb-5">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${hasOverdue ? 'bg-red-500 text-white' : 'bg-gradient-to-br from-orange-400 to-orange-500 text-white'
                     }`}>
                     <Calendar className="w-6 h-6" />
@@ -365,8 +365,8 @@ export default function PortalHome() {
 
                 <div className="space-y-3">
                   {upcomingInstallments.slice(0, 2).map((inst, i) => (
-                    <div key={i} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100/50 dark:border-gray-700/50 p-4 rounded-2xl flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-                      <div className="flex items-center gap-4">
+                    <div key={i} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-100/50 dark:border-gray-700/50 p-4 rounded-2xl flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                      <div className="flex items-center gap-3 sm:gap-4">
                         <span className="font-black text-2xl text-gray-900 dark:text-white w-8 text-center">{new Date(inst.dueDate).getDate()}</span>
                         <div className="flex flex-col">
                           <span className="text-xs font-black text-gray-700 dark:text-gray-300">{t('home.alerts.installment_due')}</span>
@@ -447,7 +447,7 @@ export default function PortalHome() {
                   {/* Visual Category Suggestions */}
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 mb-3 px-1">{t('home.browse_by_category')}</h4>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {categories?.slice(0, 4).map((cat, i) => (
                         <button
                           key={i}

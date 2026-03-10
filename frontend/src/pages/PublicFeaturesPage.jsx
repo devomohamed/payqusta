@@ -1,5 +1,6 @@
 import React from 'react';
-import { BarChart3, Boxes, CreditCard, MonitorSmartphone, ShieldCheck, Workflow } from 'lucide-react';
+import { ArrowLeft, BarChart3, Boxes, CreditCard, MonitorSmartphone, ShieldCheck, Workflow } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const modules = [
   {
@@ -40,20 +41,61 @@ const modules = [
   },
 ];
 
+const valueOutcomes = [
+  'صورة أوضح للعميل والزائر قبل التسجيل',
+  'تشغيل يومي أسرع لفريق المبيعات والتحصيل',
+  'ربط أفضل بين الواجهة العامة وما يحدث داخل النظام',
+];
+
 export default function PublicFeaturesPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-      <div className="max-w-3xl text-right">
-        <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">المزايا</p>
-        <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-          PayQusta ليس أداة واحدة، بل منظومة مترابطة
-        </h1>
-        <p className="mt-4 text-lg leading-8 text-slate-600">
-          الصفحة دي تشرح ماذا يقدمه المشروع فعليًا، وكيف تتكامل الأجزاء المختلفة بدل أن تكون مجرد قائمة خواص منفصلة.
-        </p>
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
+        <div className="text-right">
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">المزايا</p>
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            PayQusta ليس أداة واحدة، بل منظومة مترابطة
+          </h1>
+          <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
+            هذه الصفحة تشرح ماذا يقدم المشروع فعليًا، وكيف تتكامل الأجزاء المختلفة بدل أن تكون مجرد قائمة خواص منفصلة.
+          </p>
+
+          <div className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الصورة الكبيرة</p>
+            <h2 className="mt-3 text-2xl font-black text-slate-950">الميزة الأقوى هي الترابط</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              المنتج القوي ليس فقط في عدد الخواص، بل في كيف تتصل ببعضها. PayQusta يربط بين الإدارة اليومية، والواجهة
+              العامة، وحركة البيع، وسجل التحصيل في مسار واحد أوضح.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:p-8">
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">النتيجة</p>
+          <h2 className="mt-3 text-3xl font-black leading-tight">زائر يفهم المشروع بسرعة، وفريق يعمل براحة أكبر</h2>
+          <p className="mt-4 text-sm leading-7 text-slate-300">
+            هذا بالضبط هدف الموقع العام الجديد: شرح احترافي للمنصة، ثم تحويل الزائر إلى مستخدم أو عميل محتمل بخطوات واضحة.
+          </p>
+          <div className="mt-6 grid gap-3">
+            {valueOutcomes.map((item) => (
+              <div key={item} className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white/90">
+                {item}
+              </div>
+            ))}
+          </div>
+          <div className="mt-6">
+            <Link
+              to="/login?mode=register"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
+            >
+              ابدأ الآن
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-10 grid gap-5 lg:grid-cols-3">
+      <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {modules.map((module) => {
           const Icon = module.icon;
           return (
@@ -77,22 +119,31 @@ export default function PublicFeaturesPage() {
         })}
       </div>
 
-      <div className="mt-10 grid gap-5 lg:grid-cols-2">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-7 text-right shadow-sm">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">الصورة الكبيرة</p>
-          <h3 className="mt-3 text-3xl font-black text-slate-950">الميزة الأقوى هي الترابط</h3>
-          <p className="mt-4 text-base leading-8 text-slate-600">
-            المنتج القوي ليس فقط في عدد الخواص، بل في كيف تتصل ببعضها. PayQusta يربط بين الداخل والخارج:
-            بين الإدارة اليومية، والواجهة العامة، وحركة البيع، وسجل التحصيل.
-          </p>
-        </div>
+      <div className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right shadow-sm sm:p-8">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">ما الذي يتحسن فعليًا؟</p>
+            <h3 className="mt-3 text-3xl font-black text-slate-950">من عرض البراند إلى متابعة التحصيل، نفس المنظومة تخدمك</h3>
+            <p className="mt-3 text-base leading-8 text-slate-600">
+              الفكرة ليست إضافة صفحات فقط، بل جعل كل طبقة من التجربة تخدم الهدف التالي: فهم، ثقة، تشغيل، ثم نمو.
+            </p>
+          </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-7 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">النتيجة</p>
-          <h3 className="mt-3 text-3xl font-black">زائر يفهم المشروع بسرعة، وفريق يعمل براحة أكبر</h3>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
-            ده بالضبط الهدف من الموقع العام الجديد: شرح احترافي للمنصة، ثم تحويل الزائر إلى مستخدم أو عميل محتمل بخطوات واضحة.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+            <Link
+              to="/use-cases"
+              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+            >
+              الحالات العملية
+            </Link>
+            <Link
+              to="/login?mode=register"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
+            >
+              جرّب الآن
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

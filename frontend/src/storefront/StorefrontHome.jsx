@@ -139,8 +139,8 @@ export default function StorefrontHome() {
           <Badge variant="primary" className="border border-white/10 bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur-md">
             منتجات مختارة
           </Badge>
-          <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight md:text-5xl">
-            اكتشف أحدث منتجات {settings?.tenant?.name || settings?.store?.name || 'متجرنا'}
+          <h1 className="mt-5 max-w-2xl text-3xl sm:text-4xl md:text-5xl font-black leading-tight">
+            اكتشف أحدث منتجات {settings?.store?.name || 'المتجر'}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-slate-200 md:text-lg">
             تجربة شراء أسرع، أسعار واضحة، ومنتجات جاهزة للطلب بدون ازدحام أو رسائل مشتتة.
@@ -154,11 +154,11 @@ export default function StorefrontHome() {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <div className="mt-8 grid gap-4 grid-cols-1 sm:grid-cols-3">
             {heroTrustSignals.map((signal) => (
               <div
                 key={signal.key}
-                className="rounded-2xl border border-white/10 bg-white/10 p-4 text-right text-white backdrop-blur-sm"
+                className="rounded-2xl border border-white/10 bg-white/10 p-5 text-right text-white backdrop-blur-sm"
               >
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-200">{signal.label}</p>
                 <p className="mt-2 text-xl font-black">{signal.value}</p>
@@ -424,7 +424,7 @@ function ProductCard({ product }) {
               {reviewCount > 0 ? `(${reviewCount})` : 'بدون تقييمات'}
             </span>
           </div>
-          <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors leading-7">
+          <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors leading-7 min-h-[3.5rem]">
             {product.name}
           </h3>
 

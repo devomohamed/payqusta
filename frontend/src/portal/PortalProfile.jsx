@@ -112,11 +112,11 @@ export default function PortalProfile() {
   return (
     <div className="space-y-4 pb-20" dir={i18n.dir()}>
       {/* Profile Card */}
-      <div className={`bg-gradient-to-br ${tier.color} rounded-3xl p-6 text-white shadow-xl relative overflow-hidden`}>
+      <div className={`bg-gradient-to-br ${tier.color} rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-10 -mb-10 blur-xl" />
 
-        <div className="relative z-10 flex items-center gap-4">
+        <div className="relative z-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           <div className="relative group">
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm text-3xl font-black overflow-hidden border-2 border-white/30">
               {profilePhoto ? (
@@ -126,13 +126,13 @@ export default function PortalProfile() {
               )}
             </div>
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-xl font-black">{customer?.name}</h2>
             <p className="text-white/70 text-sm flex items-center gap-1 mt-1">
               <Phone className="w-3.5 h-3.5" />
               {customer?.phone}
             </p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="bg-white/20 backdrop-blur-sm px-3 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
                 <TierIcon className="w-3.5 h-3.5" />
                 {t('profile.tiers.customer', { tier: t(`profile.tiers.${customer?.tier || 'bronze'}`) })}
@@ -150,7 +150,7 @@ export default function PortalProfile() {
       {/* ═══ Statement Quick-Access ═══ */}
       <Link
         to="/portal/statement"
-        className="flex items-center justify-between bg-gradient-to-l from-blue-600 to-blue-700 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all group"
+        className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-l from-blue-600 to-blue-700 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all group"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -161,7 +161,7 @@ export default function PortalProfile() {
             <p className="text-white/70 text-xs">{t('profile.statement_desc')}</p>
           </div>
         </div>
-        <ChevronLeft className="w-5 h-5 text-white/70 group-hover:translate-x-[-4px] transition-transform" />
+        <ChevronLeft className="w-5 h-5 text-white/70 group-hover:translate-x-[-4px] transition-transform self-end sm:self-auto" />
       </Link>
 
       {/* Section Tabs */}
@@ -363,7 +363,7 @@ export default function PortalProfile() {
             ) : (
               <>
                 {/* Points Summary */}
-                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
                   <div className="relative z-10 text-center">
                     <Star className="w-10 h-10 mx-auto mb-2 fill-current" />
@@ -376,7 +376,7 @@ export default function PortalProfile() {
                 {/* Tier Info */}
                 <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
                   <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('profile.points.tier_level')}</h3>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3 sm:items-center">
                     <div className={`w-12 h-12 bg-gradient-to-br ${tier.color} rounded-xl flex items-center justify-center text-white`}>
                       <TierIcon className="w-6 h-6" />
                     </div>
@@ -409,7 +409,7 @@ export default function PortalProfile() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 text-center">
                     <ShoppingBag className="w-6 h-6 text-primary-500 mx-auto mb-2" />
                     <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.invoices_count')}</p>
@@ -450,7 +450,7 @@ export default function PortalProfile() {
       {/* Settings Sections Placeholders for explicit flow navigation */}
       {
         activeSection === 'addresses' && (
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+          <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-5 sm:p-8 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
             <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('profile.addresses_page.title')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{t('profile.addresses_page.desc')}</p>
@@ -464,7 +464,7 @@ export default function PortalProfile() {
       {
         activeSection === 'settings' && (
           <div className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
-            <div className="p-4 flex items-center justify-between">
+            <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.offers_title')}</h4>
                 <p className="text-xs text-gray-500 mt-1">{t('profile.settings.offers_desc')}</p>
@@ -474,7 +474,7 @@ export default function PortalProfile() {
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:-translate-x-full peer-checked:bg-primary-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
               </label>
             </div>
-            <div className="p-4 flex items-center justify-between">
+            <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.orders_title')}</h4>
                 <p className="text-xs text-gray-500 mt-1">{t('profile.settings.orders_desc')}</p>

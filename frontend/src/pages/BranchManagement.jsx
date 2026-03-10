@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Building2, Plus, Edit, Trash2, MapPin, Phone, User,
-  Search, Filter, Store, X
+  Search, Store, X,
 } from 'lucide-react';
-import { Button, Input, Card, Modal, EmptyState, Badge } from '../components/UI';
+import { Button, Input, Card, Modal, EmptyState, Badge, LoadingSpinner } from '../components/UI';
 import toast from 'react-hot-toast';
 import { api, useAuthStore } from '../store';
 import { confirm } from '../components/ConfirmDialog';
@@ -18,7 +18,6 @@ export default function BranchManagement() {
   const [editingBranch, setEditingBranch] = useState(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', cameras: [] });
 
-  // Filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [tenantFilter, setTenantFilter] = useState('all');
   const [tenants, setTenants] = useState([]);
@@ -28,15 +27,13 @@ export default function BranchManagement() {
     try {
       const [branchesRes, tenantsRes] = await Promise.all([
         api.get('/branches'),
-        isSuperAdmin ? api.get('/admin/tenants?limit=1000') : Promise.resolve({ data: { data: [] } })
+        isSuperAdmin ? api.get('/admin/tenants?limit=1000') : Promise.resolve({ data: { data: [] } }),
       ]);
 
       setBranches(branchesRes.data.data.branches || []);
 
-      // Extract unique tenants for filter
       if (isSuperAdmin) {
-        const allTenants = tenantsRes.data.data || [];
-        setTenants(allTenants);
+        setTenants(tenantsRes.data.data || []);
       }
     } catch (err) {
       toast.error('فشل تحميل البيانات');
@@ -49,10 +46,14 @@ export default function BranchManagement() {
     fetchBranches();
   }, []);
 
+  const resetForm = () => {
+    setForm({ name: '', address: '', phone: '', cameras: [], tenantId: '' });
+    setEditingBranch(null);
+  };
+
   const handleSave = async () => {
     if (!form.name) return toast.error('اسم الفرع مطلوب');
 
-    // Super Admin must select tenant
     if (isSuperAdmin && !form.tenantId && !editingBranch) {
       return toast.error('يجب اختيار المتجر (Owner)');
     }
@@ -66,7 +67,6 @@ export default function BranchManagement() {
     try {
       const payload = { ...form };
 
-      // For Super Admin, include tenant in payload
       if (isSuperAdmin && form.tenantId) {
         payload.tenantId = form.tenantId;
       }
@@ -78,10 +78,10 @@ export default function BranchManagement() {
         await api.post('/branches', payload);
         toast.success('تم إضافة الفرع');
       }
+
       fetchBranches();
       setShowModal(false);
-      setForm({ name: '', address: '', phone: '', cameras: [], tenantId: '' });
-      setEditingBranch(null);
+      resetForm();
     } catch (err) {
       toast.error(err.response?.data?.message || 'حدث خطأ');
     }
@@ -90,6 +90,7 @@ export default function BranchManagement() {
   const handleDelete = async (id) => {
     const ok = await confirm.delete('هل أنت متأكد من حذف هذا الفرع؟');
     if (!ok) return;
+
     try {
       await api.delete(`/branches/${id}`);
       toast.success('تم حذف الفرع');
@@ -115,22 +116,22 @@ export default function BranchManagement() {
     setShowModal(true);
   };
 
-  // Filtering logic
-  const filteredBranches = branches.filter(branch => {
-    const matchesSearch = !searchTerm ||
-      branch.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredBranches = branches.filter((branch) => {
+    const matchesSearch = !searchTerm
+      || branch.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      || branch.address?.toLowerCase().includes(searchTerm.toLowerCase())
+      || branch.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesTenant = tenantFilter === 'all' || branch.tenant?._id === tenantFilter;
 
     return matchesSearch && matchesTenant;
   });
 
+  const hasFilters = Boolean(searchTerm) || tenantFilter !== 'all';
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
             <Building2 className="w-6 h-6 text-white" />
@@ -142,11 +143,12 @@ export default function BranchManagement() {
             </p>
           </div>
         </div>
+
         <Button
+          className="w-full sm:w-auto"
           icon={<Plus className="w-4 h-4" />}
           onClick={() => {
-            setEditingBranch(null);
-            setForm({ name: '', address: '', phone: '', cameras: [], tenantId: '' });
+            resetForm();
             setShowModal(true);
           }}
         >
@@ -154,10 +156,8 @@ export default function BranchManagement() {
         </Button>
       </div>
 
-      {/* Filters */}
       <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Search */}
+        <div className="flex flex-col gap-3 md:flex-row">
           <div className="flex-1 relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -176,7 +176,6 @@ export default function BranchManagement() {
             )}
           </div>
 
-          {/* Tenant Filter - Only for Super Admin */}
           {isSuperAdmin && tenants.length > 0 && (
             <div className="md:w-64">
               <select
@@ -185,8 +184,8 @@ export default function BranchManagement() {
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
               >
                 <option value="all">جميع المتاجر ({branches.length})</option>
-                {tenants.map(tenant => {
-                  const count = branches.filter(b => b.tenant?._id === tenant._id).length;
+                {tenants.map((tenant) => {
+                  const count = branches.filter((branch) => branch.tenant?._id === tenant._id).length;
                   return (
                     <option key={tenant._id} value={tenant._id}>
                       {tenant.name} ({count})
@@ -199,45 +198,50 @@ export default function BranchManagement() {
         </div>
       </Card>
 
-      {/* Branches Grid */}
       {loading ? (
-        <div className="flex justify-center py-12">جاري التحميل...</div>
+        <Card className="p-6 sm:p-8">
+          <LoadingSpinner size="lg" text="جاري تحميل الفروع..." />
+        </Card>
       ) : filteredBranches.length === 0 ? (
         <EmptyState
-          icon={<Building2 />}
-          title={searchTerm || tenantFilter !== 'all' ? 'لا توجد نتائج' : 'لا توجد فروع'}
-          description={searchTerm || tenantFilter !== 'all' ? 'جرب تغيير البحث أو الفلتر' : 'أضف فرعك الأول لبدء العمل'}
-          action={
-            searchTerm || tenantFilter !== 'all' ? (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSearchTerm('');
-                  setTenantFilter('all');
-                }}
-              >
-                إعادة تعيين الفلاتر
-              </Button>
-            ) : null
-          }
+          icon={Building2}
+          title={hasFilters ? 'لا توجد نتائج' : 'لا توجد فروع'}
+          description={hasFilters ? 'جرّب تغيير البحث أو الفلتر الحالي.' : 'أضف أول فرع لبدء تنظيم العمل بين المتاجر والفروع.'}
+          action={hasFilters ? {
+            label: 'إعادة تعيين الفلاتر',
+            onClick: () => {
+              setSearchTerm('');
+              setTenantFilter('all');
+            },
+            variant: 'outline',
+            size: 'md',
+          } : {
+            label: 'إضافة فرع',
+            onClick: () => {
+              resetForm();
+              setShowModal(true);
+            },
+            variant: 'primary',
+            size: 'md',
+          }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {filteredBranches.map((branch) => (
             <Card key={branch._id} className="p-5 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3 flex-1">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
                     <Building2 className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold truncate">{branch.name}</h3>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-bold">{branch.name}</h3>
                     <p className="text-xs text-gray-400">
                       {branch.cameras?.length || 0} كاميرا
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex flex-shrink-0 gap-1">
                   <button
                     onClick={() => handleEdit(branch)}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -254,9 +258,8 @@ export default function BranchManagement() {
               </div>
 
               <div className="space-y-2 text-sm">
-                {/* Tenant Badge - Only for Super Admin */}
                 {isSuperAdmin && branch.tenant && (
-                  <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-2">
                     <Store className="w-4 h-4 text-primary-500" />
                     <Badge variant="primary" className="text-xs">
                       {branch.tenant.name}
@@ -288,25 +291,23 @@ export default function BranchManagement() {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
         title={editingBranch ? 'تعديل فرع' : 'إضافة فرع جديد'}
       >
         <div className="space-y-4">
-          {/* Tenant Selector - Only for Super Admin and only when creating */}
           {isSuperAdmin && !editingBranch && (
             <div>
               <label className="block text-sm font-bold mb-2">المتجر (Owner) *</label>
               <select
                 value={form.tenantId}
-                onChange={e => setForm({ ...form, tenantId: e.target.value })}
+                onChange={(e) => setForm({ ...form, tenantId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
                 required
               >
                 <option value="">-- اختر المتجر --</option>
-                {tenants.map(tenant => (
+                {tenants.map((tenant) => (
                   <option key={tenant._id} value={tenant._id}>
                     {tenant.name}
                   </option>
@@ -315,7 +316,6 @@ export default function BranchManagement() {
             </div>
           )}
 
-          {/* Show current tenant for Super Admin when editing */}
           {isSuperAdmin && editingBranch && editingBranch.tenant && (
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-500 mb-1">المتجر التابع له:</p>
@@ -326,57 +326,57 @@ export default function BranchManagement() {
           <Input
             label="اسم الفرع *"
             value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="فرع القاهرة"
           />
           <Input
             label="العنوان"
             value={form.address}
-            onChange={e => setForm({ ...form, address: e.target.value })}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
             placeholder="شارع الهرم، الجيزة"
           />
           <Input
             label="رقم الهاتف"
             value={form.phone}
-            onChange={e => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
             placeholder="01234567890"
           />
 
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-bold mb-3">
+            <h3 className="mb-3 text-sm font-bold">
               {editingBranch ? 'تعديل بيانات مدير الفرع' : 'بيانات مدير الفرع'}
             </h3>
             <div className="space-y-3">
               <Input
                 label="اسم المدير"
                 value={form.managerName || ''}
-                onChange={e => setForm({ ...form, managerName: e.target.value })}
+                onChange={(e) => setForm({ ...form, managerName: e.target.value })}
                 placeholder="أحمد محمد"
               />
               <Input
                 label="البريد الإلكتروني"
                 type="email"
                 value={form.managerEmail || ''}
-                onChange={e => setForm({ ...form, managerEmail: e.target.value })}
+                onChange={(e) => setForm({ ...form, managerEmail: e.target.value })}
                 placeholder="manager@branch.com"
               />
               <Input
                 label="رقم هاتف المدير"
                 value={form.managerPhone || ''}
-                onChange={e => setForm({ ...form, managerPhone: e.target.value })}
+                onChange={(e) => setForm({ ...form, managerPhone: e.target.value })}
                 placeholder="010xxxxxxx"
               />
               <Input
                 label="كلمة المرور"
                 type="password"
                 value={form.managerPassword || ''}
-                onChange={e => setForm({ ...form, managerPassword: e.target.value })}
-                placeholder={editingBranch ? "اتركه فارغاً إذا لم ترد التغيير" : "********"}
+                onChange={(e) => setForm({ ...form, managerPassword: e.target.value })}
+                placeholder={editingBranch ? 'اتركه فارغًا إذا لم ترد التغيير' : '********'}
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 mt-6">
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
             <Button onClick={handleSave}>حفظ</Button>
           </div>

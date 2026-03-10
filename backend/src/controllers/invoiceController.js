@@ -33,8 +33,8 @@ class InvoiceController {
     if (branch) filter.branch = branch;
     // Filter by payment status
     if (status) filter.status = status;
-    // Filter by source (e.g., 'portal')
-    if (source) filter.source = source;
+    // Filter by source (e.g., 'portal,online_store')
+    if (source) filter.source = { $in: source.split(',') };
     // Filter by order tracking status
     if (orderStatus) filter.orderStatus = orderStatus;
 

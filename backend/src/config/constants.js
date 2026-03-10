@@ -23,6 +23,7 @@ module.exports = {
   // Payment Methods
   PAYMENT_METHODS: {
     CASH: 'cash',
+    CASH_ON_DELIVERY: 'cash_on_delivery',
     INSTALLMENT: 'installment',
     DEFERRED: 'deferred', // آجل
     VISA: 'visa',

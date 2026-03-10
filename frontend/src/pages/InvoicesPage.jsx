@@ -306,13 +306,13 @@ export default function InvoicesPage() {
     overdue: <Badge variant="danger">متأخر</Badge>,
   }[s] || <Badge variant="gray">—</Badge>);
 
-  const methodLabel = (m) => ({ cash: '💵 نقد', installment: '📅 أقساط', deferred: '⏳ آجل' }[m] || m);
+  const methodLabel = (m) => ({ cash: '💵 نقد', cash_on_delivery: '🚚 الدفع عند الاستلام', installment: '📅 أقساط', deferred: '⏳ آجل' }[m] || m);
 
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
           {/* Customer Search Box */}
           <div className="relative w-full sm:w-56">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -342,7 +342,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* Branch Filter */}
-        <div className="relative flex-1 sm:w-64">
+        <div className="relative w-full sm:flex-1 sm:w-64">
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
@@ -380,7 +380,7 @@ export default function InvoicesPage() {
         <>
           <Card className="overflow-hidden border-0 shadow-lg shadow-gray-100/50 dark:shadow-none">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-right">
+              <table className="w-full min-w-[980px] text-sm text-right">
                 <thead>
                   <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
                     <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">رقم الفاتورة</th>
@@ -423,7 +423,7 @@ export default function InvoicesPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex flex-wrap items-center justify-center gap-2 min-w-[168px]">
                           {inv.remainingAmount > 0 ? (
                             <>
                               <button
@@ -537,7 +537,7 @@ export default function InvoicesPage() {
               .map((p) => {
                 const inCart = cart.find((c) => c.productId === p._id);
                 return (
-                  <div key={p._id} className="flex items-center justify-between p-2 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                  <div key={p._id} className="flex items-start justify-between gap-3 p-2 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-white dark:hover:bg-gray-800 transition-colors">
                     <div>
                       <p className="font-bold text-xs text-gray-800 dark:text-gray-200">{p.name}</p>
                       <div className="flex items-center gap-2 text-[10px] text-gray-500">
@@ -570,9 +570,9 @@ export default function InvoicesPage() {
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4">
             <p className="text-xs font-bold text-gray-400 mb-3">سلة الفاتورة</p>
             {cart.map((item) => (
-              <div key={item.productId} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={item.productId} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
                 <span className="text-sm font-medium">{item.name}</span>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between sm:justify-end gap-3">
                   <div className="flex items-center gap-1">
                     <button onClick={() => updateQty(item.productId, item.quantity - 1)} className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 text-sm font-bold flex items-center justify-center">−</button>
                     <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
@@ -583,7 +583,7 @@ export default function InvoicesPage() {
                 </div>
               </div>
             ))}
-            <div className="flex justify-between mt-3 pt-3 border-t-2 border-gray-200 dark:border-gray-600">
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between mt-3 pt-3 border-t-2 border-gray-200 dark:border-gray-600">
               <span className="font-extrabold">الإجمالي</span>
               <span className="text-xl font-extrabold text-primary-500">{fmt(cartTotal)} ج.م</span>
             </div>
@@ -600,7 +600,7 @@ export default function InvoicesPage() {
               <Select label="التكرار" value={frequency} onChange={(e) => setFrequency(e.target.value)}
                 options={[{ value: 'weekly', label: 'أسبوعي' }, { value: 'biweekly', label: 'كل 15 يوم' }, { value: 'monthly', label: 'شهري' }, { value: 'bimonthly', label: 'كل شهرين' }]} />
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
               <div className="bg-white dark:bg-gray-900 rounded-xl p-3"><p className="text-[10px] text-gray-400">المقدم</p><p className="text-lg font-extrabold text-emerald-500">{fmt(Number(downPayment) || 0)}</p></div>
               <div className="bg-white dark:bg-gray-900 rounded-xl p-3"><p className="text-[10px] text-gray-400">المتبقي</p><p className="text-lg font-extrabold text-amber-500">{fmt(remaining)}</p></div>
               <div className="bg-white dark:bg-gray-900 rounded-xl p-3"><p className="text-[10px] text-gray-400">القسط</p><p className="text-lg font-extrabold text-primary-500">{fmt(monthlyAmount)}</p></div>
@@ -609,7 +609,7 @@ export default function InvoicesPage() {
           </div>
         )}
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <Button variant="ghost" onClick={() => setShowCreate(false)}>إلغاء</Button>
           <Button icon={<Check className="w-4 h-4" />} onClick={handleCreate} loading={creating}>إنشاء الفاتورة</Button>
         </div>
@@ -624,7 +624,7 @@ export default function InvoicesPage() {
               <p className="text-2xl font-extrabold text-red-500">{fmt(payInvoice.remainingAmount)} ج.م</p>
             </div>
             <Input label="مبلغ الدفع" type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="أدخل المبلغ" />
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
               <Button variant="ghost" onClick={() => setShowPayModal(false)}>إلغاء</Button>
               <Button icon={<Check className="w-4 h-4" />} onClick={handlePay}>تأكيد الدفع</Button>
             </div>
@@ -656,7 +656,7 @@ export default function InvoicesPage() {
                   ]}
                 />
 
-                <div className="flex justify-end gap-3 mt-4">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-4">
                   <Button variant="ghost" onClick={() => setShowLinkModal(false)}>إلغاء</Button>
                   <Button icon={<LinkIcon className="w-4 h-4" />} onClick={handleGenerateLink} loading={linkLoading}>
                     إنشاء الرابط
@@ -690,7 +690,7 @@ export default function InvoicesPage() {
                   </button>
                 </div>
 
-                <div className="flex justify-between gap-3">
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
                   <Button variant="ghost" onClick={() => { setGeneratedLink(''); setShowLinkModal(false); }} className="flex-1">إغلاق</Button>
                   <Button
                     variant="primary"

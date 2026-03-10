@@ -17,27 +17,28 @@ export function Modal({
 }) {
   if (open === false) return null;
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = () => {
     if (closeOnOutsideClick && onClose) {
       onClose();
     }
   };
 
   const widths = {
-    sm: 'max-w-md',
-    md: 'max-w-xl',
-    lg: 'max-w-3xl',
-    xl: 'max-w-5xl',
-    '2xl': 'max-w-6xl',
-    'fullscreen': 'max-w-none',
+    sm: 'sm:max-w-md',
+    md: 'sm:max-w-xl',
+    lg: 'sm:max-w-3xl',
+    xl: 'sm:max-w-5xl',
+    '2xl': 'sm:max-w-6xl',
+    fullscreen: 'max-w-none',
   };
+
   const isFullscreen = size === 'fullscreen';
   const containerClass = isFullscreen
-    ? 'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5'
-    : 'fixed inset-0 z-50 flex items-start justify-center pt-20 p-4';
+    ? 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-5'
+    : 'fixed inset-0 z-50 flex items-end sm:items-start justify-center p-0 sm:pt-20 sm:p-4';
   const panelSizeClass = isFullscreen
-    ? 'w-[min(96vw,1400px)] h-[92vh]'
-    : `w-full ${widths[size] || widths.md} max-h-[85vh]`;
+    ? 'w-full h-svh sm:w-[min(96vw,1400px)] sm:h-[92vh]'
+    : `w-full ${widths[size] || widths.md} max-h-svh sm:max-h-[85vh]`;
   const bodyBaseClass = isFullscreen
     ? 'flex-1 min-h-0 overflow-y-auto'
     : `overflow-y-auto ${stickyFooter ? 'flex-1 min-h-0' : 'max-h-[calc(85vh-130px)]'}`;
@@ -46,23 +47,21 @@ export function Modal({
     <div className={containerClass} onClick={handleBackdropClick}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
       <div
-        className={`relative ${panelSizeClass} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col ${contentClassName}`}
+        className={`relative ${panelSizeClass} bg-white dark:bg-gray-900 rounded-t-[1.75rem] sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className={`shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 ${headerClassName}`}>
-          <h3 className="text-lg font-bold">{title}</h3>
+        <div className={`shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 ${headerClassName}`}>
+          <h3 className="text-base sm:text-lg font-bold truncate">{title}</h3>
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
+              className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
-        {/* Body */}
-        <div className={`px-6 py-5 ${bodyBaseClass} ${bodyClassName}`}>{children}</div>
+        <div className={`px-4 sm:px-6 py-4 sm:py-5 ${bodyBaseClass} ${bodyClassName}`}>{children}</div>
       </div>
     </div>
   );
@@ -80,7 +79,7 @@ export function Badge({ children, variant = 'primary', className = '' }) {
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${variants[variant]} ${className}`}>
+    <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-bold tracking-[0.01em] ${variants[variant]} ${className}`}>
       {children}
     </span>
   );
@@ -104,14 +103,19 @@ export function Button({
     md: 'px-4 py-2.5 text-sm gap-2',
     lg: 'px-6 py-3 text-base gap-2.5',
   };
+  const spinnerSizes = {
+    sm: 'w-3.5 h-3.5',
+    md: 'w-4 h-4',
+    lg: 'w-5 h-5',
+  };
 
   return (
     <button
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center whitespace-nowrap font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
-      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
+      {loading ? <Loader2 className={`${spinnerSizes[size] || spinnerSizes.md} animate-spin`} /> : icon}
       {children}
     </button>
   );
@@ -232,45 +236,105 @@ export function Card({ children, className = '', hover = false, ...props }) {
 }
 
 // ========== EMPTY STATE ==========
-export function EmptyState({ icon, title, description, action }) {
-  // Support both icon={Package} (component) and icon={<Package />} (element)
+export function EmptyState({ icon, title, description, action, className = '' }) {
   const renderIcon = () => {
     if (!icon) return null;
-    // React elements and component types from forwardRef/memo both expose $$typeof.
-    // `React.isValidElement` distinguishes an already-created element from a component type.
     if (React.isValidElement(icon)) {
       return icon;
     }
-    // Accept component functions/classes as well as forwardRef/memo component objects.
     if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in icon)) {
       const Icon = icon;
-      return <Icon className="w-8 h-8" />;
+      return <Icon className="w-9 h-9" />;
     }
     return null;
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 mb-4">
-        {renderIcon()}
-      </div>
-      <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">{title}</h3>
-      <p className="text-sm text-gray-400 mb-4">{description}</p>
-      {action && (
-        <Button onClick={action.onClick} variant="outline" size="sm">
+  const actionNode = React.isValidElement(action)
+    ? action
+    : action?.label
+      ? (
+        <Button
+          onClick={action.onClick}
+          variant={action.variant || 'outline'}
+          size={action.size || 'sm'}
+          className={action.className || ''}
+        >
           {action.label}
         </Button>
-      )}
+      )
+      : null;
+
+  return (
+    <div className={`flex items-center justify-center py-10 sm:py-16 ${className}`}>
+      <div className="w-full max-w-xl rounded-[1.75rem] border border-gray-100 bg-white/90 px-5 py-8 text-center shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80 sm:px-8 sm:py-10">
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-emerald-50 text-primary-500 shadow-inner dark:border-primary-500/20 dark:from-primary-500/10 dark:via-gray-900 dark:to-emerald-500/10">
+          <div className="text-current [&_svg]:h-9 [&_svg]:w-9">
+            {renderIcon()}
+          </div>
+        </div>
+        <h3 className="text-lg sm:text-xl font-black text-gray-800 dark:text-gray-100">{title}</h3>
+        {description && (
+          <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-gray-500 dark:text-gray-400">{description}</p>
+        )}
+        {actionNode && (
+          <div className="mt-6 flex justify-center">
+            <div className="w-full sm:w-auto [&>*]:w-full sm:[&>*]:w-auto">
+              {actionNode}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 // ========== LOADING SPINNER ==========
-export function LoadingSpinner({ text = 'جاري التحميل...' }) {
+export function LoadingSpinner({ text, size = 'md', className = '' }) {
+  const sizes = {
+    xs: {
+      shell: '',
+      spinner: 'h-4 w-4 border-2',
+      wrapper: 'inline-flex items-center justify-center',
+      text: 'text-[11px]',
+    },
+    sm: {
+      shell: '',
+      spinner: 'h-5 w-5 border-[3px]',
+      wrapper: 'inline-flex items-center justify-center',
+      text: 'text-xs',
+    },
+    md: {
+      shell: 'h-14 w-14 rounded-2xl border border-primary-100 bg-white shadow-sm dark:border-primary-500/20 dark:bg-gray-900',
+      spinner: 'h-8 w-8 border-[3px]',
+      wrapper: 'flex flex-col items-center justify-center gap-3 py-12',
+      text: 'text-sm',
+    },
+    lg: {
+      shell: 'h-20 w-20 rounded-[1.75rem] border border-primary-100 bg-white shadow-sm dark:border-primary-500/20 dark:bg-gray-900',
+      spinner: 'h-10 w-10 border-4',
+      wrapper: 'flex flex-col items-center justify-center gap-4 py-16',
+      text: 'text-sm',
+    },
+  };
+  const config = sizes[size] || sizes.md;
+  const fallbackText = 'جاري التحميل...';
+  const shouldShowText = typeof text === 'string'
+    ? text.length > 0
+    : !['xs', 'sm'].includes(size);
+  const label = typeof text === 'string' ? text : fallbackText;
+
   return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <div className="w-10 h-10 border-4 border-primary-200 dark:border-primary-800 border-t-primary-500 rounded-full animate-spin mb-4" />
-      <p className="text-sm text-gray-400">{text}</p>
+    <div className={`${config.wrapper} ${className}`}>
+      {config.shell ? (
+        <div className={`flex items-center justify-center ${config.shell}`}>
+          <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} />
+        </div>
+      ) : (
+        <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} />
+      )}
+      {shouldShowText && (
+        <p className={`${config.text} font-medium text-gray-500 dark:text-gray-400`}>{label}</p>
+      )}
     </div>
   );
 }
@@ -279,16 +343,36 @@ export function LoadingSpinner({ text = 'جاري التحميل...' }) {
 export function OwnerTableSkeleton({ rows = 8, columns = 6 }) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-        <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+      <div className="border-b border-gray-100 dark:border-gray-800 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="flex gap-2">
+            <div className="h-10 w-28 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div className="h-10 w-24 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          </div>
+        </div>
       </div>
-      <div className="p-4 space-y-3">
+
+      <div className="space-y-3 p-4 sm:hidden">
+        {Array.from({ length: Math.min(rows, 4) }).map((_, rowIdx) => (
+          <div key={`mobile-${rowIdx}`} className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3">
+            <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            </div>
+            <div className="h-10 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden space-y-3 p-4 sm:block">
         {Array.from({ length: rows }).map((_, rowIdx) => (
           <div key={rowIdx} className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
             {Array.from({ length: columns }).map((__, colIdx) => (
               <div
                 key={`${rowIdx}-${colIdx}`}
-                className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                className="h-4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"
               />
             ))}
           </div>

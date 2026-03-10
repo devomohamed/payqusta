@@ -532,9 +532,9 @@ export default function ProductDetails() {
 
       {/* ─── Sticky Add-to-Cart Bar ─── */}
       <div className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ${showStickyCart ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
-        <div className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-4 py-3 shadow-2xl">
-          <div className="max-w-4xl mx-auto flex items-center gap-4">
-            {activeImage && <img src={activeImage} alt={product.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />}
+        <div className="border-t border-gray-100 bg-white px-4 py-3 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+          <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            {activeImage && <img src={activeImage} alt={product.name} className="h-11 w-11 rounded-xl object-cover flex-shrink-0 sm:h-12 sm:w-12" />}
             <div className="flex-1 min-w-0">
               <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{product.name}</p>
               <p className="text-primary-600 font-black">{currentPrice.toLocaleString('en-US')} ج.م</p>
@@ -542,7 +542,7 @@ export default function ProductDetails() {
             <button
               onClick={addToCart}
               disabled={isOutOfStock}
-              className="flex-shrink-0 h-11 px-6 bg-primary-600 hover:bg-primary-500 active:scale-95 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 font-bold text-white shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-auto sm:flex-shrink-0 sm:px-6"
             >
               <ShoppingCart className="w-4 h-4" />
               أضف للسلة
@@ -552,7 +552,7 @@ export default function ProductDetails() {
       </div>
 
       {/* ─── Breadcrumbs ─── */}
-      <nav className="flex items-center gap-2 text-sm text-gray-400 mb-8 pt-4 flex-wrap" aria-label="breadcrumb">
+      <nav className="mb-6 flex flex-wrap items-center gap-2 pt-4 text-sm text-gray-400 sm:mb-8" aria-label="breadcrumb">
         <Link to={storefrontPath('/')} className="hover:text-primary-600 transition-colors font-medium">الرئيسية</Link>
         <ChevronLeft className="w-4 h-4 flex-shrink-0" />
         <Link to={storefrontPath('/products')} className="hover:text-primary-600 transition-colors font-medium">المنتجات</Link>
@@ -580,7 +580,7 @@ export default function ProductDetails() {
               <img
                 src={activeImage}
                 alt={product.name}
-                className="w-full h-full object-contain p-8 transition-transform duration-300 ease-out"
+                className="w-full h-full object-contain p-4 transition-transform duration-300 ease-out sm:p-8"
                 style={{ transformOrigin: `${mousePos.x}% ${mousePos.y}%`, transform: isZoomed ? 'scale(1.8)' : 'scale(1)' }}
               />
             ) : (
@@ -683,7 +683,7 @@ export default function ProductDetails() {
           </div>
 
           {/* ─── Action Card ─── */}
-          <div className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-6 shadow-[0_12px_40px_rgb(0,0,0,0.06)] dark:shadow-none sticky top-24 space-y-6">
+          <div className="space-y-6 rounded-[2rem] border border-gray-100 bg-white p-5 shadow-[0_12px_40px_rgb(0,0,0,0.06)] dark:border-gray-800 dark:bg-gray-900 dark:shadow-none sm:p-6 lg:sticky lg:top-24">
 
             {/* Price */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 relative">
@@ -947,7 +947,7 @@ export default function ProductDetails() {
             <span className="w-1.5 h-6 bg-gradient-to-b from-primary-400 to-primary-600 rounded-full" />وصف المنتج
           </h3>
           <div
-            className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-800/40 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800"
+            className="prose prose-lg dark:prose-invert max-w-none rounded-[2rem] border border-gray-100 bg-white p-5 text-gray-600 leading-relaxed dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-300 sm:p-8"
             dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف متاح لهذا المنتج.</p>' }}
           />
         </div>
@@ -1022,7 +1022,7 @@ export default function ProductDetails() {
             <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
               <Star className="w-10 h-10 text-gray-200 mx-auto mb-2" />
               <p className="text-gray-500 font-bold">لا توجد تقييمات حتى الآن</p>
-              <p className="text-sm text-gray-400">كن أول من يقيم هذا المنتج!</p>
+              <p className="text-sm text-gray-400">سجل دخول لكتابة رايك وتقيمك عن المنتج والبائع</p>
             </div>
           )}
         </div>

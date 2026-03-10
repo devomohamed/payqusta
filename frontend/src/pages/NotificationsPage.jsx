@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../store';
 import { notify } from '../components/AnimatedNotification';
+import { LoadingSpinner } from '../components/UI';
 
 const iconMap = {
   clock: Clock,
@@ -161,8 +162,8 @@ export default function NotificationsPage() {
 
       <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
         {loading ? (
-          <div className="p-10 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <div className="p-6 sm:p-8">
+            <LoadingSpinner size="lg" text="جاري تحميل الإشعارات..." />
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-10 text-center text-gray-500">

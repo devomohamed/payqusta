@@ -273,11 +273,11 @@ export default function ShoppingCart() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-black">سلة التسوق</h1>
         <button
           onClick={handleClearCart}
-          className="text-red-500 hover:text-red-600 text-sm font-medium"
+          className="self-start text-sm font-medium text-red-500 hover:text-red-600 sm:self-auto"
         >
           إفراغ السلة
         </button>
@@ -330,9 +330,16 @@ export default function ShoppingCart() {
             const itemVolumeDiscount = !isPortal ? calculateStorefrontVolumeDiscountForLine(item.price || 0, item.quantity || 0) : 0;
 
             return (
-              <Card key={item.cartKey || index} className="p-4">
-                <div className="flex gap-4">
-                  <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
+              <Card key={item.cartKey || index} className="relative p-4">
+                <button
+                  onClick={() => removeFromCart(item.cartKey)}
+                  className="absolute left-3 top-3 rounded-xl p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 sm:h-24 sm:w-24">
                     {imageUrl ? (
                       <img src={imageUrl} alt={productName} className="w-full h-full object-cover" />
                     ) : (
@@ -342,8 +349,8 @@ export default function ShoppingCart() {
                     )}
                   </div>
 
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1">{productName}</h3>
+                  <div className="min-w-0 flex-1 pr-8 sm:pr-0">
+                    <h3 className="mb-1 text-base font-bold sm:text-lg">{productName}</h3>
                     {Object.keys(variantAttributes).length > 0 && (
                       <p className="text-sm text-gray-500 mb-2 flex flex-wrap gap-2">
                         {Object.entries(variantAttributes).map(([key, value]) => (
@@ -357,7 +364,7 @@ export default function ShoppingCart() {
                         {volumeOffer.shortLabel} ويوفّر {itemVolumeDiscount.toFixed(2)} ج.م
                       </div>
                     )}
-                    <div className="flex items-center justify-between mt-3">
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleQuantity(index, item.quantity - 1)}
@@ -374,8 +381,8 @@ export default function ShoppingCart() {
                         </button>
                       </div>
 
-                      <div className="text-left">
-                        <div className="text-xl font-black text-primary-600">
+                      <div className="text-right sm:text-left">
+                        <div className="text-lg font-black text-primary-600 sm:text-xl">
                           {((item.price || 0) * (item.quantity || 0)).toFixed(2)} ج.م
                         </div>
                         <div className="text-xs text-gray-400">
@@ -384,13 +391,6 @@ export default function ShoppingCart() {
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => removeFromCart(item.cartKey)}
-                    className="text-red-500 hover:text-red-600 p-2"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
                 </div>
               </Card>
             );
@@ -398,7 +398,7 @@ export default function ShoppingCart() {
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="p-6 sticky top-20">
+          <Card className="p-5 sm:p-6 lg:sticky lg:top-20">
             <h2 className="text-xl font-bold mb-4">ملخص الطلب</h2>
 
             {!isPortal && (

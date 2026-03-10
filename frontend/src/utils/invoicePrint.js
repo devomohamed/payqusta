@@ -31,6 +31,7 @@ function getPaymentMethodLabel(method) {
   return (
     {
       cash: 'نقدي',
+      cash_on_delivery: 'الدفع عند الاستلام',
       visa: 'بطاقة',
       installment: 'أقساط',
       deferred: 'آجل',

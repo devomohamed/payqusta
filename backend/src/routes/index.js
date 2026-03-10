@@ -30,7 +30,7 @@ const purchaseOrderController = require('../controllers/purchaseOrderController'
 const revenueAnalyticsController = require('../controllers/revenueAnalyticsController');
 const planController = require('../controllers/planController');
 const reviewController = require('../controllers/reviewController');
-const { uploadSingle } = require('../middleware/upload');
+const { uploadSingle, upload } = require('../middleware/upload');
 const { supplierValidations } = require('../middleware/validation');
 
 // ============ APP INFO ============
@@ -219,6 +219,7 @@ router.post('/settings/whatsapp/create-templates', authorize('admin'), requireFe
 router.post('/settings/whatsapp/detect-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.detectTemplates);
 router.post('/settings/whatsapp/apply-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.applyTemplateMapping);
 router.put('/settings/branding', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateBranding);
+router.post('/settings/logo', authorize('vendor', 'admin'), checkPermission('settings', 'update'), upload.single('logo'), settingsController.uploadLogo);
 router.get('/settings/subdomain-availability', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.checkSubdomainAvailability);
 router.put('/settings/subdomain', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateSubdomain);
 router.put('/settings/user', settingsController.updateUser);

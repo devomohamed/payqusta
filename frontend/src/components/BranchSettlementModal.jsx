@@ -195,7 +195,7 @@ export default function BranchSettlementModal({ open, onClose, branchId, branchN
           <Button variant="ghost" onClick={onClose} disabled={settling}>إلغاء</Button>
           <Button
             className="w-full sm:w-auto"
-            icon={settling ? <LoadingSpinner /> : <CheckCircle className="w-4 h-4" />}
+            icon={settling ? <LoadingSpinner size="sm" /> : <CheckCircle className="w-4 h-4" />}
             onClick={handleSettle}
             disabled={loading || !settlementData || settling || !cashInHand}
           >

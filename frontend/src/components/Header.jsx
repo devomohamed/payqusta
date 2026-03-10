@@ -46,18 +46,18 @@ export default function Header({ onMenuClick }) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-6 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-3 overflow-hidden">
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-3 sm:px-4 md:px-6 min-h-16 py-2 sm:py-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
+        <div className="flex min-w-0 items-center gap-3 overflow-hidden">
           <button
             onClick={onMenuClick}
             className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex flex-col md:flex-row md:items-center md:gap-3 overflow-hidden">
-            <h2 className="text-xl font-extrabold whitespace-nowrap">{title}</h2>
+          <div className="flex min-w-0 flex-col md:flex-row md:items-center md:gap-3 overflow-hidden">
+            <h2 className="text-lg sm:text-xl font-extrabold truncate">{title}</h2>
             <div className="hidden md:block w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
-            <div className="flex items-center gap-1.5 text-sm font-bold truncate">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold truncate">
               {user?.branch?.name ? (
                 <span className="text-primary-600 dark:text-primary-400 whitespace-nowrap">
                   {user.branch.name}
@@ -76,7 +76,7 @@ export default function Header({ onMenuClick }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-shrink-0 items-center gap-1 sm:gap-1.5">
           <a
             href={storefrontUrl}
             className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/40 font-bold text-sm transition-colors"

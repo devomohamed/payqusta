@@ -203,7 +203,7 @@ export function clearStorefrontResponseCache() {
 }
 
 export function loadStorefrontSettings(options = {}) {
-  return storefrontGet('/settings', {
+  return storefrontGet('/storefront/settings', {
     ttlMs: 20000,
     ...options,
   });

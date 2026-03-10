@@ -129,8 +129,8 @@ export default function OrderConfirmation() {
         <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">طريقة الدفع:</span>
-            <Badge variant={order.paymentMethod === 'cash' ? 'warning' : 'success'}>
-              {order.paymentMethod === 'cash' ? 'الدفع عند الاستلام' : 'مدفوع'}
+            <Badge variant={order.paymentMethod === 'cash_on_delivery' ? 'warning' : 'success'}>
+              {order.paymentMethod === 'cash_on_delivery' ? 'الدفع عند الاستلام' : 'مدفوع'}
             </Badge>
           </div>
         </div>

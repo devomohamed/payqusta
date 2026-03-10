@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save, Globe, Paintbrush, Upload, Eye, X, Palette, Store } from 'lucide-react';
+import { Save, Globe, Upload, Eye, X, Palette, Loader2 } from 'lucide-react';
 import { useAuthStore, useThemeStore, api } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
@@ -9,6 +9,7 @@ export default function SettingsWhiteLabel() {
     const { tenant, getMe } = useAuthStore();
     const { dark, toggleTheme } = useThemeStore();
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
     const [logoPreview, setLogoPreview] = useState(null);
     const [domainError, setDomainError] = useState('');
     const fileInputRef = useRef(null);
@@ -48,19 +49,41 @@ export default function SettingsWhiteLabel() {
         connected: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
     }[domainStatus];
 
-    const handleLogoChange = (e) => {
+    // Upload logo as an actual file (not base64) to get a proper URL
+    const handleLogoChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.size > 20 * 1024 * 1024) {
             notify.error('حجم الشعار يجب ألا يتجاوز 20MB');
             return;
         }
+
+        // Show immediate preview locally
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            setLogoPreview(ev.target.result);
-            setForm(prev => ({ ...prev, logo: ev.target.result }));
-        };
+        reader.onload = (ev) => setLogoPreview(ev.target.result);
         reader.readAsDataURL(file);
+
+        // Upload file to server and get back a real URL
+        setUploadingLogo(true);
+        try {
+            const formData = new FormData();
+            formData.append('logo', file);
+            const res = await api.post('/settings/logo', formData);
+            const logoUrl = res.data?.data?.logoUrl;
+            if (logoUrl) {
+                setForm(prev => ({ ...prev, logo: logoUrl }));
+                setLogoPreview(logoUrl);
+                notify.success('تم رفع الشعار بنجاح ✓');
+                getMe();
+            }
+        } catch (err) {
+            notify.error(getUserFriendlyErrorMessage(err, 'فشل رفع الشعار'));
+            setLogoPreview(form.logo || null);
+        } finally {
+            setUploadingLogo(false);
+            // Reset file input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
     };
 
     const handleSave = async () => {
@@ -107,10 +130,15 @@ export default function SettingsWhiteLabel() {
                 </h3>
                 <div className="flex items-center gap-6">
                     <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-28 h-28 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center cursor-pointer hover:border-primary-400 transition-colors overflow-hidden relative group"
+                        onClick={() => !uploadingLogo && fileInputRef.current?.click()}
+                        className={`w-28 h-28 rounded-2xl border-2 border-dashed flex items-center justify-center transition-colors overflow-hidden relative group ${uploadingLogo ? 'border-primary-400 cursor-wait' : 'border-gray-300 dark:border-gray-600 cursor-pointer hover:border-primary-400'}`}
                     >
-                        {logoPreview ? (
+                        {uploadingLogo ? (
+                            <div className="flex flex-col items-center text-primary-500">
+                                <Loader2 className="w-8 h-8 animate-spin mb-1" />
+                                <p className="text-xs">جار الرفع...</p>
+                            </div>
+                        ) : logoPreview ? (
                             <>
                                 <img src={logoPreview} alt="Logo" className="w-full h-full object-contain p-2" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -135,7 +163,7 @@ export default function SettingsWhiteLabel() {
                         <p>• الحجم الأقصى: 20MB</p>
                         <p>• الصيغ: PNG, JPG, SVG, WebP</p>
                         <p>• يُفضل صورة شفافة (بدون خلفية)</p>
-                        {logoPreview && (
+                        {logoPreview && !uploadingLogo && (
                             <button
                                 className="mt-2 text-red-500 text-xs flex items-center gap-1 hover:underline"
                                 onClick={() => { setLogoPreview(null); setForm(prev => ({ ...prev, logo: '' })); }}
@@ -150,7 +178,7 @@ export default function SettingsWhiteLabel() {
             {/* Color Customization */}
             <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                 <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <Paintbrush className="w-4 h-4 text-gray-500" /> ألوان الهوية
+                    <Palette className="w-4 h-4 text-gray-500" /> ألوان الهوية
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -228,7 +256,6 @@ export default function SettingsWhiteLabel() {
                         setDomainError(preview && !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(preview) ? 'Please enter a valid domain like shop.example.com' : '');
                     }}
                     placeholder="shop.yourdomain.com"
-
                 />
                 {domainError && (
                     <p className="text-xs text-red-500 mt-2">{domainError}</p>
@@ -267,9 +294,6 @@ export default function SettingsWhiteLabel() {
                 </button>
             </div>
 
-            {/* PWA Install Button */}
-            <InstallAppButton />
-
             {/* Save */}
             <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
                 <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>
@@ -279,88 +303,3 @@ export default function SettingsWhiteLabel() {
         </div>
     );
 }
-
-// Internal component for Install Button
-function InstallAppButton() {
-    const [deferredPrompt, setDeferredPrompt] = useState(null);
-    const [isInstalled, setIsInstalled] = useState(false);
-
-    useEffect(() => {
-        // Check if installed
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            setIsInstalled(true);
-        }
-
-        const handler = (e) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-        };
-        window.addEventListener('beforeinstallprompt', handler);
-        return () => window.removeEventListener('beforeinstallprompt', handler);
-    }, []);
-
-    const handleInstall = async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            setDeferredPrompt(null);
-        }
-    };
-
-    if (isInstalled) {
-        return (
-            <div className="p-4 rounded-xl border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
-                    <Store className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                    <h3 className="font-bold text-green-700 dark:text-green-400">التطبيق مثبت</h3>
-                    <p className="text-sm text-green-600/80">أنت تستخدم النسخة المثبتة من النظام</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!deferredPrompt) {
-        if (import.meta.env.DEV) {
-            return (
-                <div className="p-4 rounded-xl border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800 text-sm text-yellow-700 dark:text-yellow-400">
-                    <div className="font-bold flex items-center gap-2">
-                        <Store className="w-4 h-4" />
-                        وضع المطور (Debug Mode)
-                    </div>
-                    <p className="mt-1">زر التثبيت غير متاح حالياً.</p>
-                    <ul className="list-disc list-inside mt-2 space-y-1 text-xs opacity-80">
-                        <li>تأكد أن التطبيق ليس مثبتاً بالفعل.</li>
-                        <li>تأكد من العمل على localhost أو HTTPS.</li>
-                        <li>متصفح Chrome/Edge يتطلب تفاعل المستخدم أحياناً.</li>
-                        <li>حدث الصفحة (Refresh) وحاول مرة أخرى.</li>
-                    </ul>
-                </div>
-            );
-        }
-        return null;
-    }
-
-    return (
-        <div className="p-4 rounded-xl border border-primary-200 bg-primary-50 dark:bg-primary-900/10 dark:border-primary-800 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center">
-                    <Store className="w-5 h-5 text-primary-600" />
-                </div>
-                <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">تثبيت التطبيق</h3>
-                    <p className="text-sm text-gray-500">قم بتثبيت النظام على جهازك لسهولة الوصول والعمل بدون إنترنت</p>
-                </div>
-            </div>
-            <button
-                onClick={handleInstall}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
-            >
-                تثبيت الآن
-            </button>
-        </div>
-    );
-}
-

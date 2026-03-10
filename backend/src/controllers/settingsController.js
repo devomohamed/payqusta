@@ -13,6 +13,7 @@ const {
   applyTenantBarcodeSettings,
   getTenantBarcodeSettings,
 } = require('../utils/barcodeHelpers');
+const { processImage } = require('../middleware/upload');
 const logger = require('../utils/logger');
 
 const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
@@ -98,6 +99,28 @@ const getPlatformSubdomain = (host) => {
 };
 
 class SettingsController {
+
+  /**
+   * POST /api/v1/settings/logo
+   * Upload store logo and return URL
+   */
+  uploadLogo = catchAsync(async (req, res, next) => {
+    if (!req.file) return next(AppError.badRequest('يرجى اختيار صورة للشعار'));
+
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    const logoUrl = await processImage(req.file.buffer, req.file.originalname, 'logos', req.file.mimetype);
+
+    // Save logo URL to tenant branding
+    tenant.branding = {
+      ...tenant.branding,
+      logo: logoUrl,
+    };
+    await tenant.save();
+
+    ApiResponse.success(res, { logoUrl, branding: tenant.branding }, 'تم رفع الشعار بنجاح');
+  });
 
   /**
    * GET /api/v1/settings

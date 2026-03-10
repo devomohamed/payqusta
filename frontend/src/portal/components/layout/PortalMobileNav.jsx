@@ -8,9 +8,10 @@ export default function PortalMobileNav({ navItems = [], isActive, toggleCart })
     const { t } = useTranslation('portal');
     const [showMore, setShowMore] = useState(false);
 
-    const corePaths = ['/portal/dashboard', '/portal/products', '/portal/orders', '/portal/cart', '/portal/profile'];
-
-    const primaryItems = navItems.filter(item => corePaths.includes(item.path) || item.isCart).slice(0, 4);
+    const preferredSections = ['dashboard', 'orders', 'invoices', 'profile'];
+    const primaryItems = preferredSections
+        .map((section) => navItems.find((item) => item.path.endsWith(`/${section}`)))
+        .filter(Boolean);
     const secondaryItems = navItems.filter(item => !primaryItems.includes(item));
 
     return (
@@ -84,7 +85,7 @@ export default function PortalMobileNav({ navItems = [], isActive, toggleCart })
                                     key={item.path}
                                     onClick={() => {
                                         setShowMore(false);
-                                        navigate(item.path);
+                                        item.isCart ? toggleCart() : navigate(item.path);
                                     }}
                                     className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                                 >

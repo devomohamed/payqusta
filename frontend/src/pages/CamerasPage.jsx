@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactPlayer from 'react-player';
 import { Camera, Plus, Trash2, Edit, Save, ExternalLink, RefreshCw, X, Video } from 'lucide-react';
-import { Button, Input, Card, Modal, EmptyState } from '../components/UI';
+import { Button, Input, Card, Modal, EmptyState, LoadingSpinner } from '../components/UI';
 import toast from 'react-hot-toast';
 import { api } from '../store';
 import { confirm } from '../components/ConfirmDialog';
@@ -98,7 +98,9 @@ export default function CamerasPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">Loading...</div>
+        <Card className="p-6 sm:p-8">
+          <LoadingSpinner size="lg" text="جاري تحميل الكاميرات..." />
+        </Card>
       ) : cameras.length === 0 ? (
         <EmptyState
           icon={<Video className="w-12 h-12" />}

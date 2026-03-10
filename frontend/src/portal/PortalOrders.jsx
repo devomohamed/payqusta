@@ -4,6 +4,7 @@ import { usePortalStore } from '../store/portalStore';
 import { Package, Clock, CheckCircle, Truck, XCircle, RotateCcw, ChevronLeft, X, ShoppingBag } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 import { confirm } from '../components/ConfirmDialog';
+import { LoadingSpinner } from '../components/UI';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
 
@@ -83,7 +84,7 @@ export default function PortalOrders() {
 
     return (
         <div className="space-y-4 pb-20" dir={i18n.dir()}>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="w-6 h-6 text-primary-500" />
                     {t('orders.title')}
@@ -127,17 +128,17 @@ export default function PortalOrders() {
                         return (
                             <div
                                 key={order._id}
-                                className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm"
+                                className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 sm:p-5 border border-gray-100 dark:border-gray-700 shadow-sm"
                             >
                                 {/* Header */}
-                                <div className="flex justify-between items-start mb-3">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3">
                                     <div>
                                         <p className="font-bold text-gray-900 dark:text-white">{t('orders.order_num', { num: order.invoiceNumber })}</p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                             {new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                         </p>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${ostatus.color}`}>
+                                    <span className={`self-start px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${ostatus.color}`}>
                                         <OIcon className="w-3.5 h-3.5" />
                                         {t(`orders.statuses.${ostatus.key}`)}
                                     </span>
@@ -168,23 +169,23 @@ export default function PortalOrders() {
                                 )}
 
                                 {/* Price */}
-                                <div className="grid grid-cols-3 gap-2 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 text-center text-xs mb-3">
-                                    <div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl overflow-hidden text-center text-xs mb-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700">
+                                    <div className="p-3">
                                         <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.total')}</p>
                                         <p className="font-bold text-gray-900 dark:text-white">{order.totalAmount?.toLocaleString()}</p>
                                     </div>
-                                    <div className="border-x border-gray-200 dark:border-gray-700">
+                                    <div className="p-3">
                                         <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.paid')}</p>
                                         <p className="font-bold text-green-600 dark:text-green-400">{order.paidAmount?.toLocaleString()}</p>
                                     </div>
-                                    <div>
+                                    <div className="p-3">
                                         <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.remaining')}</p>
                                         <p className="font-bold text-red-600 dark:text-red-400">{order.remainingAmount?.toLocaleString()}</p>
                                     </div>
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                     <button
                                         onClick={() => openDetails(order._id)}
                                         className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition flex items-center justify-center gap-1"
@@ -232,8 +233,8 @@ export default function PortalOrders() {
                         onClick={e => e.stopPropagation()}
                     >
                         {detailsLoading ? (
-                            <div className="flex justify-center py-20">
-                                <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+                            <div className="px-4">
+                                <LoadingSpinner size="lg" text="جاري تحميل تفاصيل الطلب..." />
                             </div>
                         ) : selectedOrder && (
                             <>

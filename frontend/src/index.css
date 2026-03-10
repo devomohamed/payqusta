@@ -14,17 +14,14 @@
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
 }
 
-* {
-  font-family: 'Cairo', sans-serif;
-}
-
 body {
+  font-family: 'Cairo', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Modern Dot Pattern Background */
-.light body, body:not(.dark) {
+/* Admin-only pattern background */
+.app-shell-pattern {
   background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
   background-size: 24px 24px;
 }

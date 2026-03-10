@@ -255,7 +255,7 @@ export default function ProductCatalog() {
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex items-stretch gap-2">
         <div ref={searchPanelRef} className="relative flex-1">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
           <input
@@ -328,7 +328,7 @@ export default function ProductCatalog() {
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`px-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 flex items-center gap-2 text-sm font-bold transition-all ${showFilters ? 'bg-primary-500 border-primary-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          className={`flex min-w-[3.25rem] shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm font-bold transition-all dark:border-gray-700 sm:min-w-0 ${showFilters ? 'bg-primary-500 border-primary-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
         >
           <SlidersHorizontal className="w-4 h-4" />
           {isPortal ? '' : 'فلتر'}
@@ -342,27 +342,31 @@ export default function ProductCatalog() {
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        <button
-          onClick={() => setSelectedCategory('')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 ${!selectedCategory ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
-        >
-          الكل
-        </button>
-        {catalogCategories.map(cat => {
-          const catId = cat._id || cat.id || cat.name;
-          const catName = cat.name;
-          const catIcon = cat.icon;
-          return (
-            <button
-              key={catId || catName}
-              onClick={() => setSelectedCategory(selectedCategory === catId ? '' : catId)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 ${selectedCategory === catId ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
-            >
-              {catIcon && <span className="mr-1">{catIcon}</span>}{catName}
-            </button>
-          );
-        })}
+      <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 overflow-x-auto pb-3 snap-x scrollbar-hide">
+          <button
+            onClick={() => setSelectedCategory('')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${!selectedCategory ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
+          >
+            الكل
+          </button>
+          {catalogCategories.map(cat => {
+            const catId = cat._id || cat.id || cat.name;
+            const catName = cat.name;
+            const catIcon = cat.icon;
+            return (
+              <button
+                key={catId || catName}
+                onClick={() => setSelectedCategory(selectedCategory === catId ? '' : catId)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${selectedCategory === catId ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
+              >
+                {catIcon && <span className="mr-1">{catIcon}</span>}{catName}
+              </button>
+            );
+          })}
+        </div>
+        <div className="absolute top-0 bottom-3 right-0 w-6 bg-gradient-to-l from-gray-50 dark:from-gray-900 to-transparent pointer-events-none sm:hidden" />
+        <div className="absolute top-0 bottom-3 left-0 w-6 bg-gradient-to-r from-gray-50 dark:from-gray-900 to-transparent pointer-events-none sm:hidden" />
       </div>
 
       {/* ═══ PRICE FILTER (collapsible) ═══ */}
@@ -400,7 +404,7 @@ export default function ProductCatalog() {
           <p className="text-sm text-gray-400 mt-1">جرب تغيير معايير البحث</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
           {filteredProducts.map((product, index) => {
             const inWishlist = wishlistIds?.includes(product._id);
             const isAdding = addingId === product._id;
@@ -446,9 +450,9 @@ export default function ProductCatalog() {
 
                   {/* Category badge */}
                   {product.category && (
-                    <span className="absolute top-2 left-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-gray-600 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="absolute bottom-2 left-2 flex max-w-[70%] items-center gap-1 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-bold text-gray-600 backdrop-blur-sm dark:bg-gray-900/85 dark:text-gray-300">
                       <Tag className="w-3 h-3" />
-                      {typeof product.category === 'object' ? product.category.name : product.category}
+                      <span className="truncate">{typeof product.category === 'object' ? product.category.name : product.category}</span>
                     </span>
                   )}
 
@@ -483,7 +487,7 @@ export default function ProductCatalog() {
 
                 {/* Info */}
                 <div className="p-3">
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1">
+                  <h3 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 leading-snug mb-1 min-h-[2.5rem]">
                     {product.name}
                   </h3>
 

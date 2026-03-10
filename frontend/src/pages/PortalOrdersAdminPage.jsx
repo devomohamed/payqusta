@@ -49,7 +49,7 @@ export default function PortalOrdersAdminPage() {
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const params = { page, limit: LIMIT, source: 'portal', sort: '-createdAt' };
+            const params = { page, limit: LIMIT, source: 'portal,online_store', sort: '-createdAt' };
             if (statusFilter) params.orderStatus = statusFilter;
             if (search) params.search = search;
             const res = await api.get('/invoices', {

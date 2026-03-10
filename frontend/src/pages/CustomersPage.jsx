@@ -440,8 +440,8 @@ export default function CustomersPage() {
 
 
       {/* Header */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-none sm:max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف..."
             className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:border-primary-500 transition-all" />
@@ -449,13 +449,13 @@ export default function CustomersPage() {
 
         {/* Branch Filter */}
         <select value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
+          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
           <option value="">🏢 كل الفروع</option>
           {(Array.isArray(branches) ? branches : []).map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
         </select>
 
         <select value={tierFilter} onChange={(e) => setTierFilter(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
+          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
           <option value="">كل العملاء</option>
           <option value="vip">⭐ VIP</option>
           <option value="premium">مميز</option>
@@ -464,13 +464,13 @@ export default function CustomersPage() {
         <button
           type="button"
           onClick={resetFilters}
-          className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           إعادة الفلاتر
         </button>
         <button
           onClick={() => window.location.href = '/marketing'}
-          className="px-3 py-2.5 rounded-xl border-2 border-primary-100 bg-primary-50 text-primary-600 text-sm hover:bg-primary-100 transition-colors flex items-center gap-2"
+          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-primary-100 bg-primary-50 text-primary-600 text-sm hover:bg-primary-100 transition-colors flex items-center justify-center gap-2"
         >
           <TrendingUp className="w-4 h-4" />
           لوحة التسويق
@@ -480,12 +480,12 @@ export default function CustomersPage() {
 
       {/* Bulk Actions Bar */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30 animate-fade-in">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30 animate-fade-in">
           <button onClick={toggleSelectAll} className="p-1">
             {selectedIds.length === customers.length ? <CheckSquare className="w-5 h-5 text-primary-500" /> : <Square className="w-5 h-5 text-primary-500" />}
           </button>
           <span className="text-sm font-bold text-primary-600 dark:text-primary-400">تم تحديد {selectedIds.length} عميل</span>
-          <div className="mr-auto flex gap-2">
+          <div className="mr-auto flex flex-wrap gap-2">
             <Button size="sm" variant="danger" icon={<Trash2 className="w-3.5 h-3.5" />} loading={bulkDeleting} onClick={handleBulkDelete}>
               حذف المحدد
             </Button>
@@ -503,7 +503,7 @@ export default function CustomersPage() {
         <>
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[980px] text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-100 dark:border-gray-800">
                     <th className="px-3 py-3 w-10">
@@ -554,7 +554,7 @@ export default function CustomersPage() {
                       </td>
                       <td className="px-4 py-3">{tierBadge(c.tier)}</td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <button onClick={() => openDetails(c)} className="p-2 rounded-lg bg-primary-50 dark:bg-primary-500/10 text-primary-500 hover:bg-primary-100 transition-colors" title="عرض التفاصيل">
                             <Eye className="w-4 h-4" />
                           </button>
@@ -604,7 +604,7 @@ export default function CustomersPage() {
           <Input label="الباركود" value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} placeholder="اتركه فارغاً للتوليد التلقائي" />
           <Input label="الحد الائتماني (ج.م)" type="number" value={form.creditLimit} onChange={(e) => setForm({ ...form, creditLimit: Number(e.target.value) })} />
         </div>
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
           <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
           <Button icon={<Check className="w-4 h-4" />} onClick={handleSave} loading={saving}>{editId ? 'تحديث' : 'إضافة'}</Button>
         </div>
@@ -614,10 +614,10 @@ export default function CustomersPage() {
       {showDetails && selectedCustomer && (
         <div className="fixed inset-0 z-50 flex" onClick={() => setShowDetails(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
-          <div className="relative w-full max-w-5xl mx-auto my-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-5xl mx-auto my-0 sm:my-4 bg-white dark:bg-gray-900 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-svh sm:max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-l from-primary-500/5 to-transparent">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-l from-primary-500/5 to-transparent">
+              <div className="flex items-start gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold ${selectedCustomer.salesBlocked ? 'bg-red-100 text-red-600' : 'bg-primary-100 dark:bg-primary-500/20 text-primary-600'}`}>
                   {selectedCustomer.salesBlocked ? <Ban className="w-7 h-7" /> : selectedCustomer.name?.charAt(0)}
                 </div>
@@ -627,13 +627,13 @@ export default function CustomersPage() {
                     {tierBadge(selectedCustomer.tier)}
                     {selectedCustomer.salesBlocked && <Badge variant="danger"><Ban className="w-3 h-3 ml-1" />ممنوع البيع</Badge>}
                   </h2>
-                  <div className="flex items-center gap-3 text-sm text-gray-500">
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
                     <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{selectedCustomer.phone}</span>
                     <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-[10px] font-mono"><Users className="w-3 h-3" />{selectedCustomer.barcode || '---'}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => preAction('print')}><Printer className="w-4 h-4 ml-1" />طباعة</Button>
                 <Button variant="whatsapp" size="sm" onClick={() => preAction('whatsapp')} loading={sendingWhatsApp}><Send className="w-4 h-4 ml-1" />إرسال WhatsApp</Button>
                 <button onClick={() => setShowDetails(false)} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors">
@@ -643,12 +643,12 @@ export default function CustomersPage() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {loadingDetails ? <LoadingSpinner /> : (
                 <div className="space-y-6">
                   {/* Financial Summary */}
                   {/* Financial Summary */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/20">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
@@ -701,7 +701,7 @@ export default function CustomersPage() {
                       <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(selectedCustomer.wallet?.balance || 0)}</p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 shadow-sm col-span-2 lg:col-span-1">
+                    <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 shadow-sm col-span-1 sm:col-span-2 xl:col-span-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
@@ -728,9 +728,9 @@ export default function CustomersPage() {
                   {/* Credit Assessment */}
                   {creditAssessment && (
                     <Card className="p-5">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                         <h3 className="font-bold flex items-center gap-2"><CreditCard className="w-5 h-5 text-primary-500" />التقييم الائتماني</h3>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {riskBadge(creditAssessment.creditEngine?.riskLevel)}
                           {!creditAssessment.salesBlocked ? (
                             <Button variant="danger" size="sm" onClick={() => handleBlockSales(selectedCustomer._id, true)}><Ban className="w-4 h-4 ml-1" />منع البيع</Button>
@@ -769,7 +769,7 @@ export default function CustomersPage() {
 
                   {/* WhatsApp Notification Preferences */}
                   <Card className="p-5">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                       <h3 className="font-bold flex items-center gap-2">
                         <MessageCircle className="w-5 h-5 text-green-500" />
                         إعدادات WhatsApp
@@ -829,7 +829,7 @@ export default function CustomersPage() {
 
                   {/* Transaction History with Invoice Details */}
                   <Card className="p-5">
-                    <h3 className="font-bold flex items-center gap-2 mb-4">
+                    <h3 className="font-bold flex flex-wrap items-center gap-2 mb-4">
                       <History className="w-5 h-5 text-primary-500" />
                       سجل المعاملات ({customerTransactions.length})
                       <span className="text-xs text-gray-400 font-normal mr-2">اضغط على الفاتورة لعرض التفاصيل</span>
@@ -842,7 +842,7 @@ export default function CustomersPage() {
                           <div key={inv._id} className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
                             {/* Invoice Header - Clickable */}
                             <div
-                              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
                               onClick={() => toggleInvoiceExpand(inv._id)}
                             >
                               <div className="flex items-center gap-4">
@@ -854,7 +854,7 @@ export default function CustomersPage() {
                                   <p className="text-xs text-gray-400">{new Date(inv.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-6">
+                              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                                 <div className="text-left">
                                   <p className="font-bold">{fmt(inv.totalAmount)} ج.م</p>
                                   <p className="text-xs text-gray-400">{inv.items?.length || 0} منتج</p>
@@ -880,7 +880,8 @@ export default function CustomersPage() {
                                 <div className="mb-4">
                                   <h4 className="text-sm font-bold mb-2 flex items-center gap-2"><Package className="w-4 h-4" />المنتجات:</h4>
                                   <div className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden">
-                                    <table className="w-full text-sm">
+                                    <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[520px] text-sm">
                                       <thead>
                                         <tr className="bg-gray-100 dark:bg-gray-800">
                                           <th className="px-3 py-2 text-right text-xs font-bold text-gray-500">المنتج</th>
@@ -903,11 +904,12 @@ export default function CustomersPage() {
                                         ))}
                                       </tbody>
                                     </table>
+                                    </div>
                                   </div>
                                 </div>
 
                                 {/* Payment Info */}
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
                                   <div className="p-2 rounded-lg bg-white dark:bg-gray-900">
                                     <p className="text-xs text-gray-400">الإجمالي</p>
                                     <p className="font-bold">{fmt(inv.totalAmount)} ج.م</p>
@@ -922,7 +924,7 @@ export default function CustomersPage() {
                                   </div>
                                   <div className="p-2 rounded-lg bg-white dark:bg-gray-900">
                                     <p className="text-xs text-gray-400">طريقة الدفع</p>
-                                    <p className="font-bold">{inv.paymentMethod === 'cash' ? 'نقد' : inv.paymentMethod === 'installment' ? 'أقساط' : 'آجل'}</p>
+                                    <p className="font-bold">{inv.paymentMethod === 'cash' ? 'نقد' : inv.paymentMethod === 'cash_on_delivery' ? 'عند الاستلام' : inv.paymentMethod === 'installment' ? 'أقساط' : 'آجل'}</p>
                                   </div>
                                 </div>
 
@@ -1009,7 +1011,7 @@ export default function CustomersPage() {
           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg text-sm">
             <p>اترك التواريخ فارغة لطباعة <b>كل المعاملات</b>.</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="من تاريخ"
               type="date"
@@ -1024,7 +1026,7 @@ export default function CustomersPage() {
             />
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
           <Button variant="ghost" onClick={() => setShowDateModal(false)}>إلغاء</Button>
           <Button onClick={executeAction}>تأكيد {actionType === 'print' ? 'الطباعة' : 'الإرسال'}</Button>
         </div>
@@ -1032,4 +1034,3 @@ export default function CustomersPage() {
     </div>
   );
 }
-
