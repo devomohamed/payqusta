@@ -1,21 +1,19 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store';
 import {
   getStorefrontBasePath,
   isStorefrontSubdomainHost,
 } from '../utils/storefrontHost';
-import {
-  brandArabicName,
-  brandDisplayName,
-  brandName,
-  publicPageMeta,
-} from '../publicSite/content';
+import { publicPageMeta } from '../publicSite/content';
+import { seoLandingMeta } from '../publicSite/seoLandingPages';
 import { applySeoMetadata } from '../utils/seo';
 
-const PLATFORM_NAME = brandName;
+const PLATFORM_NAME = 'PayQusta';
+const PLATFORM_ARABIC_NAME = 'بيكوستا';
+const PLATFORM_DISPLAY_NAME = 'PayQusta | بيكوستا';
 const PRIMARY_PUBLIC_ORIGIN = 'https://payqusta.store';
-const PLATFORM_DESCRIPTION = `${brandName} ${brandArabicName} منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد.`;
+const PLATFORM_DESCRIPTION = 'PayQusta بيكوستا منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد.';
 
 function normalizePath(pathname = '/') {
   if (!pathname) return '/';
@@ -45,7 +43,6 @@ export default function RouteMetadata() {
     const pathname = normalizePath(location.pathname || '/');
     const search = location.search || '';
     const currentUrl = `${origin}${pathname}${search}`;
-    const rootUrl = `${origin}/`;
     const publicRootUrl = `${PRIMARY_PUBLIC_ORIGIN}/`;
     const storeBasePath = normalizePath(getStorefrontBasePath(window.location.hostname) || '/store');
     const onStorefront =
@@ -55,10 +52,8 @@ export default function RouteMetadata() {
 
     const logoUrl = `${PRIMARY_PUBLIC_ORIGIN}/logo-square.png`;
     const socialImage = `${PRIMARY_PUBLIC_ORIGIN}/hero-banner.png`;
-    const publicCanonicalUrl =
-      pathname === '/' ? publicRootUrl : `${PRIMARY_PUBLIC_ORIGIN}${pathname}`;
-
-    const publicMeta = publicPageMeta[pathname];
+    const publicCanonicalUrl = pathname === '/' ? publicRootUrl : `${PRIMARY_PUBLIC_ORIGIN}${pathname}`;
+    const publicMeta = publicPageMeta[pathname] || seoLandingMeta[pathname];
 
     if (publicMeta && !(pathname === '/' && isAuthenticated)) {
       applySeoMetadata({
@@ -83,7 +78,7 @@ export default function RouteMetadata() {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: PLATFORM_NAME,
-            alternateName: [brandArabicName, brandDisplayName],
+            alternateName: [PLATFORM_ARABIC_NAME, PLATFORM_DISPLAY_NAME],
             url: publicRootUrl,
             logo: logoUrl,
             image: [logoUrl, socialImage],
@@ -93,7 +88,7 @@ export default function RouteMetadata() {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: PLATFORM_NAME,
-            alternateName: [brandArabicName, brandDisplayName],
+            alternateName: [PLATFORM_ARABIC_NAME, PLATFORM_DISPLAY_NAME],
             url: publicRootUrl,
             description: PLATFORM_DESCRIPTION,
             image: logoUrl,
@@ -103,7 +98,7 @@ export default function RouteMetadata() {
               '@context': 'https://schema.org',
               '@type': 'SoftwareApplication',
               name: PLATFORM_NAME,
-              alternateName: [brandArabicName, brandDisplayName],
+              alternateName: [PLATFORM_ARABIC_NAME, PLATFORM_DISPLAY_NAME],
               url: publicRootUrl,
               applicationCategory: 'BusinessApplication',
               operatingSystem: 'Web',

@@ -11,6 +11,16 @@ const User = require('../models/User');
 const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
 const logger = require('../utils/logger');
+const {
+  registerJob,
+  markJobRunStarted,
+  markJobRunSuccess,
+  markJobRunFailure,
+} = require('../ops/runtimeState');
+
+const CUSTOMER_INSTALLMENTS_JOB = 'customer_installment_reminders';
+const SUPPLIER_PAYMENTS_JOB = 'supplier_payment_reminders';
+const OVERDUE_SYNC_JOB = 'installment_overdue_sync';
 
 function startOfDay(date = new Date()) {
   const d = new Date(date);
@@ -29,14 +39,32 @@ class InstallmentScheduler {
    * Start scheduler
    */
   start() {
+    registerJob(CUSTOMER_INSTALLMENTS_JOB, {
+      schedule: '0 8 * * *',
+      timezone: 'Africa/Cairo',
+      category: 'billing',
+    });
+
     // Customer installment reminders - daily at 8 AM (Cairo)
     cron.schedule('0 8 * * *', () => this.checkCustomerInstallments(), {
       timezone: 'Africa/Cairo',
     });
 
+    registerJob(SUPPLIER_PAYMENTS_JOB, {
+      schedule: '0 9 * * *',
+      timezone: 'Africa/Cairo',
+      category: 'billing',
+    });
+
     // Supplier purchase installment reminders - daily at 9 AM
     cron.schedule('0 9 * * *', () => this.checkSupplierPayments(), {
       timezone: 'Africa/Cairo',
+    });
+
+    registerJob(OVERDUE_SYNC_JOB, {
+      schedule: '0 12 * * *',
+      timezone: 'Africa/Cairo',
+      category: 'billing',
     });
 
     // Overdue checks - daily at 12 PM
@@ -51,10 +79,14 @@ class InstallmentScheduler {
    * Customer installment reminders (due tomorrow)
    */
   async checkCustomerInstallments() {
+    markJobRunStarted(CUSTOMER_INSTALLMENTS_JOB, { operation: 'checkCustomerInstallments' });
+
     try {
       logger.info('Checking customer installments...');
 
       const tenants = await Tenant.find({ isActive: true });
+      let remindersSent = 0;
+      let invoicesVisited = 0;
 
       for (const tenant of tenants) {
         const tomorrowStart = startOfDay(new Date(Date.now() + (24 * 60 * 60 * 1000)));
@@ -68,6 +100,8 @@ class InstallmentScheduler {
         }).populate('customer', 'name phone whatsapp');
 
         for (const invoice of invoices) {
+          invoicesVisited += 1;
+
           const dueInstallments = (invoice.installments || []).filter((installment) => (
             installment.status === 'pending'
             && !installment.reminderSent
@@ -118,6 +152,7 @@ class InstallmentScheduler {
 
               installment.reminderSent = true;
               installment.lastReminderDate = new Date();
+              remindersSent += 1;
             } catch (err) {
               logger.error(`Failed to send customer installment reminder: ${err.message}`);
             }
@@ -128,8 +163,17 @@ class InstallmentScheduler {
       }
 
       logger.info('Customer installment check completed');
+      markJobRunSuccess(CUSTOMER_INSTALLMENTS_JOB, {
+        operation: 'checkCustomerInstallments',
+        processedTenants: tenants.length,
+        invoicesVisited,
+        remindersSent,
+      });
     } catch (error) {
       logger.error(`Customer installment scheduler error: ${error.message}`);
+      markJobRunFailure(CUSTOMER_INSTALLMENTS_JOB, error, {
+        operation: 'checkCustomerInstallments',
+      });
     }
   }
 
@@ -137,6 +181,8 @@ class InstallmentScheduler {
    * Supplier purchase installment reminders (due today + tomorrow)
    */
   async checkSupplierPayments() {
+    markJobRunStarted(SUPPLIER_PAYMENTS_JOB, { operation: 'checkSupplierPayments' });
+
     try {
       logger.info('Checking supplier purchase installments...');
 
@@ -146,6 +192,8 @@ class InstallmentScheduler {
       const todayEnd = endOfDay(now);
       const tomorrowStart = startOfDay(new Date(now.getTime() + (24 * 60 * 60 * 1000)));
       const tomorrowEnd = endOfDay(tomorrowStart);
+      let remindersSent = 0;
+      let invoicesVisited = 0;
 
       for (const tenant of tenants) {
         const [todayInvoices, tomorrowInvoices, users] = await Promise.all([
@@ -164,6 +212,7 @@ class InstallmentScheduler {
         });
 
         for (const invoice of invoicesMap.values()) {
+          invoicesVisited += 1;
           const schedule = Array.isArray(invoice.installmentsSchedule) ? invoice.installmentsSchedule : [];
           let hasUpdates = false;
 
@@ -235,6 +284,7 @@ class InstallmentScheduler {
               if (isTomorrow) installment.reminders.beforeDueSent = true;
               installment.lastReminderAt = new Date();
               hasUpdates = true;
+              remindersSent += 1;
             } catch (err) {
               logger.error(`Failed to send supplier reminder: ${err.message}`);
             }
@@ -247,8 +297,17 @@ class InstallmentScheduler {
       }
 
       logger.info('Supplier installment check completed');
+      markJobRunSuccess(SUPPLIER_PAYMENTS_JOB, {
+        operation: 'checkSupplierPayments',
+        processedTenants: tenants.length,
+        invoicesVisited,
+        remindersSent,
+      });
     } catch (error) {
       logger.error(`Supplier installment scheduler error: ${error.message}`);
+      markJobRunFailure(SUPPLIER_PAYMENTS_JOB, error, {
+        operation: 'checkSupplierPayments',
+      });
     }
   }
 
@@ -256,10 +315,13 @@ class InstallmentScheduler {
    * Mark customer + supplier installments as overdue and send one-time overdue reminders.
    */
   async markOverdueInstallments() {
+    markJobRunStarted(OVERDUE_SYNC_JOB, { operation: 'markOverdueInstallments' });
+
     try {
       logger.info('Marking overdue installments...');
 
       const now = new Date();
+      let remindersSent = 0;
 
       // -------------------------
       // Customer overdue handling
@@ -293,6 +355,8 @@ class InstallmentScheduler {
                 await WhatsAppService.sendMessage(phone, message, tenant.whatsapp);
               }
             }
+
+            remindersSent += 1;
           } catch (err) {
             logger.error(`Failed to send customer overdue reminder: ${err.message}`);
           }
@@ -401,6 +465,7 @@ class InstallmentScheduler {
               installment.reminders.overdueSent = true;
               installment.lastReminderAt = new Date();
               hasUpdates = true;
+              remindersSent += 1;
             } catch (err) {
               logger.error(`Failed to send supplier overdue reminder: ${err.message}`);
             }
@@ -414,8 +479,17 @@ class InstallmentScheduler {
       }
 
       logger.info(`Marked ${customerResult.modifiedCount} customer invoices overdue and updated ${supplierInvoicesUpdated} supplier purchase invoices`);
+      markJobRunSuccess(OVERDUE_SYNC_JOB, {
+        operation: 'markOverdueInstallments',
+        customerInvoicesUpdated: customerResult.modifiedCount,
+        supplierInvoicesUpdated,
+        remindersSent,
+      });
     } catch (error) {
       logger.error(`Overdue scheduler error: ${error.message}`);
+      markJobRunFailure(OVERDUE_SYNC_JOB, error, {
+        operation: 'markOverdueInstallments',
+      });
     }
   }
 }

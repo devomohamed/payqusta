@@ -7,10 +7,13 @@ import {
   AlertCircle,
   ExternalLink,
   Loader2,
+  Plus,
+  Trash2,
+  Truck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, api } from '../../store';
-import { Button, Input } from '../UI';
+import { Button, Input, TextArea } from '../UI';
 import { notify } from '../AnimatedNotification';
 import { transliterateArabicToEnglish } from '../../utils/textUtils';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMapper';
@@ -20,6 +23,15 @@ import {
   getStorefrontDomainUrl,
   isLocalStorefrontHost,
 } from '../../utils/storefrontHost';
+
+const createEmptyShippingZone = () => ({
+  code: '',
+  label: '',
+  fee: 0,
+  estimatedDaysMin: 1,
+  estimatedDaysMax: 3,
+  isActive: true,
+});
 
 export default function SettingsStore() {
   const { tenant, getMe } = useAuthStore();
@@ -36,6 +48,21 @@ export default function SettingsStore() {
     receiptBarcodeSource: 'none',
     deliveryBarcodeSource: 'none',
     storefrontBarcodeSearchEnabled: false,
+    shippingEnabled: false,
+    shippingProvider: 'local',
+    shippingProviderDisplayName: '',
+    shippingApiKey: '',
+    shippingMethodName: 'توصيل قياسي',
+    shippingBaseFee: 0,
+    shippingFreeThreshold: 0,
+    shippingEstimatedDaysMin: 1,
+    shippingEstimatedDaysMax: 3,
+    shippingOriginGovernorate: '',
+    shippingOriginCity: '',
+    shippingWarehouseAddress: '',
+    shippingSupportsCashOnDelivery: true,
+    shippingAutoCreateShipment: false,
+    shippingZones: [],
   });
   const [saving, setSaving] = useState(false);
   const [applyingWatermark, setApplyingWatermark] = useState(false);
@@ -64,9 +91,56 @@ export default function SettingsStore() {
       receiptBarcodeSource: tenant.settings?.barcode?.receiptBarcodeSource || 'none',
       deliveryBarcodeSource: tenant.settings?.barcode?.deliveryBarcodeSource || 'none',
       storefrontBarcodeSearchEnabled: tenant.settings?.barcode?.storefrontBarcodeSearchEnabled || false,
+      shippingEnabled: tenant.settings?.shipping?.enabled || false,
+      shippingProvider: tenant.settings?.shipping?.provider || 'local',
+      shippingProviderDisplayName: tenant.settings?.shipping?.providerDisplayName || '',
+      shippingApiKey: tenant.settings?.shipping?.apiKey || '',
+      shippingMethodName: tenant.settings?.shipping?.defaultMethodName || 'توصيل قياسي',
+      shippingBaseFee: tenant.settings?.shipping?.baseFee ?? 0,
+      shippingFreeThreshold: tenant.settings?.shipping?.freeShippingThreshold ?? 0,
+      shippingEstimatedDaysMin: tenant.settings?.shipping?.estimatedDaysMin ?? 1,
+      shippingEstimatedDaysMax: tenant.settings?.shipping?.estimatedDaysMax ?? 3,
+      shippingOriginGovernorate: tenant.settings?.shipping?.originGovernorate || '',
+      shippingOriginCity: tenant.settings?.shipping?.originCity || '',
+      shippingWarehouseAddress: tenant.settings?.shipping?.warehouseAddress || '',
+      shippingSupportsCashOnDelivery: tenant.settings?.shipping?.supportsCashOnDelivery !== false,
+      shippingAutoCreateShipment: tenant.settings?.shipping?.autoCreateShipment || false,
+      shippingZones: Array.isArray(tenant.settings?.shipping?.zones) && tenant.settings.shipping.zones.length > 0
+        ? tenant.settings.shipping.zones.map((zone) => ({
+            code: zone.code || '',
+            label: zone.label || '',
+            fee: zone.fee ?? 0,
+            estimatedDaysMin: zone.estimatedDaysMin ?? 1,
+            estimatedDaysMax: zone.estimatedDaysMax ?? 3,
+            isActive: zone.isActive !== false,
+          }))
+        : [],
     });
     setSubdomain(tenant.slug || '');
   }, [tenant]);
+
+  const updateShippingZone = (index, key, value) => {
+    setStoreForm((prev) => ({
+      ...prev,
+      shippingZones: prev.shippingZones.map((zone, zoneIndex) =>
+        zoneIndex === index ? { ...zone, [key]: value } : zone
+      ),
+    }));
+  };
+
+  const addShippingZone = () => {
+    setStoreForm((prev) => ({
+      ...prev,
+      shippingZones: [...prev.shippingZones, createEmptyShippingZone()],
+    }));
+  };
+
+  const removeShippingZone = (index) => {
+    setStoreForm((prev) => ({
+      ...prev,
+      shippingZones: prev.shippingZones.filter((_, zoneIndex) => zoneIndex !== index),
+    }));
+  };
 
   const handleSaveStore = async () => {
     if (!storeForm.name.trim()) {
@@ -96,6 +170,23 @@ export default function SettingsStore() {
             receiptBarcodeSource: storeForm.receiptBarcodeSource,
             deliveryBarcodeSource: storeForm.deliveryBarcodeSource,
             storefrontBarcodeSearchEnabled: storeForm.storefrontBarcodeSearchEnabled,
+          },
+          shipping: {
+            enabled: storeForm.shippingEnabled,
+            provider: storeForm.shippingProvider,
+            providerDisplayName: storeForm.shippingProviderDisplayName,
+            apiKey: storeForm.shippingApiKey,
+            defaultMethodName: storeForm.shippingMethodName,
+            baseFee: storeForm.shippingBaseFee,
+            freeShippingThreshold: storeForm.shippingFreeThreshold,
+            estimatedDaysMin: storeForm.shippingEstimatedDaysMin,
+            estimatedDaysMax: storeForm.shippingEstimatedDaysMax,
+            originGovernorate: storeForm.shippingOriginGovernorate,
+            originCity: storeForm.shippingOriginCity,
+            warehouseAddress: storeForm.shippingWarehouseAddress,
+            supportsCashOnDelivery: storeForm.shippingSupportsCashOnDelivery,
+            autoCreateShipment: storeForm.shippingAutoCreateShipment,
+            zones: storeForm.shippingZones,
           },
         },
       });
@@ -304,6 +395,236 @@ export default function SettingsStore() {
             />
             <span className="text-sm font-medium">تفعيل البحث بالكاميرا داخل المتجر الأمامي</span>
           </label>
+        </div>
+
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 dark:border-amber-900/30 dark:bg-amber-900/10">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-amber-700 dark:text-amber-300">إعدادات الشحن</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                الرسوم الافتراضية، شركة الشحن، ومناطق التوصيل التي ستظهر في المتجر وتدخل ضمن ملخص الطلب.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-white px-4 py-3 dark:border-amber-800/40 dark:bg-gray-900">
+                <input
+                  type="checkbox"
+                  checked={storeForm.shippingEnabled}
+                  onChange={(e) => setStoreForm({ ...storeForm, shippingEnabled: e.target.checked })}
+                  className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm font-medium">تفعيل الشحن داخل المتجر</span>
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-white px-4 py-3 dark:border-amber-800/40 dark:bg-gray-900">
+                <input
+                  type="checkbox"
+                  checked={storeForm.shippingSupportsCashOnDelivery}
+                  onChange={(e) => setStoreForm({ ...storeForm, shippingSupportsCashOnDelivery: e.target.checked })}
+                  className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm font-medium">السماح بالدفع عند الاستلام</span>
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-white px-4 py-3 dark:border-amber-800/40 dark:bg-gray-900 md:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={storeForm.shippingAutoCreateShipment}
+                  onChange={(e) => setStoreForm({ ...storeForm, shippingAutoCreateShipment: e.target.checked })}
+                  className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm font-medium">إنشاء الشحنة تلقائيًا بعد تأكيد الطلب عند تفعيل التكامل لاحقًا</span>
+              </label>
+            </div>
+
+            <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${!storeForm.shippingEnabled ? 'pointer-events-none opacity-60' : ''}`}>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">شركة الشحن</label>
+                <select
+                  value={storeForm.shippingProvider}
+                  onChange={(e) => setStoreForm({ ...storeForm, shippingProvider: e.target.value })}
+                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-amber-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <option value="local">شحن محلي</option>
+                  <option value="bosta">Bosta</option>
+                  <option value="aramex">Aramex</option>
+                  <option value="manual">يدوي / شركة خارجية</option>
+                  <option value="none">بدون مزود افتراضي</option>
+                </select>
+              </div>
+
+              <Input
+                label="الاسم الظاهر للمزود"
+                value={storeForm.shippingProviderDisplayName}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingProviderDisplayName: e.target.value })}
+                placeholder="مثال: Bosta Express"
+              />
+
+              <Input
+                label="مسمى وسيلة الشحن"
+                value={storeForm.shippingMethodName}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingMethodName: e.target.value })}
+                placeholder="توصيل قياسي"
+              />
+
+              <Input
+                label="API Key (اختياري)"
+                value={storeForm.shippingApiKey}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingApiKey: e.target.value })}
+                placeholder="يظهر للإدارة فقط"
+              />
+
+              <Input
+                label="رسوم الشحن الأساسية"
+                type="number"
+                min="0"
+                value={storeForm.shippingBaseFee}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingBaseFee: e.target.value === '' ? '' : Number(e.target.value) })}
+                placeholder="50"
+              />
+
+              <Input
+                label="حد الشحن المجاني"
+                type="number"
+                min="0"
+                value={storeForm.shippingFreeThreshold}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingFreeThreshold: e.target.value === '' ? '' : Number(e.target.value) })}
+                placeholder="500"
+              />
+
+              <Input
+                label="أقل مدة متوقعة (أيام)"
+                type="number"
+                min="0"
+                value={storeForm.shippingEstimatedDaysMin}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingEstimatedDaysMin: e.target.value === '' ? '' : Number(e.target.value) })}
+                placeholder="1"
+              />
+
+              <Input
+                label="أقصى مدة متوقعة (أيام)"
+                type="number"
+                min="0"
+                value={storeForm.shippingEstimatedDaysMax}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingEstimatedDaysMax: e.target.value === '' ? '' : Number(e.target.value) })}
+                placeholder="3"
+              />
+
+              <Input
+                label="محافظة الشحن الأصلية"
+                value={storeForm.shippingOriginGovernorate}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingOriginGovernorate: e.target.value })}
+                placeholder="القاهرة"
+              />
+
+              <Input
+                label="مدينة / فرع الانطلاق"
+                value={storeForm.shippingOriginCity}
+                onChange={(e) => setStoreForm({ ...storeForm, shippingOriginCity: e.target.value })}
+                placeholder="مدينة نصر"
+              />
+
+              <div className="md:col-span-2">
+                <TextArea
+                  label="عنوان المستودع أو نقطة الاستلام"
+                  value={storeForm.shippingWarehouseAddress}
+                  onChange={(e) => setStoreForm({ ...storeForm, shippingWarehouseAddress: e.target.value })}
+                  placeholder="العنوان الكامل الذي سيتم الاعتماد عليه عند إنشاء الشحنات"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className={`rounded-2xl border border-dashed border-amber-200 bg-white/70 p-4 dark:border-amber-800/40 dark:bg-gray-950/20 ${!storeForm.shippingEnabled ? 'pointer-events-none opacity-60' : ''}`}>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">مناطق ورسوم الشحن</h4>
+                  <p className="mt-1 text-xs text-gray-500">يمكنك تخصيص رسوم ومدة مختلفة لكل محافظة أو منطقة بدلًا من الرسوم الأساسية.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addShippingZone} icon={<Plus className="h-4 w-4" />}>
+                  إضافة منطقة
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {storeForm.shippingZones.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900">
+                    لا توجد مناطق مخصصة الآن. سيتم استخدام الرسوم الأساسية في المتجر حتى تضيف مناطق شحن هنا.
+                  </div>
+                ) : (
+                  storeForm.shippingZones.map((zone, index) => (
+                    <div key={`${zone.code || 'zone'}-${index}`} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
+                        <Input
+                          label="المنطقة"
+                          value={zone.label}
+                          onChange={(e) => updateShippingZone(index, 'label', e.target.value)}
+                          placeholder="القاهرة"
+                          className="md:col-span-2"
+                        />
+                        <Input
+                          label="الكود"
+                          value={zone.code}
+                          onChange={(e) => updateShippingZone(index, 'code', e.target.value)}
+                          placeholder="cairo"
+                        />
+                        <Input
+                          label="الرسوم"
+                          type="number"
+                          min="0"
+                          value={zone.fee}
+                          onChange={(e) => updateShippingZone(index, 'fee', e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="45"
+                        />
+                        <Input
+                          label="من يوم"
+                          type="number"
+                          min="0"
+                          value={zone.estimatedDaysMin}
+                          onChange={(e) => updateShippingZone(index, 'estimatedDaysMin', e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="1"
+                        />
+                        <Input
+                          label="إلى يوم"
+                          type="number"
+                          min="0"
+                          value={zone.estimatedDaysMax}
+                          onChange={(e) => updateShippingZone(index, 'estimatedDaysMax', e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="2"
+                        />
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={zone.isActive !== false}
+                            onChange={(e) => updateShippingZone(index, 'isActive', e.target.checked)}
+                            className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
+                          />
+                          المنطقة مفعلة
+                        </label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeShippingZone(index)}
+                          icon={<Trash2 className="h-4 w-4" />}
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">

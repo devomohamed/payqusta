@@ -1,248 +1,137 @@
-# 💰 PayQusta — Multi-Vendor SaaS CRM
+# PayQusta
 
-<div align="center">
+PayQusta is a multi-tenant commerce SaaS that combines a tenant backoffice, a public storefront, a customer portal, and super-admin tooling in one repository.
 
-**نظام إدارة المبيعات والأقساط الذكي**
+The codebase is already beyond the "landing page + CRUD" stage. The gap now is operational clarity: accurate docs, repeatable setup, clearer product boundaries, and an onboarding story that matches the current implementation.
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7+-green.svg)](https://www.mongodb.com)
-[![Express](https://img.shields.io/badge/Express-4.18-blue.svg)](https://expressjs.com)
-[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org)
+## Repository layout
 
-</div>
-
----
-
-## 📋 نظرة عامة
-
-PayQusta هو نظام CRM متعدد البائعين (Multi-Vendor SaaS) يربط بين **المورد، البائع، والعميل**. يدير المبيعات، المخزون، الأقساط مع إشعارات WhatsApp تلقائية.
-
-### ✨ المميزات الرئيسية
-
-- 🏪 **Multi-Tenant SaaS** — كل بائع له بيئة معزولة بالكامل
-- 📱 **Mobile-First** — تصميم responsive مع أنيميشن جذابة
-- 💳 **نظام أقساط مرن** — أسبوعي، نصف شهري، شهري
-- 📲 **إشعارات WhatsApp** — تذكيرات تلقائية للأقساط والمخزون
-- 📊 **لوحة تحكم ذكية** — تحليلات ورسوم بيانية
-- 🎮 **نظام نقاط (Gamification)** — مكافآت VIP/Premium
-- 🌙 **Dark/Light Mode**
-- 🔒 **أمان متقدم** — JWT, Audit Logs, Rate Limiting
-- 💰 **بدون ضرائب** — كل الفواتير بدون أي رسوم إضافية
-
----
-
-## 🏗️ هيكل المشروع
-
-```
+```text
 payqusta/
-├── server.js                    # Entry point
-├── package.json
-├── .env.example                 # Environment variables template
-├── src/
-│   ├── config/
-│   │   ├── database.js          # MongoDB connection
-│   │   └── constants.js         # App constants & enums
-│   ├── middleware/
-│   │   ├── auth.js              # JWT auth, RBAC, tenant isolation
-│   │   └── errorHandler.js      # Global error handler
-│   ├── models/
-│   │   ├── Tenant.js            # Multi-tenant model
-│   │   ├── User.js              # Auth & users
-│   │   ├── Product.js           # Products & inventory
-│   │   ├── Customer.js          # Clients & gamification
-│   │   ├── Supplier.js          # Suppliers & payments
-│   │   ├── Invoice.js           # Invoices & installments
-│   │   └── AuditLog.js          # Security audit trail
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── productController.js
-│   │   ├── customerController.js
-│   │   ├── supplierController.js
-│   │   ├── invoiceController.js
-│   │   └── dashboardController.js
-│   ├── routes/
-│   │   └── index.js             # All API routes
-│   ├── services/
-│   │   └── WhatsAppService.js   # WhatsApp Business API
-│   ├── jobs/
-│   │   ├── InstallmentScheduler.js  # Cron: installment reminders
-│   │   └── StockMonitorJob.js       # Cron: stock alerts
-│   └── utils/
-│       ├── AppError.js          # Custom error class
-│       ├── ApiResponse.js       # Standardized responses
-│       ├── helpers.js           # Utility functions
-│       ├── logger.js            # Winston logger
-│       └── seeder.js            # Database seeder
-└── client/                      # React Frontend (Vite)
+  backend/                 Express + MongoDB API, jobs, services, tests
+  frontend/                React + Vite admin, storefront, portal, public site
+  docs/                    Product, architecture, and operations documentation
+  deploy-cloudrun.ps1      Windows deployment script for Google Cloud Run
+  cloudrun.env             Cloud Run environment file
 ```
 
----
+## Product surfaces
 
-## 🚀 التشغيل
+- Tenant backoffice: inventory, invoices, customers, suppliers, reports, settings, imports, backups, notifications.
+- Public storefront: catalog, cart, checkout, guest order confirmation, guest order tracking.
+- Customer portal: customer login, orders, invoices, returns, addresses, wishlist, support, notifications, reviews.
+- Public marketing site: landing pages, feature pages, use-case pages, FAQ.
+- Super admin: plans, tenant management, subscription requests, revenue analytics, system-level operations.
 
-### المتطلبات
+## Quick start
 
-- **Node.js** 18+
-- **MongoDB** 7+ (أو MongoDB Atlas)
-- **npm** 9+
+### Requirements
 
-### 1. تثبيت التبعيات
+- Node.js 18+
+- npm 9+
+- MongoDB 7+ or MongoDB Atlas
+
+### Local development
+
+1. Install backend dependencies.
 
 ```bash
-# Backend
+cd backend
 npm install
-
-# Frontend
-cd client && npm install
 ```
 
-### 2. إعداد المتغيرات البيئية
+2. Install frontend dependencies.
 
 ```bash
+cd ../frontend
+npm install
+```
+
+3. Create backend env file.
+
+```bash
+cd ../backend
 cp .env.example .env
-# Edit .env with your settings
 ```
 
-### 3. تهيئة قاعدة البيانات
+4. Start the API.
 
 ```bash
+cd backend
+npm run dev
+```
+
+5. Start the frontend in a second terminal.
+
+```bash
+cd frontend
+npm run dev
+```
+
+### Local URLs
+
+- Frontend: `http://127.0.0.1:5173`
+- API: `http://127.0.0.1:5000/api/v1`
+- Public health: `http://127.0.0.1:5000/api/health`
+- Readiness: `http://127.0.0.1:5000/api/health/ready`
+- Swagger: `http://127.0.0.1:5000/api-docs`
+
+### Seed sample data
+
+```bash
+cd backend
 npm run seed
 ```
 
-### 4. تشغيل المشروع
+## Production shape
+
+- The production entrypoint is `node backend/server.js`.
+- The backend serves `frontend/dist` when `NODE_ENV=production`.
+- You must build the frontend before starting the production server.
 
 ```bash
-# Development (backend + frontend)
-npm run dev          # Backend on :5000
-npm run client:dev   # Frontend on :5173
-
-# Production
-npm run client:build
+cd frontend
+npm run build
+cd ..
 npm start
 ```
 
----
+The repo also includes `deploy-cloudrun.ps1`, which builds the frontend, deploys the service to Google Cloud Run, updates `CLIENT_URL`, and performs a health check.
 
-## 🔌 API Endpoints
+## Tests
 
-### 🔐 Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/register` | تسجيل بائع جديد |
-| POST | `/api/v1/auth/login` | تسجيل الدخول |
-| GET | `/api/v1/auth/me` | بيانات المستخدم الحالي |
+Backend tests live under `backend/tests`.
 
-### 📦 Products
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/products` | جميع المنتجات |
-| POST | `/api/v1/products` | إضافة منتج |
-| PUT | `/api/v1/products/:id` | تعديل منتج |
-| DELETE | `/api/v1/products/:id` | حذف منتج |
-| PATCH | `/api/v1/products/:id/stock` | تحديث المخزون |
-| GET | `/api/v1/products/low-stock` | المنتجات منخفضة المخزون |
+```bash
+cd backend
+npm test
+npm run test:api
+npm run test:smoke
+```
 
-### 👥 Customers
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/customers` | جميع العملاء |
-| POST | `/api/v1/customers` | إضافة عميل |
-| GET | `/api/v1/customers/:id/transactions` | سجل المعاملات |
-| GET | `/api/v1/customers/top` | أفضل العملاء |
-| GET | `/api/v1/customers/debtors` | العملاء المدينين |
+Current suites include:
 
-### 🧾 Invoices
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/invoices` | جميع الفواتير |
-| POST | `/api/v1/invoices` | إنشاء فاتورة (نقد/أقساط) |
-| POST | `/api/v1/invoices/:id/pay` | تسجيل دفعة |
-| POST | `/api/v1/invoices/:id/pay-all` | سداد كامل |
-| POST | `/api/v1/invoices/:id/send-whatsapp` | إرسال WhatsApp |
-| GET | `/api/v1/invoices/upcoming-installments` | الأقساط القادمة |
+- integration auth coverage
+- an end-to-end sales flow
+- smoke tests for auth, customers, invoices, products, and storefront flows
 
-### 🚛 Suppliers
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/suppliers` | جميع الموردين |
-| POST | `/api/v1/suppliers/:id/purchase` | تسجيل شراء |
-| POST | `/api/v1/suppliers/:id/pay-all` | سداد كل المستحقات |
-| POST | `/api/v1/suppliers/:id/send-reminder` | إرسال تذكير WhatsApp |
+## Documentation map
 
-### 📊 Dashboard
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/dashboard/overview` | نظرة عامة |
-| GET | `/api/v1/dashboard/sales-report` | تقرير المبيعات |
+- [docs/architecture.md](docs/architecture.md)
+- [docs/environment-variables.md](docs/environment-variables.md)
+- [docs/deployment.md](docs/deployment.md)
+- [docs/tenant-onboarding.md](docs/tenant-onboarding.md)
+- [docs/backup-restore.md](docs/backup-restore.md)
+- [docs/feature-boundaries.md](docs/feature-boundaries.md)
+- [docs/testing-strategy.md](docs/testing-strategy.md)
 
----
+## Important notes
 
-## 📲 نظام الإشعارات (WhatsApp)
+- `backend/.env.example` is a starting point, but [docs/environment-variables.md](docs/environment-variables.md) is the authoritative reference.
+- Storefront tenancy can be resolved by `x-tenant-id`, `slug`, platform subdomain, or connected custom domain.
+- Upload storage supports local filesystem, Google Cloud Storage, and MongoDB-backed fallback storage depending on env configuration.
+- Backup and restore exist today, but coverage is intentionally documented in [docs/backup-restore.md](docs/backup-restore.md) because not every domain object is included yet.
 
-### إشعارات تلقائية:
-1. **تذكير قسط العميل** — قبل الموعد بيوم
-2. **تذكير قسط المورد** — "خلي بالك انت عليك قسط للمورد X"
-3. **تنبيه نفاد المخزون** — مع خيار إعادة تخزين تلقائي
-4. **إرسال الفاتورة** — بعد الإنشاء مباشرة
-5. **طلب إعادة تخزين** — للمنسق عند انخفاض المخزون
+## License
 
----
-
-## 💳 نظام الأقساط
-
-- **تكرار مرن:** أسبوعي، كل 15 يوم، شهري، كل شهرين
-- **مقدم اختياري**
-- **حاسبة أقساط تلقائية**
-- **سداد كامل في أي وقت**
-- **تذكيرات تلقائية عبر WhatsApp**
-- **بدون أي ضريبة أو رسوم إضافية**
-
----
-
-## 🎮 نظام النقاط (Gamification)
-
-| الحدث | النقاط |
-|-------|--------|
-| كل 1000 ج.م شراء | 10 نقاط |
-| سداد القسط في الميعاد | 50 نقطة |
-| **Premium** (1000+ نقطة) | خصومات خاصة |
-| **VIP** (2000+ نقطة) | أولوية + عروض حصرية |
-
----
-
-## 🔒 الأمان
-
-- ✅ JWT Authentication
-- ✅ Role-Based Access Control (RBAC)
-- ✅ Multi-Tenant Data Isolation
-- ✅ Rate Limiting
-- ✅ Audit Logs
-- ✅ MongoDB Sanitization (NoSQL Injection)
-- ✅ HTTP Parameter Pollution Protection
-- ✅ Helmet Security Headers
-- ✅ CORS Configuration
-
----
-
-## 🧪 بيانات الاختبار
-
-بعد تشغيل `npm run seed`:
-
-| الدور | البريد | كلمة المرور |
-|-------|--------|-------------|
-| بائع | vendor@payqusta.com | 123456 |
-| منسق | coordinator@payqusta.com | 123456 |
-
----
-
-## 📄 License
-
-PROPRIETARY — PayQusta © 2026
-
----
-
-<div align="center">
-  <strong>Built with ❤️ by PayQusta Team</strong>
-</div>
-#   p a y q u s t a  
- 
+Proprietary. PayQusta internal/commercial use only unless the owner states otherwise.

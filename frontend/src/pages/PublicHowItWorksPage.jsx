@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { workflowSteps } from '../publicSite/content';
@@ -11,7 +11,7 @@ export default function PublicHowItWorksPage() {
           <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">كيف يعمل</p>
           <h1 className="mt-3 text-4xl font-black leading-tight">رحلة واضحة من تجهيز النشاط إلى تشغيله ثم عرضه للزوار</h1>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            الهدف هنا أن يفهم الزائر أن المشروع ليس فكرة نظرية، بل مسار عملي يبدأ من البيانات وينتهي بتجربة احترافية للجمهور.
+            المنصة تعمل كمسار واضح يبدأ من تجهيز البيانات، ثم البيع والمتابعة، ثم إظهار البراند والمنتجات للعميل بشكل احترافي.
           </p>
 
           <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
@@ -20,8 +20,7 @@ export default function PublicHowItWorksPage() {
               لماذا هذا الترتيب؟
             </div>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              لأن الزائر يحتاج أن يرى مسارًا منطقيًا: إعداد، تشغيل، عرض، ثم متابعة. هذا الترتيب هو ما يجعل الموقع
-              العام يقود إلى فهم حقيقي بدل صفحة واحدة مزدحمة.
+              لأن النشاط الناجح لا يبدأ من الإعلان فقط، ولا من شاشة البيع فقط، بل من ترتيب البيانات ثم التشغيل ثم تقديم التجربة المناسبة للعميل.
             </p>
           </div>
         </div>
@@ -32,7 +31,7 @@ export default function PublicHowItWorksPage() {
             خطوات متتابعة توصل الزائر إلى صورة تشغيل كاملة
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
-            الصفحة هنا لا تعرض مراحل نظرية فقط، بل تشرح كيف يبدأ النشاط داخل المنصة ثم كيف يظهر للعالم الخارجي.
+            كل خطوة هنا تقرّبك من تشغيل أكثر تنظيمًا وتجربة أوضح للعميل، بدل العمل المتقطع بين أدوات وملفات كثيرة.
           </p>
         </div>
       </div>
@@ -41,7 +40,7 @@ export default function PublicHowItWorksPage() {
         {workflowSteps.map((step, index) => (
           <article key={step.step} className="rounded-[2rem] border border-slate-200 bg-white p-5 text-right shadow-sm sm:p-7">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div className="order-2 sm:order-1 text-right">
+              <div className="order-2 text-right sm:order-1">
                 <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
                   الخطوة {step.step}
                 </div>
@@ -49,8 +48,8 @@ export default function PublicHowItWorksPage() {
                 <p className="mt-3 text-sm leading-7 text-slate-600">{step.text}</p>
               </div>
 
-              <div className="order-1 sm:order-2 flex items-center justify-end gap-3 sm:min-w-[132px]">
-                <div className="h-12 w-12 rounded-2xl bg-slate-950 text-white flex items-center justify-center text-sm font-black">
+              <div className="order-1 flex items-center justify-end gap-3 sm:order-2 sm:min-w-[132px]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
                   {step.step}
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -68,8 +67,7 @@ export default function PublicHowItWorksPage() {
           <div>
             <h2 className="text-3xl font-black text-slate-950">الخطوة الطبيعية التالية</h2>
             <p className="mt-3 max-w-3xl text-base leading-8 text-slate-600">
-              بعد أن يفهم الزائر الفكرة والمزايا والحالات العملية، يبقى التحويل إلى تسجيل أو تجربة أولية. لذلك تم تنظيم
-              الموقع العام ليقود الزائر بخطوات منطقية بدل صفحة واحدة مزدحمة.
+              بعد رؤية المسار كاملًا، تصبح الخطوة التالية بسيطة: تجربة المنصة أو بدء الحساب على بيانات نشاطك بدل الاكتفاء بالقراءة فقط.
             </p>
           </div>
 

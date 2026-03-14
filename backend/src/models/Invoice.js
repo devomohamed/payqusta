@@ -4,6 +4,7 @@
  * NO TAX — as per BRD requirements
  */
 
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const {
   INVOICE_STATUS, PAYMENT_METHODS, INSTALLMENT_STATUS,
@@ -99,6 +100,9 @@ const invoiceSchema = new mongoose.Schema(
     subtotal: { type: Number, required: true },
     taxAmount: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
+    shippingFee: { type: Number, default: 0, min: 0 },
+    shippingDiscount: { type: Number, default: 0, min: 0 },
+    carrierCost: { type: Number, default: 0, min: 0 },
     totalAmount: { type: Number, required: true },
     // Payment
     paymentMethod: {
@@ -180,9 +184,36 @@ const invoiceSchema = new mongoose.Schema(
       governorate: { type: String },
       notes: { type: String },
     },
+    shippingMethod: { type: String },
+    shippingZone: {
+      code: { type: String },
+      label: { type: String },
+    },
+    shipmentId: { type: String },
+    trackingNumber: { type: String },
+    guestTrackingToken: { type: String },
+    guestTrackingTokenIssuedAt: { type: Date },
+    estimatedDeliveryDate: { type: Date },
+    deliveredAt: { type: Date },
+    cancelledAt: { type: Date },
+    inventoryRestoredAt: { type: Date },
+    refundAmount: { type: Number, default: 0, min: 0 },
+    refundedAt: { type: Date },
+    cancelReason: { type: String },
+    refundReason: { type: String },
+    returnStatus: {
+      type: String,
+      enum: ['none', 'requested', 'approved', 'received', 'rejected', 'refunded'],
+      default: 'none',
+    },
+    refundStatus: {
+      type: String,
+      enum: ['none', 'pending', 'partially_refunded', 'refunded', 'failed'],
+      default: 'none',
+    },
     // Shipping Integration (Bosta, etc.)
     shippingDetails: {
-      provider: { type: String, enum: ['bosta', 'aramex', 'local', null], default: null },
+      provider: { type: String, enum: ['bosta', 'aramex', 'local', 'manual', null], default: null },
       waybillNumber: { type: String },
       trackingUrl: { type: String },
       status: { type: String, enum: ['pending', 'created', 'picked_up', 'in_transit', 'delivered', 'returned', 'cancelled'], default: 'pending' },
@@ -225,9 +256,15 @@ invoiceSchema.index({ 'installments.dueDate': 1, 'installments.status': 1 });
 invoiceSchema.index({ tenant: 1, customer: 1, status: 1 });
 invoiceSchema.index({ tenant: 1, branch: 1, createdAt: -1 });
 invoiceSchema.index({ tenant: 1, paymentMethod: 1, status: 1 });
+invoiceSchema.index({ tenant: 1, guestTrackingToken: 1 });
 
 // Pre-save: Calculate totals and status
 invoiceSchema.pre('save', function (next) {
+  if (this.source === 'online_store' && !this.guestTrackingToken) {
+    this.guestTrackingToken = crypto.randomBytes(18).toString('hex');
+    this.guestTrackingTokenIssuedAt = new Date();
+  }
+
   // Calculate subtotal and tax from items
   let currentProfit = 0;
   if (this.items && this.items.length > 0) {
@@ -241,19 +278,23 @@ invoiceSchema.pre('save', function (next) {
       return sum;
     }, 0);
 
-    // Total = Subtotal + Tax - Discount
-    this.totalAmount = this.subtotal + this.taxAmount - this.discount;
+    const effectiveShipping = Math.max(0, (this.shippingFee || 0) - (this.shippingDiscount || 0));
+
+    // Total = Subtotal + Tax + Shipping - Discount
+    this.totalAmount = this.subtotal + this.taxAmount + effectiveShipping - this.discount;
   }
 
   // Calculate remaining amount
   this.remainingAmount = Math.max(0, this.totalAmount - this.paidAmount);
 
   // Update status based on payments
-  if (this.paidAmount >= this.totalAmount) {
-    this.status = INVOICE_STATUS.PAID;
-    this.remainingAmount = 0;
-  } else if (this.paidAmount > 0) {
-    this.status = INVOICE_STATUS.PARTIALLY_PAID;
+  if (this.status !== INVOICE_STATUS.CANCELLED) {
+    if (this.paidAmount >= this.totalAmount) {
+      this.status = INVOICE_STATUS.PAID;
+      this.remainingAmount = 0;
+    } else if (this.paidAmount > 0) {
+      this.status = INVOICE_STATUS.PARTIALLY_PAID;
+    }
   }
 
   // Check for overdue installments
@@ -266,7 +307,7 @@ invoiceSchema.pre('save', function (next) {
     });
 
     const hasOverdue = this.installments.some((i) => i.status === 'overdue');
-    if (hasOverdue && this.status !== INVOICE_STATUS.PAID) {
+    if (hasOverdue && this.status !== INVOICE_STATUS.PAID && this.status !== INVOICE_STATUS.CANCELLED) {
       this.status = INVOICE_STATUS.OVERDUE;
     }
   }

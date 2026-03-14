@@ -544,6 +544,8 @@ export const superAdminApi = {
   getSubscriptionRequests: (params) => api.get('/super-admin/subscription-requests', { params }),
   approveSubscriptionRequest: (id) => api.post(`/super-admin/subscription-requests/${id}/approve`),
   rejectSubscriptionRequest: (id, reason) => api.post(`/super-admin/subscription-requests/${id}/reject`, { reason }),
+  getPublicLeads: (params) => api.get('/super-admin/leads', { params }),
+  updatePublicLead: (id, data) => api.patch(`/super-admin/leads/${id}`, data),
 };
 
 // Admin API (Legacy / Tenant Admin)

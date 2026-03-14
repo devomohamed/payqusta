@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ChevronDown, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { faqItems } from '../publicSite/content';
@@ -13,15 +13,15 @@ export default function PublicFaqPage() {
           <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">الأسئلة الشائعة</p>
           <h1 className="mt-3 text-4xl font-black leading-tight">إجابات يحتاجها الزائر قبل التسجيل أو التجربة الأولى</h1>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            هذه الصفحة موجودة لتكمل الصورة: ماذا يفعل المشروع، لمن يصلح، وكيف يستفيد منه النشاط بشكل عملي.
+            هنا ستجد إجابات مباشرة على الأسئلة التي تتكرر قبل اتخاذ قرار البدء أو طلب تجربة عملية.
           </p>
 
           <div className="mt-6 grid gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white/90">
-              {faqItems.length} أسئلة أساسية مرتبة لمرحلة ما قبل التسجيل
+              {faqItems.length} أسئلة أساسية يحتاجها صاحب النشاط قبل القرار
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white/90">
-              توضيح للبراند، الاستخدام، والفهرسة والواجهة العامة
+              توضيح للبراند، الاستخدام اليومي، والواجهة التي يراها العميل
             </div>
           </div>
         </div>
@@ -32,8 +32,7 @@ export default function PublicFaqPage() {
             كل إجابة هنا تمهد لخطوة أوضح في رحلة الزائر
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
-            عندما تكون الإجابات موجودة في مكانها الصحيح، تقل الأسئلة المتكررة ويصبح التحويل إلى التسجيل أو التجربة
-            أقرب وأكثر منطقية.
+            عندما تكون الإجابات واضحة، يصبح تقييم المنصة أسهل ويقل التردد قبل الانتقال إلى التجربة أو التسجيل.
           </p>
         </div>
       </div>
@@ -49,7 +48,7 @@ export default function PublicFaqPage() {
                 className="flex w-full items-center justify-between gap-4 px-5 py-5 text-right sm:px-6"
               >
                 <ChevronDown className={`h-5 w-5 flex-shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                <span className="flex-1 text-base sm:text-lg font-black text-slate-950">{item.question}</span>
+                <span className="flex-1 text-base font-black text-slate-950 sm:text-lg">{item.question}</span>
               </button>
               {isOpen && (
                 <div className="border-t border-slate-100 px-5 py-5 text-right text-sm leading-7 text-slate-600 sm:px-6">
@@ -66,7 +65,7 @@ export default function PublicFaqPage() {
           <div>
             <h2 className="text-3xl font-black text-slate-950">ما زال لديك سؤال قبل البدء؟</h2>
             <p className="mt-3 text-base leading-8 text-slate-600">
-              بعد صفحة المزايا والحالات العملية وطريقة العمل، تأتي هذه الأسئلة لتغلق فجوات الفهم وتدفع الزائر لقرار أوضح.
+              إذا بقيت نقطة غير واضحة بعد المزايا وطريقة العمل، فهذه الإجابات تساعدك على تكوين صورة أدق قبل البدء.
             </p>
           </div>
 

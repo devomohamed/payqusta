@@ -13,6 +13,10 @@ const {
   applyTenantBarcodeSettings,
   getTenantBarcodeSettings,
 } = require('../utils/barcodeHelpers');
+const {
+  applyTenantShippingSettings,
+  getPublicShippingSettings,
+} = require('../utils/shippingHelpers');
 const { processImage } = require('../middleware/upload');
 const logger = require('../utils/logger');
 
@@ -211,9 +215,10 @@ class SettingsController {
       branding: tenant.branding,
       settings: {
         barcode: getTenantBarcodeSettings(tenant),
+        shipping: getPublicShippingSettings(tenant),
         installments: tenant.settings?.installments,
       },
-      currency: 'EGP', // Default
+      currency: tenant.settings?.currency || 'EGP',
       taxRate: 14 // Default
     });
   });
@@ -228,7 +233,7 @@ class SettingsController {
     const updateData = {};
     if (name) updateData.name = name;
     if (businessInfo) updateData.businessInfo = businessInfo;
-    if (cameras) updateData.cameras = cameras;
+    if (cameras !== undefined) updateData.cameras = cameras;
 
     if (settings?.watermark) {
       updateData['settings.watermark'] = {
@@ -239,10 +244,23 @@ class SettingsController {
       };
     }
 
+    let tenantSettingsSnapshot = null;
+    if (settings?.barcode || settings?.shipping) {
+      tenantSettingsSnapshot = await Tenant.findById(req.tenantId).select('settings.barcode settings.shipping');
+      if (!tenantSettingsSnapshot) return next(AppError.notFound('المتجر غير موجود'));
+    }
+
     if (settings?.barcode) {
       const tenant = await Tenant.findById(req.tenantId).select('settings.barcode');
-      if (!tenant) return next(AppError.notFound('Ø§Ù„Ù…ØªØ¬Ø± ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯'));
+      if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
       updateData['settings.barcode'] = applyTenantBarcodeSettings(settings.barcode, tenant);
+    }
+
+    if (settings?.shipping) {
+      updateData['settings.shipping'] = applyTenantShippingSettings(
+        settings.shipping,
+        tenantSettingsSnapshot
+      );
     }
 
     const tenant = await Tenant.findByIdAndUpdate(

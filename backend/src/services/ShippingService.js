@@ -107,6 +107,10 @@ class ShippingService {
         }
     }
 
+    normalizeTrackingStatus(providerStatus) {
+        return this._mapStatus(providerStatus);
+    }
+
     /**
      * Maps Bosta internal states to our standard DB statuses
      */

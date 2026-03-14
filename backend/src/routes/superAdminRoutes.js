@@ -36,4 +36,7 @@ router.get('/subscription-requests', superAdminController.getSubscriptionRequest
 router.post('/subscription-requests/:id/approve', superAdminController.approveSubscriptionRequest);
 router.post('/subscription-requests/:id/reject', superAdminController.rejectSubscriptionRequest);
 
+router.get('/leads', superAdminController.getPublicLeads);
+router.patch('/leads/:id', superAdminController.updatePublicLead);
+
 module.exports = router;

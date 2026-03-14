@@ -10,6 +10,7 @@ const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
 const SubscriptionRequest = require('../models/SubscriptionRequest');
+const PublicLead = require('../models/PublicLead');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
@@ -391,6 +392,69 @@ class SuperAdminController {
     NotificationService.onSubscriptionRejected(request.tenant, request.rejectionReason, '').catch(() => { });
 
     ApiResponse.success(res, request, 'تم رفض الطلب بنجاح');
+  });
+
+  /**
+   * GET /api/v1/super-admin/leads
+   * List public website leads with lightweight filters
+   */
+  getPublicLeads = catchAsync(async (req, res) => {
+    const status = String(req.query?.status || 'all').trim();
+    const requestType = String(req.query?.requestType || 'all').trim();
+    const search = String(req.query?.search || '').trim();
+
+    const query = {};
+    if (status !== 'all') query.status = status;
+    if (requestType !== 'all') query.requestType = requestType;
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { businessName: { $regex: search, $options: 'i' } },
+        { message: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [leads, stats] = await Promise.all([
+      PublicLead.find(query).sort({ submittedAt: -1, createdAt: -1 }).limit(200),
+      PublicLead.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    ]);
+
+    ApiResponse.success(res, { leads, stats });
+  });
+
+  /**
+   * PATCH /api/v1/super-admin/leads/:id
+   * Update public website lead status and notes
+   */
+  updatePublicLead = catchAsync(async (req, res, next) => {
+    const lead = await PublicLead.findById(req.params.id);
+    if (!lead) {
+      return next(AppError.notFound('\u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F')); 
+    }
+
+    const nextStatus = String(req.body?.status || '').trim();
+    const internalNotes = String(req.body?.internalNotes || '').trim();
+    const allowedStatuses = ['new', 'contacted', 'qualified', 'closed', 'spam'];
+
+    if (nextStatus) {
+      if (!allowedStatuses.includes(nextStatus)) {
+        return next(AppError.badRequest('\u062D\u0627\u0644\u0629 \u0627\u0644\u0637\u0644\u0628 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629')); 
+      }
+      lead.status = nextStatus;
+      if (['contacted', 'qualified', 'closed'].includes(nextStatus)) {
+        lead.lastContactedAt = new Date();
+      }
+    }
+
+    if (req.body?.internalNotes !== undefined) {
+      lead.internalNotes = internalNotes;
+    }
+
+    await lead.save();
+
+    ApiResponse.success(res, lead, '\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0637\u0644\u0628 \u0628\u0646\u062C\u0627\u062D');
   });
 }
 

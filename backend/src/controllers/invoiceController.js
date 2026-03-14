@@ -3,6 +3,7 @@
  * Core business logic for invoice creation, payment, and WhatsApp notifications
  */
 
+const crypto = require('crypto');
 const Invoice = require('../models/Invoice');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
@@ -14,8 +15,248 @@ const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
 const GamificationService = require('../services/GamificationService');
 const ShippingService = require('../services/ShippingService');
+const refundService = require('../services/RefundService');
 const catchAsync = require('../utils/catchAsync');
 const { PAYMENT_METHODS, INVOICE_STATUS } = require('../config/constants');
+const {
+  cancelInvoiceOrder,
+  completeInvoiceReturn,
+} = require('../utils/orderLifecycle');
+
+const ORDER_SHIPPING_STATUS_MAP = {
+  pending: 'pending',
+  confirmed: 'pending',
+  processing: 'pending',
+  shipped: 'in_transit',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+};
+
+const SHIPPING_STATUS_ORDER_MAP = {
+  pending: null,
+  created: 'processing',
+  picked_up: 'shipped',
+  in_transit: 'shipped',
+  delivered: 'delivered',
+  returned: 'cancelled',
+  cancelled: 'cancelled',
+};
+
+const ORDER_STATUS_RANK = {
+  pending: 1,
+  confirmed: 2,
+  processing: 3,
+  shipped: 4,
+  delivered: 5,
+  cancelled: 5,
+};
+
+const tokensMatch = (providedToken, storedToken) => {
+  if (!providedToken || !storedToken) return false;
+
+  const provided = Buffer.from(String(providedToken));
+  const stored = Buffer.from(String(storedToken));
+
+  if (provided.length !== stored.length) return false;
+
+  return crypto.timingSafeEqual(provided, stored);
+};
+
+const secretsMatch = (providedSecret, configuredSecret) => {
+  if (!configuredSecret) return true;
+  return tokensMatch(String(providedSecret || ''), String(configuredSecret));
+};
+
+const applyOrderStatusMetadata = (invoice, orderStatus) => {
+  invoice.orderStatus = orderStatus;
+
+  if (orderStatus === 'delivered' && !invoice.deliveredAt) {
+    invoice.deliveredAt = new Date();
+  }
+
+  if (orderStatus === 'cancelled' && !invoice.cancelledAt) {
+    invoice.cancelledAt = new Date();
+  }
+
+  if (invoice.shippingDetails) {
+    const mappedShippingStatus = ORDER_SHIPPING_STATUS_MAP[orderStatus];
+    const currentShippingStatus = invoice.shippingDetails.status;
+    const shouldSyncShippingStatus =
+      !currentShippingStatus ||
+      currentShippingStatus === 'pending' ||
+      (orderStatus === 'delivered' && currentShippingStatus !== 'returned') ||
+      (orderStatus === 'cancelled' && ['pending', 'created'].includes(currentShippingStatus));
+
+    if (mappedShippingStatus && shouldSyncShippingStatus) {
+      invoice.shippingDetails.status = mappedShippingStatus;
+    }
+  }
+};
+
+const resolveOrderStatusFromShippingStatus = (shippingStatus, currentOrderStatus = 'pending') => {
+  const nextOrderStatus = SHIPPING_STATUS_ORDER_MAP[shippingStatus];
+  if (!nextOrderStatus) return currentOrderStatus;
+
+  const currentRank = ORDER_STATUS_RANK[currentOrderStatus] || 0;
+  const nextRank = ORDER_STATUS_RANK[nextOrderStatus] || 0;
+
+  return nextRank >= currentRank ? nextOrderStatus : currentOrderStatus;
+};
+
+const syncInvoiceShippingState = (
+  invoice,
+  {
+    provider = 'bosta',
+    shippingStatus,
+    rawStatus,
+    shipmentId,
+    trackingNumber,
+    trackingUrl,
+    note,
+  } = {}
+) => {
+  invoice.shippingDetails = invoice.shippingDetails || {};
+  invoice.shippingDetails.provider = provider || invoice.shippingDetails.provider || 'manual';
+
+  if (shippingStatus) {
+    invoice.shippingDetails.status = shippingStatus;
+  }
+
+  if (trackingNumber) {
+    invoice.trackingNumber = trackingNumber;
+    invoice.shippingDetails.waybillNumber = trackingNumber;
+  }
+
+  if (trackingUrl) {
+    invoice.shippingDetails.trackingUrl = trackingUrl;
+  }
+
+  if (shipmentId) {
+    invoice.shipmentId = shipmentId;
+  }
+
+  const nextOrderStatus = resolveOrderStatusFromShippingStatus(shippingStatus, invoice.orderStatus);
+  applyOrderStatusMetadata(invoice, nextOrderStatus);
+
+  if (note || rawStatus) {
+    invoice.orderStatusHistory = invoice.orderStatusHistory || [];
+    invoice.orderStatusHistory.push({
+      status: invoice.orderStatus,
+      date: new Date(),
+      note: note || `تحديث حالة الشحن: ${rawStatus || shippingStatus}`,
+    });
+  }
+};
+
+const toPublicOrderPayload = (invoice) => ({
+  id: invoice._id,
+  invoiceId: invoice._id,
+  invoiceNumber: invoice.invoiceNumber,
+  orderNumber: invoice.invoiceNumber,
+  status: invoice.orderStatus,
+  orderStatus: invoice.orderStatus,
+  createdAt: invoice.createdAt,
+  subtotal: invoice.subtotal,
+  taxAmount: invoice.taxAmount,
+  discount: invoice.discount,
+  shippingFee: invoice.shippingFee,
+  shippingDiscount: invoice.shippingDiscount,
+  total: invoice.totalAmount,
+  totalAmount: invoice.totalAmount,
+  paymentMethod: invoice.paymentMethod,
+  shippingMethod: invoice.shippingMethod,
+  shippingStatus: invoice.shippingDetails?.status || null,
+  trackingNumber: invoice.trackingNumber || invoice.shippingDetails?.waybillNumber || null,
+  trackingUrl: invoice.shippingDetails?.trackingUrl || null,
+  estimatedDeliveryDate: invoice.estimatedDeliveryDate || null,
+  deliveredAt: invoice.deliveredAt || null,
+  cancelledAt: invoice.cancelledAt || null,
+  returnStatus: invoice.returnStatus || 'none',
+  refundStatus: invoice.refundStatus || 'none',
+  refundAmount: invoice.refundAmount || 0,
+  shippingAddress: invoice.shippingAddress || null,
+  customer: {
+    phone: invoice.shippingAddress?.phone || invoice.customer?.phone || null,
+    address: invoice.shippingAddress?.address || invoice.customer?.address || null,
+  },
+  items: (invoice.items || []).map((item) => ({
+    name: item.productName || item.product?.name || 'منتج',
+    quantity: item.quantity,
+    price: item.unitPrice,
+    totalPrice: item.totalPrice,
+    image: item.product?.image || item.product?.images?.[0] || null,
+  })),
+  orderStatusHistory: invoice.orderStatusHistory || [],
+});
+
+const firstNonEmptyValue = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+
+const extractWebhookShippingPayload = (payload = {}) => {
+  const nestedData = payload.data || payload.delivery || payload.shipment || {};
+  const nestedState = payload.state || nestedData.state || {};
+
+  const trackingNumber = firstNonEmptyValue(
+    payload.trackingNumber,
+    payload.tracking_number,
+    payload.waybillNumber,
+    payload.waybill_number,
+    payload.tracking_num,
+    nestedData.trackingNumber,
+    nestedData.tracking_number,
+    nestedData.waybillNumber,
+    nestedData.tracking_num
+  );
+
+  const shipmentId = firstNonEmptyValue(
+    payload.shipmentId,
+    payload.shipment_id,
+    payload.deliveryId,
+    payload.delivery_id,
+    payload._id,
+    nestedData.shipmentId,
+    nestedData.shipment_id,
+    nestedData.deliveryId,
+    nestedData.delivery_id,
+    nestedData._id
+  );
+
+  const reference = firstNonEmptyValue(
+    payload.reference,
+    payload.orderNumber,
+    payload.order_number,
+    payload.invoiceNumber,
+    payload.invoice_number,
+    nestedData.reference,
+    nestedData.orderNumber,
+    nestedData.order_number,
+    nestedData.invoiceNumber,
+    nestedData.invoice_number
+  );
+
+  const rawStatus = firstNonEmptyValue(
+    payload.rawStatus,
+    payload.status,
+    payload.currentStatus,
+    nestedState.value,
+    nestedData.status,
+    nestedData.currentStatus
+  );
+
+  const trackingUrl = firstNonEmptyValue(
+    payload.trackingUrl,
+    payload.tracking_url,
+    nestedData.trackingUrl,
+    nestedData.tracking_url
+  );
+
+  return {
+    shipmentId,
+    trackingNumber,
+    reference,
+    rawStatus,
+    trackingUrl,
+  };
+};
 
 class InvoiceController {
   /**
@@ -106,6 +347,156 @@ class InvoiceController {
     if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
 
     ApiResponse.success(res, invoice);
+  });
+
+  /**
+   * GET /api/v1/orders/:id/confirmation?token=...
+   * Safe public order confirmation endpoint for storefront guest orders
+   */
+  getPublicOrderConfirmation = catchAsync(async (req, res, next) => {
+    const token = String(req.query.token || '').trim();
+    if (!token) return next(AppError.badRequest('رابط متابعة الطلب غير مكتمل'));
+
+    const invoice = await Invoice.findOne({
+      _id: req.params.id,
+      source: 'online_store',
+      ...req.tenantFilter,
+    })
+      .populate('customer', 'phone address')
+      .populate('items.product', 'name image images')
+      .lean();
+
+    if (!invoice || !tokensMatch(token, invoice.guestTrackingToken)) {
+      return next(AppError.notFound('الطلب غير موجود'));
+    }
+
+    ApiResponse.success(res, {
+      ...toPublicOrderPayload(invoice),
+      guestTrackingToken: invoice.guestTrackingToken,
+    });
+  });
+
+  /**
+   * GET /api/v1/orders/track?orderNumber=...&token=...
+   * Safe public order tracking endpoint for storefront guest orders
+   */
+  trackPublicOrder = catchAsync(async (req, res, next) => {
+    const orderNumber = String(req.query.orderNumber || '').trim();
+    const token = String(req.query.token || '').trim();
+
+    if (!orderNumber || !token) {
+      return next(AppError.badRequest('رقم الطلب ورمز التتبع مطلوبان'));
+    }
+
+    const invoice = await Invoice.findOne({
+      invoiceNumber: orderNumber,
+      source: 'online_store',
+      ...req.tenantFilter,
+    })
+      .populate('customer', 'phone address')
+      .populate('items.product', 'name image images')
+      .lean();
+
+    if (!invoice || !tokensMatch(token, invoice.guestTrackingToken)) {
+      return next(AppError.notFound('الطلب غير موجود'));
+    }
+
+    ApiResponse.success(res, toPublicOrderPayload(invoice));
+  });
+
+  /**
+   * POST /api/v1/shipping/webhooks/bosta
+   * Provider webhook endpoint to sync shipment status back into the order
+   */
+  handleBostaWebhook = catchAsync(async (req, res, next) => {
+    const configuredSecret = process.env.BOSTA_WEBHOOK_SECRET;
+    const providedSecret = firstNonEmptyValue(
+      req.headers['x-bosta-webhook-secret'],
+      req.headers['x-webhook-secret'],
+      req.query.secret,
+      req.body?.secret
+    );
+
+    if (!secretsMatch(providedSecret, configuredSecret)) {
+      return next(AppError.forbidden('Webhook غير مصرح به'));
+    }
+
+    const { shipmentId, trackingNumber, reference, rawStatus, trackingUrl } = extractWebhookShippingPayload(req.body);
+
+    if (!shipmentId && !trackingNumber && !reference) {
+      return next(AppError.badRequest('بيانات الشحنة غير مكتملة'));
+    }
+
+    const lookupFilters = [];
+    if (trackingNumber) {
+      lookupFilters.push({ trackingNumber });
+      lookupFilters.push({ 'shippingDetails.waybillNumber': trackingNumber });
+    }
+    if (shipmentId) {
+      lookupFilters.push({ shipmentId });
+    }
+    if (reference) {
+      lookupFilters.push({ invoiceNumber: reference });
+    }
+
+    const invoice = await Invoice.findOne({ $or: lookupFilters });
+
+    if (!invoice) {
+      return ApiResponse.success(res, { ignored: true }, 'لم يتم العثور على طلب مطابق لهذه الشحنة');
+    }
+
+    const shippingStatus = ShippingService.normalizeTrackingStatus(rawStatus);
+
+    syncInvoiceShippingState(invoice, {
+      provider: 'bosta',
+      shippingStatus,
+      rawStatus,
+      shipmentId,
+      trackingNumber,
+      trackingUrl,
+      note: `تحديث تلقائي من Bosta: ${rawStatus || shippingStatus}`,
+    });
+
+    if (shippingStatus === 'returned') {
+      const completion = await completeInvoiceReturn(
+        invoice,
+        (invoice.items || []).map((item) => ({
+          productId: item.product,
+          variantId: item.variant || null,
+          quantity: item.quantity,
+        })),
+        {
+          reason: 'returned',
+          note: `تحديث تلقائي من Bosta: ${rawStatus || shippingStatus}`,
+          cancelOrder: true,
+        }
+      );
+
+      if (completion.refundAmount > 0) {
+        await refundService.refundInvoicePayments(invoice, {
+          amount: completion.refundAmount,
+          reason: 'Returned shipment refund',
+          metadata: {
+            source: 'shipping_webhook',
+            provider: 'bosta',
+            trackingNumber,
+          },
+        });
+      }
+    }
+
+    await invoice.save({ validateBeforeSave: false });
+
+    ApiResponse.success(
+      res,
+      {
+        invoiceId: invoice._id,
+        orderStatus: invoice.orderStatus,
+        shippingStatus: invoice.shippingDetails?.status,
+        trackingNumber: invoice.trackingNumber,
+      },
+      'تمت مزامنة حالة الشحنة بنجاح'
+    );
   });
 
   create = catchAsync(async (req, res, next) => {
@@ -346,13 +737,21 @@ class InvoiceController {
       trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
       status: bostaRes.state || 'created',
     };
-    invoice.orderStatus = 'shipped'; // Update internal order status
-
-    invoice.orderStatusHistory.push({
-      status: 'shipped',
+    invoice.shippingMethod = invoice.shippingMethod || 'Bosta';
+    invoice.shipmentId =
+      bostaRes.deliveryId ||
+      bostaRes.shipmentId ||
+      bostaRes.trackingNumber;
+    invoice.trackingNumber = bostaRes.trackingNumber;
+    syncInvoiceShippingState(invoice, {
+      provider: 'bosta',
+      shippingStatus: bostaRes.state || 'created',
+      rawStatus: bostaRes.state || 'created',
+      shipmentId: invoice.shipmentId,
+      trackingNumber: bostaRes.trackingNumber,
+      trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
       note: `تم إنشاء بوليصة شحن Bosta: ${bostaRes.trackingNumber}`,
     });
-
     await invoice.save();
 
     ApiResponse.success(res, {
@@ -379,17 +778,42 @@ class InvoiceController {
 
     // Update DB if status changed
     if (trackRes.status && invoice.shippingDetails.status !== trackRes.status) {
-      invoice.shippingDetails.status = trackRes.status;
-
-      // Sync internal order status based on shipping status
-      if (trackRes.status === 'delivered') invoice.orderStatus = 'delivered';
-      else if (trackRes.status === 'returned') invoice.orderStatus = 'cancelled';
-      else if (trackRes.status === 'in_transit') invoice.orderStatus = 'shipped';
-
-      invoice.orderStatusHistory.push({
-        status: invoice.orderStatus,
+      syncInvoiceShippingState(invoice, {
+        provider: 'bosta',
+        shippingStatus: trackRes.status,
+        rawStatus: trackRes.rawStatus,
+        trackingNumber: waybillNumber,
         note: `تحديث حالة الشحن: ${trackRes.rawStatus}`,
       });
+
+      if (trackRes.status === 'returned') {
+        invoice.returnStatus = 'received';
+        const completion = await completeInvoiceReturn(
+          invoice,
+          (invoice.items || []).map((item) => ({
+            productId: item.product,
+            variantId: item.variant || null,
+            quantity: item.quantity,
+          })),
+          {
+            reason: 'returned',
+            note: `تمت إعادة الشحنة من مزود الشحن: ${trackRes.rawStatus || trackRes.status}`,
+            cancelOrder: true,
+          }
+        );
+
+        if (completion.refundAmount > 0) {
+          await refundService.refundInvoicePayments(invoice, {
+            amount: completion.refundAmount,
+            reason: 'Returned shipment refund',
+            metadata: {
+              source: 'shipping_track',
+              provider: 'bosta',
+              trackingNumber: waybillNumber,
+            },
+          });
+        }
+      }
 
       await invoice.save();
     }
@@ -435,13 +859,34 @@ class InvoiceController {
     const invoice = await Invoice.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
 
-    invoice.orderStatus = orderStatus;
-    invoice.orderStatusHistory = invoice.orderStatusHistory || [];
-    invoice.orderStatusHistory.push({
-      status: orderStatus,
-      date: new Date(),
-      note: note || `تم التحديث إلى: ${orderStatus}`,
-    });
+    let refundExecution = null;
+
+    if (orderStatus === 'cancelled') {
+      await cancelInvoiceOrder(invoice, {
+        reason: note || 'تم إلغاء الطلب من الإدارة',
+        note: note || 'تم إلغاء الطلب من الإدارة',
+        restoreInventory: true,
+      });
+
+      if ((Number(invoice.refundAmount) || 0) > 0) {
+        refundExecution = await refundService.refundInvoicePayments(invoice, {
+          reason: note || 'Order cancellation refund',
+          userId: req.user._id,
+          metadata: {
+            source: 'order_cancellation',
+            actorId: req.user._id.toString(),
+          },
+        });
+      }
+    } else {
+      applyOrderStatusMetadata(invoice, orderStatus);
+      invoice.orderStatusHistory = invoice.orderStatusHistory || [];
+      invoice.orderStatusHistory.push({
+        status: orderStatus,
+        date: new Date(),
+        note: note || `تم التحديث إلى: ${orderStatus}`,
+      });
+    }
 
     await invoice.save({ validateBeforeSave: false });
 
@@ -461,7 +906,47 @@ class InvoiceController {
       });
     } catch { /* ignore */ }
 
-    ApiResponse.success(res, { orderStatus }, 'تم تحديث حالة الطلب');
+    ApiResponse.success(res, {
+      orderStatus,
+      refund: refundExecution ? {
+        requestedAmount: refundExecution.requestedAmount,
+        executedAmount: refundExecution.executedAmount,
+        outstandingAmount: refundExecution.outstandingAmount,
+        mode: refundExecution.mode,
+      } : null,
+    }, 'تم تحديث حالة الطلب');
+  });
+
+  /**
+   * POST /api/v1/invoices/:id/refund
+   * Retry/process invoice refund for cancelled or returned orders
+   */
+  processRefund = catchAsync(async (req, res, next) => {
+    const { amount, reason } = req.body || {};
+
+    const invoice = await Invoice.findOne({ _id: req.params.id, ...req.tenantFilter });
+    if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
+
+    const refundExecution = await refundService.refundInvoicePayments(invoice, {
+      amount,
+      reason: reason || invoice.refundReason || 'Invoice refund',
+      userId: req.user._id,
+      metadata: {
+        source: 'invoice_refund',
+        actorId: req.user._id.toString(),
+      },
+    });
+
+    await invoice.save({ validateBeforeSave: false });
+
+    return ApiResponse.success(res, {
+      invoice,
+      refund: refundExecution,
+    }, refundExecution.executedAmount > 0
+      ? 'تم تنفيذ الاسترداد'
+      : refundExecution.mode === 'manual'
+        ? 'لا توجد معاملة دفع إلكترونية قابلة للاسترداد، ويرجى تنفيذ الاسترداد يدويًا'
+        : 'تم تحديث حالة الاسترداد');
   });
 }
 

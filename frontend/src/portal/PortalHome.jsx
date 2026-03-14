@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { notify } from '../components/AnimatedNotification';
 import { usePortalStore } from '../store/portalStore';
 import { useThemeStore } from '../store';
 import {
@@ -34,9 +35,9 @@ export default function PortalHome() {
     setIsClaiming(true);
     const res = await claimDailyReward();
     if (res.success) {
-      import('../components/AnimatedNotification').then(({ notify }) => notify.success(res.message));
+      notify.success(res.message);
     } else {
-      import('../components/AnimatedNotification').then(({ notify }) => notify.error(res.message));
+      notify.error(res.message);
     }
     setIsClaiming(false);
   };

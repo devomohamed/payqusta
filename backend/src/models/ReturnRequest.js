@@ -24,6 +24,10 @@ const returnRequestSchema = new mongoose.Schema(
             ref: 'Product',
             required: true,
         },
+        variantId: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null,
+        },
         variant: {
             sku: String,
             name: String
@@ -50,6 +54,30 @@ const returnRequestSchema = new mongoose.Schema(
         },
         adminNotes: {
             type: String
+        },
+        refundAmount: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+        refundStatus: {
+            type: String,
+            enum: ['none', 'pending', 'refunded', 'failed'],
+            default: 'none'
+        },
+        refundedAt: {
+            type: Date
+        },
+        restockedQuantity: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+        restockedAt: {
+            type: Date
+        },
+        completedAt: {
+            type: Date
         },
         reviewedBy: {
             type: mongoose.Schema.Types.ObjectId,

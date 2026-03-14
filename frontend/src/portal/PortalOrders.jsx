@@ -20,6 +20,23 @@ const orderStatusConfig = {
 const trackingStepKeys = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
 const trackingLabelKeys = ['receive', 'confirm', 'prepare', 'ship', 'deliver'];
 
+const refundStatusLabels = {
+    none: 'لا يوجد استرداد',
+    pending: 'استرداد قيد المعالجة',
+    partially_refunded: 'تم رد جزء من المبلغ',
+    refunded: 'تم رد المبلغ',
+    failed: 'فشل الاسترداد',
+};
+
+const returnStatusLabels = {
+    none: 'لا يوجد مرتجع',
+    requested: 'تم طلب مرتجع',
+    approved: 'تمت الموافقة على المرتجع',
+    received: 'تم استلام المرتجع',
+    rejected: 'تم رفض المرتجع',
+    refunded: 'تم رد قيمة المرتجع',
+};
+
 export default function PortalOrders() {
     const { fetchOrders, fetchOrderDetails, reorder, cancelOrder } = usePortalStore();
     const { t, i18n } = useTranslation('portal');
@@ -138,10 +155,22 @@ export default function PortalOrders() {
                                             {new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                         </p>
                                     </div>
-                                    <span className={`self-start px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${ostatus.color}`}>
-                                        <OIcon className="w-3.5 h-3.5" />
-                                        {t(`orders.statuses.${ostatus.key}`)}
-                                    </span>
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className={`self-start px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${ostatus.color}`}>
+                                            <OIcon className="w-3.5 h-3.5" />
+                                            {t(`orders.statuses.${ostatus.key}`)}
+                                        </span>
+                                        {order.returnStatus && order.returnStatus !== 'none' ? (
+                                            <span className="self-start px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                                {returnStatusLabels[order.returnStatus] || order.returnStatus}
+                                            </span>
+                                        ) : null}
+                                        {order.refundStatus && order.refundStatus !== 'none' ? (
+                                            <span className="self-start px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                {refundStatusLabels[order.refundStatus] || order.refundStatus}
+                                            </span>
+                                        ) : null}
+                                    </div>
                                 </div>
 
                                 {/* Tracking Timeline (mini) */}
@@ -183,6 +212,20 @@ export default function PortalOrders() {
                                         <p className="font-bold text-red-600 dark:text-red-400">{order.remainingAmount?.toLocaleString()}</p>
                                     </div>
                                 </div>
+
+                                {(order.refundStatus && order.refundStatus !== 'none') || (order.returnStatus && order.returnStatus !== 'none') ? (
+                                    <div className="mb-3 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                                        {order.refundStatus && order.refundStatus !== 'none' ? (
+                                            <p className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                {refundStatusLabels[order.refundStatus] || order.refundStatus}
+                                                {Number(order.refundAmount || 0) > 0 ? ` • ${Number(order.refundAmount).toLocaleString()} ج.م` : ''}
+                                            </p>
+                                        ) : null}
+                                        {order.returnStatus && order.returnStatus !== 'none' ? (
+                                            <p className="mt-1 font-medium text-orange-600 dark:text-orange-300">{returnStatusLabels[order.returnStatus] || order.returnStatus}</p>
+                                        ) : null}
+                                    </div>
+                                ) : null}
 
                                 {/* Actions */}
                                 <div className="flex flex-col sm:flex-row gap-2">
@@ -289,6 +332,33 @@ export default function PortalOrders() {
                                             ))}
                                         </div>
                                     </div>
+
+                                    {(selectedOrder.returnStatus && selectedOrder.returnStatus !== 'none') || (selectedOrder.refundStatus && selectedOrder.refundStatus !== 'none') || selectedOrder.cancelReason ? (
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 space-y-2">
+                                            <h4 className="font-bold text-sm text-gray-900 dark:text-white">الاسترداد والمرتجعات</h4>
+                                            {selectedOrder.returnStatus && selectedOrder.returnStatus !== 'none' ? (
+                                                <div className="flex justify-between gap-4 text-sm">
+                                                    <span className="text-gray-500 dark:text-gray-400">حالة المرتجع</span>
+                                                    <span className="font-bold text-orange-600 dark:text-orange-300">{returnStatusLabels[selectedOrder.returnStatus] || selectedOrder.returnStatus}</span>
+                                                </div>
+                                            ) : null}
+                                            {selectedOrder.refundStatus && selectedOrder.refundStatus !== 'none' ? (
+                                                <div className="flex justify-between gap-4 text-sm">
+                                                    <span className="text-gray-500 dark:text-gray-400">حالة الاسترداد</span>
+                                                    <span className="font-bold text-emerald-600 dark:text-emerald-300">
+                                                        {refundStatusLabels[selectedOrder.refundStatus] || selectedOrder.refundStatus}
+                                                        {Number(selectedOrder.refundAmount || 0) > 0 ? ` • ${Number(selectedOrder.refundAmount).toLocaleString()} ج.م` : ''}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            {selectedOrder.cancelReason ? (
+                                                <div className="text-sm">
+                                                    <span className="text-gray-500 dark:text-gray-400">سبب الإلغاء</span>
+                                                    <p className="mt-1 font-bold text-gray-800 dark:text-gray-100">{selectedOrder.cancelReason}</p>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </>
                         )}

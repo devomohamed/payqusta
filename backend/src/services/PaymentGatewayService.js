@@ -11,6 +11,17 @@ const gateways = require('../config/paymentGateways');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
+const safeEqual = (left, right) => {
+  if (!left || !right) return false;
+
+  const normalizedLeft = Buffer.from(String(left));
+  const normalizedRight = Buffer.from(String(right));
+
+  if (normalizedLeft.length !== normalizedRight.length) return false;
+
+  return crypto.timingSafeEqual(normalizedLeft, normalizedRight);
+};
+
 class PaymentGatewayService {
   getGatewayConfig(gateway) {
     const normalizedGateway = String(gateway || '').toLowerCase();
@@ -19,6 +30,20 @@ class PaymentGatewayService {
     if (normalizedGateway === 'instapay') return gateways.instaPay;
 
     return gateways[normalizedGateway];
+  }
+
+  async authenticatePaymob() {
+    const config = gateways.paymob;
+
+    if (!config?.apiKey) {
+      throw AppError.badRequest('بيانات Paymob غير مكتملة لتنفيذ الاسترداد');
+    }
+
+    const authResponse = await axios.post(`${config.apiUrl}/auth/tokens`, {
+      api_key: config.apiKey
+    });
+
+    return authResponse.data?.token;
   }
 
   /**
@@ -208,6 +233,7 @@ class PaymentGatewayService {
       const paymentToken = paymentKeyResponse.data.token;
 
       // Save gateway transaction ID
+      transaction.gatewayOrderId = orderId.toString();
       transaction.gatewayTransactionId = orderId.toString();
       transaction.status = 'processing';
       await transaction.save();
@@ -306,7 +332,7 @@ class PaymentGatewayService {
       .update(concatenated)
       .digest('hex');
 
-    return calculatedHMAC === data.hmac;
+    return safeEqual(calculatedHMAC, data.hmac);
   }
 
   /**
@@ -350,8 +376,12 @@ class PaymentGatewayService {
     }
 
     // Find transaction by order ID
+    const paymobOrderId = data.obj.order.toString();
     const transaction = await PaymentTransaction.findOne({
-      gatewayTransactionId: data.obj.order.toString()
+      $or: [
+        { gatewayOrderId: paymobOrderId },
+        { gatewayTransactionId: paymobOrderId },
+      ],
     }).populate('invoice customer');
 
     if (!transaction) {
@@ -361,6 +391,10 @@ class PaymentGatewayService {
 
     // Update transaction
     if (data.obj.success === 'true' || data.obj.success === true) {
+      transaction.gatewayOrderId = transaction.gatewayOrderId || paymobOrderId;
+      if (data.obj.id) {
+        transaction.gatewayTransactionId = data.obj.id.toString();
+      }
       await transaction.markAsSuccess(data.obj);
       
       // Update invoice
@@ -376,6 +410,79 @@ class PaymentGatewayService {
     await transaction.save();
 
     return transaction;
+  }
+
+  supportsGatewayRefund(gateway) {
+    return String(gateway || '').toLowerCase() === 'paymob';
+  }
+
+  async refundPaymobTransaction(transaction, { amount, reason = '', userId = null, metadata = {} } = {}) {
+    const config = gateways.paymob;
+    const capturedAmount = typeof transaction.getCapturedAmount === 'function'
+      ? transaction.getCapturedAmount()
+      : Math.max(0, (Number(transaction.amount) || 0) - (Number(transaction.discount) || 0));
+    const refundableAmount = typeof transaction.getRefundableAmount === 'function'
+      ? transaction.getRefundableAmount()
+      : capturedAmount;
+    const refundAmount = Math.min(refundableAmount, Math.max(0, Number(amount) || 0));
+
+    if (refundAmount <= 0) {
+      return { processed: false, mode: 'manual', reason: 'لا يوجد رصيد قابل للاسترداد' };
+    }
+
+    if (!config?.enabled || !config?.apiKey) {
+      return { processed: false, mode: 'manual', reason: 'Paymob غير مفعل أو بياناته غير مكتملة' };
+    }
+
+    const paymobTransactionId = Number(transaction.gatewayTransactionId);
+    if (!Number.isFinite(paymobTransactionId) || paymobTransactionId <= 0) {
+      return { processed: false, mode: 'manual', reason: 'لا يوجد رقم معاملة Paymob صالح للاسترداد' };
+    }
+
+    const authToken = await this.authenticatePaymob();
+    const refundPayload = {
+      auth_token: authToken,
+      transaction_id: paymobTransactionId,
+      amount_cents: Math.round(refundAmount * 100),
+    };
+
+    let response;
+    try {
+      response = await axios.post(`${config.apiUrl}/acceptance/void_refund/refund`, refundPayload);
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        throw error;
+      }
+      response = await axios.post(`${config.apiUrl}/acceptance/void_refund/refund/`, refundPayload);
+    }
+
+    await transaction.refund(userId, reason || 'Gateway refund', refundAmount, {
+      ...metadata,
+      provider: 'paymob',
+      gatewayRefundResponse: response.data,
+    });
+
+    return {
+      processed: true,
+      mode: 'gateway',
+      amount: refundAmount,
+      response: response.data,
+    };
+  }
+
+  async refundTransaction(transaction, options = {}) {
+    const gateway = String(transaction?.gateway || '').toLowerCase();
+
+    switch (gateway) {
+      case 'paymob':
+        return this.refundPaymobTransaction(transaction, options);
+      default:
+        return {
+          processed: false,
+          mode: 'manual',
+          reason: `الاسترداد التلقائي غير مدعوم لبوابة ${transaction?.gateway || 'غير معروفة'}`,
+        };
+    }
   }
 
   /**

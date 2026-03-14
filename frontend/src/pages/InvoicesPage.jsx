@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter, Link as LinkIcon, Copy, ExternalLink, Printer, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
-import { invoicesApi, customersApi, productsApi, settingsApi } from '../store';
+import { invoicesApi, customersApi, productsApi, settingsApi, useAuthStore } from '../store';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState, OwnerTableSkeleton } from '../components/UI';
 import Pagination from '../components/Pagination';
@@ -62,20 +62,18 @@ export default function InvoicesPage() {
     } catch (_) { }
 
     // Load branches from store
-    import('../store').then(({ useAuthStore }) => {
-      useAuthStore.getState().getBranches()
-        .then((result) => {
-          const normalizedBranches = Array.isArray(result)
-            ? result
-            : Array.isArray(result?.branches)
-              ? result.branches
-              : Array.isArray(result?.data)
-                ? result.data
-                : [];
-          setBranches(normalizedBranches);
-        })
-        .catch(() => setBranches([]));
-    });
+    useAuthStore.getState().getBranches()
+      .then((result) => {
+        const normalizedBranches = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.branches)
+            ? result.branches
+            : Array.isArray(result?.data)
+              ? result.data
+              : [];
+        setBranches(normalizedBranches);
+      })
+      .catch(() => setBranches([]));
   }, []);
 
   useEffect(() => {
@@ -252,14 +250,14 @@ export default function InvoicesPage() {
   const handlePrintDocument = async (invoiceSummary, type = 'receipt') => {
     const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=980');
     if (!printWindow) {
-      toast.error('Ø§Ù„Ù…ØªØµÙØ­ Ù…Ù†Ø¹ Ù†Ø§ÙØ°Ø© Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©');
+      toast.error('المتصفح منع نافذة الطباعة');
       return;
     }
 
-    printWindow.document.write('<!doctype html><html dir="rtl" lang="ar"><head><title>Loading...</title></head><body style="font-family:Segoe UI,Tahoma,Arial,sans-serif;padding:24px">Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² Ù‚Ø§Ù„Ø¨ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©...</body></html>');
+    printWindow.document.write('<!doctype html><html dir="rtl" lang="ar"><head><title>Loading...</title></head><body style="font-family:Segoe UI,Tahoma,Arial,sans-serif;padding:24px">جاري تجهيز قالب الطباعة...</body></html>');
     printWindow.document.close();
 
-    const loadingToast = toast.loading(type === 'receipt' ? 'Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø¥ÙŠØµØ§Ù„...' : 'Ø¬Ø§Ø±ÙŠ ØªØ¬Ù‡ÙŠØ² ØªÙŠÙƒÙŠØª Ø§Ù„ØªÙˆØµÙŠÙ„...');
+    const loadingToast = toast.loading(type === 'receipt' ? 'جاري تجهيز الإيصال...' : 'جاري تجهيز تيكيت التوصيل...');
 
     try {
       const [invoiceResponse, settingsResponse] = await Promise.all([
@@ -291,10 +289,10 @@ export default function InvoicesPage() {
         });
       }
 
-      toast.success(type === 'receipt' ? 'ØªÙ… ØªØ¬Ù‡ÙŠØ² Ø§Ù„Ø¥ÙŠØµØ§Ù„ Ù„Ù„Ø·Ø¨Ø§Ø¹Ø©' : 'ØªÙ… ØªØ¬Ù‡ÙŠØ² ØªÙŠÙƒÙŠØª Ø§Ù„ØªÙˆØµÙŠÙ„ Ù„Ù„Ø·Ø¨Ø§Ø¹Ø©', { id: loadingToast });
+      toast.success(type === 'receipt' ? 'تم تجهيز الإيصال للطباعة' : 'تم تجهيز تيكيت التوصيل للطباعة', { id: loadingToast });
     } catch (err) {
       printWindow.close();
-      toast.error(err.response?.data?.message || 'ØªØ¹Ø°Ø± ØªØ¬Ù‡ÙŠØ² Ù…Ø³ØªÙ†Ø¯ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©', { id: loadingToast });
+      toast.error(err.response?.data?.message || 'تعذر تجهيز مستند الطباعة', { id: loadingToast });
     }
   };
 

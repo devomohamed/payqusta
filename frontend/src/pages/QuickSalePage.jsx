@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { productsApi, customersApi, invoicesApi, useAuthStore } from '../store';
+import { api, productsApi, customersApi, invoicesApi, useAuthStore } from '../store';
 import { Button, Badge, LoadingSpinner } from '../components/UI';
 import BarcodeScanner, { useBarcodeScanner } from '../components/BarcodeScanner';
 import db, { syncProductsToLocal, syncCustomersToLocal, searchLocalProducts, searchLocalCustomers, savePendingInvoice } from '../db/posDatabase';
@@ -368,7 +368,6 @@ export default function QuickSalePage() {
     if (!returnReason) return toast.error('سبب الاسترجاع مطلوب');
     setReturnCreating(true);
     try {
-      const { api } = await import('../store');
       await api.post('/returns', {
         invoiceId: returnInvoice._id,
         items: itemsToReturn.map(i => ({

@@ -13,10 +13,13 @@ const { serveUploadedFile } = require('./middleware/upload');
 const logger = require('./utils/logger');
 const routes = require('./routes');
 const swaggerSpec = require('./config/swagger');
+const { registerOperationalRoutes } = require('./ops/registerOperationalRoutes');
 
 function createApp() {
   const app = express();
   const security = require('./middleware/security');
+  const jsonPayloadLimit = process.env.API_JSON_LIMIT || '10mb';
+  const urlencodedPayloadLimit = process.env.API_FORM_LIMIT || '2mb';
 
   app.set('trust proxy', 1);
 
@@ -34,13 +37,24 @@ function createApp() {
   app.use('/api/v1/auth/forgot-password', security.passwordResetLimiter);
   app.use('/api/v1/auth/reset-password', security.passwordResetLimiter);
 
-  app.use(express.json({ limit: '50mb' })); // Increased for large image uploads
-  app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increased for large image uploads
+  app.use(express.json({ limit: jsonPayloadLimit }));
+  app.use(express.urlencoded({ extended: true, limit: urlencodedPayloadLimit }));
 
   app.use((err, req, res, next) => {
     if (err.type === 'entity.parse.failed') {
-      return res.status(400).json({ success: false, message: 'طلب غير صالح - الـ JSON المرسل غير صحيح' });
+      return res.status(400).json({
+        success: false,
+        message: 'طلب غير صالح - JSON المرسل غير صحيح',
+      });
     }
+
+    if (err.type === 'entity.too.large') {
+      return res.status(413).json({
+        success: false,
+        message: 'The request body is too large for this endpoint',
+      });
+    }
+
     next(err);
   });
 
@@ -54,21 +68,13 @@ function createApp() {
     : ':id :remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"';
 
   app.use(morgan(morganFormat, {
-    stream: { write: (message) => logger.info(message.trim(), { type: 'http' }) }
+    stream: { write: (message) => logger.info(message.trim(), { type: 'http' }) },
   }));
 
   app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
   app.get('/uploads/*', serveUploadedFile);
 
-  app.get('/api/health', (req, res) => {
-    res.json({
-      success: true,
-      message: 'PayQusta API is running',
-      version: '1.0.0',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-    });
-  });
+  registerOperationalRoutes(app);
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',

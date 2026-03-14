@@ -29,24 +29,21 @@ import {
 } from './storefrontCampaignAttribution';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
 import { calculateStorefrontVolumeDiscountForItems } from './storefrontVolumeOffers';
-import { getStorefrontTenantRequestConfig } from './storefrontDataClient';
+import {
+  getStorefrontTenantRequestConfig,
+  loadStorefrontSettings,
+} from './storefrontDataClient';
+import {
+  buildEstimatedDeliveryDate,
+  findStorefrontShippingZone,
+  resolveStorefrontShippingSettings,
+} from './storefrontShipping';
+import {
+  buildGuestTrackingQuery,
+  saveGuestOrderTracking,
+} from './guestOrderTracking';
 
-const FREE_SHIPPING_THRESHOLD = 500;
 const DEFAULT_PORTAL_SHIPPING_FEE = 50;
-const SHIPPING_REGIONS = [
-  { value: 'cairo', label: 'القاهرة', fee: 45, eta: 'خلال 24-48 ساعة' },
-  { value: 'giza', label: 'الجيزة', fee: 45, eta: 'خلال 24-48 ساعة' },
-  { value: 'alexandria', label: 'الإسكندرية', fee: 60, eta: 'خلال 2-3 أيام عمل' },
-  { value: 'delta', label: 'الدلتا', fee: 65, eta: 'خلال 2-4 أيام عمل' },
-  { value: 'canal', label: 'مدن القناة', fee: 70, eta: 'خلال 2-4 أيام عمل' },
-  { value: 'upper-egypt', label: 'الصعيد', fee: 85, eta: 'خلال 3-5 أيام عمل' },
-  { value: 'frontier', label: 'المحافظات الحدودية', fee: 110, eta: 'خلال 4-6 أيام عمل' },
-];
-
-function getShippingRegion(value) {
-  if (!value) return null;
-  return SHIPPING_REGIONS.find((region) => region.value === value) || null;
-}
 
 const STEPS = [
   { id: 'customer', title: 'بيانات العميل', icon: User },
@@ -59,6 +56,7 @@ export default function Checkout() {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [storefrontSettings, setStorefrontSettings] = useState(null);
 
   // Portal Context
   const isPortal = location.pathname.includes('/portal');
@@ -113,9 +111,76 @@ export default function Checkout() {
     }
   }, [isPortal, isAuthenticated, customer, checkoutItems.length]);
 
+  useEffect(() => {
+    if (isPortal) return undefined;
+
+    let cancelled = false;
+
+    loadStorefrontSettings()
+      .then((response) => {
+        if (cancelled) return;
+        setStorefrontSettings(response?.data?.data || null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStorefrontSettings(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPortal]);
+
   const normalizedCheckoutItems = checkoutItems.map((item) => normalizeCheckoutItem(item));
   const subtotal = normalizedCheckoutItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const itemCount = normalizedCheckoutItems.reduce((sum, item) => sum + item.quantity, 0);
+  const shippingConfig = !isPortal
+    ? resolveStorefrontShippingSettings(storefrontSettings?.settings?.shipping)
+    : null;
+  const selectedShippingRegion = !isPortal
+    ? findStorefrontShippingZone(shippingConfig?.zones, form.governorate)
+    : null;
+  const shippingEnabled = isPortal ? true : shippingConfig?.enabled !== false;
+  const estimatedShippingFee = isPortal
+    ? DEFAULT_PORTAL_SHIPPING_FEE
+    : shippingEnabled
+      ? (selectedShippingRegion?.fee ?? shippingConfig?.baseFee ?? DEFAULT_PORTAL_SHIPPING_FEE)
+      : 0;
+  const shipping = !isPortal && shippingEnabled && (shippingConfig?.freeShippingThreshold || 0) > 0 && subtotal >= shippingConfig.freeShippingThreshold
+    ? 0
+    : estimatedShippingFee;
+  const shippingRegionLabel = isPortal
+    ? 'توصيل قياسي'
+    : selectedShippingRegion?.label || shippingConfig?.defaultMethodName || 'اختر المحافظة';
+  const shippingEta = isPortal
+    ? 'خلال 3-5 أيام عمل'
+    : selectedShippingRegion?.eta || shippingConfig?.eta || 'اختر المحافظة أولًا لعرض الموعد المتوقع';
+  const shippingSavings = !isPortal && shippingEnabled && (shippingConfig?.freeShippingThreshold || 0) > 0 && subtotal >= shippingConfig.freeShippingThreshold
+    ? estimatedShippingFee
+    : 0;
+  const shippingSummary = !isPortal
+    ? {
+        shippingFee: shipping,
+        shippingDiscount: shippingSavings,
+        carrierCost: estimatedShippingFee,
+        shippingMethod: shippingConfig?.defaultMethodName || 'توصيل قياسي',
+        provider: shippingConfig?.provider || 'local',
+        zoneCode: selectedShippingRegion?.code || '',
+        zoneLabel: selectedShippingRegion?.label || form.governorate || '',
+        estimatedDaysMin: selectedShippingRegion?.estimatedDaysMin ?? shippingConfig?.estimatedDaysMin,
+        estimatedDaysMax: selectedShippingRegion?.estimatedDaysMax ?? shippingConfig?.estimatedDaysMax,
+        estimatedDeliveryDate: buildEstimatedDeliveryDate(
+          selectedShippingRegion?.estimatedDaysMax ?? shippingConfig?.estimatedDaysMax
+        ),
+      }
+    : null;
+  useEffect(() => {
+    if (isPortal) return;
+    if (shippingConfig?.supportsCashOnDelivery === false && form.paymentMethod === 'cash') {
+      setForm((prev) => ({ ...prev, paymentMethod: 'online' }));
+    }
+  }, [form.paymentMethod, isPortal, shippingConfig?.supportsCashOnDelivery]);
   useEffect(() => {
     if (isPortal || normalizedCheckoutItems.length === 0) return;
 
@@ -127,12 +192,6 @@ export default function Checkout() {
       uniqueEventKey: buyNowItem ? `checkout_start:buy_now:${normalizedCheckoutItems[0]?.productId || 'item'}` : 'checkout_start:cart',
     });
   }, [isPortal, buyNowItem, itemCount, normalizedCheckoutItems]);
-  const selectedShippingRegion = !isPortal ? getShippingRegion(form.governorate) : null;
-  const estimatedShippingFee = isPortal ? DEFAULT_PORTAL_SHIPPING_FEE : (selectedShippingRegion?.fee ?? DEFAULT_PORTAL_SHIPPING_FEE);
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : estimatedShippingFee;
-  const shippingRegionLabel = isPortal ? 'توصيل قياسي' : (selectedShippingRegion?.label || 'اختر المحافظة');
-  const shippingEta = isPortal ? 'خلال 3-5 أيام عمل' : (selectedShippingRegion?.eta || 'اختر المحافظة أولًا لعرض الموعد المتوقع');
-  const shippingSavings = subtotal >= FREE_SHIPPING_THRESHOLD ? estimatedShippingFee : 0;
   const volumeDiscount = !isPortal ? calculateStorefrontVolumeDiscountForItems(normalizedCheckoutItems) : 0;
   const [couponData, setCouponData] = useState(() => (!isPortal ? loadStorefrontCoupon() : null));
   const discount = !isPortal ? (couponData?.discountAmount || 0) : 0;
@@ -223,7 +282,7 @@ export default function Checkout() {
       const missingName = !form.customerName.trim();
       const missingPhone = !form.phone.trim();
       const missingAddress = !isPortal && !form.address.trim();
-      const missingGovernorate = !isPortal && !form.governorate.trim();
+      const missingGovernorate = !isPortal && shippingEnabled && !form.governorate.trim();
 
       if (missingName || missingPhone || missingAddress || missingGovernorate) {
         notify.error(isPortal ? 'الرجاء إدخال الاسم ورقم الهاتف' : 'الرجاء إدخال الاسم ورقم الهاتف وعنوان التوصيل');
@@ -344,6 +403,7 @@ export default function Checkout() {
             governorate: selectedShippingRegion?.label || form.governorate || undefined,
             notes: form.notes
           },
+          shippingSummary,
           source: 'online_store',
           ...(campaignAttribution ? { campaignAttribution } : {})
         };
@@ -375,6 +435,12 @@ export default function Checkout() {
         }
         clearStorefrontCoupon();
 
+        saveGuestOrderTracking({
+          orderId: invoice?._id,
+          orderNumber: invoice?.invoiceNumber,
+          token: invoice?.guestTrackingToken,
+        });
+
         if (form.paymentMethod === 'online') {
           const paymentRes = await api.post('/storefront/payments/create-link', {
             invoiceId: invoice._id,
@@ -391,7 +457,14 @@ export default function Checkout() {
           }
           window.location.href = paymentUrl;
         } else {
-          navigate(storefrontPath(`/order/${invoice._id}`));
+          navigate(
+            storefrontPath(
+              `/order/${invoice._id}${buildGuestTrackingQuery({
+                orderNumber: invoice?.invoiceNumber,
+                token: invoice?.guestTrackingToken,
+              })}`
+            )
+          );
         }
       }
     } catch (err) {
@@ -505,8 +578,8 @@ export default function Checkout() {
                         className="w-full rounded-2xl bg-gray-50 border-2 border-transparent px-4 py-4 text-sm focus:border-indigo-500 focus:bg-white transition-all"
                       >
                         <option value="">اختر المحافظة</option>
-                        {SHIPPING_REGIONS.map((region) => (
-                          <option key={region.value} value={region.value}>
+                        {(shippingConfig?.zones || []).map((region) => (
+                          <option key={region.code} value={region.code}>
                             {region.label}
                           </option>
                         ))}
@@ -597,14 +670,16 @@ export default function Checkout() {
                     </button>
                   ) : (
                     <>
-                      <button
-                        onClick={() => setForm({ ...form, paymentMethod: 'cash' })}
-                        className={`p-6 rounded-3xl border-2 text-right transition-all ${form.paymentMethod === 'cash' ? 'border-indigo-600 bg-indigo-50 ring-4 ring-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}
-                      >
-                        <Wallet className={`w-8 h-8 mb-4 ${form.paymentMethod === 'cash' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        <h4 className="font-black text-lg mb-1">الدفع عند الاستلام</h4>
-                        <p className="text-xs text-gray-500">ادفع نقداً عند باب منزلك</p>
-                      </button>
+                      {shippingConfig?.supportsCashOnDelivery !== false && (
+                        <button
+                          onClick={() => setForm({ ...form, paymentMethod: 'cash' })}
+                          className={`p-6 rounded-3xl border-2 text-right transition-all ${form.paymentMethod === 'cash' ? 'border-indigo-600 bg-indigo-50 ring-4 ring-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}
+                        >
+                          <Wallet className={`w-8 h-8 mb-4 ${form.paymentMethod === 'cash' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                          <h4 className="font-black text-lg mb-1">الدفع عند الاستلام</h4>
+                          <p className="text-xs text-gray-500">ادفع نقداً عند باب منزلك</p>
+                        </button>
+                      )}
                       <button
                         onClick={() => setForm({ ...form, paymentMethod: 'online' })}
                         className={`p-6 rounded-3xl border-2 text-right transition-all ${form.paymentMethod === 'online' ? 'border-indigo-600 bg-indigo-50 ring-4 ring-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}

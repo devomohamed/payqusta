@@ -1,5 +1,5 @@
 /**
- * Stock Monitor Job — Cron
+ * Stock Monitor Job â€” Cron
  * Monitors stock levels and sends alerts via WhatsApp
  * Handles auto-restock requests to coordinators
  */
@@ -11,6 +11,14 @@ const User = require('../models/User');
 const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
 const logger = require('../utils/logger');
+const {
+  registerJob,
+  markJobRunStarted,
+  markJobRunSuccess,
+  markJobRunFailure,
+} = require('../ops/runtimeState');
+
+const STOCK_MONITOR_JOB = 'stock_monitor';
 
 class StockMonitorJob {
   /**
@@ -18,32 +26,41 @@ class StockMonitorJob {
    * Runs every 6 hours
    */
   start() {
+    registerJob(STOCK_MONITOR_JOB, {
+      schedule: '0 */6 * * *',
+      timezone: 'Africa/Cairo',
+      category: 'inventory',
+    });
+
     cron.schedule('0 */6 * * *', () => this.checkStockLevels(), {
       timezone: 'Africa/Cairo',
     });
 
-    logger.info('📦 Stock Monitor Job started');
+    logger.info('ðŸ“¦ Stock Monitor Job started');
   }
 
   async checkStockLevels() {
+    markJobRunStarted(STOCK_MONITOR_JOB, { operation: 'checkStockLevels' });
+
     try {
-      logger.info('📦 Checking stock levels...');
+      logger.info('ðŸ“¦ Checking stock levels...');
 
       const tenants = await Tenant.find({ isActive: true });
+      let lowStockProductsCount = 0;
+      let restockRequestsSent = 0;
 
       for (const tenant of tenants) {
         // Find low stock products
         const lowStockProducts = await Product.findLowStock(tenant._id);
+        lowStockProductsCount += lowStockProducts.length;
 
         if (lowStockProducts.length === 0) continue;
 
-        // Get vendor
         const vendor = await User.findOne({
           tenant: tenant._id,
           role: 'vendor',
         });
 
-        // Get coordinator (if exists)
         const coordinator = await User.findOne({
           tenant: tenant._id,
           role: 'coordinator',
@@ -52,12 +69,10 @@ class StockMonitorJob {
         for (const product of lowStockProducts) {
           const isOutOfStock = product.stock.quantity <= 0;
 
-          // Send in-app notification (if not already sent)
           if (
             (isOutOfStock && !product.outOfStockAlertSent) ||
             (!isOutOfStock && !product.lowStockAlertSent)
           ) {
-            // In-app notification (always fires)
             try {
               if (isOutOfStock) {
                 await NotificationService.onOutOfStock(tenant._id, product);
@@ -68,7 +83,6 @@ class StockMonitorJob {
               logger.error(`Stock notification failed: ${err.message}`);
             }
 
-            // WhatsApp alert (if enabled)
             if (vendor && tenant.whatsapp?.enabled && tenant.whatsapp?.notifications?.lowStockAlert) {
               try {
                 await WhatsAppService.sendLowStockAlert(
@@ -88,7 +102,6 @@ class StockMonitorJob {
             }
           }
 
-          // Auto-restock: send request to coordinator
           if (
             product.autoRestock?.enabled &&
             coordinator &&
@@ -102,9 +115,8 @@ class StockMonitorJob {
                 tenant.name
               );
 
-              logger.info(
-                `Restock request sent for ${product.name} to coordinator`
-              );
+              logger.info(`Restock request sent for ${product.name} to coordinator`);
+              restockRequestsSent += 1;
             } catch (err) {
               logger.error(`Restock request failed: ${err.message}`);
             }
@@ -114,9 +126,18 @@ class StockMonitorJob {
         }
       }
 
-      logger.info('✅ Stock level check completed');
+      logger.info('âœ… Stock level check completed');
+      markJobRunSuccess(STOCK_MONITOR_JOB, {
+        operation: 'checkStockLevels',
+        processedTenants: tenants.length,
+        lowStockProductsCount,
+        restockRequestsSent,
+      });
     } catch (error) {
       logger.error(`Stock monitor error: ${error.message}`);
+      markJobRunFailure(STOCK_MONITOR_JOB, error, {
+        operation: 'checkStockLevels',
+      });
     }
   }
 }

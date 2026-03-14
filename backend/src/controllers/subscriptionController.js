@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const Tenant = require('../models/Tenant');
 const Plan = require('../models/Plan');
 const SubscriptionRequest = require('../models/SubscriptionRequest');
@@ -6,6 +7,24 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const NotificationService = require('../services/NotificationService');
+
+const normalizeGatewaySecretKey = (gateway) => (
+    String(gateway || '')
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_')
+);
+
+const safeCompare = (provided, expected) => {
+    if (!provided || !expected) return false;
+
+    const left = Buffer.from(String(provided));
+    const right = Buffer.from(String(expected));
+
+    if (left.length !== right.length) return false;
+
+    return crypto.timingSafeEqual(left, right);
+};
 
 class SubscriptionController {
     ensureSystemConfig = async () => {
@@ -33,6 +52,38 @@ class SubscriptionController {
             vodafone_cash: !!(payments.vodafone_cash?.enabled && payments.vodafone_cash?.configured),
         };
         return Object.keys(flags).filter((k) => flags[k]);
+    };
+
+    resolveWebhookSecret = (gateway) => {
+        const normalizedGateway = normalizeGatewaySecretKey(gateway);
+        return (
+            process.env[`SUBSCRIPTION_${normalizedGateway}_WEBHOOK_SECRET`] ||
+            process.env.SUBSCRIPTION_WEBHOOK_SECRET ||
+            ''
+        ).trim();
+    };
+
+    verifyWebhookRequest = (gateway, req) => {
+        const configuredSecret = this.resolveWebhookSecret(gateway);
+        if (!configuredSecret) {
+            throw new AppError('Subscription webhook secret is not configured', 503, 'WEBHOOK_SECRET_NOT_CONFIGURED');
+        }
+
+        const authorizationHeader = String(req.headers.authorization || '').trim();
+        const bearerToken = authorizationHeader.startsWith('Bearer ')
+            ? authorizationHeader.slice('Bearer '.length).trim()
+            : '';
+        const providedSecret =
+            req.headers['x-subscription-webhook-secret'] ||
+            req.headers['x-webhook-secret'] ||
+            bearerToken ||
+            req.query.secret ||
+            req.body?.secret ||
+            '';
+
+        if (!safeCompare(providedSecret, configuredSecret)) {
+            throw AppError.forbidden('Subscription webhook is not authorized');
+        }
     };
 
     /**
@@ -169,6 +220,7 @@ class SubscriptionController {
     handleWebhook = catchAsync(async (req, res) => {
         const { gateway } = req.params;
         const payload = req.body;
+        this.verifyWebhookRequest(gateway, req);
 
         try {
             let isSuccess = false;

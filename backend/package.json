@@ -10,8 +10,15 @@
     "migrate:uploads": "node scripts/migrate-local-uploads-to-db.js",
     "migrate:barcodes": "node scripts/migrate-legacy-barcodes.js",
     "test": "jest --coverage",
+    "test:unit": "jest --runInBand tests/unit --coverage=false",
+    "test:integration": "jest --runInBand tests/integration --coverage=false",
+    "test:ci": "jest --runInBand tests/unit tests/integration --coverage=false",
+    "test:e2e": "jest --runInBand tests/e2e --coverage=false",
     "test:api": "jest --runInBand tests/integration tests/e2e",
     "test:smoke": "jest --runInBand tests/smoke",
+    "release:preflight": "node scripts/release-preflight.js --env-file=../cloudrun.env",
+    "release:smoke": "node scripts/post-deploy-smoke.js",
+    "ops:snapshot": "node scripts/ops-snapshot.js",
     "client:install": "cd ../frontend && npm install --include=dev --no-package-lock",
     "client:dev": "cd ../frontend && npm run dev",
     "client:build": "cd ../frontend && npm run build",
@@ -60,3 +67,5 @@
   "author": "PayQusta Team",
   "license": "PROPRIETARY"
 }
+
+

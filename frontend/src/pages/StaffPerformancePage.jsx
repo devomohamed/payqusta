@@ -15,7 +15,7 @@ import {
     Zap
 } from 'lucide-react';
 import { api } from '../store';
-import { Card, Badge, LoadingSpinner, Button } from '../components/UI';
+import { Card, Badge, EmptyState, LoadingSpinner, Button } from '../components/UI';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -207,10 +207,12 @@ const StaffPerformancePage = () => {
                     </div>
 
                     {performance.length === 0 && (
-                        <div className="text-center py-20 text-gray-400">
-                            <Users className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                            <p className="text-lg">لا توجد بيانات أداء للموظفين في هذه الفترة</p>
-                        </div>
+                        <EmptyState
+                            icon={Users}
+                            title="لا توجد بيانات أداء للموظفين"
+                            description="لم يتم العثور على نشاط خلال الفترة المحددة."
+                            action={{ label: 'تحديث البيانات', onClick: fetchPerformance }}
+                        />
                     )}
                 </>
             )}

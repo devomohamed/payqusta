@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../store';
-import { Card, LoadingSpinner, Badge } from '../components/UI';
+import { Card, LoadingSpinner, Badge, EmptyState } from '../components/UI';
 
 import { useAuthStore } from '../store';
 import BusinessReportsPage from './BusinessReportsPage';
@@ -101,10 +101,12 @@ export default function AdminStatisticsPage() {
               </div>
             ))}
             {(!data?.topTenants || data.topTenants.length === 0) && (
-              <div className="text-center py-8 text-gray-400">
-                <Building2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p>لا توجد بيانات</p>
-              </div>
+              <EmptyState
+                icon={Building2}
+                title="لا توجد بيانات"
+                description="ستظهر أفضل المتاجر هنا بمجرد توفر بيانات كافية."
+                className="py-6"
+              />
             )}
           </div>
         </div>

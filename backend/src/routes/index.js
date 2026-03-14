@@ -4,7 +4,7 @@
 
 const router = require('express').Router();
 const checkLimit = require('../middleware/checkLimit');
-const { protect, authorize, tenantScope, publicTenantScope, auditLog } = require('../middleware/auth');
+const { protect, protectOps, authorize, tenantScope, publicTenantScope, auditLog } = require('../middleware/auth');
 const { checkPermission } = require('../middleware/checkPermission');
 const { requireSuperAdmin } = require('../middleware/requireSuperAdmin');
 const authController = require('../controllers/authController');
@@ -30,13 +30,22 @@ const purchaseOrderController = require('../controllers/purchaseOrderController'
 const revenueAnalyticsController = require('../controllers/revenueAnalyticsController');
 const planController = require('../controllers/planController');
 const reviewController = require('../controllers/reviewController');
+const opsController = require('../controllers/opsController');
 const { uploadSingle, upload } = require('../middleware/upload');
+const { uploadLimiter, webhookLimiter } = require('../middleware/security');
+const { isAllowedImportFile, isAllowedJsonFile } = require('../utils/fileValidation');
+const AppError = require('../utils/AppError');
 const { supplierValidations } = require('../middleware/validation');
 
 // ============ APP INFO ============
-router.get('/health', async (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
-});
+router.get('/health', (req, res) => opsController.getPublicHealth(req, res));
+router.get('/health/live', (req, res) => opsController.getLiveness(req, res));
+router.get('/health/ready', (req, res) => opsController.getReadiness(req, res));
+router.post('/shipping/webhooks/bosta', webhookLimiter, invoiceController.handleBostaWebhook);
+router.post('/payments/webhook/paymob', webhookLimiter, paymentController.paymobWebhook);
+router.post('/payments/webhook/fawry', webhookLimiter, paymentController.fawryWebhook);
+router.post('/payments/webhook/vodafone', webhookLimiter, paymentController.vodafoneWebhook);
+router.post('/payments/webhook/instapay', webhookLimiter, paymentController.instapayWebhook);
 
 // ============ PORTAL ROUTES (Customer App) ============
 router.use('/portal', require('./portal/authRoutes'));
@@ -54,10 +63,12 @@ const reportsController = require('../controllers/reportsController');
 const searchController = require('../controllers/searchController');
 const importController = require('../controllers/importController');
 const backupController = require('../controllers/backupController');
+const publicLeadController = require('../controllers/publicLeadController');
 
 router.get('/storefront/settings', settingsController.getStorefrontSettings);
 router.get('/settings', publicTenantScope, settingsController.getSettings);
 router.use('/plans', require('./planRoutes'));
+router.post('/public/leads', publicLeadController.createLead);
 
 // Product Public Routes
 router.get('/products', publicTenantScope, productController.getAll);
@@ -77,7 +88,8 @@ router.post('/customers', (req, res, next) => {
   protect(req, res, next);
 }, publicTenantScope, customerController.create);
 
-router.get('/invoices/:id([0-9a-fA-F]{24})', publicTenantScope, invoiceController.getById);
+router.get('/orders/track', publicTenantScope, invoiceController.trackPublicOrder);
+router.get('/orders/:id([0-9a-fA-F]{24})/confirmation', publicTenantScope, invoiceController.getPublicOrderConfirmation);
 
 router.post('/invoices', (req, res, next) => {
   if (req.body.source === 'online_store') return next();
@@ -89,6 +101,8 @@ router.post('/storefront/payments/create-link', publicTenantScope, paymentContro
 // ============ SUPER ADMIN ROUTES ============
 router.use('/super-admin', protect, require('./superAdminRoutes'));
 
+router.get('/ops/status', protectOps, authorize('vendor', 'admin'), (req, res) => opsController.getOpsStatus(req, res));
+router.get('/ops/metrics', protectOps, authorize('vendor', 'admin'), (req, res) => opsController.getOpsMetrics(req, res));
 // ============ PROTECTED ROUTES ============
 router.use(protect); // All routes below require authentication
 router.use(tenantScope); // All routes below are tenant-scoped
@@ -97,7 +111,7 @@ router.use(tenantScope); // All routes below are tenant-scoped
 router.get('/auth/me', authController.getMe);
 router.put('/auth/update-password', authController.updatePassword);
 router.put('/auth/update-profile', authController.updateProfile);
-router.put('/auth/update-avatar', uploadSingle, authController.updateAvatar);
+router.put('/auth/update-avatar', uploadLimiter, uploadSingle, authController.updateAvatar);
 router.delete('/auth/remove-avatar', authController.removeAvatar);
 router.get('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'read'), authController.getTenantUsers);
 router.post('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
@@ -219,7 +233,7 @@ router.post('/settings/whatsapp/create-templates', authorize('admin'), requireFe
 router.post('/settings/whatsapp/detect-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.detectTemplates);
 router.post('/settings/whatsapp/apply-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.applyTemplateMapping);
 router.put('/settings/branding', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateBranding);
-router.post('/settings/logo', authorize('vendor', 'admin'), checkPermission('settings', 'update'), upload.single('logo'), settingsController.uploadLogo);
+router.post('/settings/logo', authorize('vendor', 'admin'), checkPermission('settings', 'update'), uploadLimiter, upload.single('logo'), settingsController.uploadLogo);
 router.get('/settings/subdomain-availability', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.checkSubdomainAvailability);
 router.put('/settings/subdomain', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateSubdomain);
 router.put('/settings/user', settingsController.updateUser);
@@ -330,15 +344,16 @@ const importUpload = multer({
   dest: 'uploads/imports/',
   limits: { fileSize: 50 * 1024 * 1024 }, // Increased to 50MB
   fileFilter: (req, file, cb) => {
-    const allowed = ['.xlsx', '.xls', '.csv'];
-    const ext = require('path').extname(file.originalname).toLowerCase();
-    cb(null, allowed.includes(ext));
+    if (isAllowedImportFile(file)) {
+      return cb(null, true);
+    }
+    return cb(AppError.badRequest('Only CSV, XLS, and XLSX files are allowed'), false);
   },
 });
 
-router.post('/import/products', authorize('vendor', 'admin'), checkLimit('product'), importUpload.single('file'), auditLog('import', 'product'), importController.importProducts);
-router.post('/import/customers', authorize('vendor', 'admin'), importUpload.single('file'), auditLog('import', 'customer'), importController.importCustomers);
-router.post('/import/preview', authorize('vendor', 'admin'), importUpload.single('file'), importController.previewFile);
+router.post('/import/products', authorize('vendor', 'admin'), uploadLimiter, checkLimit('product'), importUpload.single('file'), auditLog('import', 'product'), importController.importProducts);
+router.post('/import/customers', authorize('vendor', 'admin'), uploadLimiter, importUpload.single('file'), auditLog('import', 'customer'), importController.importCustomers);
+router.post('/import/preview', authorize('vendor', 'admin'), uploadLimiter, importUpload.single('file'), importController.previewFile);
 router.get('/import/template/:type', authorize('vendor', 'admin'), importController.downloadTemplate);
 
 // ============ REVIEWS ROUTES ============
@@ -362,16 +377,20 @@ router.delete('/coupons/:id', authorize('vendor', 'admin'), auditLog('delete', '
 router.get('/backup/export', authorize('vendor', 'admin'), backupController.exportData);
 router.get('/backup/export-json', authorize('vendor', 'admin'), backupController.exportJSON);
 router.get('/backup/stats', authorize('vendor', 'admin'), backupController.getStats);
-router.post('/backup/restore', authorize('vendor', 'admin'), importUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreData);
+router.post('/backup/restore', authorize('vendor', 'admin'), uploadLimiter, importUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreData);
 
 const backupUpload = multer({
   dest: 'uploads/imports/',
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for JSON
   fileFilter: (req, file, cb) => {
-    const ext = require('path').extname(file.originalname).toLowerCase();
-    cb(null, ext === '.json');
+    if (isAllowedJsonFile(file)) {
+      return cb(null, true);
+    }
+    return cb(AppError.badRequest('Only JSON backup files are allowed'), false);
   },
 });
-router.post('/backup/restore-json', authorize('vendor', 'admin'), backupUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreJSON);
+router.post('/backup/restore-json', authorize('vendor', 'admin'), uploadLimiter, backupUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreJSON);
 
 module.exports = router;
+
+

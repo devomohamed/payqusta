@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const portalController = require('../../controllers/portalController');
 const { protectCustomer } = require('../../middleware/portalAuth');
+const { portalAuthLimiter, portalEnrollmentLimiter } = require('../../middleware/security');
 
 // ═══════════════ Public Routes ═══════════════
-router.post('/login', portalController.login);
-router.post('/register', portalController.register);
-router.post('/activate', portalController.activate);
+router.post('/login', portalAuthLimiter, portalController.login);
+router.post('/register', portalEnrollmentLimiter, portalController.register);
+router.post('/activate', portalEnrollmentLimiter, portalController.activate);
 
 // ═══════════════ Protected Routes ═══════════════
 router.use(protectCustomer);

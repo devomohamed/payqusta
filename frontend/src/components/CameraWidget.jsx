@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import ReactPlayer from 'react-player';
+import React from 'react';
 import { Camera, Maximize2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from './UI';
+import LazyStreamPlayer from './LazyStreamPlayer';
 
 export default function CameraWidget({ cameras = [] }) {
   const navigate = useNavigate();
-  const [expandedCamera, setExpandedCamera] = useState(null);
 
   if (!cameras || cameras.length === 0) {
     return (
@@ -73,7 +72,7 @@ export default function CameraWidget({ cameras = [] }) {
                 allowFullScreen
               />
             ) : (
-              <ReactPlayer
+              <LazyStreamPlayer
                 url={cam.url}
                 width="100%"
                 height="100%"

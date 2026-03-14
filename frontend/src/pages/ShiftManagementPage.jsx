@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Clock, DollarSign, X, PlayCircle, StopCircle, History, TrendingUp, ShoppingBag, Wallet } from 'lucide-react';
 import { api } from '../store';
 import toast from 'react-hot-toast';
+import { EmptyState, LoadingSpinner } from '../components/UI';
 
 const fmt = (n) => Number(n || 0).toLocaleString('ar-EG');
 
@@ -76,8 +77,8 @@ export default function ShiftManagementPage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            <div className="h-64">
+                <LoadingSpinner size="lg" text="جاري تحميل بيانات الوردية..." />
             </div>
         );
     }
@@ -177,9 +178,16 @@ export default function ShiftManagementPage() {
                         سجل الورديات السابقة
                     </h2>
                     {historyLoading ? (
-                        <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" /></div>
+                        <div className="py-4">
+                            <LoadingSpinner size="md" text="جاري تحميل سجل الورديات..." />
+                        </div>
                     ) : history.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-6">لا يوجد سجل بعد</p>
+                        <EmptyState
+                            icon={History}
+                            title="لا يوجد سجل بعد"
+                            description="سيظهر تاريخ الورديات السابقة هنا بمجرد إغلاق أول وردية."
+                            className="py-4"
+                        />
                     ) : (
                         history.map((shift) => {
                             const variance = shift.variance || 0;

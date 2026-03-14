@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { api } from '../store';
 import toast from 'react-hot-toast';
+import { EmptyState, LoadingSpinner } from '../components/UI';
 
 const MarketingPage = () => {
     const { t } = useTranslation('admin');
@@ -59,8 +60,8 @@ const MarketingPage = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="min-h-[400px]">
+                <LoadingSpinner size="lg" text="جاري تحميل بيانات التسويق..." />
             </div>
         );
     }
@@ -254,7 +255,12 @@ const MarketingPage = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-12 text-center text-gray-500">لا يوجد عملاء في هذه الفئة حالياً</div>
+                            <EmptyState
+                                icon={Users}
+                                title="لا يوجد عملاء في هذه الفئة حاليًا"
+                                description="ستظهر نتائج هذه الشريحة هنا بمجرد توفر عملاء مطابقين."
+                                className="py-6"
+                            />
                         )}
                     </div>
                 </div>
@@ -296,7 +302,12 @@ const MarketingPage = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-12 text-center text-gray-500">جميع عملائك نشطون!</div>
+                            <EmptyState
+                                icon={UserX}
+                                title="جميع عملائك نشطون"
+                                description="لا توجد حاليًا أي حسابات خاملة تحتاج إلى إعادة تنشيط."
+                                className="py-6"
+                            />
                         )}
                     </div>
                 </div>

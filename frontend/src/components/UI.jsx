@@ -15,13 +15,83 @@ export function Modal({
   showCloseButton = true,
   closeOnOutsideClick = true,
 }) {
-  if (open === false) return null;
+  const dialogRef = React.useRef(null);
+  const closeButtonRef = React.useRef(null);
+  const titleId = React.useId();
+  const bodyId = React.useId();
 
   const handleBackdropClick = () => {
     if (closeOnOutsideClick && onClose) {
       onClose();
     }
   };
+
+  React.useEffect(() => {
+    if (open === false) return undefined;
+
+    const previousActiveElement = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusableSelectors = [
+      'button:not([disabled])',
+      '[href]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    const focusFirstElement = () => {
+      const focusableElements = dialogRef.current?.querySelectorAll(focusableSelectors) || [];
+      const firstElement = focusableElements[0] || closeButtonRef.current || dialogRef.current;
+      firstElement?.focus();
+    };
+
+    const rafId = window.requestAnimationFrame(focusFirstElement);
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && onClose) {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = Array.from(
+        dialogRef.current?.querySelectorAll(focusableSelectors) || [],
+      );
+
+      if (!focusableElements.length) {
+        event.preventDefault();
+        dialogRef.current?.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousActiveElement instanceof HTMLElement) {
+        previousActiveElement.focus();
+      }
+    };
+  }, [open, onClose]);
 
   const widths = {
     sm: 'sm:max-w-md',
@@ -43,25 +113,35 @@ export function Modal({
     ? 'flex-1 min-h-0 overflow-y-auto'
     : `overflow-y-auto ${stickyFooter ? 'flex-1 min-h-0' : 'max-h-[calc(85vh-130px)]'}`;
 
+  if (open === false) return null;
+
   return (
-    <div className={containerClass} onClick={handleBackdropClick}>
+    <div className={containerClass} onClick={handleBackdropClick} role="presentation">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={bodyId}
+        tabIndex={-1}
         className={`relative ${panelSizeClass} bg-white dark:bg-gray-900 rounded-t-[1.75rem] sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 ${headerClassName}`}>
-          <h3 className="text-base sm:text-lg font-bold truncate">{title}</h3>
+          <h3 id={titleId} className="text-base sm:text-lg font-bold truncate">{title}</h3>
           {showCloseButton && (
             <button
+              ref={closeButtonRef}
               onClick={onClose}
               className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
+              aria-label="إغلاق النافذة"
             >
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
-        <div className={`px-4 sm:px-6 py-4 sm:py-5 ${bodyBaseClass} ${bodyClassName}`}>{children}</div>
+        <div id={bodyId} className={`px-4 sm:px-6 py-4 sm:py-5 ${bodyBaseClass} ${bodyClassName}`}>{children}</div>
       </div>
     </div>
   );
@@ -87,7 +167,7 @@ export function Badge({ children, variant = 'primary', className = '' }) {
 
 // ========== BUTTON ==========
 export function Button({
-  children, variant = 'primary', size = 'md', icon, loading, disabled, className = '', ...props
+  children, variant = 'primary', size = 'md', icon, loading, disabled, className = '', type = 'button', ...props
 }) {
   const variants = {
     primary: 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40',
@@ -111,7 +191,9 @@ export function Button({
 
   return (
     <button
+      type={type}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={`inline-flex items-center justify-center whitespace-nowrap font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
@@ -122,12 +204,16 @@ export function Button({
 }
 
 // ========== INPUT ==========
-export function Input({ label, error, tooltip, className = '', ...props }) {
+export function Input({ label, error, tooltip, className = '', id: providedId, ...props }) {
+  const inputId = providedId || React.useId();
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [props['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined;
+
   return (
     <div className={className}>
       {label && (
         <div className="flex items-center gap-1.5 mb-1.5">
-          <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400">{label}</label>
+          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-600 dark:text-gray-400">{label}</label>
           {tooltip && (
             <div className="group relative z-10">
               <Info className="w-4 h-4 text-gray-400 hover:text-primary-500 cursor-help transition-colors" />
@@ -140,44 +226,61 @@ export function Input({ label, error, tooltip, className = '', ...props }) {
         </div>
       )}
       <input
+        id={inputId}
+        aria-invalid={!!error}
+        aria-describedby={describedBy}
         className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${error
           ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
           : 'border-gray-200 dark:border-gray-700 focus:border-primary-500 dark:focus:border-primary-400'
           }`}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
 
 // ========== TEXT AREA ==========
-export function TextArea({ label, error, className = '', ...props }) {
+export function TextArea({ label, error, className = '', id: providedId, ...props }) {
+  const inputId = providedId || React.useId();
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [props['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined;
+
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
+        <label htmlFor={inputId} className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
       )}
       <textarea
+        id={inputId}
+        aria-invalid={!!error}
+        aria-describedby={describedBy}
         className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${error
           ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
           : 'border-gray-200 dark:border-gray-700 focus:border-primary-500 dark:focus:border-primary-400'
           }`}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
 
 // ========== SELECT ==========
-export function Select({ label, options = [], children, error, className = '', ...props }) {
+export function Select({ label, options = [], children, error, className = '', id: providedId, ...props }) {
+  const inputId = providedId || React.useId();
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [props['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined;
+
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
+        <label htmlFor={inputId} className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
       )}
       <select
+        id={inputId}
+        aria-invalid={!!error}
+        aria-describedby={describedBy}
         className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 appearance-none cursor-pointer ${error
           ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
           : 'border-gray-200 dark:border-gray-700 focus:border-primary-500'
@@ -189,7 +292,7 @@ export function Select({ label, options = [], children, error, className = '', .
         ))}
         {children}
       </select>
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
@@ -324,13 +427,13 @@ export function LoadingSpinner({ text, size = 'md', className = '' }) {
   const label = typeof text === 'string' ? text : fallbackText;
 
   return (
-    <div className={`${config.wrapper} ${className}`}>
+    <div className={`${config.wrapper} ${className}`} role="status" aria-live="polite" aria-label={label}>
       {config.shell ? (
         <div className={`flex items-center justify-center ${config.shell}`}>
-          <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} />
+          <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} aria-hidden="true" />
         </div>
       ) : (
-        <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} />
+        <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} aria-hidden="true" />
       )}
       {shouldShowText && (
         <p className={`${config.text} font-medium text-gray-500 dark:text-gray-400`}>{label}</p>

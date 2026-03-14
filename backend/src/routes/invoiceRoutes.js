@@ -20,6 +20,7 @@ router.post('/send-whatsapp-message', authorize('vendor', 'admin', 'coordinator'
 router.post('/:id/pay', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), auditLog('payment', 'invoice'), invoiceController.recordPayment);
 router.post('/:id/pay-all', authorize('vendor', 'admin'), checkPermission('invoices', 'update'), auditLog('payment', 'invoice'), invoiceController.payAll);
 router.post('/:id/send-whatsapp', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), invoiceController.sendWhatsApp);
+router.post('/:id/refund', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), auditLog('refund', 'invoice'), invoiceController.processRefund);
 router.patch('/:id/order-status', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'update'), invoiceController.updateOrderStatus);
 
 // --- Shipping (Bosta) ---

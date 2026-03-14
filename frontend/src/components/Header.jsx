@@ -51,6 +51,7 @@ export default function Header({ onMenuClick }) {
           <button
             onClick={onMenuClick}
             className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+            aria-label={t('header.open_navigation', 'فتح القائمة')}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -104,6 +105,7 @@ export default function Header({ onMenuClick }) {
             onClick={() => setSearchOpen(true)}
             className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
             title={t('header.search_quick_mobile')}
+            aria-label={t('header.search_quick_mobile', 'فتح البحث')}
           >
             <Search className="w-5 h-5" />
           </button>
@@ -115,6 +117,8 @@ export default function Header({ onMenuClick }) {
           <button
             onClick={toggleTheme}
             className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
+            aria-label={dark ? t('header.switch_to_light', 'التبديل إلى الوضع الفاتح') : t('header.switch_to_dark', 'التبديل إلى الوضع الداكن')}
+            aria-pressed={dark}
           >
             {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>

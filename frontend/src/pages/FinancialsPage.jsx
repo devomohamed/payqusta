@@ -17,6 +17,7 @@ import { api } from '../store';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { EmptyState, LoadingSpinner } from '../components/UI';
 
 const FinancialsPage = () => {
     const { t } = useTranslation('admin');
@@ -137,12 +138,12 @@ const FinancialsPage = () => {
             )}
 
             {loading ? (
-                <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <div className="min-h-[400px]">
+                    <LoadingSpinner size="lg" text="جاري تحميل البيانات المالية..." />
                 </div>
             ) : (
                 <>
-                    {activeTab === 'pnl' && pnlData && (
+                    {activeTab === 'pnl' && pnlData ? (
                         <div className="space-y-6 animate-fade-in">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <SummaryCard
@@ -264,7 +265,14 @@ const FinancialsPage = () => {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : activeTab === 'pnl' ? (
+                        <EmptyState
+                            icon={FileText}
+                            title="لا توجد بيانات أرباح وخسائر"
+                            description="تعذر تحميل بيانات الفترة الحالية. جرّب تغيير الفترة أو إعادة التحديث."
+                            action={{ label: 'إعادة المحاولة', onClick: fetchFinancialData }}
+                        />
+                    ) : null}
 
                     {activeTab === 'ledger' && (
                         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden animate-fade-in">
@@ -307,7 +315,14 @@ const FinancialsPage = () => {
                                         ))}
                                         {ledgerData.length === 0 && (
                                             <tr>
-                                                <td colSpan="6" className="p-12 text-center text-gray-500">لا توجد حركات مالية في هذه الفترة</td>
+                                                <td colSpan="6" className="p-4">
+                                                    <EmptyState
+                                                        icon={ArrowRightLeft}
+                                                        title="لا توجد حركات مالية"
+                                                        description="لا توجد قيود أو حركات ضمن الفترة المحددة."
+                                                        className="py-4"
+                                                    />
+                                                </td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -316,7 +331,7 @@ const FinancialsPage = () => {
                         </div>
                     )}
 
-                    {activeTab === 'forecast' && forecastData && (
+                    {activeTab === 'forecast' && forecastData ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
                             <div className="bg-gradient-to-br from-green-500 to-green-600 p-8 rounded-3xl text-white shadow-xl shadow-green-500/20">
                                 <h4 className="text-green-100 text-sm font-bold mb-2">تدفقات نقدية متوقعة (30 يوم)</h4>
@@ -335,7 +350,14 @@ const FinancialsPage = () => {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    ) : activeTab === 'forecast' ? (
+                        <EmptyState
+                            icon={BarChart2}
+                            title="لا توجد توقعات متاحة"
+                            description="تعذر تحميل توقعات التدفق النقدي في الوقت الحالي."
+                            action={{ label: 'إعادة المحاولة', onClick: fetchFinancialData }}
+                        />
+                    ) : null}
                 </>
             )}
         </div>

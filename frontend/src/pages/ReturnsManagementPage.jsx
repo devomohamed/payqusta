@@ -197,6 +197,26 @@ export default function ReturnsManagementPage() {
                             </button>
                           </>
                         )}
+                        {ret.status === 'approved' && (
+                          <button
+                            onClick={() => updateReturn(ret._id, 'completed')}
+                            disabled={actionLoading}
+                            className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition disabled:opacity-50"
+                            title="إكمال واستلام المرتجع"
+                          >
+                            <Package className="w-4 h-4" />
+                          </button>
+                        )}
+                        {ret.status === 'completed' && ['pending', 'failed'].includes(ret.refundStatus) && Number(ret.refundAmount || 0) > 0 && (
+                          <button
+                            onClick={() => updateReturn(ret._id, 'completed')}
+                            disabled={actionLoading}
+                            className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100 transition disabled:opacity-50"
+                            title="معالجة الاسترداد"
+                          >
+                            <RefreshCcw className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -225,6 +245,24 @@ export default function ReturnsManagementPage() {
                   </button>
                 </div>
               )}
+              {selected.status === 'approved' && (
+                <button
+                  onClick={() => updateReturn(selected._id, 'completed')}
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl bg-blue-500 text-white text-sm font-bold hover:bg-blue-600 transition disabled:opacity-50 flex items-center gap-1"
+                >
+                  <Package className="w-4 h-4" /> إكمال المرتجع
+                </button>
+              )}
+              {selected.status === 'completed' && ['pending', 'failed'].includes(selected.refundStatus) && Number(selected.refundAmount || 0) > 0 && (
+                <button
+                  onClick={() => updateReturn(selected._id, 'completed')}
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition disabled:opacity-50 flex items-center gap-1"
+                >
+                  <RefreshCcw className="w-4 h-4" /> معالجة الاسترداد
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -252,6 +290,45 @@ export default function ReturnsManagementPage() {
                 <p className="text-sm text-blue-700 dark:text-blue-300">{selected.adminNotes}</p>
               </div>
             )}
+
+            {(selected.refundStatus && selected.refundStatus !== 'none') || selected.restockedAt || selected.completedAt ? (
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 space-y-2">
+                <h4 className="font-bold text-xs text-emerald-600 uppercase mb-2">الاسترداد والمخزون</h4>
+                {selected.refundStatus && selected.refundStatus !== 'none' ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">حالة الاسترداد</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                      {selected.refundStatus === 'pending' ? 'قيد المعالجة' : selected.refundStatus === 'refunded' ? 'تم رد المبلغ' : selected.refundStatus}
+                      {Number(selected.refundAmount || 0) > 0 ? ` • ${Number(selected.refundAmount).toLocaleString('ar-EG')} ج.م` : ''}
+                    </span>
+                  </div>
+                ) : null}
+                {selected.restockedAt ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">إعادة للمخزون</span>
+                    <span className="font-bold text-blue-700 dark:text-blue-300">
+                      {new Date(selected.restockedAt).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                ) : null}
+                {selected.completedAt ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">تاريخ الإكمال</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-100">
+                      {new Date(selected.completedAt).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                ) : null}
+                {selected.refundedAt ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">تم رد المبلغ</span>
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                      {new Date(selected.refundedAt).toLocaleString('ar-EG')}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="text-xs text-gray-400 flex items-center gap-4">
               <span>تاريخ الطلب: {new Date(selected.createdAt).toLocaleString('ar-EG')}</span>

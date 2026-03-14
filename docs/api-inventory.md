@@ -6,6 +6,10 @@ This document summarizes the current API surface based on the route files under 
 
 - API base: `/api/v1`
 - Health check: `/api/health`
+- Liveness: `/api/health/live`
+- Readiness: `/api/health/ready`
+- Versioned health alias: `/api/v1/health`
+- Protected ops status: `/api/v1/ops/status`
 - Swagger UI: `/api-docs`
 - Swagger JSON: `/api-docs.json`
 
@@ -22,6 +26,12 @@ This document summarizes the current API surface based on the route files under 
 ## Health
 
 - `GET /health`
+- `GET /health/live`
+- `GET /health/ready`
+
+## Ops
+
+- `GET /ops/status`
 
 ## Auth
 

@@ -35,6 +35,13 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        globIgnores: [
+          '**/assets/vendor-hls-*.js',
+          '**/assets/vendor-editor-*.js',
+          '**/assets/vendor-capture-*.js',
+          '**/assets/CamerasPage-*.js',
+          '**/assets/BarcodeScanner-*.js',
+        ],
         // EvenNode build was failing because one generated JS chunk is > 2 MiB.
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
@@ -117,6 +124,84 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    emptyOutDir: true,
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+
+          if (id.includes('hls.js')) {
+            return 'vendor-hls';
+          }
+
+          if (
+            id.includes('/react/') ||
+            id.includes('\\react\\') ||
+            id.includes('react-dom') ||
+            id.includes('scheduler') ||
+            id.includes('use-sync-external-store')
+          ) {
+            return 'vendor-react';
+          }
+
+          if (id.includes('react-router') || id.includes('@remix-run')) {
+            return 'vendor-router';
+          }
+
+          if (
+            id.includes('i18next') ||
+            id.includes('react-i18next')
+          ) {
+            return 'vendor-i18n';
+          }
+
+          if (
+            id.includes('recharts') ||
+            id.includes('d3-') ||
+            id.includes('internmap')
+          ) {
+            return 'vendor-charts';
+          }
+
+          if (id.includes('lucide-react') || id.includes('@heroicons')) {
+            return 'vendor-icons';
+          }
+
+          if (
+            id.includes('dexie') ||
+            id.includes('zustand') ||
+            id.includes('axios') ||
+            id.includes('date-fns')
+          ) {
+            return 'vendor-data';
+          }
+
+          if (
+            id.includes('@zxing') ||
+            id.includes('html5-qrcode') ||
+            id.includes('react-easy-crop')
+          ) {
+            return 'vendor-capture';
+          }
+
+          if (
+            id.includes('framer-motion') ||
+            id.includes('react-hot-toast')
+          ) {
+            return 'vendor-ui';
+          }
+
+          if (
+            id.includes('react-quill') ||
+            id.includes('/quill/') ||
+            id.includes('\\quill\\') ||
+            id.includes('quill-emoji')
+          ) {
+            return 'vendor-editor';
+          }
+        },
+      },
+    },
   },
 });

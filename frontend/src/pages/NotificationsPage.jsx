@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../store';
 import { notify } from '../components/AnimatedNotification';
-import { LoadingSpinner } from '../components/UI';
+import { EmptyState, LoadingSpinner } from '../components/UI';
 
 const iconMap = {
   clock: Clock,
@@ -166,9 +166,13 @@ export default function NotificationsPage() {
             <LoadingSpinner size="lg" text="جاري تحميل الإشعارات..." />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="p-10 text-center text-gray-500">
-            لا توجد إشعارات حالياً
-          </div>
+          <EmptyState
+            icon={Bell}
+            title="لا توجد إشعارات حاليًا"
+            description="بمجرد وجود تنبيهات أو تحديثات جديدة ستظهر لك هنا."
+            action={{ label: 'العودة للوحة التحكم', onClick: () => navigate('/dashboard') }}
+            className="px-4"
+          />
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {notifications.map((notification) => {

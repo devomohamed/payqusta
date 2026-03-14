@@ -336,7 +336,7 @@ class PaymentController {
    * POST /api/v1/payments/transactions/:id/refund
    */
   refund = catchAsync(async (req, res, next) => {
-    const { reason } = req.body;
+    const { reason, amount } = req.body;
 
     if (!reason) {
       return next(AppError.badRequest('سبب الاسترجاع مطلوب'));
@@ -353,11 +353,27 @@ class PaymentController {
       return next(AppError.forbidden('غير مصرح لك بالوصول'));
     }
 
-    if (transaction.status !== 'success') {
+    if (!['success', 'refunded'].includes(transaction.status)) {
       return next(AppError.badRequest('لا يمكن استرجاع معاملة غير ناجحة'));
     }
 
-    await transaction.refund(req.user._id, reason);
+    if (typeof transaction.getRefundableAmount === 'function' && transaction.getRefundableAmount() <= 0) {
+      return next(AppError.badRequest('لا يوجد رصيد قابل للاسترداد في هذه المعاملة'));
+    }
+
+    const refundResult = await paymentGatewayService.refundTransaction(transaction, {
+      amount,
+      reason,
+      userId: req.user._id,
+      metadata: {
+        source: 'manual_refund',
+        actorId: req.user._id,
+      },
+    });
+
+    if (!refundResult?.processed) {
+      return next(AppError.badRequest(refundResult?.reason || 'هذه المعاملة تحتاج استردادًا يدويًا خارج البوابة الحالية'));
+    }
 
     res.status(200).json(
       ApiResponse.success(transaction, 'تم استرجاع المبلغ')

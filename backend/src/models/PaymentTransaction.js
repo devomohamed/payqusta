@@ -42,6 +42,10 @@ const paymentTransactionSchema = new mongoose.Schema({
     type: String, // ID from the payment gateway
     index: true
   },
+  gatewayOrderId: {
+    type: String,
+    index: true
+  },
 
   // Amount Details
   amount: {
@@ -122,6 +126,36 @@ const paymentTransactionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  refundedAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  refundStatus: {
+    type: String,
+    enum: ['none', 'partial', 'refunded'],
+    default: 'none',
+    index: true
+  },
+  refunds: [{
+    amount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    reason: String,
+    refundedAt: {
+      type: Date,
+      default: Date.now
+    },
+    refundedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed
+    }
+  }],
 
   // Notes
   notes: String,
@@ -141,6 +175,7 @@ paymentTransactionSchema.index({ tenant: 1, status: 1 });
 paymentTransactionSchema.index({ tenant: 1, gateway: 1 });
 paymentTransactionSchema.index({ tenant: 1, createdAt: -1 });
 paymentTransactionSchema.index({ customer: 1, createdAt: -1 });
+paymentTransactionSchema.index({ gateway: 1, gatewayOrderId: 1 });
 
 // Generate transaction ID before saving
 paymentTransactionSchema.pre('save', function(next) {
@@ -173,12 +208,45 @@ paymentTransactionSchema.methods.markAsFailed = function(reason, gatewayData = {
   return this.save();
 };
 
+paymentTransactionSchema.methods.getCapturedAmount = function() {
+  return Math.max(0, (Number(this.amount) || 0) - (Number(this.discount) || 0));
+};
+
+paymentTransactionSchema.methods.getRefundableAmount = function() {
+  const capturedAmount = this.getCapturedAmount();
+  return Math.max(0, capturedAmount - (Number(this.refundedAmount) || 0));
+};
+
 // Refund transaction
-paymentTransactionSchema.methods.refund = async function(userId, reason) {
-  this.status = 'refunded';
+paymentTransactionSchema.methods.refund = async function(userId, reason, amount = null, metadata = {}) {
+  const maxRefundable = this.getRefundableAmount();
+  const requestedAmount = amount == null ? maxRefundable : Math.max(0, Number(amount) || 0);
+  const refundAmount = Math.min(maxRefundable, requestedAmount);
+
+  if (refundAmount <= 0) {
+    throw new Error('No refundable balance remaining for this transaction');
+  }
+
+  this.refundedAmount = (Number(this.refundedAmount) || 0) + refundAmount;
   this.refundedAt = new Date();
-  this.refundedBy = userId;
+  this.refundedBy = userId || null;
   this.refundReason = reason;
+  this.refunds.push({
+    amount: refundAmount,
+    reason,
+    refundedAt: this.refundedAt,
+    refundedBy: userId || null,
+    metadata,
+  });
+
+  if (this.getRefundableAmount() <= 0) {
+    this.status = 'refunded';
+    this.refundStatus = 'refunded';
+  } else {
+    this.status = 'success';
+    this.refundStatus = 'partial';
+  }
+
   return this.save();
 };
 

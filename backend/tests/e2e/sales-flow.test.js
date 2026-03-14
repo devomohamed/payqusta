@@ -1,19 +1,212 @@
 const { createApiClient } = require('../helpers/apiClient');
+const {
+  hasDbTestEnv,
+  connectTestDatabase,
+  clearTestDatabase,
+  disconnectTestDatabase,
+} = require('../helpers/dbTestHarness');
 
-describe('Sales flow E2E scaffold', () => {
-  const api = createApiClient();
+const Tenant = require('../../src/models/Tenant');
+const User = require('../../src/models/User');
+const Customer = require('../../src/models/Customer');
+const Product = require('../../src/models/Product');
+const Invoice = require('../../src/models/Invoice');
 
-  it('documents the expected end-to-end sequence', async () => {
-    const health = await api.get('/api/health');
+const api = createApiClient();
+const describeDb = hasDbTestEnv() ? describe : describe.skip;
 
-    expect(health.statusCode).toBe(200);
+const createTenant = async (overrides = {}) => Tenant.create({
+  name: 'E2E Store',
+  slug: `e2e-store-${Date.now()}-${Math.round(Math.random() * 1000)}`,
+  settings: {
+    shipping: {
+      enabled: false,
+      provider: 'local',
+      supportsCashOnDelivery: true,
+      baseFee: 0,
+    },
+  },
+  ...overrides,
+});
 
-    // Next implementation steps:
-    // 1. Login and capture a real JWT.
-    // 2. Create product fixture.
-    // 3. Create customer fixture.
-    // 4. Create deferred invoice.
-    // 5. Pay partially, then pay all.
-    // 6. Assert invoice/customer/stock side effects.
+const createVendorUser = async (tenant, overrides = {}) => User.create({
+  name: 'E2E Vendor',
+  email: `vendor-${Date.now()}-${Math.round(Math.random() * 1000)}@example.com`,
+  phone: `010${Math.floor(10000000 + Math.random() * 89999999)}`,
+  password: 'Secret123!',
+  role: 'vendor',
+  tenant: tenant._id,
+  ...overrides,
+});
+
+const createProduct = async (tenant, overrides = {}) => Product.create({
+  tenant: tenant._id,
+  name: `E2E Product ${Date.now()}`,
+  sku: `E2E-${Math.round(Math.random() * 100000)}`,
+  price: 100,
+  cost: 60,
+  stock: {
+    quantity: 5,
+    minQuantity: 1,
+    unit: 'piece',
+  },
+  images: [],
+  ...overrides,
+});
+
+const loginAs = async (email, password = 'Secret123!') => {
+  const res = await api
+    .post('/api/v1/auth/login')
+    .send({ email, password });
+
+  expect(res.statusCode).toBe(200);
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.token).toBeTruthy();
+
+  return res.body.data.token;
+};
+
+describeDb('Sales flow DB-backed E2E', () => {
+  beforeAll(async () => {
+    await connectTestDatabase();
+  });
+
+  beforeEach(async () => {
+    await clearTestDatabase();
+  });
+
+  afterAll(async () => {
+    await clearTestDatabase();
+    await disconnectTestDatabase();
+  });
+
+  it('lets a vendor login, create a customer, create an invoice, and settle it end-to-end', async () => {
+    const tenant = await createTenant();
+    const vendor = await createVendorUser(tenant);
+    const product = await createProduct(tenant);
+    const token = await loginAs(vendor.email);
+
+    const customerRes = await api
+      .post('/api/v1/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'E2E Customer',
+        phone: '01011112222',
+        address: 'Alexandria',
+        creditLimit: 5000,
+      });
+
+    expect(customerRes.statusCode).toBe(201);
+    expect(customerRes.body.success).toBe(true);
+
+    const customerId = customerRes.body.data._id;
+
+    const createInvoiceRes = await api
+      .post('/api/v1/invoices')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        customerId,
+        items: [
+          {
+            productId: product._id.toString(),
+            quantity: 2,
+          },
+        ],
+        paymentMethod: 'cash',
+        source: 'pos',
+      });
+
+    expect(createInvoiceRes.statusCode).toBe(201);
+    expect(createInvoiceRes.body.success).toBe(true);
+    expect(createInvoiceRes.body.data.totalAmount).toBe(200);
+
+    const invoiceId = createInvoiceRes.body.data._id;
+
+    let storedInvoice = await Invoice.findById(invoiceId).lean();
+    let storedProduct = await Product.findById(product._id).lean();
+    let storedCustomer = await Customer.findById(customerId).lean();
+
+    expect(storedInvoice.remainingAmount).toBe(200);
+    expect(storedProduct.stock.quantity).toBe(3);
+    expect(storedCustomer.financials.totalPurchases).toBe(200);
+    expect(storedCustomer.financials.outstandingBalance).toBe(200);
+
+    const partialPaymentRes = await api
+      .post(`/api/v1/invoices/${invoiceId}/pay`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        amount: 50,
+        method: 'cash',
+      });
+
+    expect(partialPaymentRes.statusCode).toBe(200);
+    expect(partialPaymentRes.body.success).toBe(true);
+
+    storedInvoice = await Invoice.findById(invoiceId).lean();
+    storedCustomer = await Customer.findById(customerId).lean();
+
+    expect(storedInvoice.paidAmount).toBe(50);
+    expect(storedInvoice.remainingAmount).toBe(150);
+    expect(storedCustomer.financials.totalPaid).toBe(50);
+    expect(storedCustomer.financials.outstandingBalance).toBe(150);
+
+    const payAllRes = await api
+      .post(`/api/v1/invoices/${invoiceId}/pay-all`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
+
+    expect(payAllRes.statusCode).toBe(200);
+    expect(payAllRes.body.success).toBe(true);
+
+    storedInvoice = await Invoice.findById(invoiceId).lean();
+    storedCustomer = await Customer.findById(customerId).lean();
+
+    expect(storedInvoice.status).toBe('paid');
+    expect(storedInvoice.remainingAmount).toBe(0);
+    expect(storedCustomer.financials.outstandingBalance).toBe(0);
+    expect(storedCustomer.financials.totalPaid).toBe(200);
+  });
+
+  it('enforces tenant isolation on DB-backed customer reads', async () => {
+    const tenantA = await createTenant({ name: 'Tenant A' });
+    const tenantB = await createTenant({ name: 'Tenant B' });
+    const vendorA = await createVendorUser(tenantA, {
+      email: 'tenant-a@example.com',
+      phone: '01020000001',
+    });
+
+    await Customer.create({
+      tenant: tenantA._id,
+      name: 'Tenant A Customer',
+      phone: '01030000001',
+      address: 'Alexandria',
+    });
+
+    await Customer.create({
+      tenant: tenantB._id,
+      name: 'Tenant B Customer',
+      phone: '01030000002',
+      address: 'Cairo',
+    });
+
+    const token = await loginAs(vendorA.email);
+
+    const res = await api
+      .get('/api/v1/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .query({ search: 'Tenant' });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].name).toBe('Tenant A Customer');
   });
 });
+
+if (!hasDbTestEnv()) {
+  describe('Sales flow DB-backed E2E', () => {
+    it('is skipped until TEST_MONGODB_URI is provided', () => {
+      expect(hasDbTestEnv()).toBe(false);
+    });
+  });
+}

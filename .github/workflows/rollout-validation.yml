@@ -1,0 +1,57 @@
+name: Rollout Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: Public app URL to validate, e.g. https://payqusta.store
+        required: true
+        type: string
+  schedule:
+    - cron: "17 5 * * *"
+
+jobs:
+  rollout-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_URL: ${{ github.event.inputs.app_url || secrets.OPS_MONITOR_URL }}
+      OPS_BEARER_TOKEN: ${{ secrets.OPS_BEARER_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Fail if APP_URL is missing
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "APP_URL input or OPS_MONITOR_URL secret is required"
+            exit 1
+          fi
+
+      - name: Run post-deploy smoke
+        run: npm run release:smoke -- --app-url="$APP_URL"
+
+      - name: Capture ops snapshot
+        run: npm run ops:snapshot -- --app-url="$APP_URL" --write-json=artifacts/ops-snapshot.json --write-metrics=artifacts/ops-metrics.prom
+
+      - name: Upload ops artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollout-validation-artifacts
+          path: |
+            backend/artifacts/ops-snapshot.json
+            backend/artifacts/ops-metrics.prom

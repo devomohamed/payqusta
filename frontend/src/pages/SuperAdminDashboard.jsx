@@ -4,7 +4,7 @@ import {
   Package, ShoppingCart, Plus, ArrowRight, CheckCircle, AlertCircle,
   Server, Zap, Eye
 } from 'lucide-react';
-import { Card, StatCard, LoadingSpinner, Button } from '../components/UI';
+import { Card, StatCard, LoadingSpinner, Button, EmptyState } from '../components/UI';
 import { api } from '../store';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -222,10 +222,12 @@ export default function SuperAdminDashboard() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-400">
-            <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">لا توجد بيانات متاحة</p>
-          </div>
+          <EmptyState
+            icon={TrendingUp}
+            title="لا توجد بيانات متاحة"
+            description="ستظهر المتاجر الأعلى أداءً هنا بمجرد توفر نشاط كافٍ."
+            className="py-6"
+          />
         )}
       </Card>
 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
-import { customersApi, creditApi, api } from '../store';
+import { customersApi, creditApi, api, useAuthStore } from '../store';
 import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState, OwnerTableSkeleton } from '../components/UI';
 import Pagination from '../components/Pagination';
 
@@ -75,20 +75,18 @@ export default function CustomersPage() {
     // We need a way to get branches. Typically useAuthStore or a dedicated API.
     // Assuming we can get it from an API or just mocking for now since we added it to model.
     // Let's use the one from store if available or just fetch manually.
-    import('../store').then(({ useAuthStore }) => {
-      useAuthStore.getState().getBranches()
-        .then((result) => {
-          const normalizedBranches = Array.isArray(result)
-            ? result
-            : Array.isArray(result?.branches)
-              ? result.branches
-              : Array.isArray(result?.data)
-                ? result.data
-                : [];
-          setBranches(normalizedBranches);
-        })
-        .catch(() => setBranches([]));
-    });
+    useAuthStore.getState().getBranches()
+      .then((result) => {
+        const normalizedBranches = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.branches)
+            ? result.branches
+            : Array.isArray(result?.data)
+              ? result.data
+              : [];
+        setBranches(normalizedBranches);
+      })
+      .catch(() => setBranches([]));
   }, []);
 
   useEffect(() => {

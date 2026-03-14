@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../store';
-import { Card, Button, Badge, Input } from '../components/UI';
+import { Card, Button, Badge, EmptyState, Input, LoadingSpinner } from '../components/UI';
 import Pagination from '../components/Pagination';
 
 // Aging buckets configuration
@@ -334,15 +334,17 @@ export default function AgingReportPage() {
       {/* Table */}
       <Card className="overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">جاري تحميل التقرير...</p>
+          <div className="p-6 sm:p-10">
+            <LoadingSpinner size="lg" text="جاري تحميل التقرير..." />
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <div className="p-12 text-center">
-            <Clock className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-500 font-medium">لا توجد مديونيات</p>
-          </div>
+          <EmptyState
+            icon={Clock}
+            title="لا توجد مديونيات"
+            description="لم يتم العثور على عملاء لديهم أرصدة مستحقة ضمن الفلاتر الحالية."
+            action={search || filterBucket !== 'all' ? { label: 'إعادة ضبط الفلاتر', onClick: () => { setSearch(''); setFilterBucket('all'); setPage(1); } } : null}
+            className="px-4"
+          />
         ) : (
           <>
             <div className="overflow-x-auto">

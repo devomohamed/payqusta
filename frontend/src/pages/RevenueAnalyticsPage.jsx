@@ -4,7 +4,7 @@ import {
     ArrowDownRight, BarChart3, UserCheck, UserX
 } from 'lucide-react';
 import { api } from '../store';
-import { LoadingSpinner } from '../components/UI';
+import { EmptyState, LoadingSpinner } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import { useThemeStore } from '../store';
 
@@ -28,8 +28,19 @@ export default function RevenueAnalyticsPage() {
         }
     };
 
-    if (loading) return <LoadingSpinner />;
-    if (!data) return <div className="text-center p-12 text-gray-400">لا توجد بيانات</div>;
+    if (loading) {
+        return <LoadingSpinner size="lg" text="جاري تحميل تحليلات الإيرادات..." />;
+    }
+    if (!data) {
+        return (
+            <EmptyState
+                icon={BarChart3}
+                title="لا توجد بيانات"
+                description="تعذر تحميل تحليلات الإيرادات حاليًا. جرّب التحديث مرة أخرى."
+                action={{ label: 'إعادة المحاولة', onClick: fetchAnalytics }}
+            />
+        );
+    }
 
     const fmt = (v) => Number(v || 0).toLocaleString('ar-EG', { maximumFractionDigits: 0 });
 

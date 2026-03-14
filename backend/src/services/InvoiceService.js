@@ -7,6 +7,7 @@ const Invoice = require('../models/Invoice');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
+const Tenant = require('../models/Tenant');
 const AppError = require('../utils/AppError');
 const Helpers = require('../utils/helpers');
 const {
@@ -14,6 +15,11 @@ const {
   deductInventoryAllocation,
   resolveInventoryAllocation,
 } = require('../utils/inventoryAllocation');
+const {
+  calculateTenantShippingSummary,
+  getTenantShippingSettings,
+  normalizeInvoiceShippingSummary,
+} = require('../utils/shippingHelpers');
 const NotificationService = require('./NotificationService');
 const GamificationService = require('./GamificationService');
 const WhatsAppService = require('./WhatsAppService');
@@ -41,6 +47,7 @@ class InvoiceService {
       sendWhatsApp,
       source,
       shippingAddress,
+      shippingSummary,
       couponCode,
       campaignAttribution,
     } = data;
@@ -52,6 +59,7 @@ class InvoiceService {
     let couponDiscountAmount = 0;
     let discountAmount = Number(discount) || 0;
     const normalizedCampaignAttribution = this.normalizeCampaignAttribution(campaignAttribution);
+    const normalizedShippingSummary = normalizeInvoiceShippingSummary(shippingSummary);
 
     if (!resolvedCustomerId) throw AppError.badRequest('يجب تحديد العميل');
     if (!items || !Array.isArray(items) || items.length === 0) throw AppError.badRequest('يجب إضافة منتجات للفاتورة');
@@ -79,7 +87,15 @@ class InvoiceService {
       if (session) customerQuery.session(session);
       const customer = await customerQuery;
 
+      const tenantQuery = Tenant.findById(tenantId).select('settings.shipping whatsapp');
+      if (session) tenantQuery.session(session);
+      const tenant = await tenantQuery;
+
       if (!customer) throw AppError.notFound('العميل غير موجود');
+
+      if (!tenant) {
+        throw AppError.notFound('المتجر غير موجود');
+      }
 
       // Check if sales blocked for this customer
       if (customer.salesBlocked) {
@@ -226,8 +242,27 @@ class InvoiceService {
         discountAmount += couponDiscountAmount;
       }
 
-      // Calculate total
-      const totalAmount = Math.max(0, subtotal - discountAmount);
+      const tenantShippingSettings = getTenantShippingSettings(tenant);
+      const computedShippingSummary = calculateTenantShippingSummary(
+        tenant,
+        shippingAddress,
+        subtotal,
+        normalizedShippingSummary
+      );
+
+      if (
+        source === 'online_store' &&
+        paymentMethod === PAYMENT_METHODS.CASH &&
+        tenantShippingSettings.supportsCashOnDelivery === false
+      ) {
+        throw AppError.badRequest('الدفع عند الاستلام غير متاح لهذا المتجر');
+      }
+
+      const effectiveShippingAmount = Math.max(
+        0,
+        (computedShippingSummary?.shippingFee || 0) - (computedShippingSummary?.shippingDiscount || 0)
+      );
+      const totalAmount = Math.max(0, subtotal + effectiveShippingAmount - discountAmount);
 
       // Check Credit Limit
       let transactionPendingAmount = 0;
@@ -253,6 +288,9 @@ class InvoiceService {
         items: invoiceItems,
         subtotal,
         discount: discountAmount,
+        shippingFee: computedShippingSummary?.shippingFee || 0,
+        shippingDiscount: computedShippingSummary?.shippingDiscount || 0,
+        carrierCost: computedShippingSummary?.carrierCost || 0,
         totalAmount,
         paymentMethod,
         notes,
@@ -277,6 +315,44 @@ class InvoiceService {
           governorate: shippingAddress.governorate,
           notes: shippingAddress.notes,
         };
+      }
+
+      if (computedShippingSummary) {
+        if (computedShippingSummary.shippingMethod) {
+          invoiceData.shippingMethod = computedShippingSummary.shippingMethod;
+        }
+
+        if (computedShippingSummary.zoneCode || computedShippingSummary.zoneLabel) {
+          invoiceData.shippingZone = {
+            code: computedShippingSummary.zoneCode,
+            label: computedShippingSummary.zoneLabel,
+          };
+        }
+
+        if (computedShippingSummary.shipmentId) {
+          invoiceData.shipmentId = computedShippingSummary.shipmentId;
+        }
+
+        if (computedShippingSummary.trackingNumber) {
+          invoiceData.trackingNumber = computedShippingSummary.trackingNumber;
+        }
+
+        if (computedShippingSummary.estimatedDeliveryDate) {
+          invoiceData.estimatedDeliveryDate = computedShippingSummary.estimatedDeliveryDate;
+        }
+
+        if (
+          computedShippingSummary.provider ||
+          computedShippingSummary.trackingNumber ||
+          computedShippingSummary.trackingUrl
+        ) {
+          invoiceData.shippingDetails = {
+            provider: computedShippingSummary.provider,
+            waybillNumber: computedShippingSummary.trackingNumber || undefined,
+            trackingUrl: computedShippingSummary.trackingUrl || undefined,
+            status: computedShippingSummary.trackingNumber ? 'created' : 'pending',
+          };
+        }
       }
 
       // Handle payment method configuration
@@ -377,9 +453,6 @@ class InvoiceService {
       }
 
       // Post-transaction: Notifications (non-critical)
-      const Tenant = require('../models/Tenant');
-      const tenant = await Tenant.findById(tenantId);
-
       if (appliedCoupon) {
         Coupon.findByIdAndUpdate(appliedCoupon._id, {
           $push: {

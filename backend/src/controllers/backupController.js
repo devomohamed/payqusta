@@ -14,6 +14,141 @@ const Supplier = require('../models/Supplier');
 const Invoice = require('../models/Invoice');
 const Expense = require('../models/Expense');
 
+const EXCEL_SHEET_NAMES = {
+  products: 'المنتجات',
+  customers: 'العملاء',
+  suppliers: 'الموردين',
+};
+
+const EXCEL_HEADERS = {
+  name: 'الاسم',
+  barcode: 'الباركود',
+  category: 'الفئة',
+  salePrice: 'سعر البيع',
+  costPrice: 'سعر الشراء',
+  quantity: 'الكمية',
+  minQuantity: 'الحد الأدنى',
+  phone: 'الهاتف',
+  email: 'البريد',
+  address: 'العنوان',
+  totalPurchases: 'إجمالي المشتريات',
+  remaining: 'المتبقي',
+  points: 'نقاط الولاء',
+  tier: 'المستوى',
+  contactPerson: 'جهة الاتصال',
+  paymentTerms: 'شروط الدفع',
+  supplierPurchases: 'المشتريات',
+  outstandingBalance: 'المستحق',
+};
+
+function extractWorksheetValue(cellValue) {
+  if (cellValue == null) return '';
+  if (cellValue instanceof Date) return cellValue;
+
+  if (typeof cellValue === 'object') {
+    if (typeof cellValue.text === 'string') return cellValue.text.trim();
+    if (typeof cellValue.result !== 'undefined') return cellValue.result;
+    if (Array.isArray(cellValue.richText)) {
+      return cellValue.richText.map((item) => item?.text || '').join('').trim();
+    }
+  }
+
+  return cellValue;
+}
+
+function normalizeString(value) {
+  return String(value ?? '').trim();
+}
+
+function normalizeNumber(value) {
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : 0;
+}
+
+function readWorksheetRows(worksheet) {
+  if (!worksheet) return [];
+
+  const headers = [];
+  worksheet.getRow(1).eachCell((cell, col) => {
+    headers[col] = normalizeString(extractWorksheetValue(cell.value));
+  });
+
+  const rows = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+
+    const record = {};
+    row.eachCell((cell, col) => {
+      const header = headers[col];
+      if (!header) return;
+      record[header] = extractWorksheetValue(cell.value);
+    });
+
+    if (Object.keys(record).length > 0) {
+      rows.push(record);
+    }
+  });
+
+  return rows;
+}
+
+function withOptionalSession(query, session) {
+  return session ? query.session(session) : query;
+}
+
+async function createWithOptionalSession(Model, payload, session) {
+  if (session) {
+    await Model.create([payload], { session });
+    return;
+  }
+
+  await Model.create(payload);
+}
+
+function supportsTransactions() {
+  try {
+    const topologyType = mongoose.connection.client?.topology?.description?.type;
+    return topologyType === 'ReplicaSetWithPrimary' || topologyType === 'Sharded';
+  } catch {
+    return false;
+  }
+}
+
+async function startRestoreSession() {
+  if (!supportsTransactions()) return null;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  return session;
+}
+
+function buildSupplierDuplicateQuery(tenantId, supplier) {
+  const filters = [];
+  const phone = normalizeString(supplier.phone);
+  const name = normalizeString(supplier.name);
+
+  if (phone) filters.push({ phone });
+  if (name) filters.push({ name });
+
+  if (filters.length === 0) return null;
+
+  return {
+    tenant: tenantId,
+    $or: filters,
+  };
+}
+
+function summarizeRestoreResults(results) {
+  return Object.values(results).reduce(
+    (summary, current) => ({
+      imported: summary.imported + Number(current.imported || 0),
+      skipped: summary.skipped + Number(current.skipped || 0),
+    }),
+    { imported: 0, skipped: 0 }
+  );
+}
+
+
 class BackupController {
   /**
    * GET /api/v1/backup/export
@@ -69,8 +204,8 @@ class BackupController {
       customers.forEach(c => custWs.addRow({
         name: c.name, phone: c.phone, email: c.email, address: c.address,
         totalPurchases: c.financials?.totalPurchases || 0,
-        totalRemaining: c.financials?.totalRemaining || 0,
-        points: c.gamification?.points || 0, tier: c.gamification?.tier || 'normal',
+        totalRemaining: c.financials?.outstandingBalance || 0,
+        points: c.gamification?.points || 0, tier: c.tier || 'normal',
       }));
 
       // Suppliers sheet
@@ -172,72 +307,151 @@ class BackupController {
    * Restore data from Excel backup file
    */
   async restoreData(req, res, next) {
+    const fs = require('fs');
+    let session = null;
+
     try {
-      if (!req.file) return next(AppError.badRequest('يرجى رفع ملف النسخة الاحتياطية'));
+      if (!req.file) return next(AppError.badRequest('\u064A\u0631\u062C\u0649 \u0631\u0641\u0639 \u0645\u0644\u0641 \u0627\u0644\u0646\u0633\u062E\u0629 \u0627\u0644\u0627\u062D\u062A\u064A\u0627\u0637\u064A\u0629'));
 
-      const ImportService = require('../services/ImportService');
-      const fs = require('fs');
-
+      const tenantId = req.tenantId;
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.readFile(req.file.path);
 
-      const results = { products: 0, customers: 0, suppliers: 0 };
+      const productRows = readWorksheetRows(workbook.getWorksheet(EXCEL_SHEET_NAMES.products));
+      const customerRows = readWorksheetRows(workbook.getWorksheet(EXCEL_SHEET_NAMES.customers));
+      const supplierRows = readWorksheetRows(workbook.getWorksheet(EXCEL_SHEET_NAMES.suppliers));
 
-      // Restore Products
-      const prodWs = workbook.getWorksheet('المنتجات');
-      if (prodWs) {
-        const rows = [];
-        const headers = [];
-        prodWs.getRow(1).eachCell((cell, col) => { headers[col] = String(cell.value).trim(); });
-        prodWs.eachRow((row, num) => {
-          if (num === 1) return;
-          const obj = {};
-          row.eachCell((cell, col) => { if (headers[col]) obj[headers[col]] = cell.value; });
-          rows.push(obj);
-        });
+      const results = {
+        products: { imported: 0, skipped: 0 },
+        customers: { imported: 0, skipped: 0 },
+        suppliers: { imported: 0, skipped: 0 },
+      };
 
-        for (const row of rows) {
-          const name = row['الاسم'];
-          if (!name) continue;
-          const existing = await Product.findOne({ tenant: req.tenantId, name });
-          if (!existing) {
-            await Product.create({
-              tenant: req.tenantId, name, sku: row['SKU'] || '', barcode: row['الباركود'] || '',
-              category: row['الفئة'] || 'عام', price: Number(row['سعر البيع']) || 0,
-              cost: Number(row['سعر الشراء']) || 0,
-              stock: { quantity: Number(row['الكمية']) || 0, minQuantity: Number(row['الحد الأدنى']) || 5 },
-            });
-            results.products++;
-          }
+      session = await startRestoreSession();
+
+      for (const row of productRows) {
+        const name = normalizeString(row[EXCEL_HEADERS.name]);
+        if (!name) continue;
+
+        const existing = await withOptionalSession(Product.findOne({ tenant: tenantId, name }), session);
+        if (existing) {
+          results.products.skipped++;
+          continue;
         }
+
+        const categoryName = normalizeString(row[EXCEL_HEADERS.category]);
+        const minQuantityValue = row[EXCEL_HEADERS.minQuantity];
+
+        await createWithOptionalSession(Product, {
+          tenant: tenantId,
+          name,
+          sku: normalizeString(row.SKU),
+          barcode: normalizeString(row[EXCEL_HEADERS.barcode]),
+          categoryName: categoryName || undefined,
+          price: Math.max(0, normalizeNumber(row[EXCEL_HEADERS.salePrice])),
+          cost: Math.max(0, normalizeNumber(row[EXCEL_HEADERS.costPrice])),
+          stock: {
+            quantity: Math.max(0, normalizeNumber(row[EXCEL_HEADERS.quantity])),
+            minQuantity: minQuantityValue === '' || minQuantityValue == null ? 5 : Math.max(0, normalizeNumber(minQuantityValue)),
+          },
+        }, session);
+
+        results.products.imported++;
       }
 
-      // Restore Customers
-      const custWs = workbook.getWorksheet('العملاء');
-      if (custWs) {
-        const headers = [];
-        custWs.getRow(1).eachCell((cell, col) => { headers[col] = String(cell.value).trim(); });
-        custWs.eachRow(async (row, num) => {
-          if (num === 1) return;
-          const obj = {};
-          row.eachCell((cell, col) => { if (headers[col]) obj[headers[col]] = cell.value; });
-          const name = obj['الاسم'];
-          const phone = String(obj['الهاتف'] || '');
-          if (!name || !phone) return;
-          const existing = await Customer.findOne({ tenant: req.tenantId, phone });
-          if (!existing) {
-            await Customer.create({ tenant: req.tenantId, name, phone, email: obj['البريد'] || '', address: obj['العنوان'] || '' });
-            results.customers++;
-          }
-        });
+      for (const row of customerRows) {
+        const name = normalizeString(row[EXCEL_HEADERS.name]);
+        const phone = normalizeString(row[EXCEL_HEADERS.phone]);
+        if (!name || !phone) continue;
+
+        const existing = await withOptionalSession(Customer.findOne({ tenant: tenantId, phone }), session);
+        if (existing) {
+          results.customers.skipped++;
+          continue;
+        }
+
+        const totalPurchases = Math.max(0, normalizeNumber(row[EXCEL_HEADERS.totalPurchases]));
+        const outstandingBalance = Math.max(0, normalizeNumber(row[EXCEL_HEADERS.remaining]));
+        const points = Math.max(0, normalizeNumber(row[EXCEL_HEADERS.points]));
+        const tier = normalizeString(row[EXCEL_HEADERS.tier]);
+
+        await createWithOptionalSession(Customer, {
+          tenant: tenantId,
+          name,
+          phone,
+          email: normalizeString(row[EXCEL_HEADERS.email]) || undefined,
+          address: normalizeString(row[EXCEL_HEADERS.address]) || undefined,
+          financials: {
+            totalPurchases,
+            totalPaid: Math.max(0, totalPurchases - outstandingBalance),
+            outstandingBalance,
+          },
+          tier: tier || undefined,
+          gamification: {
+            points,
+            totalEarnedPoints: points,
+          },
+        }, session);
+
+        results.customers.imported++;
       }
 
-      fs.unlink(req.file.path, () => {});
+      for (const row of supplierRows) {
+        const name = normalizeString(row[EXCEL_HEADERS.name]);
+        const phone = normalizeString(row[EXCEL_HEADERS.phone]);
+        if (!name || !phone) continue;
 
-      ApiResponse.success(res, results, `تم استعادة البيانات بنجاح`);
+        const duplicateQuery = buildSupplierDuplicateQuery(tenantId, { name, phone });
+        const existing = duplicateQuery
+          ? await withOptionalSession(Supplier.findOne(duplicateQuery), session)
+          : null;
+
+        if (existing) {
+          results.suppliers.skipped++;
+          continue;
+        }
+
+        const totalPurchases = Math.max(0, normalizeNumber(row[EXCEL_HEADERS.supplierPurchases]));
+        const outstandingBalance = Math.max(0, normalizeNumber(row[EXCEL_HEADERS.outstandingBalance]));
+
+        await createWithOptionalSession(Supplier, {
+          tenant: tenantId,
+          name,
+          contactPerson: normalizeString(row[EXCEL_HEADERS.contactPerson]) || undefined,
+          phone,
+          email: normalizeString(row[EXCEL_HEADERS.email]) || undefined,
+          paymentTerms: normalizeString(row[EXCEL_HEADERS.paymentTerms]) || undefined,
+          financials: {
+            totalPurchases,
+            totalPaid: Math.max(0, totalPurchases - outstandingBalance),
+            outstandingBalance,
+          },
+        }, session);
+
+        results.suppliers.imported++;
+      }
+
+      if (session) {
+        await session.commitTransaction();
+        session.endSession();
+        session = null;
+      }
+
+      const summary = summarizeRestoreResults(results);
+
+      ApiResponse.success(res, {
+        ...results,
+        totalImported: summary.imported,
+        totalSkipped: summary.skipped,
+      }, '\u062A\u0645 \u0627\u0633\u062A\u0639\u0627\u062F\u0629 ' + summary.imported + ' \u0633\u062C\u0644 \u0628\u0646\u062C\u0627\u062D (\u062A\u0645 \u062A\u062E\u0637\u064A ' + summary.skipped + ' \u0645\u0643\u0631\u0631)');
     } catch (error) {
-      if (req.file?.path) require('fs').unlink(req.file.path, () => {});
+      if (session) {
+        await session.abortTransaction();
+        session.endSession();
+      }
       next(error);
+    } finally {
+      if (req.file?.path) fs.unlink(req.file.path, () => {});
     }
   }
   /**
@@ -298,22 +512,23 @@ class BackupController {
    * Restore data from JSON backup file
    */
   async restoreJSON(req, res, next) {
-    try {
-      if (!req.file) return next(AppError.badRequest('يرجى رفع ملف النسخة الاحتياطية'));
+    const fs = require('fs');
+    let session = null;
 
-      const fs = require('fs');
+    try {
+      if (!req.file) return next(AppError.badRequest('\u064A\u0631\u062C\u0649 \u0631\u0641\u0639 \u0645\u0644\u0641 \u0627\u0644\u0646\u0633\u062E\u0629 \u0627\u0644\u0627\u062D\u062A\u064A\u0627\u0637\u064A\u0629'));
+
       const raw = fs.readFileSync(req.file.path, 'utf-8');
-      fs.unlink(req.file.path, () => {});
 
       let backup;
       try {
         backup = JSON.parse(raw);
       } catch {
-        return next(AppError.badRequest('ملف JSON غير صالح'));
+        return next(AppError.badRequest('\u0645\u0644\u0641 JSON \u063A\u064A\u0631 \u0635\u0627\u0644\u062D'));
       }
 
       if (!backup.data || !backup.appName) {
-        return next(AppError.badRequest('ملف النسخة الاحتياطية غير صالح - يجب أن يكون ملف PayQusta'));
+        return next(AppError.badRequest('\u0645\u0644\u0641 \u0627\u0644\u0646\u0633\u062E\u0629 \u0627\u0644\u0627\u062D\u062A\u064A\u0627\u0637\u064A\u0629 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D - \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0645\u0644\u0641 PayQusta'));
       }
 
       const tenantId = req.tenantId;
@@ -325,91 +540,134 @@ class BackupController {
         expenses: { imported: 0, skipped: 0 },
       };
 
-      // Restore Products
+      session = await startRestoreSession();
+
       if (backup.data.products?.length) {
-        for (const p of backup.data.products) {
-          const existing = await Product.findOne({ tenant: tenantId, name: p.name });
-          if (existing) { results.products.skipped++; continue; }
-          await Product.create({
-            ...p, _id: undefined, tenant: tenantId,
-          });
+        for (const product of backup.data.products) {
+          const existing = await withOptionalSession(Product.findOne({ tenant: tenantId, name: product.name }), session);
+          if (existing) {
+            results.products.skipped++;
+            continue;
+          }
+
+          await createWithOptionalSession(Product, {
+            ...product,
+            _id: undefined,
+            tenant: tenantId,
+          }, session);
           results.products.imported++;
         }
       }
 
-      // Restore Customers
       if (backup.data.customers?.length) {
-        for (const c of backup.data.customers) {
-          const existing = await Customer.findOne({ tenant: tenantId, phone: c.phone });
-          if (existing) { results.customers.skipped++; continue; }
-          await Customer.create({
-            ...c, _id: undefined, tenant: tenantId,
-          });
+        for (const customer of backup.data.customers) {
+          const existing = await withOptionalSession(Customer.findOne({ tenant: tenantId, phone: customer.phone }), session);
+          if (existing) {
+            results.customers.skipped++;
+            continue;
+          }
+
+          await createWithOptionalSession(Customer, {
+            ...customer,
+            _id: undefined,
+            tenant: tenantId,
+          }, session);
           results.customers.imported++;
         }
       }
 
-      // Restore Suppliers
       if (backup.data.suppliers?.length) {
-        for (const s of backup.data.suppliers) {
-          const existing = await Supplier.findOne({ tenant: tenantId, name: s.name });
-          if (existing) { results.suppliers.skipped++; continue; }
-          await Supplier.create({
-            ...s, _id: undefined, tenant: tenantId,
-          });
+        for (const supplier of backup.data.suppliers) {
+          const duplicateQuery = buildSupplierDuplicateQuery(tenantId, supplier);
+          const existing = duplicateQuery
+            ? await withOptionalSession(Supplier.findOne(duplicateQuery), session)
+            : null;
+
+          if (existing) {
+            results.suppliers.skipped++;
+            continue;
+          }
+
+          await createWithOptionalSession(Supplier, {
+            ...supplier,
+            _id: undefined,
+            tenant: tenantId,
+          }, session);
           results.suppliers.imported++;
         }
       }
 
-      // Restore Invoices
       if (backup.data.invoices?.length) {
-        for (const inv of backup.data.invoices) {
-          const existing = await Invoice.findOne({ tenant: tenantId, invoiceNumber: inv.invoiceNumber });
-          if (existing) { results.invoices.skipped++; continue; }
-          // Link customer by name/phone if possible
-          let customerId = null;
-          if (inv.customer?.name) {
-            const cust = await Customer.findOne({ tenant: tenantId, name: inv.customer.name });
-            if (cust) customerId = cust._id;
+        for (const invoice of backup.data.invoices) {
+          const existing = await withOptionalSession(Invoice.findOne({ tenant: tenantId, invoiceNumber: invoice.invoiceNumber }), session);
+          if (existing) {
+            results.invoices.skipped++;
+            continue;
           }
-          await Invoice.create({
-            ...inv, _id: undefined, tenant: tenantId,
-            customer: customerId || inv.customer?._id || inv.customer,
-          });
+
+          let customerId = null;
+          if (invoice.customer?.name) {
+            const customer = await withOptionalSession(Customer.findOne({ tenant: tenantId, name: invoice.customer.name }), session);
+            if (customer) customerId = customer._id;
+          }
+
+          await createWithOptionalSession(Invoice, {
+            ...invoice,
+            _id: undefined,
+            tenant: tenantId,
+            customer: customerId || invoice.customer?._id || invoice.customer,
+          }, session);
           results.invoices.imported++;
         }
       }
 
-      // Restore Expenses
       if (backup.data.expenses?.length) {
-        for (const e of backup.data.expenses) {
-          const existing = await Expense.findOne({
+        for (const expense of backup.data.expenses) {
+          const existing = await withOptionalSession(Expense.findOne({
             tenant: tenantId,
-            description: e.description,
-            amount: e.amount,
-            date: e.date,
-          });
-          if (existing) { results.expenses.skipped++; continue; }
-          await Expense.create({
-            ...e, _id: undefined, tenant: tenantId,
-          });
+            description: expense.description,
+            amount: expense.amount,
+            date: expense.date,
+          }), session);
+
+          if (existing) {
+            results.expenses.skipped++;
+            continue;
+          }
+
+          await createWithOptionalSession(Expense, {
+            ...expense,
+            _id: undefined,
+            tenant: tenantId,
+          }, session);
           results.expenses.imported++;
         }
       }
 
-      const totalImported = Object.values(results).reduce((sum, r) => sum + r.imported, 0);
-      const totalSkipped = Object.values(results).reduce((sum, r) => sum + r.skipped, 0);
+      if (session) {
+        await session.commitTransaction();
+        session.endSession();
+        session = null;
+      }
+
+      const summary = summarizeRestoreResults(results);
 
       ApiResponse.success(res, {
         ...results,
-        totalImported,
-        totalSkipped,
-      }, `تم استعادة ${totalImported} سجل بنجاح (تم تخطي ${totalSkipped} مكرر)`);
+        totalImported: summary.imported,
+        totalSkipped: summary.skipped,
+      }, '\u062A\u0645 \u0627\u0633\u062A\u0639\u0627\u062F\u0629 ' + summary.imported + ' \u0633\u062C\u0644 \u0628\u0646\u062C\u0627\u062D (\u062A\u0645 \u062A\u062E\u0637\u064A ' + summary.skipped + ' \u0645\u0643\u0631\u0631)');
     } catch (error) {
-      if (req.file?.path) require('fs').unlink(req.file.path, () => {});
+      if (session) {
+        await session.abortTransaction();
+        session.endSession();
+      }
       next(error);
+    } finally {
+      if (req.file?.path) fs.unlink(req.file.path, () => {});
     }
   }
 }
+
 
 module.exports = new BackupController();

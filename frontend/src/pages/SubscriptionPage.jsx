@@ -1,19 +1,20 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, CreditCard, Copy, UploadCloud } from 'lucide-react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { AlertCircle, Check, CreditCard, Copy, Sparkles, UploadCloud } from 'lucide-react';
 import { api, subscriptionApi } from '../store';
 import toast from 'react-hot-toast';
-import { Modal, Button, Input, Badge } from '../components/UI';
+import { Modal, Button, Badge } from '../components/UI';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
 
 const FEATURE_TRANSLATIONS = {
   advanced_reports: 'تقارير ومبيعات متقدمة',
   pos: 'نظام نقاط البيع (POS / كاشير)',
   whatsapp_notifications: 'إرسال فواتير وإشعارات عبر واتس آب',
-  multi_branch: 'إدارة أكثر من فرع ذكياً',
+  multi_branch: 'إدارة أكثر من فرع بذكاء',
   api_access: 'ربط برمجي مع تطبيقات خارجية (API)',
   barcode_scanner: 'دعم الباركود والماسح الضوئي',
   loyalty_program: 'برنامج الولاء ونقاط العملاء',
-  customer_portal: 'بوابة إلكترونية لعملائك لتبويب الفواتير',
+  customer_portal: 'بوابة إلكترونية لعملائك لتتبع الفواتير',
   inventory_management: 'إدارة متقدمة للمخزون وجرد المستودع',
 };
 
@@ -31,10 +32,35 @@ export default function SubscriptionPage() {
   const [receiptBase64, setReceiptBase64] = useState('');
   const [isSubmittingReceipt, setIsSubmittingReceipt] = useState(false);
 
+  const location = useLocation();
+  const selectedPlanId = useMemo(() => new URLSearchParams(location.search || '').get('plan') || '', [location.search]);
+
   const enabledMethods = useMemo(
-    () => paymentMethods.filter((m) => m.available),
+    () => paymentMethods.filter((method) => method.available),
     [paymentMethods]
   );
+
+  const selectedPlan = useMemo(
+    () => plans.find((plan) => plan?._id === selectedPlanId) || null,
+    [plans, selectedPlanId]
+  );
+
+  const orderedPlans = useMemo(() => {
+    if (!selectedPlanId) return plans;
+
+    const selected = [];
+    const remaining = [];
+
+    plans.forEach((plan) => {
+      if (plan?._id === selectedPlanId) {
+        selected.push(plan);
+      } else {
+        remaining.push(plan);
+      }
+    });
+
+    return [...selected, ...remaining];
+  }, [plans, selectedPlanId]);
 
   const loadData = async () => {
     setLoading(true);
@@ -64,6 +90,19 @@ export default function SubscriptionPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (!selectedPlanId || plans.length === 0 || typeof document === 'undefined') return;
+
+    const element = document.getElementById(`subscription-plan-${selectedPlanId}`);
+    if (!element) return;
+
+    const rafId = window.requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [plans, selectedPlanId]);
+
   const handleSubscribe = async (planId) => {
     if (!selectedGateway) {
       toast.error('لا توجد طريقة دفع متاحة. تواصل مع صاحب النظام.');
@@ -88,7 +127,7 @@ export default function SubscriptionPage() {
         setManualPaymentInfo({
           ...res.data?.data,
           planId,
-          gatewayName: selectedGateway === 'instapay' ? 'إنستاباي (InstaPay)' : 'فودافون كاش',
+          gatewayName: selectedGateway === 'instapay' ? 'إنستا باي (InstaPay)' : 'فودافون كاش',
         });
       } else {
         toast.success(`تم اختيار ${selectedGateway}... جاري التحويل`);
@@ -130,9 +169,9 @@ export default function SubscriptionPage() {
       await subscriptionApi.submitReceipt({
         planId: manualPaymentInfo.planId,
         gateway: manualPaymentInfo.gateway,
-        receiptImage: receiptBase64
+        receiptImage: receiptBase64,
       });
-      toast.success('تم رفع الإيصال بنجاح. سنقوم بمراجعته وتفعيل اشتراكك قريباً.', { duration: 5000 });
+      toast.success('تم رفع الإيصال بنجاح. سنراجع الطلب ونفعل الاشتراك قريبًا.', { duration: 5000 });
       setManualPaymentInfo(null);
       setReceiptFile(null);
       setReceiptBase64('');
@@ -163,6 +202,32 @@ export default function SubscriptionPage() {
             اختر الباقة التي تناسب تطلعاتك. يمكنك الترقية أو التغيير في أي وقت بكل سهولة.
           </p>
         </div>
+
+        {selectedPlan && currentSubscription?.plan?._id !== selectedPlan._id && (
+          <div className="mt-8 max-w-4xl mx-auto rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm dark:border-amber-900/40 dark:from-amber-950/20 dark:to-gray-900">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  الباقة المختارة من الموقع
+                </div>
+                <h3 className="mt-3 text-2xl font-black text-gray-900 dark:text-white">{selectedPlan.name}</h3>
+                <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300">
+                  {selectedPlan.description || 'هذه هي الباقة التي اخترتها من صفحة الأسعار. يمكنك إكمال الاشتراك مباشرة من هنا بعد اختيار وسيلة الدفع.'}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-sm ring-1 ring-amber-100 dark:bg-gray-900 dark:ring-amber-900/30">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">السعر الحالي</p>
+                <p className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-300">
+                  {(Number(selectedPlan.price || 0)).toLocaleString('ar-EG')} {selectedPlan.currency || 'EGP'}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  {selectedPlan.billingCycle === 'yearly' ? 'خطة سنوية' : 'خطة شهرية'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {currentSubscription && (
           <div className="mt-8 max-w-4xl mx-auto bg-white/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl shadow-sm p-4 sm:p-6 border border-indigo-100 dark:border-indigo-900/30 flex flex-wrap items-center justify-between gap-4">
@@ -200,7 +265,7 @@ export default function SubscriptionPage() {
           {enabledMethods.length === 0 && (
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30">
               <AlertCircle className="w-5 h-5" />
-              <p className="text-sm font-medium">لا تتوفر طرق دفع حالياً. يرجى مراجعة الإدارة.</p>
+              <p className="text-sm font-medium">لا تتوفر طرق دفع حاليًا. يرجى مراجعة الإدارة.</p>
             </div>
           )}
 
@@ -261,35 +326,37 @@ export default function SubscriptionPage() {
         </div>
 
         <div className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 max-w-[100rem] mx-auto px-2 sm:px-4 lg:px-6 pb-24">
-          {plans.map((plan, index) => {
+          {orderedPlans.map((plan, index) => {
             const isCurrentPlan = currentSubscription?.plan?._id === plan._id;
+            const isSelectedPlan = plan._id === selectedPlanId;
             const displayPrice = billingCycle === 'yearly' ? Math.floor((plan.price || 0) * 12 * 0.8) : plan.price || 0;
-
-            // Add a special highlight for the middle plan (usually the most popular)
-            const isPopular = index === 1 || plans.length === 1;
+            const isPopular = Boolean(plan.isPopular) || (!selectedPlanId && (index === 1 || orderedPlans.length === 1));
 
             return (
               <div
+                id={`subscription-plan-${plan._id}`}
                 key={plan._id}
-                className={`relative flex flex-col rounded-2xl bg-white dark:bg-gray-800 p-5 shadow-lg ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isPopular
-                  ? 'ring-indigo-600 dark:ring-indigo-500 shadow-indigo-200 dark:shadow-indigo-900/50 md:scale-105 z-10'
-                  : 'ring-gray-200 dark:ring-gray-700'
+                className={`relative flex flex-col rounded-2xl bg-white dark:bg-gray-800 p-5 shadow-lg ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${isSelectedPlan
+                  ? 'ring-2 ring-amber-400 dark:ring-amber-300 shadow-amber-200/80 dark:shadow-amber-900/30 md:scale-[1.03] z-20'
+                  : isPopular
+                    ? 'ring-indigo-600 dark:ring-indigo-500 shadow-indigo-200 dark:shadow-indigo-900/50 md:scale-105 z-10'
+                    : 'ring-gray-200 dark:ring-gray-700'
                   }`}
               >
-                {isPopular && (
+                {(isPopular || isSelectedPlan) && (
                   <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                    <span className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
-                      الأكثر شيوعاً
+                    <span className={`rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm ${isSelectedPlan ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-indigo-500 to-purple-600'}`}>
+                      {isSelectedPlan ? 'الباقة المختارة' : 'الأكثر شيوعًا'}
                     </span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between mb-2 mt-1">
-                  <h3 className={`text-lg font-bold ${isPopular ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'}`}>
+                  <h3 className={`text-lg font-bold ${isPopular ? 'text-indigo-600 dark:text-indigo-400' : isSelectedPlan ? 'text-amber-600 dark:text-amber-300' : 'text-gray-900 dark:text-white'}`}>
                     {plan.name}
                   </h3>
-                  <div className={`p-1.5 rounded-lg ${isPopular ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                    <CreditCard className={`w-4 h-4 ${isPopular ? 'text-indigo-600' : 'text-gray-500'}`} />
+                  <div className={`p-1.5 rounded-lg ${isSelectedPlan ? 'bg-amber-100 dark:bg-amber-900/40' : isPopular ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                    <CreditCard className={`w-4 h-4 ${isSelectedPlan ? 'text-amber-600 dark:text-amber-300' : isPopular ? 'text-indigo-600' : 'text-gray-500'}`} />
                   </div>
                 </div>
 
@@ -307,7 +374,7 @@ export default function SubscriptionPage() {
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs text-gray-400">
-                    {billingCycle === 'yearly' ? 'تُدفع سنوياً (وفر 20%)' : 'تُدفع شهرياً'}
+                    {billingCycle === 'yearly' ? 'تُدفع سنويًا (وفر 20%)' : 'تُدفع شهريًا'}
                   </p>
                 </div>
 
@@ -349,8 +416,8 @@ export default function SubscriptionPage() {
                     {(plan.features || []).map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <div className="flex-shrink-0 mt-0.5 relative">
-                          <div className={`absolute inset-0 blur-sm rounded-full ${isPopular ? 'bg-indigo-400' : 'bg-gray-300'}`}></div>
-                          <Check className={`relative h-4 w-4 ${isPopular ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`} />
+                          <div className={`absolute inset-0 blur-sm rounded-full ${isSelectedPlan ? 'bg-amber-300' : isPopular ? 'bg-indigo-400' : 'bg-gray-300'}`}></div>
+                          <Check className={`relative h-4 w-4 ${isSelectedPlan ? 'text-amber-600 dark:text-amber-300' : isPopular ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`} />
                         </div>
                         <p className="text-xs font-medium text-gray-700 dark:text-gray-200 leading-snug">
                           {FEATURE_TRANSLATIONS[feature] || feature}
@@ -365,9 +432,11 @@ export default function SubscriptionPage() {
                   onClick={() => handleSubscribe(plan._id)}
                   className={`mt-5 block w-full py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 ${isCurrentPlan
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 cursor-not-allowed shadow-none'
-                    : isPopular
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-md hover:shadow-indigo-500/30'
-                      : 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-white hover:shadow-md'
+                    : isSelectedPlan
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:shadow-md hover:shadow-amber-500/30'
+                      : isPopular
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 hover:shadow-md hover:shadow-indigo-500/30'
+                        : 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-white hover:shadow-md'
                     }`}
                 >
                   {isProcessing === plan._id ? (
@@ -375,7 +444,7 @@ export default function SubscriptionPage() {
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                       جاري التوجيه...
                     </span>
-                  ) : isCurrentPlan ? 'باقتك الحالية' : 'اشترك الآن'}
+                  ) : isCurrentPlan ? 'باقتك الحالية' : isSelectedPlan ? 'أكمل هذه الباقة' : 'اشترك الآن'}
                 </button>
               </div>
             );
@@ -439,7 +508,7 @@ export default function SubscriptionPage() {
                     <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
                       <UploadCloud className="w-8 h-8" />
                       <span className="text-sm font-medium">اضغط لاختيار صورة الإيصال</span>
-                      <span className="text-xs">يدعم: JPG, PNG, WEBP (بحد أقصى 5 م.ب)</span>
+                      <span className="text-xs">يدعم: JPG, PNG, WEBP (بحد أقصى 20 م.ب)</span>
                     </div>
                   )}
                   <input

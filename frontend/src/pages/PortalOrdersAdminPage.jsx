@@ -38,6 +38,8 @@ export default function PortalOrdersAdminPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState(null);
+    const [shippingActionId, setShippingActionId] = useState(null);
+    const [refundActionId, setRefundActionId] = useState(null);
     const [selected, setSelected] = useState(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -70,6 +72,21 @@ export default function PortalOrdersAdminPage() {
     useEffect(() => { load(); }, [load]);
     useEffect(() => { setPage(1); }, [statusFilter, search]);
 
+    const refreshSelectedOrder = useCallback(async (orderId) => {
+        if (!orderId) return;
+        try {
+            const res = await api.get(`/invoices/${orderId}`);
+            setSelected(res.data?.data || null);
+        } catch {
+            // Keep current modal data if refresh fails.
+        }
+    }, []);
+
+    const openOrderDetails = async (order) => {
+        setSelected(order);
+        await refreshSelectedOrder(order._id);
+    };
+
     const updateStatus = async (orderId, newStatus) => {
         setUpdatingId(orderId);
         try {
@@ -83,6 +100,55 @@ export default function PortalOrdersAdminPage() {
             notify.error('فشل تحديث الحالة');
         } finally {
             setUpdatingId(null);
+        }
+    };
+
+    const createShipment = async (orderId) => {
+        const busyKey = `create:${orderId}`;
+        setShippingActionId(busyKey);
+        try {
+            const res = await api.post(`/invoices/${orderId}/shipping/bosta`, {});
+            notify.success(`تم إنشاء الشحنة: ${res.data?.data?.waybillNumber || 'تم بنجاح'}`);
+            await load();
+            await refreshSelectedOrder(orderId);
+        } catch (err) {
+            notify.error(err.response?.data?.message || 'فشل إنشاء الشحنة');
+        } finally {
+            setShippingActionId(null);
+        }
+    };
+
+    const syncShipment = async (orderId) => {
+        const busyKey = `track:${orderId}`;
+        setShippingActionId(busyKey);
+        try {
+            const res = await api.get(`/invoices/${orderId}/shipping/bosta/track`);
+            notify.success(`تم تحديث الشحنة إلى: ${res.data?.data?.status || 'نجح التحديث'}`);
+            await load();
+            await refreshSelectedOrder(orderId);
+        } catch (err) {
+            notify.error(err.response?.data?.message || 'فشل تحديث حالة الشحنة');
+        } finally {
+            setShippingActionId(null);
+        }
+    };
+
+    const processRefund = async (orderId) => {
+        setRefundActionId(orderId);
+        try {
+            const res = await api.post(`/invoices/${orderId}/refund`, {});
+            const refund = res.data?.data?.refund || {};
+            if (refund.executedAmount > 0) {
+                notify.success(`تم تنفيذ استرداد بقيمة ${fmt(refund.executedAmount)} ج.م`);
+            } else {
+                notify.success(res.data?.message || 'تم تحديث حالة الاسترداد');
+            }
+            await load();
+            await refreshSelectedOrder(orderId);
+        } catch (err) {
+            notify.error(err.response?.data?.message || 'فشل تنفيذ الاسترداد');
+        } finally {
+            setRefundActionId(null);
         }
     };
 
@@ -211,7 +277,7 @@ export default function PortalOrdersAdminPage() {
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
-                                                        onClick={() => setSelected(order)}
+                                                        onClick={() => openOrderDetails(order)}
                                                         className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition"
                                                         title="عرض التفاصيل"
                                                     >
@@ -229,7 +295,29 @@ export default function PortalOrdersAdminPage() {
                                                                 : <CheckCircle className="w-4 h-4" />}
                                                         </button>
                                                     )}
-                                                    {order.orderStatus !== 'cancelled' && order.orderStatus !== 'delivered' && (
+                                                    {!order.shippingDetails?.waybillNumber && order.orderStatus !== 'cancelled' ? (
+                                                        <button
+                                                            onClick={() => createShipment(order._id)}
+                                                            disabled={shippingActionId === `create:${order._id}`}
+                                                            className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition disabled:opacity-50"
+                                                            title="إنشاء شحنة"
+                                                        >
+                                                            {shippingActionId === `create:${order._id}`
+                                                                ? <RefreshCw className="w-4 h-4 animate-spin" />
+                                                                : <Truck className="w-4 h-4" />}
+                                                        </button>
+                                                    ) : null}
+                                                    {order.shippingDetails?.waybillNumber ? (
+                                                        <button
+                                                            onClick={() => syncShipment(order._id)}
+                                                            disabled={shippingActionId === `track:${order._id}`}
+                                                            className="p-2 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 transition disabled:opacity-50"
+                                                            title="تحديث الشحنة"
+                                                        >
+                                                            <RefreshCw className={`w-4 h-4 ${shippingActionId === `track:${order._id}` ? 'animate-spin' : ''}`} />
+                                                        </button>
+                                                    ) : null}
+                                                    {['pending', 'confirmed', 'processing'].includes(order.orderStatus) && (
                                                         <button
                                                             onClick={() => updateStatus(order._id, 'cancelled')}
                                                             className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 transition"
@@ -266,6 +354,35 @@ export default function PortalOrdersAdminPage() {
                                     {updatingId === selected._id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4" /> تحديث إلى: {STATUS_CONFIG[NEXT_STATUS[selected.orderStatus]]?.label}</>}
                                 </button>
                             )}
+                            {!selected.shippingDetails?.waybillNumber && selected.orderStatus !== 'cancelled' ? (
+                                <button
+                                    onClick={() => createShipment(selected._id)}
+                                    disabled={shippingActionId === `create:${selected._id}`}
+                                    className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {shippingActionId === `create:${selected._id}` ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Truck className="w-4 h-4" /> إنشاء شحنة</>}
+                                </button>
+                            ) : null}
+                            {selected.shippingDetails?.waybillNumber ? (
+                                <button
+                                    onClick={() => syncShipment(selected._id)}
+                                    disabled={shippingActionId === `track:${selected._id}`}
+                                    className="px-4 py-2 rounded-xl bg-violet-500 text-white text-sm font-bold hover:bg-violet-600 transition disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${shippingActionId === `track:${selected._id}` ? 'animate-spin' : ''}`} />
+                                    تحديث الشحنة
+                                </button>
+                            ) : null}
+                            {selected.refundStatus && ['pending', 'partially_refunded', 'failed'].includes(selected.refundStatus) && Number(selected.refundAmount || 0) > 0 ? (
+                                <button
+                                    onClick={() => processRefund(selected._id)}
+                                    disabled={refundActionId === selected._id}
+                                    className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${refundActionId === selected._id ? 'animate-spin' : ''}`} />
+                                    معالجة الاسترداد
+                                </button>
+                            ) : null}
                         </div>
 
                         {/* Customer & Shipping */}
@@ -287,8 +404,68 @@ export default function PortalOrdersAdminPage() {
                                         <div className="flex justify-between"><span className="text-gray-400 flex-shrink-0">العنوان</span><span className="font-bold text-left max-w-[60%]">{selected.shippingAddress.address}</span></div>
                                         {selected.shippingAddress.notes && <div className="flex justify-between"><span className="text-gray-400">ملاحظات</span><span className="text-gray-600 dark:text-gray-400 text-left max-w-[60%]">{selected.shippingAddress.notes}</span></div>}
                                     </div>
-                                ) : <p className="text-xs text-gray-400">لا توجد بيانات توصيل</p>}
+                                ) : (
+                                    <EmptyState
+                                        icon={MapPin}
+                                        title="لا توجد بيانات توصيل"
+                                        description="لم يتم تسجيل عنوان أو تفاصيل شحن لهذا الطلب بعد."
+                                        className="py-4"
+                                    />
+                                )}
                             </div>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                                <h4 className="font-bold text-xs text-gray-400 uppercase mb-3 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> حالة الشحن</h4>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between"><span className="text-gray-400">وسيلة الشحن</span><span className="font-bold">{selected.shippingMethod || '—'}</span></div>
+                                    <div className="flex justify-between"><span className="text-gray-400">رقم التتبع</span><span className="font-bold" dir="ltr">{selected.trackingNumber || selected.shippingDetails?.waybillNumber || '—'}</span></div>
+                                    <div className="flex justify-between"><span className="text-gray-400">حالة شركة الشحن</span><span className="font-bold">{selected.shippingDetails?.status || '—'}</span></div>
+                                    <div className="flex justify-between"><span className="text-gray-400">موعد متوقع</span><span className="font-bold">{selected.estimatedDeliveryDate ? new Date(selected.estimatedDeliveryDate).toLocaleDateString('ar-EG') : '—'}</span></div>
+                                </div>
+                                {selected.shippingDetails?.trackingUrl ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => window.open(selected.shippingDetails.trackingUrl, '_blank', 'noopener,noreferrer')}
+                                        className="mt-4 w-full rounded-xl border border-primary-200 bg-white px-4 py-2 text-sm font-bold text-primary-700 transition hover:border-primary-300 hover:bg-primary-50 dark:border-primary-800 dark:bg-gray-900 dark:text-primary-300"
+                                    >
+                                        فتح رابط التتبع
+                                    </button>
+                                ) : null}
+                            </div>
+                            {(selected.refundStatus && selected.refundStatus !== 'none') || selected.cancelReason ? (
+                                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                                    <h4 className="font-bold text-xs text-gray-400 uppercase mb-3">الاسترداد والإلغاء</h4>
+                                    <div className="space-y-2 text-sm">
+                                        {selected.refundStatus && selected.refundStatus !== 'none' ? (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">حالة الاسترداد</span>
+                                                <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                                                    {selected.refundStatus === 'pending'
+                                                        ? 'قيد المعالجة'
+                                                        : selected.refundStatus === 'partially_refunded'
+                                                            ? 'تم رد جزء من المبلغ'
+                                                            : selected.refundStatus === 'refunded'
+                                                                ? 'تم رد المبلغ'
+                                                                : selected.refundStatus === 'failed'
+                                                                    ? 'فشل الاسترداد'
+                                                                    : selected.refundStatus}
+                                                </span>
+                                            </div>
+                                        ) : null}
+                                        {Number(selected.refundAmount || 0) > 0 ? (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">المبلغ المطلوب رده</span>
+                                                <span className="font-bold">{fmt(selected.refundAmount)} ج.م</span>
+                                            </div>
+                                        ) : null}
+                                        {selected.cancelReason ? (
+                                            <div className="flex justify-between gap-3">
+                                                <span className="text-gray-400 flex-shrink-0">سبب الإلغاء</span>
+                                                <span className="font-bold text-left max-w-[60%]">{selected.cancelReason}</span>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
 
                         {/* Items */}

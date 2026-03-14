@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Zap, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Zap, Eye, EyeOff, Sun, Moon, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuthStore, useThemeStore } from '../store';
+import { api, useAuthStore, useThemeStore } from '../store';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
+
+function formatPlanPrice(plan) {
+  const price = Number(plan?.price || 0);
+  if (price <= 0) return 'مجانًا';
+  return `${price.toLocaleString('ar-EG')} ${plan?.currency || 'EGP'}`;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,11 +17,18 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [registerData, setRegisterData] = useState({ name: '', storeName: '', phone: '' });
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [loadingSelectedPlan, setLoadingSelectedPlan] = useState(false);
 
   const { login, register, loading } = useAuthStore();
   const { dark, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const selectedPlanId = useMemo(() => {
+    const params = new URLSearchParams(location.search || '');
+    return params.get('plan') || '';
+  }, [location.search]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search || '');
@@ -35,18 +48,52 @@ export default function LoginPage() {
     }
   }, [location.search]);
 
+  useEffect(() => {
+    let ignore = false;
+
+    if (!selectedPlanId) {
+      setSelectedPlan(null);
+      setLoadingSelectedPlan(false);
+      return () => {
+        ignore = true;
+      };
+    }
+
+    setLoadingSelectedPlan(true);
+    api.get('/plans')
+      .then(({ data }) => {
+        if (ignore) return;
+        const plans = Array.isArray(data?.data) ? data.data : [];
+        setSelectedPlan(plans.find((plan) => plan?._id === selectedPlanId) || null);
+      })
+      .catch(() => {
+        if (!ignore) setSelectedPlan(null);
+      })
+      .finally(() => {
+        if (!ignore) setLoadingSelectedPlan(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedPlanId]);
+
+  const getPostAuthPath = () => {
+    if (!selectedPlanId) return '/';
+    return `/subscriptions?plan=${encodeURIComponent(selectedPlanId)}`;
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
-      toast.success('تم تسجيل الدخول بنجاح! 🎉');
+      toast.success('تم تسجيل الدخول بنجاح!');
 
-      // Get role from store or response (login updates store)
       const { user } = useAuthStore.getState();
       if (user?.isSuperAdmin) {
         navigate('/admin/dashboard');
       } else {
-        navigate('/');
+        navigate(getPostAuthPath());
       }
     } catch (err) {
       toast.error(err.message || 'خطأ في تسجيل الدخول');
@@ -63,8 +110,8 @@ export default function LoginPage() {
         password,
         storeName: registerData.storeName,
       });
-      toast.success('تم إنشاء الحساب بنجاح! 🎉');
-      navigate('/');
+      toast.success('تم إنشاء الحساب بنجاح!');
+      navigate(getPostAuthPath());
     } catch (err) {
       toast.error(err.message || 'خطأ في إنشاء الحساب');
     }
@@ -74,21 +121,54 @@ export default function LoginPage() {
     <div className={`min-h-screen flex items-center justify-center p-5 ${dark ? 'dark' : ''}`}>
       <div className="fixed inset-0 bg-gradient-to-br from-primary-100 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-primary-950" />
 
-      {/* Decorative blobs */}
       <div className="fixed top-10 right-10 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl" />
       <div className="fixed bottom-10 left-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
 
       <div className="relative w-full max-w-md animate-slide-up">
-        {/* Logo */}
         <div className="text-center mb-8 flex flex-col items-center">
-          <AnimatedBrandLogo src="/logo.png" alt="PayQusta Logo" size="lg" containerClassName="mb-4" />
+          <AnimatedBrandLogo src="/logo-square.png" alt="PayQusta Logo" size="lg" containerClassName="mb-4" />
           <h1 className="text-3xl font-black text-gray-900 dark:text-white mt-2">
             Pay<span className="text-primary-500">Qusta</span>
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">نظام إدارة المبيعات والأقساط الذكي</p>
         </div>
 
-        {/* Form Card */}
+        {(selectedPlanId || loadingSelectedPlan) && (
+          <div className="mb-4 rounded-3xl border border-primary-100 bg-white/95 p-4 shadow-lg shadow-primary-500/10 dark:border-primary-900/40 dark:bg-gray-900/95">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-primary-50 p-2 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-primary-600 dark:text-primary-300">الباقة المختارة</p>
+                {loadingSelectedPlan ? (
+                  <p className="mt-2 text-sm font-semibold text-gray-500 dark:text-gray-400">جارٍ تحميل تفاصيل الباقة...</p>
+                ) : selectedPlan ? (
+                  <>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <h2 className="text-lg font-black text-gray-900 dark:text-white">{selectedPlan.name}</h2>
+                      <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-black text-primary-700 dark:bg-primary-900/30 dark:text-primary-200">
+                        {formatPlanPrice(selectedPlan)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                      {selectedPlan.description || 'سننقلك مباشرة إلى صفحة الاشتراك بعد إتمام الدخول أو إنشاء الحساب.'}
+                    </p>
+                    <div className="mt-3 flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span>بعد المتابعة سنفتح لك صفحة الاشتراك على هذه الباقة مباشرة.</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                    تم التقاط اختيار الباقة، وسنوجهك إلى صفحة الاشتراكات بعد المتابعة لإكمال الدفع أو التفعيل.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl dark:shadow-2xl border border-gray-100 dark:border-gray-800 p-8">
           <form onSubmit={isRegister ? handleRegister : handleLogin}>
             {isRegister && (
@@ -196,7 +276,11 @@ export default function LoginPage() {
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   جاري المعالجة...
                 </span>
-              ) : isRegister ? 'إنشاء حساب جديد' : 'تسجيل الدخول'}
+              ) : isRegister ? (
+                selectedPlanId ? 'إنشاء الحساب والمتابعة للباقات' : 'إنشاء حساب جديد'
+              ) : (
+                selectedPlanId ? 'تسجيل الدخول والمتابعة' : 'تسجيل الدخول'
+              )}
             </button>
           </form>
 
@@ -210,7 +294,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Theme toggle */}
         <div className="text-center mt-5">
           <button
             onClick={toggleTheme}

@@ -25,6 +25,15 @@ const logger = require('./src/utils/logger');
 const routes = require('./src/routes');
 const swaggerSpec = require('./src/config/swagger');
 const swaggerUi = require('swagger-ui-express');
+const { sendWebhook } = require('./src/utils/webhook');
+const { registerOperationalRoutes } = require('./src/ops/registerOperationalRoutes');
+const {
+  startStartupTask,
+  completeStartupTask,
+  failStartupTask,
+  skipStartupTask,
+  setServerListening,
+} = require('./src/ops/runtimeState');
 
 // Import scheduled jobs
 const InstallmentScheduler = require('./src/jobs/InstallmentScheduler');
@@ -60,9 +69,18 @@ class PayQustaServer {
    * Connect to MongoDB
    */
   async _connectDatabase() {
+    startStartupTask('database_connection', {
+      description: 'Primary MongoDB connection',
+      blocking: true,
+    });
     await connectDB();
+    completeStartupTask('database_connection');
 
     // One-time Data Migration: Clear legacy whatsapp string fields
+    startStartupTask('legacy_whatsapp_migration', {
+      description: 'Normalize legacy WhatsApp fields',
+      blocking: false,
+    });
     try {
       const Customer = require('./src/models/Customer');
       const Tenant = require('./src/models/Tenant');
@@ -83,28 +101,49 @@ class PayQustaServer {
       );
 
       logger.info('✅ Data migration for WhatsApp fields completed');
+      completeStartupTask('legacy_whatsapp_migration');
     } catch (err) {
       logger.error(`❌ Data migration failed: ${err.message}`);
+      failStartupTask('legacy_whatsapp_migration', err);
     }
 
+    startStartupTask('product_identifier_indexes', {
+      description: 'Ensure partial unique product identifier indexes',
+      blocking: false,
+    });
     try {
       await ensureIdentifierIndexes({ logger });
+      completeStartupTask('product_identifier_indexes');
     } catch (err) {
       logger.error(`[PRODUCT_IDENTIFIER_INDEX] Migration failed: ${err.message}`);
+      failStartupTask('product_identifier_indexes', err);
     }
 
     this._scheduleLocalUploadMigration();
   }
 
   _scheduleLocalUploadMigration() {
+    startStartupTask('local_upload_migration', {
+      description: 'Optional local upload migration',
+      blocking: false,
+    });
+
     if (!shouldRunLocalUploadMigration()) {
+      skipStartupTask('local_upload_migration', {
+        reason: 'disabled',
+      });
       return;
     }
+
+    completeStartupTask('local_upload_migration', {
+      mode: 'deferred',
+    });
 
     setImmediate(() => {
       migrateLocalUploadsToDatabase({ logger })
         .catch((error) => {
           logger.error(`[UPLOAD_MIGRATION] Failed during startup: ${error.message}`);
+          sendWebhook('Upload migration failed', error.message, 'error').catch(() => {});
         });
     });
   }
@@ -175,16 +214,7 @@ class PayQustaServer {
    * Configure API routes
    */
   _configureRoutes() {
-    // Health check
-    this.app.get('/api/health', (req, res) => {
-      res.json({
-        success: true,
-        message: 'PayQusta API is running',
-        version: '1.0.0',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-      });
-    });
+    registerOperationalRoutes(this.app);
 
     // Swagger API Documentation
     this.app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -255,12 +285,14 @@ class PayQustaServer {
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (err) => {
       logger.error(`Unhandled Rejection: ${err.message}`);
+      sendWebhook('Unhandled rejection', err.message, 'error').catch(() => {});
       this.server.close(() => process.exit(1));
     });
 
     // Handle uncaught exceptions
     process.on('uncaughtException', (err) => {
       logger.error(`Uncaught Exception: ${err.message}`);
+      sendWebhook('Uncaught exception', err.message, 'error').catch(() => {});
       process.exit(1);
     });
 
@@ -277,6 +309,11 @@ class PayQustaServer {
    * Start scheduled background jobs
    */
   _startScheduledJobs() {
+    startStartupTask('scheduled_jobs', {
+      description: 'Register recurring background jobs',
+      blocking: false,
+    });
+
     const installmentScheduler = new InstallmentScheduler();
     installmentScheduler.start();
 
@@ -287,6 +324,9 @@ class PayQustaServer {
     productTrends.start();
 
     logger.info('✅ Scheduled jobs started');
+    completeStartupTask('scheduled_jobs', {
+      registeredJobs: 5,
+    });
   }
 
   /**
@@ -296,6 +336,8 @@ class PayQustaServer {
     await this.initialize();
 
     this.server = this.app.listen(this.port, () => {
+      setServerListening({ port: this.port });
+
       logger.info(`
 ╔══════════════════════════════════════════════╗
 ║         🚀 PayQusta Server Started           ║
@@ -317,6 +359,8 @@ class PayQustaServer {
 const server = new PayQustaServer();
 server.start().catch((err) => {
   logger.error(`Failed to start server: ${err.message}`);
+  failStartupTask('database_connection', err);
+  sendWebhook('Server startup failed', err.message, 'error').catch(() => {});
   process.exit(1);
 });
 

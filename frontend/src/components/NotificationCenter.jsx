@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../store';
 import toast from 'react-hot-toast';
+import { EmptyState, LoadingSpinner } from './UI';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -146,14 +147,19 @@ const NotificationCenter = ({ isOpen, onClose }) => {
           {/* Notifications List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              </div>
+              <LoadingSpinner
+                size="lg"
+                text="جاري تحميل الإشعارات..."
+                className="h-full"
+              />
             ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <Bell size={48} className="mb-3 opacity-50" />
-                <p>لا توجد إشعارات</p>
-              </div>
+              <EmptyState
+                icon={Bell}
+                title="لا توجد إشعارات"
+                description={filter === 'unread' ? 'لا توجد إشعارات غير مقروءة حاليًا.' : 'ستظهر إشعاراتك هنا بمجرد وجود نشاط جديد.'}
+                action={filter === 'unread' ? { label: 'عرض الكل', onClick: () => setFilter('all') } : null}
+                className="h-full py-0"
+              />
             ) : (
               notifications.map((notification) => (
                 <motion.div

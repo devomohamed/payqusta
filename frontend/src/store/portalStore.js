@@ -416,9 +416,10 @@ export const usePortalStore = create((set, get) => ({
   },
 
   // Checkout (place order with shipping details)
-  checkout: async (items, shippingAddress, notes, signature, couponCode, paymentMethod, months) => {
+  checkout: async (items, shippingAddress, shippingSummary, notes, signature, couponCode, paymentMethod, months) => {
     try {
       const body = { items, shippingAddress, notes, signature, paymentMethod, months };
+      if (shippingSummary) body.shippingSummary = shippingSummary;
       if (couponCode) body.couponCode = couponCode;
       const res = await portalApi.post('/portal/cart/checkout', body);
       return { success: true, data: res.data.data, message: res.data.message };

@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const subscriptionController = require('../controllers/subscriptionController');
 const { protect, authorize } = require('../middleware/auth');
+const { webhookLimiter } = require('../middleware/security');
 
 // Public Webhooks (No auth required, relies on gateway signature verification inside)
-router.post('/webhook/:gateway', subscriptionController.handleWebhook);
+router.post('/webhook/:gateway', webhookLimiter, subscriptionController.handleWebhook);
 
 // Protected routes for Vendors
 router.use(protect);

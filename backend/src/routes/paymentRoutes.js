@@ -8,7 +8,7 @@ const router = express.Router();
 const paymentController = require('../controllers/paymentController');
 const { protect, authorize } = require('../middleware/auth');
 
-// Apply authentication to all routes
+// Apply authentication to all remaining routes
 router.use(protect);
 
 // Get available gateways
@@ -28,11 +28,5 @@ router.get('/analytics', authorize('admin'), paymentController.getAnalytics);
 
 // Refund transaction (admin only)
 router.post('/transactions/:id/refund', authorize('admin'), paymentController.refund);
-
-// Webhooks (no auth required - verified by HMAC)
-router.post('/webhook/paymob', paymentController.paymobWebhook);
-router.post('/webhook/fawry', paymentController.fawryWebhook);
-router.post('/webhook/vodafone', paymentController.vodafoneWebhook);
-router.post('/webhook/instapay', paymentController.instapayWebhook);
 
 module.exports = router;

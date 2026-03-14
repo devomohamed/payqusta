@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import ReactPlayer from 'react-player';
 import { Camera, Plus, Trash2, Edit, Save, ExternalLink, RefreshCw, X, Video } from 'lucide-react';
 import { Button, Input, Card, Modal, EmptyState, LoadingSpinner } from '../components/UI';
+import LazyStreamPlayer from '../components/LazyStreamPlayer';
 import toast from 'react-hot-toast';
 import { api } from '../store';
 import { confirm } from '../components/ConfirmDialog';
@@ -120,7 +120,7 @@ export default function CamerasPage() {
                     allowFullScreen
                   />
                 ) : (
-                  <ReactPlayer
+                  <LazyStreamPlayer
                     url={cam.url}
                     width="100%"
                     height="100%"

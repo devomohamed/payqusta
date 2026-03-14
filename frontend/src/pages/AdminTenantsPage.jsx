@@ -231,7 +231,14 @@ export default function AdminTenantsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4" className="p-4 text-center text-gray-500">لا توجد فروع مسجلة</td>
+                          <td colSpan="4" className="p-4">
+                            <EmptyState
+                              icon={Building2}
+                              title="لا توجد فروع مسجلة"
+                              description="لم يتم إضافة أي فروع لهذا المتجر حتى الآن."
+                              className="py-4"
+                            />
+                          </td>
                         </tr>
                       )}
                     </tbody>

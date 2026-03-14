@@ -177,7 +177,16 @@ export default function CashDrawerPage() {
                    </thead>
                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                      {history.length === 0 ? (
-                       <tr><td colSpan="6" className="p-8 text-center text-gray-500">لا يوجد سجل سابق</td></tr>
+                       <tr>
+                         <td colSpan="6" className="p-4">
+                           <EmptyState
+                             icon={History}
+                             title="لا يوجد سجل سابق"
+                             description="ستظهر الورديات المغلقة السابقة هنا بمجرد إتمام أول وردية."
+                             className="py-4"
+                           />
+                         </td>
+                       </tr>
                      ) : history.map(shift => (
                        <tr key={shift._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                          <td className="p-4">{new Date(shift.startTime).toLocaleDateString('ar-EG')}</td>

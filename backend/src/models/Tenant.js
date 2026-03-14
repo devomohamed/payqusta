@@ -112,6 +112,34 @@ const tenantSchema = new mongoose.Schema(
         storefrontBarcodeSearchEnabled: { type: Boolean, default: false },
         localBarcodeCounter: { type: Number, default: 0, min: 0 },
       },
+      shipping: {
+        enabled: { type: Boolean, default: false },
+        provider: {
+          type: String,
+          enum: ['none', 'local', 'bosta', 'aramex', 'manual'],
+          default: 'local',
+        },
+        providerDisplayName: { type: String, default: 'شحن محلي' },
+        apiKey: { type: String, default: '' },
+        defaultMethodName: { type: String, default: 'توصيل قياسي' },
+        supportsCashOnDelivery: { type: Boolean, default: true },
+        autoCreateShipment: { type: Boolean, default: false },
+        baseFee: { type: Number, default: 0, min: 0 },
+        freeShippingThreshold: { type: Number, default: 0, min: 0 },
+        estimatedDaysMin: { type: Number, default: 1, min: 0 },
+        estimatedDaysMax: { type: Number, default: 3, min: 0 },
+        originGovernorate: { type: String, default: '' },
+        originCity: { type: String, default: '' },
+        warehouseAddress: { type: String, default: '' },
+        zones: [{
+          code: { type: String, default: '' },
+          label: { type: String, default: '' },
+          fee: { type: Number, default: 0, min: 0 },
+          estimatedDaysMin: { type: Number, default: 0, min: 0 },
+          estimatedDaysMax: { type: Number, default: 0, min: 0 },
+          isActive: { type: Boolean, default: true },
+        }],
+      },
       installments: {
         enabled: { type: Boolean, default: true },
         installmentConfigs: [{
@@ -223,7 +251,6 @@ const tenantSchema = new mongoose.Schema(
 // Indexes
 tenantSchema.index({ owner: 1 });
 tenantSchema.index({ 'subscription.status': 1 });
-tenantSchema.index({ customDomain: 1 }, { unique: true, sparse: true });
 
 // Pre-save Migration: Handle legacy data
 tenantSchema.pre('save', function (next) {

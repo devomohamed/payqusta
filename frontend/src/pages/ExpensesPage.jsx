@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
 import { expensesApi } from '../store';
-import { Card, Button, Badge, Modal, LoadingSpinner } from '../components/UI';
+import { Card, Button, Badge, EmptyState, Modal, LoadingSpinner } from '../components/UI';
 import Pagination from '../components/Pagination';
 
 const CATEGORY_COLORS = {
@@ -173,7 +173,14 @@ export default function ExpensesPage() {
                   <Tooltip formatter={(v) => `${v.toLocaleString('ar-EG')} ج.م`} contentStyle={{ borderRadius: 12, fontSize: 11, fontFamily: 'Cairo' }} />
                 </PieChart>
               </ResponsiveContainer>
-            ) : <p className="text-xs text-gray-400 text-center py-6">لا توجد بيانات</p>}
+            ) : (
+              <EmptyState
+                icon={TrendingDown}
+                title="لا توجد بيانات"
+                description="سيظهر توزيع المصروفات هنا بعد تسجيل بيانات كافية."
+                className="py-4"
+              />
+            )}
           </Card>
           <Card className="p-4">
             <p className="text-xs text-gray-400 mb-2">أعلى الفئات</p>
@@ -209,10 +216,13 @@ export default function ExpensesPage() {
       {/* Expenses List */}
       <Card className="p-5">
         {expenses.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>لا توجد مصروفات — ابدأ بإضافة مصروف</p>
-          </div>
+          <EmptyState
+            icon={Receipt}
+            title="لا توجد مصروفات"
+            description="ابدأ بإضافة أول مصروف ليظهر السجل والتحليلات هنا."
+            action={{ label: 'إضافة مصروف', onClick: () => setShowModal(true) }}
+            className="px-4"
+          />
         ) : (
           <div className="space-y-3">
             {expenses.map((exp) => (

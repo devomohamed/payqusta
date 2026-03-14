@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
+const crypto = require('crypto');
 
 const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
   .trim()
@@ -59,6 +60,17 @@ const markCustomDomainConnected = (Tenant, tenantId) => {
       },
     }
   ).catch(() => { });
+};
+
+const safeTokenEquals = (providedToken, expectedToken) => {
+  if (!providedToken || !expectedToken) return false;
+
+  const provided = Buffer.from(String(providedToken));
+  const expected = Buffer.from(String(expectedToken));
+
+  if (provided.length !== expected.length) return false;
+
+  return crypto.timingSafeEqual(provided, expected);
 };
 
 /**
@@ -117,6 +129,33 @@ const protect = async (req, res, next) => {
     }
     next(error);
   }
+};
+
+/**
+ * Protect operational routes
+ * Allows either a configured ops bearer token or a normal authenticated vendor/admin JWT.
+ */
+const protectOps = async (req, res, next) => {
+  const authorization = String(req.headers.authorization || '').trim();
+  const opsToken = String(process.env.OPS_BEARER_TOKEN || '').trim();
+
+  if (authorization.startsWith('Bearer ') && opsToken) {
+    const providedToken = authorization.slice('Bearer '.length).trim();
+    if (safeTokenEquals(providedToken, opsToken)) {
+      req.opsAccess = true;
+      req.user = {
+        _id: null,
+        role: 'admin',
+        tenant: null,
+        isOpsToken: true,
+        isActive: true,
+      };
+      req.tenantId = null;
+      return next();
+    }
+  }
+
+  return protect(req, res, next);
 };
 
 /**
@@ -296,6 +335,5 @@ const auditLog = (action, resource) => {
   };
 };
 
-module.exports = { protect, authorize, tenantScope, publicTenantScope, auditLog };
-
+module.exports = { protect, protectOps, authorize, tenantScope, publicTenantScope, auditLog };
 

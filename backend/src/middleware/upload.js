@@ -9,6 +9,10 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const AppError = require('../utils/AppError');
+const {
+  isAllowedImageMimeType,
+  isAllowedBase64DocumentMimeType,
+} = require('../utils/fileValidation');
 
 const PRODUCT_IMAGE_UPLOAD_LIMIT = 10;
 const EDITOR_IMAGE_UPLOAD_LIMIT = 5;
@@ -276,14 +280,14 @@ const storage = multer.memoryStorage();
 
 // File filter - enhanced security
 const fileFilter = (req, file, cb) => {
-  // Check if it's an image
-  if (file.mimetype.startsWith('image/')) {
+  if (isAllowedImageMimeType(file.mimetype)) {
     file.originalname = sanitizeFilename(file.originalname);
     cb(null, true);
   } else {
-    return cb(AppError.badRequest('يرجى رفع ملفات صور فقط'), false);
+    return cb(AppError.badRequest('Only JPG, PNG, and WebP images are allowed'), false);
   }
 };
+
 
 const upload = multer({
   storage,
@@ -433,6 +437,10 @@ const processBase64Document = async (base64String, folder = 'documents') => {
   }
 
   const contentType = matches[1];
+
+  if (!isAllowedBase64DocumentMimeType(contentType)) {
+    throw new Error('Unsupported base64 document type');
+  }
   const buffer = Buffer.from(matches[2], 'base64');
 
   let ext = '.bin';
@@ -499,3 +507,5 @@ module.exports = {
   PRODUCT_IMAGE_UPLOAD_LIMIT,
   EDITOR_IMAGE_UPLOAD_LIMIT,
 };
+
+

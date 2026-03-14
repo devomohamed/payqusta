@@ -1,171 +1,130 @@
 # PayQusta Testing Strategy
 
-This project already includes `jest` and `supertest` in `backend/package.json`, but it currently has only a smoke test script in `backend/scripts/run_smoke_tests.js`.
+## Current Baseline
 
-## Current State
+The backend now has three useful layers of automated coverage:
 
-- `npm test` runs `jest --coverage`
-- No real `backend/tests` suite exists yet
-- Existing smoke coverage is limited to:
-- tenant isolation
-- invoice create + pay-all
-- coupon usage in checkout
+- `tests/unit`
+  Covers auth and permission guards without needing a real database.
+- `tests/integration`
+  Uses `supertest` against `createApp()` for lightweight API regression checks.
+- `tests/smoke`
+  Verifies key endpoints fail safely instead of throwing `500` errors.
 
-## Recommended Test Pyramid
+This baseline is intentionally focused on Phase 2 hardening work:
 
-## 1. Unit Tests
+- RBAC / permission regression coverage
+- tenant context and public tenant resolution coverage
+- auth guard behavior for protected routes
+- a CI entrypoint that can run inside GitHub Actions without MongoDB
 
-Target pure or near-pure logic.
+## Commands
 
-Priority areas:
-
-- `src/services/InvoiceService.js`
-- `src/services/GamificationService.js`
-- `src/services/ReportsService.js`
-- `src/services/PaymentGatewayService.js`
-- `src/middleware/checkPermission.js`
-- utility modules under `src/utils`
-
-Typical assertions:
-
-- totals, balances, due dates, and discounts are calculated correctly
-- permission matrices allow and deny correctly
-- invalid payloads throw `AppError`
-- helper functions handle edge cases
-
-## 2. Integration Tests
-
-Target single endpoints with real middleware and database interaction.
-
-Use `jest + supertest` against the Express app.
-
-Priority endpoints:
-
-- `POST /api/v1/auth/login`
-- `GET /api/v1/auth/me`
-- `POST /api/v1/products`
-- `POST /api/v1/customers`
-- `POST /api/v1/invoices`
-- `POST /api/v1/invoices/:id/pay`
-
-Validate:
-
-- HTTP status codes
-- response shape
-- auth and permission enforcement
-- tenant scoping
-- DB side effects
-
-## 3. End-to-End API Tests
-
-Target full business flows.
-
-Best candidates:
-
-- auth -> product -> customer -> invoice -> payment
-- portal checkout with coupon
-- supplier purchase and settlement
-- admin tenant lifecycle
-- import and backup workflows
-
-## Test Environment Rules
-
-## Database
-
-- Use a dedicated test database, never production or development.
-- Recommended environment variable: `MONGO_URI_TEST`
-- Clear only test data between tests.
-- Seed minimum fixtures per suite.
-
-## Isolation
-
-- One suite should not depend on another suite’s data.
-- Create fresh users, tenants, products, and customers inside each suite or shared setup.
-- Clean up with `afterEach` or `afterAll`.
-
-## Authentication
-
-- Prefer logging in through the API to get a real JWT.
-- Only mock auth when you are explicitly unit-testing controller internals.
-
-## External Integrations
-
-Mock these in unit/integration tests:
-
-- WhatsApp
-- email sending
-- OCR
-- payment gateways
-- file storage
-
-For E2E, keep them disabled or redirected to sandbox endpoints.
-
-## Suggested Test Layout
-
-```text
-backend/
-  tests/
-    setup.js
-    helpers/
-      factory.js
-      auth.js
-    unit/
-      invoice-service.test.js
-      permissions.test.js
-    integration/
-      auth.test.js
-      products.test.js
-      invoices.test.js
-    e2e/
-      sales-flow.test.js
-      portal-checkout.test.js
-      admin-tenant-lifecycle.test.js
-```
-
-## How To Run
-
-## Unit/Integration
+Run from `backend/`:
 
 ```bash
-cd backend
-npm test
+npm run test:unit
+npm run test:integration
+npm run test:ci
+npm run test:e2e
+npm run test:smoke
 ```
 
-## Smoke Script
+Command intent:
 
-```bash
-cd backend
-node scripts/run_smoke_tests.js
-```
+- `test:unit`
+  Fast guard-level regression tests.
+- `test:integration`
+  App-level API checks using the Express app factory.
+- `test:ci`
+  The default GitHub Actions command. Runs unit + integration suites without coverage overhead.
+- `test:e2e`
+  Runs DB-backed end-to-end suites. Requires `TEST_MONGODB_URI`.
+- `test`
+  Full Jest run with coverage for local deeper inspection.
 
-## Focused Jest Run
+## CI Workflow
 
-```bash
-cd backend
-npx jest tests/integration/auth.test.js --runInBand
-```
+GitHub Actions workflow:
 
-## What Good Coverage Looks Like
+- `.github/workflows/backend-ci.yml`
 
-Minimum high-value coverage:
+What it does:
 
-- auth success + auth failure
-- protected route unauthorized
-- protected route forbidden
-- CRUD success path for products and customers
-- invoice create, partial payment, full payment
-- tenant isolation on reads and writes
-- validation failures for malformed payloads
-- webhook signature or payload rejection paths
+- installs backend dependencies with `npm ci`
+- installs frontend dependencies with `npm ci`
+- runs on `push` to `main`/`master`
+- runs on `pull_request`
+- executes `npm run test:ci`
+- executes the frontend production build
 
-## Known Structural Limitation
+CI environment variables are kept minimal on purpose:
 
-`backend/server.js` starts the server on import. That makes testing harder because `supertest` works best when it can import an Express app without opening a port.
+- `NODE_ENV=test`
+- `JWT_SECRET`
+- `JWT_EXPIRE`
+- `PLATFORM_ROOT_DOMAIN`
 
-To fix that cleanly:
+The current CI flow does not require a live MongoDB instance because the covered suites avoid DB-dependent business flows.
 
-- build the app in a separate module
-- let `server.js` only start listening when run directly
-- let tests import the app factory
+## DB-Backed E2E Mode
 
-This repo now includes a starter `createApp` factory to support that pattern.
+The E2E layer now supports real database execution for the highest-value business flow:
+
+- vendor login
+- customer creation
+- invoice creation
+- partial payment
+- pay-all settlement
+- DB-backed tenant isolation verification
+
+Required environment:
+
+- `TEST_MONGODB_URI`
+- optional `TEST_MONGODB_DB_NAME` (defaults to `payqusta_e2e`)
+
+If `TEST_MONGODB_URI` is not set, the DB-backed suite is skipped safely.
+
+## What Is Covered Now
+
+- missing / invalid bearer token handling
+- disabled-user rejection in auth middleware
+- tenant scoping for protected routes
+- public tenant resolution via header or store subdomain
+- default role permission enforcement
+- custom role permission lookup
+- admin full-access behavior
+- lightweight health + malformed login API regression
+- guest order confirmation and guest order tracking regression
+- Bosta shipping webhook sync for `in_transit` and `returned` updates
+- refund service regression for gateway execution, manual fallback, and gateway failure
+- Paymob refund orchestration and transaction-id capture from webhooks
+- protected-route tenant isolation on customer reads
+- route-level permission denial for coordinator access to invoice refunds
+- conditional storefront checkout routing for guest vs authenticated invoice creation
+- portal protected-route auth rejection when the customer token is missing
+- portal order listing regression scoped to the authenticated customer
+- portal return-request creation regression with tenant context coming from portal auth
+- portal support-ticket creation regression with admin notification fan-out
+- DB-backed sales flow from vendor login to full invoice settlement
+- DB-backed tenant isolation verification on real customer reads
+- protected ops status and ops metrics route coverage
+- security-header presence and auth rate-limit regression coverage
+
+## Highest-Value Gaps Still Open
+
+These are the next Phase 2 targets after the current baseline:
+
+- real tenant-isolation tests against DB-backed reads and writes
+- storefront / portal / admin regression flows
+- deeper portal support flows
+- subscription enforcement and quota coverage
+- broader E2E business flows with seeded fixtures beyond the current sales path
+
+## Practical Next Step
+
+Once Phase 1 shipping work stabilizes, add DB-backed integration suites for:
+
+1. tenant isolation on `products`, `customers`, and `invoices`
+2. permission enforcement on `users`, `settings`, and `expenses`
+3. storefront checkout, portal orders, return-management, and support flows

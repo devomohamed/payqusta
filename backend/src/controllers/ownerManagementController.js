@@ -12,6 +12,10 @@ const Invoice = require('../models/Invoice');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
+const refundService = require('../services/RefundService');
+const {
+  completeInvoiceReturn,
+} = require('../utils/orderLifecycle');
 
 class OwnerManagementController {
   // ═══════════════════════════════════════════
@@ -30,7 +34,7 @@ class OwnerManagementController {
     const query = ReturnRequest.find(filter)
       .populate('customer', 'name phone')
       .populate('product', 'name images')
-      .populate('invoice', 'invoiceNumber totalAmount')
+      .populate('invoice', 'invoiceNumber totalAmount paidAmount refundStatus refundAmount returnStatus')
       .populate('reviewedBy', 'name')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -98,26 +102,95 @@ class OwnerManagementController {
 
     if (!returnReq) return next(AppError.notFound('طلب المرتجع غير موجود'));
 
+    const invoice = await Invoice.findOne({
+      _id: returnReq.invoice,
+      tenant: req.user.tenant,
+    });
+
+    if (!invoice) return next(AppError.notFound('الفاتورة المرتبطة غير موجودة'));
+
     returnReq.status = status;
     if (adminNotes) returnReq.adminNotes = adminNotes;
     returnReq.reviewedBy = req.user._id;
     returnReq.reviewedAt = new Date();
 
-    // If approved, restore stock
-    if (status === 'approved' || status === 'completed') {
-      try {
-        const product = await Product.findById(returnReq.product);
-        if (product) {
-          product.quantity = (product.quantity || 0) + returnReq.quantity;
-          await product.save({ validateBeforeSave: false });
+    let refundExecution = null;
+
+    if (status === 'approved') {
+      invoice.returnStatus = 'approved';
+      returnReq.refundAmount = returnReq.refundAmount || 0;
+      if ((Number(invoice.paidAmount) || 0) > 0 && returnReq.refundAmount > 0 && returnReq.refundStatus === 'none') {
+        returnReq.refundStatus = 'pending';
+      }
+    } else if (status === 'rejected') {
+      invoice.returnStatus = 'rejected';
+      returnReq.refundStatus = 'none';
+    } else if (status === 'completed') {
+      let refundTargetAmount = Math.max(0, Number(returnReq.refundAmount) || 0);
+
+      if (!returnReq.restockedAt) {
+        const completion = await completeInvoiceReturn(
+          invoice,
+          [{
+            productId: returnReq.product,
+            variantId: returnReq.variantId || null,
+            quantity: returnReq.quantity,
+          }],
+          {
+            reason: returnReq.reason,
+            note: adminNotes || 'تم استلام المرتجع وإعادة المخزون',
+            cancelOrder: false,
+          }
+        );
+
+        returnReq.restockedAt = new Date();
+        returnReq.completedAt = new Date();
+        returnReq.restockedQuantity = completion.totalQuantity;
+        returnReq.refundAmount = completion.refundAmount;
+        returnReq.refundStatus = completion.refundAmount > 0 ? 'pending' : 'none';
+        refundTargetAmount = completion.refundAmount;
+      } else {
+        returnReq.completedAt = returnReq.completedAt || new Date();
+      }
+
+      if (refundTargetAmount > 0 && returnReq.refundStatus !== 'refunded') {
+        refundExecution = await refundService.refundInvoicePayments(invoice, {
+          amount: refundTargetAmount,
+          reason: adminNotes || returnReq.reason || 'Return refund',
+          userId: req.user._id,
+          metadata: {
+            source: 'return_request',
+            returnRequestId: returnReq._id.toString(),
+            actorId: req.user._id.toString(),
+          },
+        });
+
+        if (refundExecution.executedAmount >= refundTargetAmount) {
+          returnReq.refundStatus = 'refunded';
+          returnReq.refundedAt = new Date();
+        } else if (refundExecution.executedAmount > 0 || refundExecution.mode === 'manual') {
+          returnReq.refundStatus = 'pending';
+        } else if (refundExecution.errors.length > 0) {
+          returnReq.refundStatus = 'failed';
         }
-      } catch { /* ignore */ }
+      }
     }
 
+    await invoice.save({ validateBeforeSave: false });
     await returnReq.save();
 
     // Notify customer
-    const labels = { approved: 'تمت الموافقة', rejected: 'تم الرفض', completed: 'مكتمل' };
+    const labels = {
+      approved: 'تمت الموافقة على طلب الإرجاع',
+      rejected: 'تم رفض طلب الإرجاع',
+      completed: returnReq.refundStatus === 'refunded'
+        ? 'تم استلام المرتجع ورد المبلغ'
+        : returnReq.refundStatus === 'failed'
+          ? 'تم استلام المرتجع لكن فشل الاسترداد الإلكتروني'
+          : returnReq.refundStatus === 'pending'
+            ? 'تم استلام المرتجع وسيتم استرداد المبلغ'
+            : 'تم استلام المرتجع وإعادة المخزون',
+    };
     await Notification.create({
       tenant: req.user.tenant,
       customerRecipient: returnReq.customer._id,

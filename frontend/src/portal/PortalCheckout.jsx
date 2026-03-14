@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 import { usePortalStore } from '../store/portalStore';
 import { notify } from '../components/AnimatedNotification';
+import {
+    buildEstimatedDeliveryDate,
+    findStorefrontShippingZone,
+    resolveStorefrontShippingSettings,
+} from '../storefront/storefrontShipping';
 
 const EGYPT_GOVERNORATES = [
     'القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'البحر الأحمر',
@@ -60,12 +65,41 @@ export default function PortalCheckout() {
     const [couponError, setCouponError] = useState('');
 
     const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+    const shippingConfig = resolveStorefrontShippingSettings(customer?.tenant?.settings?.shipping);
+    const selectedShippingZone = findStorefrontShippingZone(shippingConfig.zones, form.governorate);
+    const shippingFeeBase = selectedShippingZone?.fee ?? shippingConfig.baseFee;
+    const shippingDiscount =
+        shippingConfig.freeShippingThreshold > 0 && subtotal >= shippingConfig.freeShippingThreshold
+            ? shippingFeeBase
+            : 0;
+    const shipping = Math.max(0, shippingFeeBase - shippingDiscount);
+    const shippingEta = selectedShippingZone?.eta || shippingConfig.eta;
+    const shippingSummary = {
+        shippingFee: shippingFeeBase,
+        shippingDiscount,
+        carrierCost: shippingFeeBase,
+        shippingMethod: shippingConfig.defaultMethodName,
+        provider: shippingConfig.provider,
+        zoneCode: selectedShippingZone?.code || '',
+        zoneLabel: selectedShippingZone?.label || form.governorate || '',
+        estimatedDaysMin: selectedShippingZone?.estimatedDaysMin ?? shippingConfig.estimatedDaysMin,
+        estimatedDaysMax: selectedShippingZone?.estimatedDaysMax ?? shippingConfig.estimatedDaysMax,
+        estimatedDeliveryDate: buildEstimatedDeliveryDate(
+            selectedShippingZone?.estimatedDaysMax ?? shippingConfig.estimatedDaysMax
+        ),
+    };
     const discount = couponData ? couponData.discountAmount : 0;
-    const total = Math.max(0, subtotal - discount);
+    const total = Math.max(0, subtotal + shipping - discount);
 
     const creditLimit = customer?.financials?.creditLimit ?? customer?.creditLimit ?? 0;
     const outstandingBalance = customer?.financials?.outstandingBalance ?? customer?.outstandingBalance ?? 0;
     const creditAvailable = Math.max(0, creditLimit - outstandingBalance);
+
+    useEffect(() => {
+        if (shippingConfig.supportsCashOnDelivery === false && paymentMethod === 'cash') {
+            setPaymentMethod('deferred');
+        }
+    }, [paymentMethod, shippingConfig.supportsCashOnDelivery]);
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
@@ -119,9 +153,9 @@ export default function PortalCheckout() {
                 phone: form.phone,
                 address: form.address,
                 city: form.city,
-                governorate: form.governorate,
+                governorate: selectedShippingZone?.label || form.governorate,
                 notes: form.notes,
-            }, form.notes, form.signature, couponData?.coupon?.code, paymentMethod, months);
+            }, shippingSummary, form.notes, form.signature, couponData?.coupon?.code, paymentMethod, months);
 
             if (res.success) {
                 setOrderId(res.data.orderId);
@@ -158,7 +192,7 @@ export default function PortalCheckout() {
                 <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 w-full max-w-sm ltr:text-left rtl:text-right mb-6 space-y-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">{t('checkout.success.address')}</span>
-                        <span className="font-bold text-gray-800 dark:text-gray-200">{form.address}، {form.governorate}</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200">{form.address}، {selectedShippingZone?.label || form.governorate}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">{t('checkout.success.phone')}</span>
@@ -273,9 +307,26 @@ export default function PortalCheckout() {
                                     onChange={e => setForm({ ...form, governorate: e.target.value })}
                                 >
                                     <option value="">{t('checkout.shipping.choose_gov')}</option>
-                                    {EGYPT_GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
+                                    {shippingConfig.zones.map((zone) => (
+                                        <option key={zone.code} value={zone.code}>{zone.label}</option>
+                                    ))}
                                 </select>
                                 {errors.governorate && <p className="text-red-500 text-[11px] mt-1">{errors.governorate}</p>}
+                            </div>
+                            <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 px-4 py-3 text-xs text-primary-700 dark:text-primary-300">
+                                <div className="flex items-center justify-between gap-3 font-bold">
+                                    <span>{shippingConfig.defaultMethodName}</span>
+                                    <span>{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
+                                </div>
+                                <div className="mt-1 flex items-center justify-between gap-3 text-[11px]">
+                                    <span>{selectedShippingZone?.label || 'سيتم اعتماد الرسوم الأساسية'}</span>
+                                    <span>{shippingEta}</span>
+                                </div>
+                                {shippingDiscount > 0 && (
+                                    <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                        تم تفعيل الشحن المجاني بدلًا من {shippingFeeBase.toLocaleString()} ج.م
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">{t('checkout.shipping.city')}</label>
@@ -388,6 +439,10 @@ export default function PortalCheckout() {
                                 <span className="text-sm font-bold text-green-600">-{discount.toLocaleString()} ج.م</span>
                             </div>
                         )}
+                        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900/30 flex justify-between items-center border-t border-gray-100 dark:border-gray-700">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">الشحن</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
+                        </div>
                         <div className="px-5 py-4 bg-gray-50 dark:bg-gray-900/30 flex justify-between items-center">
                             <span className="font-bold text-gray-700 dark:text-gray-300">{t('checkout.review.total')}</span>
                             <span className="font-black text-xl text-primary-600">{total.toLocaleString()} ج.م</span>
@@ -410,7 +465,15 @@ export default function PortalCheckout() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-400">{t('checkout.review.governorate')}</span>
-                                <span className="font-bold text-gray-800 dark:text-gray-200">{form.governorate} {form.city && `/ ${form.city}`}</span>
+                                <span className="font-bold text-gray-800 dark:text-gray-200">{selectedShippingZone?.label || form.governorate} {form.city && `/ ${form.city}`}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-400">وسيلة الشحن</span>
+                                <span className="font-bold text-gray-800 dark:text-gray-200">{shippingConfig.defaultMethodName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-400">موعد متوقع</span>
+                                <span className="font-bold text-primary-600">{shippingEta}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-400 flex-shrink-0">{t('checkout.review.address')}</span>
@@ -429,16 +492,18 @@ export default function PortalCheckout() {
                     <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 space-y-4">
                         <h3 className="font-bold text-gray-800 dark:text-white text-sm mb-3">{t('checkout.payment.title')}</h3>
                         <div className="grid grid-cols-2 gap-3">
-                            <button
-                                onClick={() => setPaymentMethod('cash')}
-                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                            >
-                                <Building2 className="w-5 h-5" />
-                                <span className="font-bold text-sm">{t('checkout.payment.cash')}</span>
-                            </button>
+                            {shippingConfig.supportsCashOnDelivery !== false && (
+                                <button
+                                    onClick={() => setPaymentMethod('cash')}
+                                    className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                >
+                                    <Building2 className="w-5 h-5" />
+                                    <span className="font-bold text-sm">{t('checkout.payment.cash')}</span>
+                                </button>
+                            )}
                             <button
                                 onClick={() => setPaymentMethod('deferred')}
-                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'deferred' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'deferred' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'} ${shippingConfig.supportsCashOnDelivery === false ? 'col-span-2' : ''}`}
                             >
                                 <Package className="w-5 h-5" />
                                 <span className="font-bold text-sm">{t('checkout.payment.deferred')}</span>

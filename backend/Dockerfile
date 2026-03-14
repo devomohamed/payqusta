@@ -1,25 +1,24 @@
-# Build stage for client
-FROM node:20-alpine AS client-build
-WORKDIR /app/client
-COPY client/package*.json ./
+# Build stage for frontend
+FROM node:20-alpine AS frontend-build
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
 RUN npm ci
-COPY client/ ./
+COPY frontend/ ./
 RUN npm run build
 
 # Production stage
 FROM node:20-alpine
-WORKDIR /app
+WORKDIR /app/backend
 
 # Install production dependencies
-COPY package*.json ./
-RUN npm ci --only=production
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
 
 # Copy server code
-COPY src/ ./src/
-COPY server.js ./
+COPY backend/ ./
 
-# Copy built client
-COPY --from=client-build /app/client/dist ./client/dist
+# Copy built frontend
+COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
 
 # Create necessary directories
 RUN mkdir -p uploads/images uploads/pdfs uploads/imports logs
@@ -32,6 +31,6 @@ EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/v1/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health/ready || exit 1
 
 CMD ["node", "server.js"]

@@ -2,6 +2,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const cors = require('cors');
+const { URL } = require('url');
 
 /**
  * Security Middleware Configuration
@@ -58,6 +59,35 @@ const authLimiter = rateLimit({
 });
 
 /**
+ * Portal auth limiter
+ * Protects customer login brute-force attempts.
+ */
+const portalAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.PORTAL_AUTH_RATE_LIMIT_MAX) || 20,
+  skipSuccessfulRequests: true,
+  message: {
+    success: false,
+    message: 'Too many portal login attempts. Please try again later.',
+  },
+});
+
+/**
+ * Portal enrollment limiter
+ * Protects public register/activate endpoints from abuse.
+ */
+const portalEnrollmentLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: Number(process.env.PORTAL_ENROLLMENT_RATE_LIMIT_MAX) || 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many portal activation or registration attempts. Please try again later.',
+  },
+});
+
+/**
  * Password Reset Rate Limiter
  * 3 requests per hour per IP
  */
@@ -83,7 +113,60 @@ const uploadLimiter = rateLimit({
   },
 });
 
+/**
+ * Webhook Rate Limiter
+ * Public provider endpoints should stay reachable, but not unbounded.
+ */
+const webhookLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: Number(process.env.WEBHOOK_RATE_LIMIT_MAX) || (isDevelopment ? 300 : 120),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many webhook requests. Please retry later.',
+  },
+});
+
 // ============ CORS Configuration ============
+
+const PLATFORM_ROOT_DOMAIN = String(process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
+  .trim()
+  .toLowerCase();
+
+const normalizeOrigin = (origin) => {
+  try {
+    const url = new URL(origin);
+    return `${url.protocol}//${url.host}`.toLowerCase();
+  } catch (error) {
+    return null;
+  }
+};
+
+const parseConfiguredOrigins = (...values) => {
+  const origins = new Set();
+
+  values
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(','))
+    .map((value) => normalizeOrigin(value.trim()))
+    .filter(Boolean)
+    .forEach((origin) => origins.add(origin));
+
+  return origins;
+};
+
+const isPlatformOrigin = (origin) => {
+  const normalized = normalizeOrigin(origin);
+  if (!normalized) return false;
+
+  try {
+    const { hostname } = new URL(normalized);
+    return hostname === PLATFORM_ROOT_DOMAIN || hostname.endsWith(`.${PLATFORM_ROOT_DOMAIN}`);
+  } catch (error) {
+    return false;
+  }
+};
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -92,20 +175,46 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
 ];
 
+const configuredProductionOrigins = parseConfiguredOrigins(
+  process.env.CLIENT_URL,
+  process.env.APP_URL,
+  process.env.CORS_ALLOWED_ORIGINS
+);
+
 const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || !isDevelopment) {
+
+    const normalizedOrigin = normalizeOrigin(origin);
+    if (!normalizedOrigin) {
+      return callback(null, false);
+    }
+
+    if (allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 
-    // In development we still allow arbitrary preview origins to avoid blocking local workflows.
-    return callback(null, true);
+    if (isDevelopment) {
+      // In development we still allow arbitrary preview origins to avoid blocking local workflows.
+      return callback(null, true);
+    }
+
+    if (
+      configuredProductionOrigins.has(normalizedOrigin) ||
+      isPlatformOrigin(normalizedOrigin) ||
+      normalizedOrigin.endsWith('.run.app') ||
+      normalizedOrigin.endsWith('.a.run.app')
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Request-ID', 'X-Source'],
   exposedHeaders: ['Content-Disposition'],
+  optionsSuccessStatus: 204,
 };
 
 // ============ Helmet Configuration ============
@@ -149,8 +258,11 @@ const mongoSanitizeConfig = mongoSanitize();
 module.exports = {
   apiLimiter,
   authLimiter,
+  portalAuthLimiter,
+  portalEnrollmentLimiter,
   passwordResetLimiter,
   uploadLimiter,
+  webhookLimiter,
   corsOptions,
   corsMiddleware: cors(corsOptions),
   helmetConfig,

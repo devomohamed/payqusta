@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowLeft, Briefcase, CreditCard, PackageSearch, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCaseGroups } from '../publicSite/content';
@@ -19,7 +19,7 @@ export default function PublicUseCasesPage() {
           <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">لمن هذا النظام؟</p>
           <h1 className="mt-3 text-4xl font-black leading-tight">PayQusta يخاطب التشغيل الحقيقي داخل النشاط</h1>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            بدل الكلام العام فقط، هذه الصفحة توضح أين تظهر قيمة المشروع حسب الدور أو الاحتياج داخل النشاط التجاري.
+            ستظهر لك هنا قيمة المنصة حسب طبيعة العمل داخل النشاط: من يتخذ القرار، ومن يبيع، ومن يتابع الأقساط، ومن يستقبل الطلبات.
           </p>
 
           <div className="mt-6 grid gap-3">
@@ -45,8 +45,7 @@ export default function PublicUseCasesPage() {
           <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">أين تظهر الفائدة؟</p>
           <h2 className="mt-3 text-3xl font-black text-slate-950">كل حالة استخدام هنا مرتبطة بجزء تشغيل فعلي</h2>
           <p className="mt-3 text-base leading-8 text-slate-600">
-            هذه ليست Personas تجميلية، بل نقاط استخدام حقيقية داخل نشاط يريد المبيعات والمخزون والتحصيل والواجهة العامة
-            أن تعمل معًا.
+            كل حالة استخدام هنا مرتبطة بموقف حقيقي يتكرر داخل المتجر أو النشاط التجاري، وليس مجرد تقسيم نظري للأدوار.
           </p>
         </div>
       </div>
@@ -79,8 +78,7 @@ export default function PublicUseCasesPage() {
             <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الهدف النهائي</p>
             <h3 className="mt-3 text-3xl font-black text-slate-950">أن يفهم كل طرف أين سيستفيد فعليًا من المنصة</h3>
             <p className="mt-3 text-base leading-8 text-slate-600">
-              عندما يفهم صاحب النشاط وفريقه والزائر قيمة المنصة من زاويته الخاصة، تصبح رحلة التسجيل والاعتماد على
-              النظام أقصر وأكثر منطقية.
+              عندما يفهم كل طرف أين سيوفر وقتًا أو يقلل أخطاء أو يتابع الحركة بشكل أفضل، يصبح قرار الاعتماد على المنصة أسهل وأكثر واقعية.
             </p>
           </div>
 

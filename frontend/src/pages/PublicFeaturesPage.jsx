@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowLeft, BarChart3, Boxes, CreditCard, MonitorSmartphone, ShieldCheck, Workflow } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -36,15 +36,15 @@ const modules = [
   {
     icon: ShieldCheck,
     title: 'ثقة واستمرارية',
-    points: ['هيكل واضح للمنصة', 'واجهة تعريفية احترافية', 'أساس جيد للفهرسة والانتشار'],
+    points: ['هيكل واضح للمنصة', 'واجهة تعريفية احترافية', 'أساس جيد للتوسع والانتظام'],
     tone: 'from-orange-100 via-white to-white',
   },
 ];
 
 const valueOutcomes = [
-  'صورة أوضح للعميل والزائر قبل التسجيل',
-  'تشغيل يومي أسرع لفريق المبيعات والتحصيل',
-  'ربط أفضل بين الواجهة العامة وما يحدث داخل النظام',
+  'صورة أوضح للعميل قبل الطلب أو التسجيل',
+  'تشغيل يومي أسرع لفريق البيع والتحصيل',
+  'ربط أفضل بين ما يراه العميل وما يحدث داخل النظام',
 ];
 
 export default function PublicFeaturesPage() {
@@ -57,15 +57,14 @@ export default function PublicFeaturesPage() {
             PayQusta ليس أداة واحدة، بل منظومة مترابطة
           </h1>
           <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
-            هذه الصفحة تشرح ماذا يقدم المشروع فعليًا، وكيف تتكامل الأجزاء المختلفة بدل أن تكون مجرد قائمة خواص منفصلة.
+            المنصة هنا ليست مجموعة شاشات منفصلة، بل أجزاء تخدم بعضها: البيع ينعكس على المخزون، والتحصيل يرتبط بالعميل، والواجهة العامة تدعم الطلب والثقة.
           </p>
 
           <div className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الصورة الكبيرة</p>
             <h2 className="mt-3 text-2xl font-black text-slate-950">الميزة الأقوى هي الترابط</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              المنتج القوي ليس فقط في عدد الخواص، بل في كيف تتصل ببعضها. PayQusta يربط بين الإدارة اليومية، والواجهة
-              العامة، وحركة البيع، وسجل التحصيل في مسار واحد أوضح.
+              قيمة المنصة ليست في كثرة المزايا فقط، بل في أن كل خطوة تكمل الأخرى: الفاتورة، العميل، المخزون، والتحصيل لا يعيش كل واحد منها في مكان منفصل.
             </p>
           </div>
         </div>
@@ -74,7 +73,7 @@ export default function PublicFeaturesPage() {
           <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">النتيجة</p>
           <h2 className="mt-3 text-3xl font-black leading-tight">زائر يفهم المشروع بسرعة، وفريق يعمل براحة أكبر</h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            هذا بالضبط هدف الموقع العام الجديد: شرح احترافي للمنصة، ثم تحويل الزائر إلى مستخدم أو عميل محتمل بخطوات واضحة.
+            النتيجة التي يراها العميل أمامه يجب أن تنعكس أيضًا على راحة الفريق في الداخل، وهذا ما تبني عليه هذه المنظومة.
           </p>
           <div className="mt-6 grid gap-3">
             {valueOutcomes.map((item) => (
@@ -125,7 +124,7 @@ export default function PublicFeaturesPage() {
             <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">ما الذي يتحسن فعليًا؟</p>
             <h3 className="mt-3 text-3xl font-black text-slate-950">من عرض البراند إلى متابعة التحصيل، نفس المنظومة تخدمك</h3>
             <p className="mt-3 text-base leading-8 text-slate-600">
-              الفكرة ليست إضافة صفحات فقط، بل جعل كل طبقة من التجربة تخدم الهدف التالي: فهم، ثقة، تشغيل، ثم نمو.
+              الهدف أن يرى العميل مشروعًا منظمًا، وأن يعمل الفريق على بيانات واضحة، وأن يتحول ذلك إلى مبيعات ومتابعة أدق مع الوقت.
             </p>
           </div>
 

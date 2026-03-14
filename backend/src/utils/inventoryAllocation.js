@@ -60,6 +60,7 @@ function resolveInventoryAllocation({
     };
   }
 
+
   return {
     branchId: null,
     availableQuantity: variant
@@ -105,6 +106,53 @@ function deductInventoryAllocation({
   );
 }
 
+function restockInventoryAllocation({
+  product,
+  variant = null,
+  branchId = null,
+  quantity = 0,
+}) {
+  const restockQuantity = Math.max(0, Number(quantity) || 0);
+  const normalizedBranchId = toIdString(branchId);
+  const inventoryRows = getInventoryRows(product, variant);
+
+  if (normalizedBranchId) {
+    const matchingRow = inventoryRows.find(
+      (row) => toIdString(row.branch) === normalizedBranchId
+    );
+
+    if (matchingRow) {
+      matchingRow.quantity = (Number(matchingRow.quantity) || 0) + restockQuantity;
+      return;
+    }
+
+    if (Array.isArray(inventoryRows)) {
+      inventoryRows.push({
+        branch: branchId,
+        quantity: restockQuantity,
+        minQuantity: 0,
+      });
+      return;
+    }
+  }
+
+  if (inventoryRows.length > 0) {
+    inventoryRows[0].quantity = (Number(inventoryRows[0].quantity) || 0) + restockQuantity;
+    return;
+  }
+
+  if (variant) {
+    variant.stock = (Number(variant.stock) || 0) + restockQuantity;
+    return;
+  }
+
+  if (!product.stock || typeof product.stock !== 'object') {
+    product.stock = { quantity: 0 };
+  }
+
+  product.stock.quantity = (Number(product.stock.quantity) || 0) + restockQuantity;
+}
+
 function collectUniqueBranchIds(updates = []) {
   return [...new Set(
     (Array.isArray(updates) ? updates : [])
@@ -116,6 +164,7 @@ function collectUniqueBranchIds(updates = []) {
 module.exports = {
   collectUniqueBranchIds,
   deductInventoryAllocation,
+  restockInventoryAllocation,
   resolveInventoryAllocation,
   toIdString,
 };

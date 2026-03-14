@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Card, LoadingSpinner } from './UI';
+import { Modal, Button, Card, EmptyState, LoadingSpinner } from './UI';
 import { api } from '../store';
 import { Calculator, DollarSign, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -188,7 +188,13 @@ export default function BranchSettlementModal({ open, onClose, branchId, branchN
              </Card>
           </div>
         ) : (
-          <p className="text-center text-gray-500">لا توجد بيانات</p>
+          <EmptyState
+            icon={Calculator}
+            title="لا توجد بيانات"
+            description="تعذر تحميل بيانات التصفية لهذا الفرع الآن."
+            action={{ label: 'إعادة المحاولة', onClick: fetchSettlementData }}
+            className="py-6"
+          />
         )}
 
         <div className="flex justify-end gap-3 mt-6">

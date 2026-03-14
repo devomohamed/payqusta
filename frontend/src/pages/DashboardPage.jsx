@@ -6,7 +6,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
 import { dashboardApi, useAuthStore } from '../store';
-import { StatCard, Card, Badge, LoadingSpinner } from '../components/UI';
+import { StatCard, Card, Badge, EmptyState, LoadingSpinner } from '../components/UI';
 import AIStockWidget from '../components/AIStockWidget';
 
 export default function DashboardPage() {
@@ -136,7 +136,14 @@ export default function DashboardPage() {
                   <Area type="monotone" dataKey="sales" stroke="#6366f1" fill="url(#colorSales)" strokeWidth={2.5} name="المبيعات" />
                 </AreaChart>
               </ResponsiveContainer>
-            ) : <div className="h-60 flex items-center justify-center text-gray-400 text-sm">لا توجد بيانات مبيعات بعد</div>}
+            ) : (
+              <EmptyState
+                icon={BarChart3}
+                title="لا توجد بيانات مبيعات بعد"
+                description="ستظهر حركة المبيعات الشهرية هنا بمجرد تسجيل فواتير ومبيعات جديدة."
+                className="h-60 py-4"
+              />
+            )}
           </Card>
         )}
 
@@ -182,7 +189,14 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : <div className="h-40 flex items-center justify-center text-gray-400 text-sm">لا توجد مبيعات بعد</div>}
+          ) : (
+            <EmptyState
+              icon={Boxes}
+              title="لا توجد مبيعات بعد"
+              description="عند بدء المبيعات ستظهر المنتجات الأعلى أداءً هنا."
+              className="h-40 py-4"
+            />
+          )}
         </Card>
 
         {/* Recent Invoices */}
@@ -204,7 +218,14 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : <div className="py-10 text-center text-gray-400 text-sm">لا توجد فواتير بعد</div>}
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="لا توجد فواتير بعد"
+              description="ستظهر آخر الفواتير المسجلة هنا تلقائيًا."
+              className="py-6"
+            />
+          )}
         </Card>
       </div>
 

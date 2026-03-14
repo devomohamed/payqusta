@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Menu, X, ArrowLeft, Sparkles } from 'lucide-react';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
@@ -7,6 +7,7 @@ import {
   brandDisplayName,
   platformHighlights,
   publicNavLinks,
+  publicUtilityLinks,
 } from './content';
 
 function navLinkClass({ isActive }) {
@@ -35,7 +36,7 @@ export default function PublicSiteLayout({ children }) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-3 py-3.5 sm:py-4">
             <Link to="/" className="relative flex min-w-0 items-center gap-3">
-              <AnimatedBrandLogo src="/logo.png" alt="PayQusta" size="sm" containerClassName="shrink-0" />
+              <AnimatedBrandLogo src="/logo-square.png" alt="PayQusta" size="sm" containerClassName="shrink-0" />
               <div className="min-w-0 text-right">
                 <p className="truncate text-base font-black tracking-tight sm:text-lg">{brandDisplayName}</p>
                 <p className="truncate text-[11px] font-medium text-slate-500 sm:text-xs">منصة تشغيل ونمو للمتاجر</p>
@@ -120,6 +121,19 @@ export default function PublicSiteLayout({ children }) {
                     <ArrowLeft className="h-4 w-4" />
                   </Link>
                 </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {publicUtilityLinks.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-bold text-slate-700"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -140,8 +154,7 @@ export default function PublicSiteLayout({ children }) {
                 ابنِ حضورًا عامًا أقوى، وشغّل المبيعات والمخزون والأقساط من نفس المكان.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                الموقع العام يعرّف الزائر بالمشروع، والمتجر العام يحول الزيارة إلى طلب، بينما النظام الداخلي يربط البيع
-                بالمخزون والتحصيل في تجربة تشغيل واحدة.
+                الموقع العام يعرّف الزائر بالمشروع، والمتجر العام يحول الزيارة إلى طلب، بينما النظام الداخلي يربط البيع بالمخزون والتحصيل في تجربة تشغيل واحدة.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
                 <Link
@@ -160,7 +173,7 @@ export default function PublicSiteLayout({ children }) {
               </div>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">التصفح</p>
                 <div className="mt-4 flex flex-col gap-3">
@@ -172,12 +185,25 @@ export default function PublicSiteLayout({ children }) {
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-right shadow-sm">
+              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الثقة والسياسات</p>
+                <div className="mt-4 flex flex-col gap-3">
+                  {publicUtilityLinks.map((item) => (
+                    <NavLink key={item.to} to={item.to} className="text-base font-bold text-slate-700 transition-colors hover:text-slate-950">
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+                <p className="mt-5 text-sm leading-7 text-slate-500">
+                  هذه الصفحات تساعد الزائر على فهم الشروط، الخصوصية، ومسار التواصل قبل التسجيل أو الإطلاق.
+                </p>
+              </div>
+
+              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-right shadow-sm sm:col-span-2 xl:col-span-1">
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">عن البراند</p>
                 <p className="mt-4 text-base font-black text-slate-950">{brandDisplayName}</p>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  {brandArabicName} هو الاسم العربي المتداول لنفس البراند. الواجهة العامة هنا موجودة لتشرح القيمة
-                  التجارية بوضوح وتدعم الظهور والبحث.
+                  {brandArabicName} هو الاسم العربي المتداول لنفس البراند. الواجهة العامة هنا موجودة لتشرح القيمة التجارية بوضوح وتدعم الظهور والبحث.
                 </p>
                 <div className="mt-5 grid gap-2">
                   {platformHighlights.map((item) => (

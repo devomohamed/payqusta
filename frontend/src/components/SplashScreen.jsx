@@ -73,7 +73,7 @@ export default function SplashScreen({ onFinish }) {
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                   >
-                    <AnimatedBrandLogo src="/logo.png" alt="PayQusta Logo" size="full" />
+                    <AnimatedBrandLogo src="/logo-square.png" alt="PayQusta Logo" size="full" />
                   </motion.div>
                 </div>
               </div>

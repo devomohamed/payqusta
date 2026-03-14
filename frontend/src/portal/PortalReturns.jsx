@@ -87,24 +87,47 @@ export default function PortalReturns() {
                                     </span>
                                 </div>
 
-                                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 text-xs space-y-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('returns.request_date')}</span>
-                                        <span className="font-bold text-gray-700 dark:text-gray-300">
-                                            {new Date(req.createdAt).toLocaleDateString(locale)}
+                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 text-xs space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500 dark:text-gray-400">{t('returns.request_date')}</span>
+                                            <span className="font-bold text-gray-700 dark:text-gray-300">
+                                                {new Date(req.createdAt).toLocaleDateString(locale)}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('returns.reason_label')}</span>
-                                        <span className="font-bold text-gray-700 dark:text-gray-300">
-                                            {t(`returns.reasons.${req.reason}`, { defaultValue: req.reason })}
-                                        </span>
-                                    </div>
-                                    {req.adminNotes && (
-                                        <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
-                                            <span className="block text-gray-500 dark:text-gray-400 mb-1">{t('returns.store_notes')}</span>
-                                            <p className="text-gray-700 dark:text-gray-300">{req.adminNotes}</p>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500 dark:text-gray-400">{t('returns.reason_label')}</span>
+                                            <span className="font-bold text-gray-700 dark:text-gray-300">
+                                                {t(`returns.reasons.${req.reason}`, { defaultValue: req.reason })}
+                                            </span>
                                         </div>
+                                        {req.refundStatus && req.refundStatus !== 'none' && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500 dark:text-gray-400">حالة الاسترداد</span>
+                                                <span className="font-bold text-emerald-600 dark:text-emerald-300">
+                                                    {req.refundStatus === 'pending' ? 'قيد المعالجة' : req.refundStatus === 'refunded' ? 'تم رد المبلغ' : req.refundStatus}
+                                                    {Number(req.refundAmount || 0) > 0 ? ` • ${Number(req.refundAmount).toLocaleString(locale)} ج.م` : ''}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {req.restockedAt && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500 dark:text-gray-400">إعادة للمخزون</span>
+                                                <span className="font-bold text-blue-600 dark:text-blue-300">
+                                                    {new Date(req.restockedAt).toLocaleDateString(locale)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {req.invoice?.returnStatus && req.invoice.returnStatus !== 'none' && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500 dark:text-gray-400">حالة الطلب</span>
+                                                <span className="font-bold text-orange-600 dark:text-orange-300">{req.invoice.returnStatus}</span>
+                                            </div>
+                                        )}
+                                        {req.adminNotes && (
+                                            <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                                                <span className="block text-gray-500 dark:text-gray-400 mb-1">{t('returns.store_notes')}</span>
+                                                <p className="text-gray-700 dark:text-gray-300">{req.adminNotes}</p>
+                                            </div>
                                     )}
                                 </div>
                             </div>

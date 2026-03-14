@@ -17,6 +17,12 @@ const {
   deductInventoryAllocation,
   resolveInventoryAllocation,
 } = require('../utils/inventoryAllocation');
+const { calculateTenantShippingSummary } = require('../utils/shippingHelpers');
+const {
+  calculateRefundAmountForItems,
+  cancelInvoiceOrder,
+} = require('../utils/orderLifecycle');
+const refundService = require('../services/RefundService');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -826,6 +832,14 @@ class PortalController {
     const invoice = await Invoice.findOne({ _id: invoiceId, customer: req.user.id });
     if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
 
+    if (invoice.status === 'cancelled' || invoice.orderStatus === 'cancelled') {
+      return next(AppError.badRequest('لا يمكن طلب مرتجع لطلب ملغي'));
+    }
+
+    if (invoice.orderStatus && invoice.orderStatus !== 'delivered' && invoice.status !== 'paid') {
+      return next(AppError.badRequest('يمكن طلب الإرجاع بعد تسليم الطلب فقط'));
+    }
+
     const item = invoice.items.find(i => i.product.toString() === productId);
     if (!item) return next(AppError.badRequest('المنتج غير موجود في الفاتورة'));
 
@@ -835,20 +849,62 @@ class PortalController {
 
     // Check if return period expired (e.g. 14 days) - Optional logic here
 
-    // Check if already requested for this item/quantity 
-    // (Simplification: just create request. In real app, we check remaining quantity available for return)
+    const existingRequests = await ReturnRequest.aggregate([
+      {
+        $match: {
+          tenant: new mongoose.Types.ObjectId(req.tenant._id),
+          customer: new mongoose.Types.ObjectId(req.user.id),
+          invoice: new mongoose.Types.ObjectId(invoiceId),
+          product: new mongoose.Types.ObjectId(productId),
+          ...(item.variant ? { variantId: item.variant } : {}),
+          status: { $ne: 'rejected' },
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          quantity: { $sum: '$quantity' },
+        }
+      }
+    ]);
+
+    const alreadyRequestedQuantity = Number(existingRequests?.[0]?.quantity) || 0;
+    if ((alreadyRequestedQuantity + Number(quantity)) > item.quantity) {
+      return next(AppError.badRequest('تم استهلاك كامل الكمية المتاحة للإرجاع من هذا المنتج'));
+    }
+
+    const product = await Product.findById(productId).select('variants');
+    const matchedVariant = item.variant
+      ? product?.variants?.id(item.variant)
+      : null;
+
+    const refundPreview = calculateRefundAmountForItems(invoice, [{
+      productId,
+      variantId: item.variant || null,
+      quantity,
+    }]);
 
     const returnRequest = await ReturnRequest.create({
       tenant: req.tenant._id,
       customer: req.user.id,
       invoice: invoiceId,
       product: productId,
-      variant: item.variant, // Assuming invoice item has variant info if needed
+      variantId: item.variant || null,
+      variant: matchedVariant ? {
+        sku: matchedVariant.sku,
+        name: Object.values(matchedVariant.attributes || {}).filter(Boolean).join(' / ') || matchedVariant.description || '',
+      } : undefined,
       quantity,
       reason,
       description,
-      status: 'pending'
+      status: 'pending',
+      refundAmount: Math.min(refundPreview, Math.max(0, Number(invoice.paidAmount) || 0)),
     });
+
+    if (invoice.returnStatus === 'none') {
+      invoice.returnStatus = 'requested';
+      await invoice.save({ validateBeforeSave: false });
+    }
 
     ApiResponse.success(res, returnRequest, 'تم تقديم طلب الإرجاع بنجاح');
   });
@@ -859,7 +915,7 @@ class PortalController {
   getReturnRequests = catchAsync(async (req, res, next) => {
     const requests = await ReturnRequest.find({ customer: req.user.id })
       .populate('product', 'name images')
-      .populate('invoice', 'invoiceNumber date')
+      .populate('invoice', 'invoiceNumber date returnStatus refundStatus refundAmount')
       .sort('-createdAt');
 
     ApiResponse.success(res, requests);
@@ -1115,7 +1171,7 @@ class PortalController {
    * POST /api/v1/portal/cart/checkout
    */
   checkout = catchAsync(async (req, res, next) => {
-    const { items, shippingAddress, notes, signature, couponCode } = req.body;
+    const { items, shippingAddress, shippingSummary, notes, signature, couponCode } = req.body;
     const customer = await Customer.findById(req.user.id).populate('tenant', 'settings');
     const installmentSettings = customer?.tenant?.settings?.installments || {};
     const preferredBranchId = customer?.branch || null;
@@ -1221,8 +1277,23 @@ class PortalController {
       finalTotalAmount = Math.max(0, totalAmount - discountAmount);
     }
 
+    const computedShippingSummary = calculateTenantShippingSummary(
+      customer.tenant,
+      shippingAddress,
+      totalAmount,
+      shippingSummary
+    );
+    const effectiveShippingAmount = Math.max(
+      0,
+      (computedShippingSummary?.shippingFee || 0) - (computedShippingSummary?.shippingDiscount || 0)
+    );
+    finalTotalAmount = Math.max(0, finalTotalAmount + effectiveShippingAmount);
+
     // Check Payment Method & Validate Limit / Documents
     const paymentMethod = req.body.paymentMethod === 'cash' ? 'cash' : 'deferred';
+    if (paymentMethod === 'cash' && computedShippingSummary.supportsCashOnDelivery === false) {
+      return next(AppError.badRequest('الدفع عند الاستلام غير متاح لهذا المتجر'));
+    }
     const months = parseInt(req.body.months) || installmentSettings.defaultMonths || 6;
 
     let installments = [];
@@ -1276,6 +1347,9 @@ class PortalController {
       items: invoiceItems,
       subtotal: totalAmount,
       discount: discountAmount,
+      shippingFee: computedShippingSummary?.shippingFee || 0,
+      shippingDiscount: computedShippingSummary?.shippingDiscount || 0,
+      carrierCost: computedShippingSummary?.carrierCost || 0,
       totalAmount: finalTotalAmount,
       paidAmount: 0,
       remainingAmount: finalTotalAmount,
@@ -1294,6 +1368,18 @@ class PortalController {
         notes: shippingAddress.notes || '',
       },
       notes: notes || 'طلب من خلال بوابة العملاء',
+      shippingMethod: computedShippingSummary.shippingMethod,
+      shippingZone: {
+        code: computedShippingSummary.zoneCode,
+        label: computedShippingSummary.zoneLabel,
+      },
+      estimatedDeliveryDate: computedShippingSummary.estimatedDeliveryDate,
+      shippingDetails: computedShippingSummary.provider
+        ? {
+            provider: computedShippingSummary.provider,
+            status: 'pending',
+          }
+        : undefined,
       electronicSignature: signature || null,
       orderStatusHistory: [{ status: 'pending', note: 'تم استلام الطلب من البوابة الإلكترونية' }],
     });
@@ -1565,7 +1651,7 @@ class PortalController {
 
     const [orders, total] = await Promise.all([
       Invoice.find(filter)
-        .select('invoiceNumber totalAmount paidAmount remainingAmount status orderStatus paymentMethod createdAt items orderStatusHistory')
+        .select('invoiceNumber totalAmount paidAmount remainingAmount status orderStatus paymentMethod createdAt items orderStatusHistory returnStatus refundStatus refundAmount cancelReason inventoryRestoredAt')
         .sort('-createdAt')
         .skip((page - 1) * limit)
         .limit(Number(limit))
@@ -1596,7 +1682,6 @@ class PortalController {
    * POST /api/v1/portal/orders/:id/cancel
    */
   cancelOrder = catchAsync(async (req, res, next) => {
-    const Invoice = require('../models/Invoice');
     const customerId = req.user.id;
     const invoice = await Invoice.findOne({
       _id: req.params.id,
@@ -1605,26 +1690,29 @@ class PortalController {
 
     if (!invoice) return next(AppError.notFound('الطلب غير موجود'));
 
-    if (!['pending'].includes(invoice.orderStatus || invoice.status)) {
-      return next(AppError.badRequest('لا يمكن إلغاء الطلب في هذه المرحلة'));
-    }
-
-    if (invoice.orderStatus) {
-      invoice.orderStatus = 'cancelled';
-    }
-    invoice.status = 'cancelled';
-
-    // Also push historian
-    if (!invoice.orderStatusHistory) invoice.orderStatusHistory = [];
-    invoice.orderStatusHistory.push({
-      status: 'cancelled',
-      timestamp: new Date(),
-      note: 'إلغاء من قبل العميل'
+    await cancelInvoiceOrder(invoice, {
+      reason: 'إلغاء من قبل العميل',
+      note: 'إلغاء من قبل العميل',
+      restoreInventory: true,
     });
 
-    await invoice.save();
+    let refundExecution = null;
+    if ((Number(invoice.refundAmount) || 0) > 0) {
+      refundExecution = await refundService.refundInvoicePayments(invoice, {
+        reason: 'Customer order cancellation refund',
+        metadata: {
+          source: 'portal_cancellation',
+          customerId: req.user.id.toString(),
+        },
+      });
+    }
 
-    ApiResponse.success(res, invoice, 'تم إلغاء الطلب بنجاح');
+    await invoice.save({ validateBeforeSave: false });
+
+    ApiResponse.success(res, {
+      invoice,
+      refund: refundExecution,
+    }, 'تم إلغاء الطلب بنجاح');
   });
 
   // ═══════════════════════════════════════════

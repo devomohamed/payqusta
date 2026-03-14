@@ -1,4 +1,4 @@
-const Plan = require('../models/Plan');
+﻿const Plan = require('../models/Plan');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
@@ -75,7 +75,7 @@ class PlanController {
      */
     createPlan = catchAsync(async (req, res) => {
         const plan = await Plan.create(req.body);
-        ApiResponse.created(res, plan, 'تم إنشاء الباقة بنجاح');
+        ApiResponse.created(res, plan, 'ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¨Ø§Ù‚Ø© Ø¨Ù†Ø¬Ø§Ø­');
     });
 
     /**
@@ -87,8 +87,8 @@ class PlanController {
             runValidators: true,
         });
 
-        if (!plan) return next(AppError.notFound('الباقة غير موجودة'));
-        ApiResponse.success(res, plan, 'تم تحديث الباقة بنجاح');
+        if (!plan) return next(AppError.notFound('Ø§Ù„Ø¨Ø§Ù‚Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©'));
+        ApiResponse.success(res, plan, 'ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø¨Ø§Ù‚Ø© Ø¨Ù†Ø¬Ø§Ø­');
     });
 
     /**
@@ -96,9 +96,10 @@ class PlanController {
      */
     deletePlan = catchAsync(async (req, res, next) => {
         const plan = await Plan.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
-        if (!plan) return next(AppError.notFound('الباقة غير موجودة'));
-        ApiResponse.success(res, null, 'تم إيقاف الباقة بنجاح');
+        if (!plan) return next(AppError.notFound('Ø§Ù„Ø¨Ø§Ù‚Ø© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©'));
+        ApiResponse.success(res, null, 'ØªÙ… Ø¥ÙŠÙ‚Ø§Ù Ø§Ù„Ø¨Ø§Ù‚Ø© Ø¨Ù†Ø¬Ø§Ø­');
     });
 }
 
 module.exports = new PlanController();
+

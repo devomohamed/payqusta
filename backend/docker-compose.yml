@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: payqusta-app
     restart: unless-stopped
     ports:
@@ -18,9 +20,12 @@ services:
       - EMAIL_PASS=${EMAIL_PASS}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_SILENT=${LOG_SILENT:-false}
+      - WEBHOOK_URL=${WEBHOOK_URL}
     volumes:
-      - uploads_data:/app/uploads
-      - logs_data:/app/logs
+      - uploads_data:/app/backend/uploads
+      - logs_data:/app/backend/logs
     depends_on:
       mongo:
         condition: service_healthy

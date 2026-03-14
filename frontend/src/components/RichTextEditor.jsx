@@ -3,9 +3,6 @@ import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import * as Emoji from 'quill-emoji';
-import 'quill-emoji/dist/quill-emoji.css';
-
 import { api } from '../store';
 import { getUserFriendlyErrorMessage } from '../utils/errorMapper';
 import { resolveMediaUrl } from '../utils/media';
@@ -13,7 +10,6 @@ import { resolveMediaUrl } from '../utils/media';
 const SizeAttributor = Quill.import('attributors/class/size');
 SizeAttributor.whitelist = ['small', 'large', 'huge'];
 Quill.register(SizeAttributor, true);
-Quill.register('modules/emoji', Emoji);
 
 const TOOLBAR_LAYOUT = [
   [{ header: [1, 2, 3, false] }, { size: ['small', false, 'large', 'huge'] }],
@@ -21,7 +17,7 @@ const TOOLBAR_LAYOUT = [
   [{ color: [] }, { background: [] }],
   [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote', 'code-block'],
   [{ direction: 'rtl' }, { align: [] }],
-  ['link', 'image', 'video', 'emoji'],
+  ['link', 'image', 'video'],
   [{ script: 'sub' }, { script: 'super' }],
   ['clean'],
 ];
@@ -44,7 +40,6 @@ const SUPPORTED_FORMATS = [
   'link',
   'image',
   'video',
-  'emoji',
   'script',
 ];
 
@@ -282,7 +277,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
         if ((input.files?.length || 0) > MAX_EDITOR_IMAGE_UPLOADS) {
           toast(
             t('editor.image_upload_limit', {
-              defaultValue: 'ÙŠÙ…ÙƒÙ† Ø±ÙØ¹ {{count}} ØµÙˆØ± ÙƒØ­Ø¯ Ø£Ù‚ØµÙ‰ ÙÙŠ ÙƒÙ„ Ù…Ø±Ø©',
+              defaultValue: 'يمكن رفع {{count}} صور كحد أقصى في كل مرة',
               count: MAX_EDITOR_IMAGE_UPLOADS,
             }),
             { icon: 'ℹ️' }
@@ -422,9 +417,6 @@ export default function RichTextEditor({ value, onChange, label, className = '',
     clipboard: {
       matchVisual: false,
     },
-    'emoji-toolbar': true,
-    'emoji-textarea': false,
-    'emoji-shortname': true,
   }), [handlers]);
 
   useEffect(() => {
