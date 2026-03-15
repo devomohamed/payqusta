@@ -6,6 +6,7 @@ const runtimeState = {
   port: null,
   startupTasks: new Map(),
   jobs: new Map(),
+  jobLocks: new Map(),
 };
 
 function toIso(value = new Date()) {
@@ -191,6 +192,90 @@ function markJobRunFailure(name, error, details = {}) {
   });
 }
 
+function markJobRunSkipped(name, details = {}) {
+  const now = toIso();
+  const existing = runtimeState.jobs.get(name) || {};
+
+  return upsertJob(name, {
+    status: 'skipped',
+    skipCount: Number(existing.skipCount || 0) + 1,
+    lastSkippedAt: now,
+    lastContext: details,
+    updatedAt: now,
+  });
+}
+
+function upsertJobLock(key, nextState = {}) {
+  const existing = runtimeState.jobLocks.get(key) || {
+    key,
+    createdAt: toIso(),
+  };
+
+  const merged = {
+    ...existing,
+    ...nextState,
+    key,
+  };
+
+  runtimeState.jobLocks.set(key, merged);
+  return merged;
+}
+
+function trackJobLockAcquired(lock = {}) {
+  const key = String(lock.key || '');
+  if (!key) return null;
+
+  return upsertJobLock(key, {
+    jobName: lock.jobName || null,
+    contextKey: lock.contextKey || 'global',
+    ownerId: lock.ownerId || null,
+    acquiredAt: lock.acquiredAt ? toIso(lock.acquiredAt) : toIso(),
+    expiresAt: lock.expiresAt ? toIso(lock.expiresAt) : null,
+    metadata: lock.metadata || {},
+    status: 'active',
+    updatedAt: toIso(),
+  });
+}
+
+function trackJobLockReleased({ key, ownerId = null, reason = 'released' } = {}) {
+  const normalizedKey = String(key || '');
+  if (!normalizedKey) return null;
+
+  const existing = runtimeState.jobLocks.get(normalizedKey);
+  if (!existing) return null;
+
+  return upsertJobLock(normalizedKey, {
+    ownerId: ownerId || existing.ownerId || null,
+    status: reason,
+    releasedAt: toIso(),
+    updatedAt: toIso(),
+  });
+}
+
+function removeTrackedJobLock(key) {
+  runtimeState.jobLocks.delete(String(key || ''));
+}
+
+function pruneTrackedJobLocks(referenceTime = new Date()) {
+  const now = referenceTime instanceof Date ? referenceTime : new Date(referenceTime);
+
+  for (const [key, lock] of runtimeState.jobLocks.entries()) {
+    const expiresAt = lock?.expiresAt ? new Date(lock.expiresAt) : null;
+    if (lock?.status === 'active' && expiresAt && expiresAt <= now) {
+      runtimeState.jobLocks.set(key, {
+        ...lock,
+        status: 'expired',
+        updatedAt: toIso(now),
+      });
+      continue;
+    }
+
+    if (lock?.status && lock.status !== 'active') {
+      runtimeState.jobLocks.delete(key);
+    }
+  }
+}
+
 function setServerListening({ port } = {}) {
   runtimeState.listeningAt = toIso();
   runtimeState.port = port || runtimeState.port;
@@ -201,6 +286,8 @@ function serializeRecords(records) {
 }
 
 function getRuntimeSnapshot() {
+  pruneTrackedJobLocks();
+
   return {
     service: runtimeState.service,
     version: runtimeState.version,
@@ -209,6 +296,7 @@ function getRuntimeSnapshot() {
     port: runtimeState.port,
     startupTasks: serializeRecords(runtimeState.startupTasks),
     jobs: serializeRecords(runtimeState.jobs),
+    jobLocks: serializeRecords(runtimeState.jobLocks),
   };
 }
 
@@ -222,6 +310,11 @@ module.exports = {
   markJobRunStarted,
   markJobRunSuccess,
   markJobRunFailure,
+  markJobRunSkipped,
+  trackJobLockAcquired,
+  trackJobLockReleased,
+  removeTrackedJobLock,
+  pruneTrackedJobLocks,
   setServerListening,
   getRuntimeSnapshot,
 };

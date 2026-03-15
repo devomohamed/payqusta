@@ -12,15 +12,17 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!email) {
+    if (!normalizedEmail) {
       return toast.error('البريد الإلكتروني مطلوب');
     }
 
     setLoading(true);
     try {
-      const res = await api.post('/auth/forgot-password', { email });
+      const res = await api.post('/auth/forgot-password', { email: normalizedEmail });
       toast.success(res.data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور');
+      setEmail(normalizedEmail);
       setSent(true);
     } catch (err) {
       toast.error(err.response?.data?.message || 'حدث خطأ');

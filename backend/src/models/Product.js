@@ -354,7 +354,8 @@ productSchema.index({ tenant: 1, name: 'text', description: 'text' });
 productSchema.index({ tenant: 1, category: 1 });
 productSchema.index({ tenant: 1, stockStatus: 1 });
 productSchema.index({ tenant: 1, supplier: 1 });
-productSchema.index({ tenant: 1, isSuspended: 1 });
+productSchema.index({ tenant: 1, isSuspended: 1, isActive: 1 }); // Updated to include isActive
+productSchema.index({ tenant: 1, isActive: 1 }); // Added for speedy active lookups
 
 // Virtual: profit margin
 productSchema.virtual('profitMargin').get(function () {

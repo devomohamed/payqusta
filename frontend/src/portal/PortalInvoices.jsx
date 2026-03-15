@@ -401,6 +401,8 @@ export default function PortalInvoices() {
                   {[
                     { id: 'paymob', label: 'Paymob', sub: 'فيزا / ماستركارد / محفظة', icon: '💳' },
                     { id: 'fawry', label: 'Fawry', sub: 'دفع نقدي في المحلات', icon: '🏪' },
+                    { id: 'vodafone', label: 'Vodafone Cash', sub: 'تحويل محفظة', icon: '📱' },
+                    { id: 'instapay', label: 'InstaPay', sub: 'تحويل بنكي فوري', icon: '⚡' },
                   ].map((g) => (
                     <button
                       key={g.id}

@@ -3,6 +3,7 @@
  */
 
 const Branch = require('../models/Branch');
+const BranchSettlement = require('../models/BranchSettlement');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const { ROLES } = require('../config/constants');

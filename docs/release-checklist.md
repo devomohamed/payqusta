@@ -32,15 +32,16 @@
 ## Post Deploy Smoke
 
 1. Run `npm --prefix backend run release:smoke -- --app-url=https://your-service`
-2. Backoffice login
-3. Public storefront load
-4. Portal login
-5. Create one safe test customer or use sandbox data
-6. Create one invoice
-7. Record one payment
-8. Verify public order tracking if storefront checkout changed
-9. Verify shipping webhook endpoint is reachable if shipping logic changed
-10. Run through `docs/manual-qa-checklist.md` for the affected surfaces
+2. Run `npm --prefix backend run release:validate -- --app-url=https://your-service`
+3. Backoffice login
+4. Public storefront load
+5. Portal login
+6. Create one safe test customer or use sandbox data
+7. Create one invoice
+8. Record one payment
+9. Verify public order tracking if storefront checkout changed
+10. Verify shipping webhook endpoint is reachable if shipping logic changed
+11. Run through `docs/manual-qa-checklist.md` for the affected surfaces
 
 ## Rollback Trigger
 
@@ -48,6 +49,7 @@ Rollback immediately if any of these fail:
 
 - readiness stays `503`
 - protected ops endpoint fails for valid admin/vendor token
+- release validation reports failing jobs or expired job locks
 - invoice creation breaks
 - payment recording breaks
 - portal orders or storefront checkout regress
@@ -58,8 +60,3 @@ Rollback immediately if any of these fail:
 2. Re-check a protected API and a storefront API
 3. Review whether any data repair is needed
 4. Log the incident and root cause before the next rollout
-
-
-
-
-

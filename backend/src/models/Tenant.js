@@ -148,6 +148,40 @@ const tenantSchema = new mongoose.Schema(
           interestRate: { type: Number, default: 0 },
         }],
       },
+      autoBackup: {
+        enabled: { type: Boolean, default: false },
+        consentAcceptedAt: { type: Date, default: null },
+        consentAcceptedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          default: null,
+        },
+        frequency: {
+          type: String,
+          enum: ['daily'],
+          default: 'daily',
+        },
+        format: {
+          type: String,
+          enum: ['json'],
+          default: 'json',
+        },
+        destination: {
+          type: {
+            type: String,
+            enum: ['platform_storage'],
+            default: 'platform_storage',
+          },
+        },
+        retention: {
+          keepLast: { type: Number, default: 14, min: 1, max: 90 },
+        },
+        lastRunAt: { type: Date, default: null },
+        lastSuccessAt: { type: Date, default: null },
+        lastFailureAt: { type: Date, default: null },
+        lastError: { type: String, default: '' },
+        lastBackupKey: { type: String, default: '' },
+      },
     },
     // WhatsApp configuration
     whatsapp: {

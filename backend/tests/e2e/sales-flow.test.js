@@ -201,6 +201,159 @@ describeDb('Sales flow DB-backed E2E', () => {
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0].name).toBe('Tenant A Customer');
   });
+
+  it('blocks cross-tenant invoice creation when the customer or product belongs to another tenant', async () => {
+    const tenantA = await createTenant({ name: 'Tenant A' });
+    const tenantB = await createTenant({ name: 'Tenant B' });
+    const vendorA = await createVendorUser(tenantA, {
+      email: 'writer-a@example.com',
+      phone: '01020000011',
+    });
+    const tokenA = await loginAs(vendorA.email);
+
+    const customerA = await Customer.create({
+      tenant: tenantA._id,
+      name: 'Tenant A Customer',
+      phone: '01030000011',
+      address: 'Alexandria',
+    });
+    const customerB = await Customer.create({
+      tenant: tenantB._id,
+      name: 'Tenant B Customer',
+      phone: '01030000012',
+      address: 'Cairo',
+    });
+    const productA = await createProduct(tenantA, {
+      name: 'Tenant A Product',
+      sku: 'TENANT-A-PRODUCT',
+    });
+    const productB = await createProduct(tenantB, {
+      name: 'Tenant B Product',
+      sku: 'TENANT-B-PRODUCT',
+    });
+
+    const foreignCustomerRes = await api
+      .post('/api/v1/invoices')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        customerId: customerB._id.toString(),
+        items: [
+          {
+            productId: productA._id.toString(),
+            quantity: 1,
+          },
+        ],
+        paymentMethod: 'cash',
+        source: 'pos',
+      });
+
+    expect(foreignCustomerRes.statusCode).toBe(404);
+    expect(foreignCustomerRes.body.success).toBe(false);
+
+    const foreignProductRes = await api
+      .post('/api/v1/invoices')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        customerId: customerA._id.toString(),
+        items: [
+          {
+            productId: productB._id.toString(),
+            quantity: 1,
+          },
+        ],
+        paymentMethod: 'cash',
+        source: 'pos',
+      });
+
+    expect(foreignProductRes.statusCode).toBe(404);
+    expect(foreignProductRes.body.success).toBe(false);
+
+    const tenantAInvoices = await Invoice.countDocuments({ tenant: tenantA._id });
+    const productBStored = await Product.findById(productB._id).lean();
+
+    expect(tenantAInvoices).toBe(0);
+    expect(productBStored.stock.quantity).toBe(5);
+  });
+
+  it('blocks cross-tenant writes on existing customer, product, and invoice records', async () => {
+    const tenantA = await createTenant({ name: 'Tenant A' });
+    const tenantB = await createTenant({ name: 'Tenant B' });
+    const vendorA = await createVendorUser(tenantA, {
+      email: 'writer-a-2@example.com',
+      phone: '01020000021',
+    });
+    const vendorB = await createVendorUser(tenantB, {
+      email: 'writer-b@example.com',
+      phone: '01020000022',
+    });
+
+    const customerB = await Customer.create({
+      tenant: tenantB._id,
+      name: 'Tenant B Customer',
+      phone: '01030000021',
+      address: 'Cairo',
+    });
+    const productB = await createProduct(tenantB, {
+      name: 'Tenant B Product',
+      sku: 'TENANT-B-PRODUCT-2',
+    });
+    const tokenA = await loginAs(vendorA.email);
+    const tokenB = await loginAs(vendorB.email);
+
+    const invoiceRes = await api
+      .post('/api/v1/invoices')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({
+        customerId: customerB._id.toString(),
+        items: [
+          {
+            productId: productB._id.toString(),
+            quantity: 1,
+          },
+        ],
+        paymentMethod: 'deferred',
+        source: 'pos',
+      });
+
+    expect(invoiceRes.statusCode).toBe(201);
+    const invoiceId = invoiceRes.body.data._id;
+
+    const updateCustomerRes = await api
+      .put(`/api/v1/customers/${customerB._id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ name: 'Leaked Customer' });
+
+    expect(updateCustomerRes.statusCode).toBe(404);
+    expect(updateCustomerRes.body.success).toBe(false);
+
+    const updateProductRes = await api
+      .put(`/api/v1/products/${productB._id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ name: 'Leaked Product' });
+
+    expect(updateProductRes.statusCode).toBe(404);
+    expect(updateProductRes.body.success).toBe(false);
+
+    const payInvoiceRes = await api
+      .post(`/api/v1/invoices/${invoiceId}/pay`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        amount: 10,
+        method: 'cash',
+      });
+
+    expect(payInvoiceRes.statusCode).toBe(404);
+    expect(payInvoiceRes.body.success).toBe(false);
+
+    const storedCustomer = await Customer.findById(customerB._id).lean();
+    const storedProduct = await Product.findById(productB._id).lean();
+    const storedInvoice = await Invoice.findById(invoiceId).lean();
+
+    expect(storedCustomer.name).toBe('Tenant B Customer');
+    expect(storedProduct.name).toBe('Tenant B Product');
+    expect(storedInvoice.paidAmount).toBe(0);
+    expect(storedInvoice.remainingAmount).toBe(storedInvoice.totalAmount);
+  });
 });
 
 if (!hasDbTestEnv()) {

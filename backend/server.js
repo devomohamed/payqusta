@@ -39,6 +39,7 @@ const {
 const InstallmentScheduler = require('./src/jobs/InstallmentScheduler');
 const StockMonitorJob = require('./src/jobs/StockMonitorJob');
 const ProductTrendsJob = require('./src/jobs/ProductTrendsJob');
+const TenantBackupJob = require('./src/jobs/TenantBackupJob');
 const {
   migrateLocalUploadsToDatabase,
   shouldRunLocalUploadMigration,
@@ -323,9 +324,12 @@ class PayQustaServer {
     const productTrends = new ProductTrendsJob();
     productTrends.start();
 
+    const tenantBackupJob = new TenantBackupJob();
+    tenantBackupJob.start();
+
     logger.info('✅ Scheduled jobs started');
     completeStartupTask('scheduled_jobs', {
-      registeredJobs: 5,
+      registeredJobs: 6,
     });
   }
 

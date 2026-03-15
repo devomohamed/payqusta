@@ -1,11 +1,13 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, ChevronDown, Package, MessageCircle, PhoneCall, Camera, LayoutDashboard } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, ChevronDown, Package, MessageCircle, PhoneCall, Camera, LayoutDashboard, Send, Clock, CheckCircle2, ArrowUpRight, FileText, RotateCcw, Bell } from 'lucide-react';
 import { usePortalStore } from '../store/portalStore';
 import { useAuthStore } from '../store';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import NotificationDropdown from '../components/NotificationDropdown';
 import BarcodeScanner from '../components/BarcodeScanner';
+import { Badge, Button, Input, Modal, TextArea } from '../components/UI';
+import { notify } from '../components/AnimatedNotification';
 import { getBackofficeDashboardUrl, storefrontPath } from '../utils/storefrontHost';
 import { pickProductImage } from '../utils/media';
 import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
@@ -42,6 +44,13 @@ export default function StorefrontLayout({ children }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchCatalog, setSearchCatalog] = useState([]);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportType, setSupportType] = useState('inquiry');
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [supportTicketsLoading, setSupportTicketsLoading] = useState(false);
   const searchRef = useRef(null);
   const searchTimeout = useRef(null);
   const bootstrappedRef = useRef(false);
@@ -51,6 +60,9 @@ export default function StorefrontLayout({ children }) {
   const isAuthenticated = usePortalStore(state => state.isAuthenticated);
   const customer = usePortalStore(state => state.customer);
   const cart = usePortalStore(state => state.cart);
+  const unreadCount = usePortalStore(state => state.unreadCount);
+  const sendSupportMessage = usePortalStore(state => state.sendSupportMessage);
+  const fetchSupportMessages = usePortalStore(state => state.fetchSupportMessages);
 
   const isAdminAuthenticated = useAuthStore(state => state.isAuthenticated);
   const adminUser = useAuthStore(state => state.user);
@@ -73,6 +85,20 @@ export default function StorefrontLayout({ children }) {
   const directSupportPhone = settings?.store?.phone?.trim() || '';
   const publicSupportHref = directSupportPhone ? `tel:${directSupportPhone}` : storefrontPath('/track-order');
   const storefrontBarcodeSearchEnabled = settings?.settings?.barcode?.storefrontBarcodeSearchEnabled === true;
+  const supportTicketsOpenCount = supportTickets.filter((ticket) => ticket?.status !== 'closed').length;
+  const supportQuickTypes = [
+    { value: 'inquiry', label: 'استفسار عام' },
+    { value: 'order', label: 'مشكلة طلب' },
+    { value: 'payment', label: 'مشكلة دفع' },
+    { value: 'complaint', label: 'شكوى' },
+  ];
+  const portalBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
+  const customerNavLinks = [
+    { key: 'orders', label: 'طلباتي', to: `${portalBasePath}/orders`, icon: Package },
+    { key: 'invoices', label: 'فواتيري', to: `${portalBasePath}/invoices`, icon: FileText },
+    { key: 'returns', label: 'المرتجعات', to: `${portalBasePath}/returns`, icon: RotateCcw },
+    { key: 'support', label: 'الدعم', to: `${portalBasePath}/support`, icon: MessageCircle },
+  ];
   const headerSearchSuggestions = buildStorefrontSearchSuggestions({
     products: searchCatalog,
     categories,
@@ -100,6 +126,11 @@ export default function StorefrontLayout({ children }) {
     setMobileMenuOpen(false);
     setSearchOpen(false);
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!showSupportModal || !isAuthenticated || !customer) return;
+    loadSupportTickets();
+  }, [showSupportModal, isAuthenticated, customer]);
 
   // Close search on outside click
   useEffect(() => {
@@ -197,6 +228,54 @@ export default function StorefrontLayout({ children }) {
       navigate(storefrontPath(`/products/${product._id}`));
     } catch (_) {
       setShowBarcodeScanner(false);
+    }
+  };
+
+  const loadSupportTickets = async () => {
+    setSupportTicketsLoading(true);
+    try {
+      const data = await fetchSupportMessages();
+      setSupportTickets(Array.isArray(data) ? data : []);
+    } finally {
+      setSupportTicketsLoading(false);
+    }
+  };
+
+  const handleSupportSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!supportSubject.trim() || !supportMessage.trim()) {
+      notify.error('اكتب عنوان الرسالة والمحتوى قبل الإرسال');
+      return;
+    }
+
+    setSupportSubmitting(true);
+    try {
+      const result = await sendSupportMessage(supportSubject.trim(), supportMessage.trim(), supportType);
+      if (!result?.success) {
+        notify.error(result?.message || 'فشل إرسال الرسالة');
+        return;
+      }
+
+      notify.success(result.message || 'تم إرسال رسالتك إلى المتجر');
+      setSupportSubject('');
+      setSupportMessage('');
+      setSupportType('inquiry');
+      await loadSupportTickets();
+      setShowSupportModal(false);
+    } finally {
+      setSupportSubmitting(false);
+    }
+  };
+
+  const supportStatusBadge = (status) => {
+    switch (status) {
+      case 'replied':
+        return { label: 'تم الرد', className: 'bg-emerald-100 text-emerald-700' };
+      case 'closed':
+        return { label: 'مغلقة', className: 'bg-slate-100 text-slate-600' };
+      default:
+        return { label: 'مفتوحة', className: 'bg-amber-100 text-amber-700' };
     }
   };
 
@@ -463,6 +542,53 @@ export default function StorefrontLayout({ children }) {
         </div>
       </header>
 
+      {isAuthenticated && customer ? (
+        <section className="border-b border-gray-100 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3" dir="rtl">
+            <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              <div className="hidden md:flex min-w-max items-center gap-3 rounded-2xl bg-gray-50 px-4 py-2.5 text-right dark:bg-gray-800/70">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
+                  <User className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-900 dark:text-white">{customer?.name || 'حسابك'}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">وصول سريع داخل المتجر</p>
+                </div>
+              </div>
+
+              {customerNavLinks.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname.startsWith(item.to);
+                return (
+                  <Link
+                    key={item.key}
+                    to={item.to}
+                    className={`inline-flex min-w-max items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-black transition-all ${isActive ? 'border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'border-gray-200 bg-white text-slate-600 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 dark:border-gray-700 dark:bg-gray-900 dark:text-slate-300 dark:hover:border-primary-700 dark:hover:bg-primary-900/20 dark:hover:text-primary-300'}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => setShowSupportModal(true)}
+                className="inline-flex min-w-max items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+              >
+                <Bell className="h-4 w-4" />
+                إشعارات ودعم
+                {unreadCount > 0 ? (
+                  <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                ) : null}
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-32">
         {children}
       </main>
@@ -472,6 +598,157 @@ export default function StorefrontLayout({ children }) {
           onScan={handleBarcodeLookup}
           onClose={() => setShowBarcodeScanner(false)}
         />
+      ) : null}
+
+      {showSupportModal && customer ? (
+        <Modal
+          open={showSupportModal}
+          onClose={() => setShowSupportModal(false)}
+          title="الدعم السريع"
+          size="lg"
+        >
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]" dir="rtl">
+            <div className="space-y-4">
+              <div className="rounded-[1.5rem] border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-emerald-50 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-900">مرحبًا {customer?.name?.split(' ')[0] || 'بك'}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      أرسل رسالة سريعة للمتجر أو افتح صفحة الدعم الكاملة لمتابعة المحادثات والردود.
+                    </p>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
+                    <MessageCircle className="h-5 w-5" />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge className="bg-white text-slate-700">التذاكر المفتوحة: {supportTicketsOpenCount}</Badge>
+                  {directSupportPhone ? <Badge className="bg-white text-slate-700">هاتف المتجر متاح</Badge> : null}
+                </div>
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    to={`${portalBasePath}/support`}
+                    onClick={() => setShowSupportModal(false)}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-slate-800"
+                  >
+                    افتح مركز الدعم
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                  {directSupportPhone ? (
+                    <a
+                      href={`tel:${directSupportPhone}`}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"
+                    >
+                      اتصال سريع
+                      <PhoneCall className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+
+              <form onSubmit={handleSupportSubmit} className="space-y-4 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap gap-2">
+                  {supportQuickTypes.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setSupportType(item.value)}
+                      className={`rounded-full px-4 py-2 text-xs font-black transition-colors ${supportType === item.value ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <Input
+                  label="عنوان الرسالة"
+                  value={supportSubject}
+                  onChange={(event) => setSupportSubject(event.target.value)}
+                  placeholder="مثال: تأخير في شحن الطلب"
+                  autoFocus
+                />
+
+                <TextArea
+                  label="تفاصيل الرسالة"
+                  value={supportMessage}
+                  onChange={(event) => setSupportMessage(event.target.value)}
+                  placeholder="اكتب المشكلة أو الاستفسار باختصار واضح حتى يصل للفريق بسرعة."
+                  rows={5}
+                />
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    loading={supportSubmitting}
+                    icon={!supportSubmitting ? <Send className="h-4 w-4" /> : undefined}
+                  >
+                    إرسال إلى المتجر
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowSupportModal(false)}
+                  >
+                    إغلاق
+                  </Button>
+                </div>
+              </form>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="text-right">
+                  <h3 className="text-lg font-black text-slate-900">آخر المحادثات</h3>
+                  <p className="mt-1 text-sm text-slate-500">ملخص سريع قبل فتح مركز الدعم الكامل.</p>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm">
+                  <Clock className="h-4.5 w-4.5" />
+                </div>
+              </div>
+
+              {supportTicketsLoading ? (
+                <div className="flex min-h-[220px] items-center justify-center">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-500 shadow-sm">
+                    <Clock className="h-4 w-4 animate-pulse" />
+                    جاري تحميل المحادثات
+                  </div>
+                </div>
+              ) : supportTickets.length > 0 ? (
+                <div className="space-y-3">
+                  {supportTickets.slice(0, 4).map((ticket) => {
+                    const status = supportStatusBadge(ticket?.status);
+                    return (
+                      <Link
+                        key={ticket._id}
+                        to={`${portalBasePath}/support/${ticket._id}`}
+                        onClick={() => setShowSupportModal(false)}
+                        className="block rounded-2xl border border-white bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-black text-slate-900">{ticket.subject}</p>
+                            <p className="mt-1 line-clamp-2 text-xs leading-6 text-slate-500">{ticket.message}</p>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-[11px] font-black ${status.className}`}>{status.label}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 text-center">
+                  <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+                  <p className="mt-4 text-sm font-black text-slate-900">لا توجد محادثات حالية</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-500">ابدأ أول رسالة من النموذج المجاور وسيتم تتبعها هنا تلقائيًا.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
       ) : null}
 
       {/* ─── FOOTER ─── */}
@@ -534,14 +811,20 @@ export default function StorefrontLayout({ children }) {
       ) : null}
 
       {/* Floating Support Button */}
-      {showSupportFab && customer ? (
-        <Link
-          to="/portal/support"
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-primary-600 px-3 py-3 text-white shadow-2xl transition-transform hover:scale-105 hover:bg-primary-500 sm:bottom-6 sm:right-6 sm:gap-3 sm:px-4 sm:py-3.5"
+      {showSupportFab && customer && isAuthenticated ? (
+        <button
+          type="button"
+          onClick={() => setShowSupportModal(true)}
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-primary-600 px-3 py-3 text-white shadow-2xl transition-transform hover:scale-105 hover:bg-primary-500 sm:bottom-6 sm:right-6 sm:gap-3 sm:px-4 sm:py-3.5 relative"
         >
           <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
           <span className="font-bold text-sm hidden sm:inline-block">الدعم المباشر</span>
-        </Link>
+          {supportTicketsOpenCount > 0 ? (
+            <span className="absolute -top-1 -left-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-400 px-1 text-[10px] font-black text-slate-950">
+              {supportTicketsOpenCount > 9 ? '9+' : supportTicketsOpenCount}
+            </span>
+          ) : null}
+        </button>
       ) : showSupportFab ? (
         <a
           href={publicSupportHref}

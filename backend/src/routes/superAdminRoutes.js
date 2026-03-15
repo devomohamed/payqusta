@@ -3,12 +3,26 @@
  */
 
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const superAdminController = require('../controllers/superAdminController');
 const planController = require('../controllers/planController');
 const paymentMethodController = require('../controllers/paymentMethodController');
 const { requireSuperAdmin } = require('../middleware/requireSuperAdmin');
 const { requireSystemOwner } = require('../middleware/requireSystemOwner');
+const { isAllowedJsonFile } = require('../utils/fileValidation');
+const AppError = require('../utils/AppError');
+
+const platformBackupUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (isAllowedJsonFile(file)) {
+      return cb(null, true);
+    }
+    return cb(AppError.badRequest('Only JSON backup files are allowed'), false);
+  },
+});
 
 // All routes require Super Admin access
 router.use(requireSuperAdmin);
@@ -38,5 +52,11 @@ router.post('/subscription-requests/:id/reject', superAdminController.rejectSubs
 
 router.get('/leads', superAdminController.getPublicLeads);
 router.patch('/leads/:id', superAdminController.updatePublicLead);
+
+router.get('/backup/stats', requireSystemOwner, superAdminController.getPlatformBackupStats);
+router.get('/backup/export-json', requireSystemOwner, superAdminController.exportPlatformBackupJSON);
+router.get('/backup/export-full-json', requireSystemOwner, superAdminController.exportFullPlatformBackupJSON);
+router.post('/backup/restore-json', requireSystemOwner, platformBackupUpload.single('file'), superAdminController.restorePlatformBackupJSON);
+router.post('/backup/restore-full-json', requireSystemOwner, platformBackupUpload.single('file'), superAdminController.restoreFullPlatformBackupJSON);
 
 module.exports = router;

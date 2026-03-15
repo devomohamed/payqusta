@@ -499,6 +499,7 @@ module.exports = {
   serveUploadedFile,
   getUploadStorageMode,
   uploadSingle: upload.single('image'),
+  uploadAvatar: upload.single('avatar'),
   uploadMultiple: upload.array('images', PRODUCT_IMAGE_UPLOAD_LIMIT),
   uploadEditorImages: upload.fields([
     { name: 'image', maxCount: 1 },

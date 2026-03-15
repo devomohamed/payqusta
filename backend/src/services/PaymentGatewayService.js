@@ -22,7 +22,58 @@ const safeEqual = (left, right) => {
   return crypto.timingSafeEqual(normalizedLeft, normalizedRight);
 };
 
+const MANUAL_GATEWAY_SUCCESS_STATUSES = new Set([
+  'paid',
+  'success',
+  'successful',
+  'completed',
+  'settled',
+  'approved',
+  'captured',
+]);
+
+const MANUAL_GATEWAY_FAILURE_STATUSES = new Set([
+  'failed',
+  'cancelled',
+  'canceled',
+  'declined',
+  'rejected',
+  'expired',
+  'voided',
+]);
+
+const isMongoId = (value) => /^[0-9a-fA-F]{24}$/.test(String(value || ''));
+const pickFirst = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+
 class PaymentGatewayService {
+  getAppUrl() {
+    return String(process.env.APP_URL || 'http://localhost:5173').replace(/\/+$/, '');
+  }
+
+  getPaymentLinkSecret() {
+    return String(process.env.PAYMENT_LINK_SECRET || process.env.JWT_SECRET || 'payqusta-dev-payment-link-secret');
+  }
+
+  createPublicAccessToken(transactionId) {
+    return crypto
+      .createHmac('sha256', this.getPaymentLinkSecret())
+      .update(String(transactionId))
+      .digest('hex');
+  }
+
+  verifyPublicAccessToken(transactionId, providedToken) {
+    return safeEqual(this.createPublicAccessToken(transactionId), String(providedToken || '').toLowerCase());
+  }
+
+  buildPublicPaymentLink(gateway, transactionId) {
+    const access = this.createPublicAccessToken(transactionId);
+    return `${this.getAppUrl()}/payment/${gateway}/${transactionId}?access=${access}`;
+  }
+
+  formatAmount(amount, currency = gateways.settings.currency) {
+    return `${Number(amount || 0).toFixed(2)} ${currency || 'EGP'}`;
+  }
+
   getGatewayConfig(gateway) {
     const normalizedGateway = String(gateway || '').toLowerCase();
 
@@ -30,6 +81,295 @@ class PaymentGatewayService {
     if (normalizedGateway === 'instapay') return gateways.instaPay;
 
     return gateways[normalizedGateway];
+  }
+
+  buildManualPaymentInstructions(gateway, transaction) {
+    const normalizedGateway = String(gateway || '').toLowerCase();
+    const amountText = this.formatAmount(transaction.netAmount, transaction.currency);
+
+    if (normalizedGateway === 'fawry') {
+      const config = gateways.fawry;
+      return {
+        providerName: 'Fawry',
+        title: 'تعليمات السداد عبر فوري',
+        description: 'استخدم الرقم المرجعي التالي في أي نقطة فوري لإتمام السداد.',
+        referenceLabel: config.paymentCodeLabel || 'الرقم المرجعي',
+        referenceValue: transaction.transactionId,
+        destinationLabel: config.merchantCode ? 'Merchant Code' : '',
+        destinationValue: config.merchantCode || '',
+        destinationHint: config.branchHint || '',
+        launchUrl: '',
+        steps: [
+          'توجه إلى أقرب فرع فوري أو تاجر معتمد.',
+          'اطلب سداد الفاتورة باستخدام الرقم المرجعي الموضح في الصفحة.',
+          `ادفع نفس المبلغ المطلوب: ${amountText}.`,
+          'احتفظ بالإيصال حتى يتم تأكيد العملية داخل النظام.',
+        ],
+      };
+    }
+
+    if (normalizedGateway === 'vodafone') {
+      const config = gateways.vodafoneCash;
+      return {
+        providerName: 'Vodafone Cash',
+        title: 'تحويل عبر فودافون كاش',
+        description: 'حوّل المبلغ إلى رقم المحفظة التالي ثم أكمل العملية من تطبيق Vodafone Cash.',
+        referenceLabel: 'رقم المرجع',
+        referenceValue: transaction.transactionId,
+        destinationLabel: 'رقم المحفظة',
+        destinationValue: config.number || config.merchantId || 'غير محدد بعد',
+        destinationHint: config.accountName || '',
+        launchUrl: config.number
+          ? `vfcash://pay?to=${encodeURIComponent(config.number)}&amount=${encodeURIComponent(transaction.netAmount)}`
+          : '',
+        steps: [
+          'افتح تطبيق Vodafone Cash أو استخدم طريقة التحويل المعتادة.',
+          'حوّل المبلغ إلى رقم المحفظة الظاهر في الصفحة.',
+          `أدخل الرقم المرجعي ${transaction.transactionId} في ملاحظات التحويل إن أمكن.`,
+          'بعد نجاح التحويل سيتم تحديث حالة العملية عند وصول التأكيد.',
+        ],
+      };
+    }
+
+    if (normalizedGateway === 'instapay') {
+      const config = gateways.instaPay;
+      return {
+        providerName: 'InstaPay',
+        title: 'تحويل عبر إنستا باي',
+        description: 'استخدم حساب InstaPay التالي لتحويل المبلغ المطلوب.',
+        referenceLabel: 'رقم المرجع',
+        referenceValue: transaction.transactionId,
+        destinationLabel: 'حساب InstaPay',
+        destinationValue: config.account || config.merchantId || 'غير محدد بعد',
+        destinationHint: [config.accountName, config.bankName].filter(Boolean).join(' • '),
+        launchUrl: config.account
+          ? `instapay://pay?ipa=${encodeURIComponent(config.account)}&amount=${encodeURIComponent(transaction.netAmount)}`
+          : '',
+        steps: [
+          'افتح تطبيق InstaPay.',
+          'اختر تحويل جديد ثم الصق الحساب المعروض في الصفحة.',
+          `حوّل المبلغ المطلوب: ${amountText}.`,
+          `احتفظ بالمرجع ${transaction.transactionId} حتى اكتمال التأكيد.`,
+        ],
+      };
+    }
+
+    return {
+      providerName: gateway,
+      title: 'تعليمات الدفع',
+      description: 'اتبع تعليمات الدفع الخاصة ببوابة الدفع المختارة.',
+      referenceLabel: 'رقم المرجع',
+      referenceValue: transaction.transactionId,
+      destinationLabel: '',
+      destinationValue: '',
+      destinationHint: '',
+      launchUrl: '',
+      steps: [],
+    };
+  }
+
+  buildPaymentResponseMeta(gateway, transaction) {
+    if (String(gateway || '').toLowerCase() === 'paymob') {
+      return null;
+    }
+
+    const instructions = this.buildManualPaymentInstructions(gateway, transaction);
+
+    return {
+      type: gateway === 'fawry' ? 'cash_reference' : 'wallet_transfer',
+      providerName: instructions.providerName,
+      title: instructions.title,
+      description: instructions.description,
+      referenceLabel: instructions.referenceLabel,
+      referenceValue: instructions.referenceValue,
+      destinationLabel: instructions.destinationLabel,
+      destinationValue: instructions.destinationValue,
+      destinationHint: instructions.destinationHint,
+      launchUrl: instructions.launchUrl,
+      steps: instructions.steps,
+    };
+  }
+
+  extractManualWebhookPayload(data) {
+    const root = data?.obj || data || {};
+    const rawStatus = pickFirst(
+      root.status,
+      root.paymentStatus,
+      root.txStatus,
+      root.orderStatus,
+      root.event,
+      root.type
+    );
+    const normalizedStatus = String(rawStatus || '').trim().toLowerCase();
+    const successFlag = root.success === true || root.success === 'true';
+    const failureFlag = root.success === false || root.success === 'false';
+
+    return {
+      rawStatus,
+      status: normalizedStatus,
+      isSuccess: successFlag || MANUAL_GATEWAY_SUCCESS_STATUSES.has(normalizedStatus),
+      isFailure: failureFlag || MANUAL_GATEWAY_FAILURE_STATUSES.has(normalizedStatus),
+      reference: pickFirst(
+        root.referenceNumber,
+        root.reference,
+        root.merchantRefNum,
+        root.merchantRefNumber,
+        root.merchant_order_id,
+        root.orderId,
+        root.transactionId,
+        root.order?.merchant_order_id
+      ),
+      gatewayTransactionId: pickFirst(
+        root.gatewayTransactionId,
+        root.providerTransactionId,
+        root.paymentId,
+        root.fawryRefNumber,
+        root.fawryRefNum,
+        root.transactionNo,
+        root.txnId,
+        root.id
+      ),
+      amount: pickFirst(root.amount, root.amount_cents ? Number(root.amount_cents) / 100 : undefined),
+      signature: pickFirst(root.signature, root.hmac, root.hash, root.secureHash, root.signatureHash),
+      message: pickFirst(root.message, root.reason, root.failureReason, root.error, root.description),
+    };
+  }
+
+  verifyManualWebhookSignature(gateway, payload) {
+    const config = this.getGatewayConfig(gateway);
+    const configuredSecret = String(
+      config?.webhookSecret || config?.securityKey || config?.apiKey || ''
+    ).trim();
+
+    if (!configuredSecret) {
+      return true;
+    }
+
+    if (!payload.signature) {
+      return false;
+    }
+
+    const signatureBase = [
+      payload.reference || '',
+      payload.gatewayTransactionId || '',
+      payload.status || '',
+      payload.amount !== undefined ? String(payload.amount) : '',
+    ].join('|');
+
+    const calculatedSignature = crypto
+      .createHmac('sha256', configuredSecret)
+      .update(signatureBase)
+      .digest('hex');
+
+    return safeEqual(calculatedSignature, String(payload.signature).toLowerCase());
+  }
+
+  async findTransactionByWebhookReference(gateway, payload) {
+    const references = [payload.reference, payload.gatewayTransactionId].filter(Boolean);
+
+    if (!references.length) {
+      throw AppError.badRequest('بيانات العملية غير كافية');
+    }
+
+    const query = {
+      gateway,
+      $or: [
+        { transactionId: { $in: references } },
+        { gatewayTransactionId: { $in: references } },
+        { gatewayOrderId: { $in: references } },
+      ],
+    };
+
+    const mongoIds = references.filter((value) => isMongoId(value));
+    if (mongoIds.length) {
+      query.$or.push({ _id: { $in: mongoIds } });
+    }
+
+    const transaction = await PaymentTransaction.findOne(query).populate('invoice customer');
+    if (!transaction) {
+      throw AppError.notFound('Transaction not found');
+    }
+
+    return transaction;
+  }
+
+  async processManualGatewayWebhook(gateway, data) {
+    const payload = this.extractManualWebhookPayload(data);
+
+    if (!this.verifyManualWebhookSignature(gateway, payload)) {
+      logger.error(`${gateway} webhook signature verification failed`);
+      throw AppError.forbidden('Invalid webhook signature');
+    }
+
+    const transaction = await this.findTransactionByWebhookReference(gateway, payload);
+
+    if (payload.reference) {
+      transaction.gatewayOrderId = transaction.gatewayOrderId || String(payload.reference);
+    }
+    if (payload.gatewayTransactionId) {
+      transaction.gatewayTransactionId = String(payload.gatewayTransactionId);
+    }
+
+    if (payload.isSuccess) {
+      const alreadyCounted = ['success', 'refunded'].includes(transaction.status);
+      if (!alreadyCounted) {
+        await transaction.markAsSuccess(data);
+        await this.updateInvoicePayment(transaction);
+      } else {
+        transaction.gatewayResponse = data;
+        transaction.webhookReceived = true;
+        await transaction.save();
+      }
+      logger.info(`${gateway} payment successful: ${transaction.transactionId}`);
+    } else if (payload.isFailure) {
+      await transaction.markAsFailed(payload.message || 'Payment failed from gateway', data);
+      logger.warn(`${gateway} payment failed: ${transaction.transactionId}`);
+    } else {
+      transaction.status = 'processing';
+      transaction.notes = payload.message || `Webhook status: ${payload.rawStatus || 'processing'}`;
+      transaction.gatewayResponse = data;
+      transaction.webhookReceived = true;
+      await transaction.save();
+      logger.info(`${gateway} payment still processing: ${transaction.transactionId}`);
+    }
+
+    transaction.webhookData = data;
+    await transaction.save();
+
+    return transaction;
+  }
+
+  async getPublicPaymentSession(transactionId, accessToken) {
+    if (!this.verifyPublicAccessToken(transactionId, accessToken)) {
+      throw AppError.forbidden('رابط الدفع غير صالح');
+    }
+
+    const transaction = await PaymentTransaction.findById(transactionId)
+      .populate('invoice', 'invoiceNumber')
+      .populate('customer', 'name');
+
+    if (!transaction) {
+      throw AppError.notFound('المعاملة غير موجودة');
+    }
+
+    return {
+      id: transaction._id,
+      transactionId: transaction.transactionId,
+      gateway: transaction.gateway,
+      status: transaction.status,
+      amount: transaction.amount,
+      fees: transaction.fees,
+      discount: transaction.discount,
+      netAmount: transaction.netAmount,
+      currency: transaction.currency,
+      expiresAt: transaction.linkExpiresAt,
+      completedAt: transaction.completedAt,
+      createdAt: transaction.createdAt,
+      invoiceNumber: transaction.invoice?.invoiceNumber || '',
+      customerName: transaction.customer?.name || '',
+      paymentLink: transaction.paymentLink,
+      paymentMeta: this.buildPaymentResponseMeta(transaction.gateway, transaction),
+    };
   }
 
   async authenticatePaymob() {
@@ -170,6 +510,7 @@ class PaymentGatewayService {
         expiresAt: transaction.linkExpiresAt
       },
       paymentLink,
+      paymentMeta: this.buildPaymentResponseMeta(gateway, transaction),
       expiresAt: transaction.linkExpiresAt
     };
   }
@@ -250,19 +591,14 @@ class PaymentGatewayService {
    * Create Fawry payment link (simplified version)
    */
   async createFawryLink(transaction, invoice) {
-    const config = gateways.fawry;
-
     try {
       const referenceNumber = transaction.transactionId;
-      
-      // For now, return a placeholder
-      // Full Fawry integration requires merchant setup
       transaction.gatewayTransactionId = referenceNumber;
+      transaction.gatewayOrderId = referenceNumber;
       transaction.status = 'processing';
       await transaction.save();
 
-      // Return Fawry payment instruction page
-      return `${process.env.APP_URL || 'http://localhost:5173'}/payment/fawry/${transaction._id}`;
+      return this.buildPublicPaymentLink('fawry', transaction._id);
     } catch (error) {
       logger.error('Fawry error:', error);
       throw AppError.badRequest('فشل إنشاء رابط الدفع من Fawry');
@@ -273,24 +609,24 @@ class PaymentGatewayService {
    * Create Vodafone Cash payment link (simplified)
    */
   async createVodafoneLink(transaction, invoice) {
-    // Placeholder implementation
     transaction.gatewayTransactionId = transaction.transactionId;
+    transaction.gatewayOrderId = transaction.transactionId;
     transaction.status = 'processing';
     await transaction.save();
 
-    return `${process.env.APP_URL || 'http://localhost:5173'}/payment/vodafone/${transaction._id}`;
+    return this.buildPublicPaymentLink('vodafone', transaction._id);
   }
 
   /**
    * Create InstaPay payment link (simplified)
    */
   async createInstaPayLink(transaction, invoice) {
-    // Placeholder implementation
     transaction.gatewayTransactionId = transaction.transactionId;
+    transaction.gatewayOrderId = transaction.transactionId;
     transaction.status = 'processing';
     await transaction.save();
 
-    return `${process.env.APP_URL || 'http://localhost:5173'}/payment/instapay/${transaction._id}`;
+    return this.buildPublicPaymentLink('instapay', transaction._id);
   }
 
   /**
@@ -486,28 +822,24 @@ class PaymentGatewayService {
   }
 
   /**
-   * Process Fawry webhook (placeholder)
+   * Process Fawry webhook
    */
   async processFawryWebhook(data) {
-    // Implementation needed based on Fawry webhook format
-    logger.info('Fawry webhook received:', data);
-    return null;
+    return this.processManualGatewayWebhook('fawry', data);
   }
 
   /**
-   * Process Vodafone webhook (placeholder)
+   * Process Vodafone webhook
    */
   async processVodafoneWebhook(data) {
-    logger.info('Vodafone webhook received:', data);
-    return null;
+    return this.processManualGatewayWebhook('vodafone', data);
   }
 
   /**
-   * Process InstaPay webhook (placeholder)
+   * Process InstaPay webhook
    */
   async processInstaPayWebhook(data) {
-    logger.info('InstaPay webhook received:', data);
-    return null;
+    return this.processManualGatewayWebhook('instapay', data);
   }
 
   /**

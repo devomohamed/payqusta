@@ -594,6 +594,8 @@ export const importApi = {
 export const backupApi = {
   exportData: () => api.get('/backup/export', { responseType: 'blob' }),
   getStats: () => api.get('/backup/stats'),
+  getAutoSettings: () => api.get('/backup/auto-settings'),
+  updateAutoSettings: (data) => api.put('/backup/auto-settings', data),
   restore: (formData) => api.post('/backup/restore', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 

@@ -28,6 +28,7 @@ const PublicPrivacyPage = React.lazy(() => import('./pages/PublicPrivacyPage'));
 const PublicTermsPage = React.lazy(() => import('./pages/PublicTermsPage'));
 const PublicContactPage = React.lazy(() => import('./pages/PublicContactPage'));
 const PublicSeoTopicPage = React.lazy(() => import('./pages/PublicSeoTopicPage'));
+const PublicPaymentInstructionPage = React.lazy(() => import('./pages/PublicPaymentInstructionPage'));
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
@@ -113,17 +114,23 @@ const ShiftManagementPage = React.lazy(() => import('./pages/ShiftManagementPage
 const SupplierAgingReportPage = React.lazy(() => import('./pages/SupplierAgingReportPage'));
 const PurchaseReturnsPage = React.lazy(() => import('./pages/PurchaseReturnsPage'));
 
-function RouteFallback({ message = 'Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙØ­Ø©...' }) {
+const hasBrokenEncoding = (value = '') => /[ØÙðâ]|^\?{3,}/.test(String(value));
+const normalizeLoadingMessage = (message) => {
+  if (!message || hasBrokenEncoding(message)) return 'Loading...';
+  return message;
+};
+
+function RouteFallback({ message = 'Loading...' }) {
   return (
     <div className="flex min-h-[40vh] items-center justify-center">
-      <LoadingSpinner size="lg" text={message} />
+      <LoadingSpinner size="lg" text={normalizeLoadingMessage(message)} />
     </div>
   );
 }
 
 function LazyRoute({ component: Component, message }) {
   return (
-    <React.Suspense fallback={<RouteFallback message={message} />}>
+    <React.Suspense fallback={<RouteFallback message={normalizeLoadingMessage(message)} />}>
       <Component />
     </React.Suspense>
   );
@@ -131,7 +138,7 @@ function LazyRoute({ component: Component, message }) {
 
 function LazyLayoutRoute({ layout: Layout, component: Component, message }) {
   return (
-    <React.Suspense fallback={<RouteFallback message={message} />}>
+    <React.Suspense fallback={<RouteFallback message={normalizeLoadingMessage(message)} />}>
       <Layout>
         <Component />
       </Layout>
@@ -148,7 +155,7 @@ function ProtectedRoute({ children }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
           <span className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-          <span className="text-sm font-medium">???? ????? ?????? ??????...</span>
+          <span className="text-sm font-medium">Loading your workspace...</span>
         </div>
       </div>
     );
@@ -309,7 +316,7 @@ export default function App() {
     const key = `super-login-toast:${user.email?.toLowerCase()}`;
     if (sessionStorage.getItem(key)) return;
 
-    toast.success('ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø¨Ø­Ø³Ø§Ø¨ Super Admin');
+    toast.success('Signed in as Super Admin');
     sessionStorage.setItem(key, '1');
   }, [isAuthenticated, user]);
 
@@ -334,7 +341,7 @@ export default function App() {
             <h2 className="text-xl font-black text-gray-900 dark:text-white">Pay<span className="text-primary-500">Qusta</span></h2>
             <div className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm font-bold tracking-wide">???? ????? ?????? ?????...</span>
+              <span className="text-sm font-bold tracking-wide">Signing out...</span>
             </div>
           </div>
         </div>
@@ -433,6 +440,7 @@ export default function App() {
           <Route path="/privacy" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicPrivacyPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø³ÙŠØ§Ø³Ø© Ø§Ù„Ø®ØµÙˆØµÙŠØ©..." />} />
           <Route path="/terms" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicTermsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø´Ø±ÙˆØ· ÙˆØ§Ù„Ø£Ø­ÙƒØ§Ù…..." />} />
           <Route path="/contact" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicContactPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„ØªÙˆØ§ØµÙ„..." />} />
+          <Route path="/payment/:gateway/:id" element={<LazyRoute component={PublicPaymentInstructionPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØ¹Ù„ÙŠÙ…Ø§Øª Ø§Ù„Ø¯ÙØ¹..." />} />
           <Route path="/sales-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª..." />} />
           <Route path="/inventory-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø®Ø²ÙˆÙ†..." />} />
           <Route path="/installments-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„Ø£Ù‚Ø³Ø§Ø· ÙˆØ§Ù„ØªØ­ØµÙŠÙ„..." />} />

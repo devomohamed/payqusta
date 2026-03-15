@@ -35,6 +35,19 @@ class PaymentController {
   });
 
   /**
+   * Get a public payment session for manual gateways
+   * GET /api/v1/payments/public/:id
+   */
+  getPublicTransaction = catchAsync(async (req, res) => {
+    const session = await paymentGatewayService.getPublicPaymentSession(
+      req.params.id,
+      req.query.access
+    );
+
+    return ApiResponse.success(res, session, 'تم تحميل بيانات الدفع');
+  });
+
+  /**
    * Create payment link for invoice
    * POST /api/v1/payments/create-link
    */

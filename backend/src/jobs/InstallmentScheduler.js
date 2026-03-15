@@ -16,7 +16,9 @@ const {
   markJobRunStarted,
   markJobRunSuccess,
   markJobRunFailure,
+  markJobRunSkipped,
 } = require('../ops/runtimeState');
+const { acquireJobLock, releaseJobLock } = require('../services/jobLockService');
 
 const CUSTOMER_INSTALLMENTS_JOB = 'customer_installment_reminders';
 const SUPPLIER_PAYMENTS_JOB = 'supplier_payment_reminders';
@@ -79,6 +81,16 @@ class InstallmentScheduler {
    * Customer installment reminders (due tomorrow)
    */
   async checkCustomerInstallments() {
+    const lock = await acquireJobLock({
+      jobName: CUSTOMER_INSTALLMENTS_JOB,
+      leaseMs: 45 * 60 * 1000,
+      metadata: { operation: 'checkCustomerInstallments' },
+    });
+    if (!lock.acquired) {
+      markJobRunSkipped(CUSTOMER_INSTALLMENTS_JOB, { operation: 'checkCustomerInstallments', reason: 'lock_not_acquired' });
+      return;
+    }
+
     markJobRunStarted(CUSTOMER_INSTALLMENTS_JOB, { operation: 'checkCustomerInstallments' });
 
     try {
@@ -174,6 +186,8 @@ class InstallmentScheduler {
       markJobRunFailure(CUSTOMER_INSTALLMENTS_JOB, error, {
         operation: 'checkCustomerInstallments',
       });
+    } finally {
+      await releaseJobLock(lock);
     }
   }
 
@@ -181,6 +195,16 @@ class InstallmentScheduler {
    * Supplier purchase installment reminders (due today + tomorrow)
    */
   async checkSupplierPayments() {
+    const lock = await acquireJobLock({
+      jobName: SUPPLIER_PAYMENTS_JOB,
+      leaseMs: 45 * 60 * 1000,
+      metadata: { operation: 'checkSupplierPayments' },
+    });
+    if (!lock.acquired) {
+      markJobRunSkipped(SUPPLIER_PAYMENTS_JOB, { operation: 'checkSupplierPayments', reason: 'lock_not_acquired' });
+      return;
+    }
+
     markJobRunStarted(SUPPLIER_PAYMENTS_JOB, { operation: 'checkSupplierPayments' });
 
     try {
@@ -308,6 +332,8 @@ class InstallmentScheduler {
       markJobRunFailure(SUPPLIER_PAYMENTS_JOB, error, {
         operation: 'checkSupplierPayments',
       });
+    } finally {
+      await releaseJobLock(lock);
     }
   }
 
@@ -315,6 +341,16 @@ class InstallmentScheduler {
    * Mark customer + supplier installments as overdue and send one-time overdue reminders.
    */
   async markOverdueInstallments() {
+    const lock = await acquireJobLock({
+      jobName: OVERDUE_SYNC_JOB,
+      leaseMs: 45 * 60 * 1000,
+      metadata: { operation: 'markOverdueInstallments' },
+    });
+    if (!lock.acquired) {
+      markJobRunSkipped(OVERDUE_SYNC_JOB, { operation: 'markOverdueInstallments', reason: 'lock_not_acquired' });
+      return;
+    }
+
     markJobRunStarted(OVERDUE_SYNC_JOB, { operation: 'markOverdueInstallments' });
 
     try {
@@ -490,6 +526,8 @@ class InstallmentScheduler {
       markJobRunFailure(OVERDUE_SYNC_JOB, error, {
         operation: 'markOverdueInstallments',
       });
+    } finally {
+      await releaseJobLock(lock);
     }
   }
 }

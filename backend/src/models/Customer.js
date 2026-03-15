@@ -456,4 +456,8 @@ customerSchema.statics.getAgingReport = async function (tenantId) {
   };
 };
 
+// Compound Indexes for Performance
+customerSchema.index({ tenant: 1, isActive: 1 });
+customerSchema.index({ tenant: 1, isPortalActive: 1 });
+
 module.exports = mongoose.model('Customer', customerSchema);

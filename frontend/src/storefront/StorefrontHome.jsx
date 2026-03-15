@@ -54,16 +54,52 @@ function getStorefrontRatingSnapshot(products) {
   };
 }
 
+const initialCustomerZone = {
+  ordersCount: 0,
+  invoicesCount: 0,
+  returnsCount: 0,
+  wishlistCount: 0,
+  documentsCount: 0,
+  addressesCount: 0,
+  supportOpenCount: 0,
+  dueInvoicesCount: 0,
+  latestNotification: null,
+};
+
 export default function StorefrontHome() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
-  const { categories: storefrontCategories } = usePortalStore();
+  const [customerZone, setCustomerZone] = useState(initialCustomerZone);
+  const [customerZoneLoading, setCustomerZoneLoading] = useState(false);
+  const storefrontCategories = usePortalStore((state) => state.categories);
+  const customer = usePortalStore((state) => state.customer);
+  const isAuthenticated = usePortalStore((state) => state.isAuthenticated);
+  const unreadCount = usePortalStore((state) => state.unreadCount);
+  const fetchDashboard = usePortalStore((state) => state.fetchDashboard);
+  const fetchUnreadCount = usePortalStore((state) => state.fetchUnreadCount);
+  const fetchNotifications = usePortalStore((state) => state.fetchNotifications);
+  const fetchOrders = usePortalStore((state) => state.fetchOrders);
+  const fetchInvoices = usePortalStore((state) => state.fetchInvoices);
+  const fetchReturnRequests = usePortalStore((state) => state.fetchReturnRequests);
+  const fetchWishlist = usePortalStore((state) => state.fetchWishlist);
+  const fetchDocuments = usePortalStore((state) => state.fetchDocuments);
+  const fetchAddresses = usePortalStore((state) => state.fetchAddresses);
+  const fetchSupportMessages = usePortalStore((state) => state.fetchSupportMessages);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCustomerZone(initialCustomerZone);
+      return;
+    }
+
+    loadCustomerZone();
+  }, [isAuthenticated]);
 
   const loadData = async () => {
     setLoading(true);
@@ -83,6 +119,58 @@ export default function StorefrontHome() {
     }
   };
 
+  const loadCustomerZone = async () => {
+    setCustomerZoneLoading(true);
+    try {
+      const [
+        notificationsData,
+        ordersData,
+        invoicesData,
+        returnsData,
+        wishlistData,
+        documentsData,
+        addressesData,
+        supportData,
+      ] = await Promise.all([
+        fetchNotifications(1),
+        fetchOrders(1, 'all'),
+        fetchInvoices(1, 'all'),
+        fetchReturnRequests(),
+        fetchWishlist(),
+        fetchDocuments(),
+        fetchAddresses(),
+        fetchSupportMessages(),
+        fetchDashboard(),
+        fetchUnreadCount(),
+      ]);
+
+      const notifications = notificationsData?.notifications || [];
+      const orders = ordersData?.orders || [];
+      const invoices = invoicesData?.invoices || [];
+      const returns = Array.isArray(returnsData) ? returnsData : [];
+      const wishlist = Array.isArray(wishlistData) ? wishlistData : [];
+      const documents = Array.isArray(documentsData) ? documentsData : [];
+      const addresses = Array.isArray(addressesData) ? addressesData : [];
+      const supportTickets = Array.isArray(supportData) ? supportData : [];
+
+      setCustomerZone({
+        ordersCount: ordersData?.total || orders.length,
+        invoicesCount: invoicesData?.total || invoices.length,
+        returnsCount: returns.length,
+        wishlistCount: wishlist.length,
+        documentsCount: documents.length,
+        addressesCount: addresses.length,
+        supportOpenCount: supportTickets.filter((ticket) => ticket?.status !== 'closed').length,
+        dueInvoicesCount: invoices.filter((invoice) => Number(invoice?.remainingAmount || 0) > 0).length,
+        latestNotification: notifications[0] || null,
+      });
+    } catch (err) {
+      console.error('Failed to load storefront customer zone:', err);
+    } finally {
+      setCustomerZoneLoading(false);
+    }
+  };
+
 
   if (loading) return <LoadingSpinner />;
 
@@ -94,6 +182,82 @@ export default function StorefrontHome() {
   const showcasedProductsCount = showcasedProducts.length;
   const showcasedInStockCount = showcasedProducts.filter((product) => (product?.stock?.quantity ?? 0) > 0).length;
   const storefrontRatingSnapshot = getStorefrontRatingSnapshot(showcasedProducts);
+  const customerQuickLinks = [
+    {
+      key: 'orders',
+      label: 'طلباتي',
+      detail: `${customerZone.ordersCount.toLocaleString()} طلب`,
+      icon: Package,
+      href: '/portal/orders',
+      tone: 'from-blue-500/15 via-white to-white',
+      iconTone: 'bg-blue-100 text-blue-600',
+    },
+    {
+      key: 'invoices',
+      label: 'فواتيري',
+      detail: customerZone.dueInvoicesCount > 0 ? `${customerZone.dueInvoicesCount.toLocaleString()} تحتاج متابعة` : `${customerZone.invoicesCount.toLocaleString()} فاتورة`,
+      icon: FileText,
+      href: '/portal/invoices',
+      tone: 'from-indigo-500/15 via-white to-white',
+      iconTone: 'bg-indigo-100 text-indigo-600',
+    },
+    {
+      key: 'returns',
+      label: 'المرتجعات',
+      detail: customerZone.returnsCount > 0 ? `${customerZone.returnsCount.toLocaleString()} طلب مرتجع` : 'قدم أو تابع طلبات الإرجاع',
+      icon: RotateCcw,
+      href: '/portal/returns',
+      tone: 'from-orange-500/15 via-white to-white',
+      iconTone: 'bg-orange-100 text-orange-600',
+    },
+    {
+      key: 'support',
+      label: 'الدعم',
+      detail: customerZone.supportOpenCount > 0 ? `${customerZone.supportOpenCount.toLocaleString()} محادثة مفتوحة` : 'ابدأ محادثة مع المتجر',
+      icon: MessageCircle,
+      href: '/portal/support',
+      tone: 'from-emerald-500/15 via-white to-white',
+      iconTone: 'bg-emerald-100 text-emerald-600',
+    },
+  ];
+  const customerAssetCards = [
+    {
+      key: 'notifications',
+      label: 'الإشعارات',
+      value: unreadCount.toLocaleString(),
+      detail: customerZone.latestNotification?.title || 'آخر التحديثات ستظهر هنا',
+      icon: Bell,
+      href: '/portal/dashboard',
+      badgeClass: unreadCount > 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600',
+    },
+    {
+      key: 'wishlist',
+      label: 'المفضلة',
+      value: customerZone.wishlistCount.toLocaleString(),
+      detail: 'منتجات محفوظة للرجوع السريع',
+      icon: Heart,
+      href: '/portal/wishlist',
+      badgeClass: 'bg-rose-100 text-rose-700',
+    },
+    {
+      key: 'documents',
+      label: 'المستندات',
+      value: customerZone.documentsCount.toLocaleString(),
+      detail: 'تتبع اعتماد ملفاتك وKYC',
+      icon: File,
+      href: '/portal/documents',
+      badgeClass: 'bg-amber-100 text-amber-700',
+    },
+    {
+      key: 'addresses',
+      label: 'العناوين',
+      value: customerZone.addressesCount.toLocaleString(),
+      detail: 'أماكن الشحن والحفظ السريع',
+      icon: MapPin,
+      href: '/portal/addresses',
+      badgeClass: 'bg-cyan-100 text-cyan-700',
+    },
+  ];
   const heroTrustSignals = [
     {
       key: 'availability',
@@ -168,6 +332,154 @@ export default function StorefrontHome() {
           </div>
         </div>
       </section>
+
+      {isAuthenticated && customer ? (
+        <section dir="rtl">
+          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+            <div className="border-b border-slate-200 bg-gradient-to-l from-slate-950 via-slate-900 to-primary-700 px-6 py-8 text-white md:px-8">
+              <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+                <div className="max-w-2xl">
+                  <Badge variant="primary" className="border border-white/15 bg-white/10 px-4 py-1.5 text-xs text-white backdrop-blur">
+                    منطقة العميل داخل المتجر
+                  </Badge>
+                  <h2 className="mt-4 text-2xl font-black md:text-3xl">
+                    رجوع سريع لطلباتك وفواتيرك بدون الخروج من المتجر
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-200 md:text-base">
+                    أهلاً {customer.name || 'بك'}، هذه أهم العناصر المرتبطة بحسابك الآن مع اختصارات مباشرة للطلبات، الفواتير، المرتجعات، والدعم.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 md:min-w-[320px]">
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">الرصيد المتاح</p>
+                    <p className="mt-2 text-2xl font-black">{Number(customer.balance || 0).toLocaleString()} ج.م</p>
+                    <p className="mt-1 text-xs text-slate-200">من حد ائتماني إجمالي {Number(customer.creditLimit || 0).toLocaleString()} ج.م</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">نقاط الولاء</p>
+                    <p className="mt-2 text-2xl font-black">{Number(customer.points || 0).toLocaleString()}</p>
+                    <p className="mt-1 text-xs text-slate-200">الفئة الحالية: {customer.tier || 'classic'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-8 px-6 py-6 md:px-8">
+              <div className="grid gap-4 lg:grid-cols-4">
+                {customerQuickLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.key}
+                      to={item.href}
+                      className={`group rounded-[1.75rem] border border-slate-200 bg-gradient-to-br ${item.tone} p-5 text-right transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-black text-slate-900">{item.label}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-500">{item.detail}</p>
+                        </div>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.iconTone}`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                      </div>
+                      <div className="mt-5 inline-flex items-center gap-2 text-xs font-black text-primary-600">
+                        افتح الآن
+                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+                <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="text-right">
+                      <h3 className="text-xl font-black text-slate-900">ملخص الحساب داخل المتجر</h3>
+                      <p className="mt-1 text-sm text-slate-500">روابط يومية سريعة بدل الدخول لكل صفحة على حدة.</p>
+                    </div>
+                    {customerZoneLoading ? (
+                      <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        جاري التحديث
+                      </div>
+                    ) : (
+                      <Link to="/portal/dashboard" className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black text-primary-600 shadow-sm transition-colors hover:bg-primary-50">
+                        لوحة الحساب
+                        <ChevronLeft className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {customerAssetCards.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.key}
+                          to={item.href}
+                          className="rounded-2xl border border-white bg-white p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className={`rounded-full px-3 py-1 text-[11px] font-black ${item.badgeClass}`}>{item.value}</span>
+                            <Icon className="h-4.5 w-4.5 text-slate-400" />
+                          </div>
+                          <p className="mt-4 text-sm font-black text-slate-900">{item.label}</p>
+                          <p className="mt-1 text-xs leading-6 text-slate-500">{item.detail}</p>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-right">
+                      <h3 className="text-xl font-black text-slate-900">دعم سريع من داخل المتجر</h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
+                        افتح تذكرة جديدة أو أكمل المحادثات المفتوحة بدون الحاجة للعودة إلى لوحة منفصلة.
+                      </p>
+                    </div>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-3 rounded-2xl border border-white/80 bg-white/80 p-4 backdrop-blur">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-bold text-slate-500">محادثات مفتوحة</span>
+                      <span className="text-lg font-black text-slate-900">{customerZone.supportOpenCount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-bold text-slate-500">إشعارات غير مقروءة</span>
+                      <span className="text-lg font-black text-slate-900">{unreadCount.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      to="/portal/support"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-500"
+                    >
+                      افتح الدعم
+                      <ArrowLeft className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      to="/portal/support"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-50"
+                    >
+                      كل المحادثات
+                      <ChevronLeft className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Category Navigation */}
       <section dir="rtl">

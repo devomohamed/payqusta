@@ -16,6 +16,7 @@ const emailService = require('../services/EmailService');
 const catchAsync = require('../utils/catchAsync');
 const { getUserPermissions } = require('../middleware/checkPermission');
 const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
+const { processImage, deleteFile } = require('../middleware/upload');
 
 class AuthController {
   /**
@@ -189,6 +190,8 @@ class AuthController {
    */
   forgotPassword = catchAsync(async (req, res, next) => {
     const { email } = req.body;
+    const shouldExposeResetDebug = process.env.PASSWORD_RESET_DEBUG_RESPONSE === 'true'
+      || process.env.NODE_ENV !== 'production';
 
     if (!email) {
       return next(AppError.badRequest('البريد الإلكتروني مطلوب'));
@@ -208,11 +211,15 @@ class AuthController {
 
     // Generate reset token
     const resetToken = user.createPasswordResetToken();
+    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
     await user.save({ validateBeforeSave: false });
 
     // Send email
     try {
-      await emailService.sendPasswordResetEmail(user, resetToken);
+      const emailResult = await emailService.sendPasswordResetEmailModern(user, resetToken);
+      if (!emailResult?.success) {
+        throw new Error(emailResult?.error || 'Email service reported an unsuccessful send');
+      }
       logger.info(`Password reset email sent to ${email}`);
     } catch (emailError) {
       // Reset token if email fails
@@ -298,8 +305,20 @@ class AuthController {
     const user = await User.findById(req.user._id);
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
 
-    user.avatar = `/uploads/images/${req.file.filename}`;
+    const previousAvatar = user.avatar;
+    const avatarUrl = await processImage(
+      req.file.buffer,
+      req.file.originalname,
+      'avatars',
+      req.file.mimetype
+    );
+
+    user.avatar = avatarUrl;
     await user.save({ validateBeforeSave: false });
+
+    if (previousAvatar && previousAvatar !== avatarUrl) {
+      await deleteFile(previousAvatar);
+    }
 
     ApiResponse.success(res, { avatar: user.avatar }, 'تم تحديث الصورة الشخصية');
   });
@@ -312,8 +331,13 @@ class AuthController {
     const user = await User.findById(req.user._id);
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
 
+    const previousAvatar = user.avatar;
     user.avatar = null;
     await user.save({ validateBeforeSave: false });
+
+    if (previousAvatar) {
+      await deleteFile(previousAvatar);
+    }
 
     ApiResponse.success(res, null, 'تم حذف الصورة الشخصية');
   });

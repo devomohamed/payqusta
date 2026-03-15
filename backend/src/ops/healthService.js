@@ -80,16 +80,47 @@ function summarizeJobs(jobs = []) {
   };
 }
 
+function summarizeJobLocks(jobLocks = []) {
+  const now = Date.now();
+  const activeLocks = jobLocks.filter((lock) => lock.status === 'active');
+  const expiredLocks = jobLocks.filter((lock) => lock.status === 'expired');
+  const expiresSoon = activeLocks.filter((lock) => {
+    const expiresAt = lock?.expiresAt ? new Date(lock.expiresAt).getTime() : 0;
+    return expiresAt > now && expiresAt - now <= 60 * 1000;
+  });
+
+  let status = 'ok';
+  if (expiredLocks.length > 0) {
+    status = 'expired';
+  } else if (expiresSoon.length > 0) {
+    status = 'expiring_soon';
+  } else if (activeLocks.length > 0) {
+    status = 'active';
+  } else {
+    status = 'idle';
+  }
+
+  return {
+    status,
+    total: jobLocks.length,
+    active: activeLocks.length,
+    expired: expiredLocks.length,
+    expiresSoon: expiresSoon.length,
+    items: jobLocks,
+  };
+}
+
 function createHealthSnapshot() {
   const runtime = getRuntimeSnapshot();
   const database = getDatabaseCheck();
   const startup = summarizeStartup(runtime.startupTasks);
   const jobs = summarizeJobs(runtime.jobs);
+  const jobLocks = summarizeJobLocks(runtime.jobLocks || []);
   const uptimeSeconds = Number(process.uptime().toFixed(1));
   const ready = database.ready && startup.ready;
 
   let status = 'ok';
-  if (!ready || jobs.failing > 0) {
+  if (!ready || jobs.failing > 0 || jobLocks.expired > 0) {
     status = 'degraded';
   }
 
@@ -98,6 +129,7 @@ function createHealthSnapshot() {
     database,
     startup,
     jobs,
+    jobLocks,
     ready,
     status,
     timestamp: new Date().toISOString(),
@@ -147,6 +179,11 @@ function createPublicHealthPayload() {
         total: snapshot.jobs.total,
         running: snapshot.jobs.running,
         failing: snapshot.jobs.failing,
+      },
+      jobLocks: {
+        status: snapshot.jobLocks.status,
+        active: snapshot.jobLocks.active,
+        expired: snapshot.jobLocks.expired,
       },
     },
   };
@@ -207,6 +244,7 @@ function createOpsStatusPayload({ req } = {}) {
     database: snapshot.database,
     startup: snapshot.startup,
     jobs: snapshot.jobs,
+    jobLocks: snapshot.jobLocks,
     config: {
       logging: {
         level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
@@ -258,6 +296,15 @@ function createOpsMetricsPayload() {
     '# HELP payqusta_jobs_failing Total failing runtime jobs',
     '# TYPE payqusta_jobs_failing gauge',
     `payqusta_jobs_failing ${snapshot.jobs.failing}`,
+    '# HELP payqusta_job_locks_active Active runtime job locks observed by this process',
+    '# TYPE payqusta_job_locks_active gauge',
+    `payqusta_job_locks_active ${snapshot.jobLocks.active}`,
+    '# HELP payqusta_job_locks_expired Expired runtime job locks observed by this process',
+    '# TYPE payqusta_job_locks_expired gauge',
+    `payqusta_job_locks_expired ${snapshot.jobLocks.expired}`,
+    '# HELP payqusta_job_locks_expiring_soon Runtime job locks expiring within 60 seconds',
+    '# TYPE payqusta_job_locks_expiring_soon gauge',
+    `payqusta_job_locks_expiring_soon ${snapshot.jobLocks.expiresSoon}`,
     '# HELP payqusta_process_memory_rss_bytes Resident set memory usage in bytes',
     '# TYPE payqusta_process_memory_rss_bytes gauge',
     `payqusta_process_memory_rss_bytes ${memoryUsage.rss}`,

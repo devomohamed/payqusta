@@ -14,7 +14,9 @@ const {
   markJobRunStarted,
   markJobRunSuccess,
   markJobRunFailure,
+  markJobRunSkipped,
 } = require('../ops/runtimeState');
+const { acquireJobLock, releaseJobLock } = require('../services/jobLockService');
 
 const PRODUCT_TRENDS_JOB = 'product_trends';
 
@@ -38,6 +40,16 @@ class ProductTrendsJob {
   }
 
   async analyzeTrends() {
+    const lock = await acquireJobLock({
+      jobName: PRODUCT_TRENDS_JOB,
+      leaseMs: 90 * 60 * 1000,
+      metadata: { operation: 'analyzeTrends' },
+    });
+    if (!lock.acquired) {
+      markJobRunSkipped(PRODUCT_TRENDS_JOB, { operation: 'analyzeTrends', reason: 'lock_not_acquired' });
+      return;
+    }
+
     markJobRunStarted(PRODUCT_TRENDS_JOB, { operation: 'analyzeTrends' });
 
     try {
@@ -132,6 +144,8 @@ class ProductTrendsJob {
       markJobRunFailure(PRODUCT_TRENDS_JOB, error, {
         operation: 'analyzeTrends',
       });
+    } finally {
+      await releaseJobLock(lock);
     }
   }
 }

@@ -48,6 +48,9 @@ jobs:
       - name: Capture ops snapshot
         run: npm run ops:snapshot -- --app-url="$APP_URL" --write-json=artifacts/ops-snapshot.json --write-metrics=artifacts/ops-metrics.prom
 
+      - name: Enforce rollout validation gate
+        run: npm run release:validate -- --app-url="$APP_URL" --write-json=artifacts/release-validation.json --write-markdown=artifacts/release-validation.md
+
       - name: Upload ops artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -55,3 +58,5 @@ jobs:
           path: |
             backend/artifacts/ops-snapshot.json
             backend/artifacts/ops-metrics.prom
+            backend/artifacts/release-validation.json
+            backend/artifacts/release-validation.md

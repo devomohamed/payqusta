@@ -16,7 +16,9 @@ const {
   markJobRunStarted,
   markJobRunSuccess,
   markJobRunFailure,
+  markJobRunSkipped,
 } = require('../ops/runtimeState');
+const { acquireJobLock, releaseJobLock } = require('../services/jobLockService');
 
 const STOCK_MONITOR_JOB = 'stock_monitor';
 
@@ -40,6 +42,16 @@ class StockMonitorJob {
   }
 
   async checkStockLevels() {
+    const lock = await acquireJobLock({
+      jobName: STOCK_MONITOR_JOB,
+      leaseMs: 45 * 60 * 1000,
+      metadata: { operation: 'checkStockLevels' },
+    });
+    if (!lock.acquired) {
+      markJobRunSkipped(STOCK_MONITOR_JOB, { operation: 'checkStockLevels', reason: 'lock_not_acquired' });
+      return;
+    }
+
     markJobRunStarted(STOCK_MONITOR_JOB, { operation: 'checkStockLevels' });
 
     try {
@@ -138,6 +150,8 @@ class StockMonitorJob {
       markJobRunFailure(STOCK_MONITOR_JOB, error, {
         operation: 'checkStockLevels',
       });
+    } finally {
+      await releaseJobLock(lock);
     }
   }
 }

@@ -22,6 +22,9 @@ module.exports = {
     apiUrl: process.env.FAWRY_API_URL || 'https://www.atfawry.com/fawrypay-api/api',
     enabled: process.env.FAWRY_ENABLED === 'true',
     fees: parseFloat(process.env.FAWRY_FEES || '1.5'), // %
+    branchHint: process.env.FAWRY_BRANCH_HINT || 'يمكنك السداد من أي فرع فوري أو تاجر معتمد',
+    paymentCodeLabel: process.env.FAWRY_PAYMENT_CODE_LABEL || 'الرقم المرجعي',
+    webhookSecret: process.env.FAWRY_WEBHOOK_SECRET || process.env.PAYMENT_WEBHOOK_SECRET || '',
   },
 
   // Vodafone Cash
@@ -31,6 +34,9 @@ module.exports = {
     apiUrl: process.env.VODAFONE_API_URL || 'https://api.vodafonecash.com.eg',
     enabled: process.env.VODAFONE_ENABLED === 'true',
     fees: parseFloat(process.env.VODAFONE_FEES || '2.0'), // %
+    number: process.env.VODAFONE_CASH_NUMBER || '',
+    accountName: process.env.VODAFONE_ACCOUNT_NAME || 'PayQusta',
+    webhookSecret: process.env.VODAFONE_WEBHOOK_SECRET || process.env.PAYMENT_WEBHOOK_SECRET || '',
   },
 
   // InstaPay
@@ -40,6 +46,10 @@ module.exports = {
     apiUrl: process.env.INSTAPAY_API_URL || 'https://api.instapay.com.eg',
     enabled: process.env.INSTAPAY_ENABLED === 'true',
     fees: parseFloat(process.env.INSTAPAY_FEES || '0.5'), // %
+    account: process.env.INSTAPAY_ACCOUNT || '',
+    accountName: process.env.INSTAPAY_ACCOUNT_NAME || 'PayQusta',
+    bankName: process.env.INSTAPAY_BANK_NAME || '',
+    webhookSecret: process.env.INSTAPAY_WEBHOOK_SECRET || process.env.PAYMENT_WEBHOOK_SECRET || '',
   },
 
   // General Settings

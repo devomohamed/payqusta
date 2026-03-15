@@ -444,6 +444,20 @@ class NotificationService {
       link: '/super-admin/requests',
     });
   }
+
+  async onAutoBackupFailure(tenantId, details = {}) {
+    const when = details.failedAt ? new Date(details.failedAt).toLocaleString('ar-EG') : 'الآن';
+    const errorMessage = String(details.error || 'فشل حفظ النسخة الاحتياطية التلقائية').slice(0, 300);
+
+    return this.notifyTenantAdmins(tenantId, {
+      type: 'system',
+      title: 'فشل النسخ الاحتياطي التلقائي',
+      message: `تعذر إنشاء أو حفظ النسخة الاحتياطية التلقائية في ${when}. السبب: ${errorMessage}`,
+      icon: 'database',
+      color: 'danger',
+      link: '/backup',
+    }, { roles: ['admin', 'vendor'] });
+  }
 }
 
 // Singleton

@@ -31,17 +31,18 @@ const revenueAnalyticsController = require('../controllers/revenueAnalyticsContr
 const planController = require('../controllers/planController');
 const reviewController = require('../controllers/reviewController');
 const opsController = require('../controllers/opsController');
-const { uploadSingle, upload } = require('../middleware/upload');
+const { uploadSingle, uploadAvatar, upload } = require('../middleware/upload');
 const { uploadLimiter, webhookLimiter } = require('../middleware/security');
 const { isAllowedImportFile, isAllowedJsonFile } = require('../utils/fileValidation');
 const AppError = require('../utils/AppError');
-const { supplierValidations } = require('../middleware/validation');
+const { authValidations, supplierValidations } = require('../middleware/validation');
 
 // ============ APP INFO ============
 router.get('/health', (req, res) => opsController.getPublicHealth(req, res));
 router.get('/health/live', (req, res) => opsController.getLiveness(req, res));
 router.get('/health/ready', (req, res) => opsController.getReadiness(req, res));
 router.post('/shipping/webhooks/bosta', webhookLimiter, invoiceController.handleBostaWebhook);
+router.get('/payments/public/:id', paymentController.getPublicTransaction);
 router.post('/payments/webhook/paymob', webhookLimiter, paymentController.paymobWebhook);
 router.post('/payments/webhook/fawry', webhookLimiter, paymentController.fawryWebhook);
 router.post('/payments/webhook/vodafone', webhookLimiter, paymentController.vodafoneWebhook);
@@ -53,8 +54,8 @@ router.use('/portal', require('./portal/authRoutes'));
 // ============ AUTH ROUTES (Public) ============
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
-router.post('/auth/forgot-password', authController.forgotPassword);
-router.post('/auth/reset-password/:token', authController.resetPassword);
+router.post('/auth/forgot-password', authValidations.forgotPassword, authController.forgotPassword);
+router.post('/auth/reset-password/:token', authValidations.resetPassword, authController.resetPassword);
 router.post('/auth/logout', protect, authController.logout);
 router.post('/auth/logout-all', protect, authController.logoutAll);
 
@@ -111,7 +112,7 @@ router.use(tenantScope); // All routes below are tenant-scoped
 router.get('/auth/me', authController.getMe);
 router.put('/auth/update-password', authController.updatePassword);
 router.put('/auth/update-profile', authController.updateProfile);
-router.put('/auth/update-avatar', uploadLimiter, uploadSingle, authController.updateAvatar);
+router.put('/auth/update-avatar', uploadLimiter, uploadAvatar, authController.updateAvatar);
 router.delete('/auth/remove-avatar', authController.removeAvatar);
 router.get('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'read'), authController.getTenantUsers);
 router.post('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
@@ -377,6 +378,8 @@ router.delete('/coupons/:id', authorize('vendor', 'admin'), auditLog('delete', '
 router.get('/backup/export', authorize('vendor', 'admin'), backupController.exportData);
 router.get('/backup/export-json', authorize('vendor', 'admin'), backupController.exportJSON);
 router.get('/backup/stats', authorize('vendor', 'admin'), backupController.getStats);
+router.get('/backup/auto-settings', authorize('vendor', 'admin'), backupController.getAutoSettings);
+router.put('/backup/auto-settings', authorize('vendor', 'admin'), backupController.updateAutoSettings);
 router.post('/backup/restore', authorize('vendor', 'admin'), uploadLimiter, importUpload.single('file'), auditLog('restore', 'backup'), backupController.restoreData);
 
 const backupUpload = multer({

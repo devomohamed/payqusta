@@ -2,11 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, FileText, Send, Calculator, Check, X, CreditCard, Filter, Link as LinkIcon, Copy, ExternalLink, Printer, Truck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
-import { invoicesApi, customersApi, productsApi, settingsApi, useAuthStore } from '../store';
+import { api, invoicesApi, customersApi, productsApi, settingsApi, useAuthStore } from '../store';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState, OwnerTableSkeleton } from '../components/UI';
 import Pagination from '../components/Pagination';
 import { printDeliveryTicket, printReceiptDocument } from '../utils/invoicePrint';
+
+const PAYMENT_GATEWAY_LABELS = {
+  paymob: '💳 بطاقة بنكية (Paymob)',
+  fawry: '🏪 فوري (Fawry)',
+  instapay: '📱 إنستا باي (InstaPay)',
+  vodafone: '🔴 فودافون كاش',
+};
 
 export default function InvoicesPage() {
   const FILTERS_STORAGE_KEY = 'owner_invoices_filters_v1';
@@ -39,6 +46,8 @@ export default function InvoicesPage() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [linkGateway, setLinkGateway] = useState('paymob');
   const [linkLoading, setLinkLoading] = useState(false);
+  const [linkGatewaysLoading, setLinkGatewaysLoading] = useState(false);
+  const [availableLinkGateways, setAvailableLinkGateways] = useState([]);
 
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -194,16 +203,56 @@ export default function InvoicesPage() {
 
   const handleGenerateLink = async () => {
     if (!linkInvoice) return;
+    if (linkGatewaysLoading) return;
+    if (!linkGateway || availableLinkGateways.length === 0) return toast.error('لا توجد بوابات دفع مفعلة حالياً');
+    if (!availableLinkGateways.some((gateway) => gateway.id === linkGateway)) {
+      return toast.error('بوابة الدفع المختارة غير مفعلة حالياً');
+    }
     setLinkLoading(true);
     setGeneratedLink('');
     try {
       const res = await invoicesApi.generatePaymentLink(linkInvoice._id, linkGateway);
-      setGeneratedLink(res.data.paymentLink);
+      const payload = res.data?.data || {};
+      const paymentLink = payload.paymentUrl || payload.paymentLink;
+      if (!paymentLink) {
+        throw new Error('PAYMENT_LINK_MISSING');
+      }
+      setGeneratedLink(paymentLink);
       toast.success('تم إنشاء الرابط بنجاح');
     } catch (err) {
       toast.error(err.response?.data?.message || 'فشل توليد الرابط');
     } finally {
       setLinkLoading(false);
+    }
+  };
+
+  const openLinkModal = async (inv) => {
+    setLinkInvoice(inv);
+    setGeneratedLink('');
+    setShowLinkModal(true);
+    setLinkGatewaysLoading(true);
+
+    try {
+      const res = await api.get('/payments/gateways');
+      const gateways = Array.isArray(res.data?.data)
+        ? res.data.data.map((gateway) => ({
+            ...gateway,
+            displayLabel: PAYMENT_GATEWAY_LABELS[gateway.id] || gateway.name,
+          }))
+        : [];
+      setAvailableLinkGateways(gateways);
+      setLinkGateway((currentGateway) => {
+        if (gateways.some((gateway) => gateway.id === currentGateway)) {
+          return currentGateway;
+        }
+        return gateways[0]?.id || '';
+      });
+    } catch (err) {
+      setAvailableLinkGateways([]);
+      setLinkGateway('');
+      toast.error('تعذر تحميل بوابات الدفع');
+    } finally {
+      setLinkGatewaysLoading(false);
     }
   };
 
@@ -439,7 +488,7 @@ export default function InvoicesPage() {
                                 <Check className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => { setLinkInvoice(inv); setGeneratedLink(''); setShowLinkModal(true); }}
+                                onClick={() => openLinkModal(inv)}
                                 className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 transition-colors"
                                 title="إنشاء رابط دفع"
                               >

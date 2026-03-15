@@ -291,7 +291,7 @@ export default function Sidebar({ open, onClose }) {
             </div>
             <NavItem to="/super-admin/plans" icon={Crown} label={t('sidebar.plan_management')} tone="amber" />
             <NavItem to="/super-admin/requests" icon={FileText} label={t('sidebar.subscription_requests')} tone="amber" />
-            <NavItem to="/super-admin/leads" icon={MessageCircle} label="????? ??????" tone="amber" />
+            <NavItem to="/super-admin/leads" icon={MessageCircle} label="Public Leads" tone="amber" />
             <NavItem to="/tenant-management" icon={Building2} label={t('sidebar.store_management')} tone="amber" />
             <div className="my-3 border-t border-gray-200 dark:border-gray-700"></div>
           </>

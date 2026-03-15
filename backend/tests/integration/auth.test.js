@@ -36,4 +36,13 @@ describe('Auth API scaffold', () => {
 
     expect(res.statusCode).toBeGreaterThanOrEqual(400);
   });
+
+  it('rejects malformed forgot-password email payload', async () => {
+    const res = await api
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'bad..email@example..com' });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
 });

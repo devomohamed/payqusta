@@ -104,6 +104,7 @@ APP_URL=http://127.0.0.1:5173
 | `EMAIL_USER` | Optional | none | SMTP username. |
 | `EMAIL_PASS` | Optional | none | SMTP password. |
 | `EMAIL_FROM` | Optional | fallback from `EMAIL_USER` | Sender identity for email notifications. |
+| `PASSWORD_RESET_DEBUG_RESPONSE` | Optional | `true` outside production | Exposes `resetUrl` and `resetToken` in forgot-password responses for local debugging. Disable on shared/public environments. |
 
 ## WhatsApp / Meta integration
 
@@ -126,6 +127,8 @@ APP_URL=http://127.0.0.1:5173
 | `PAYMENT_CURRENCY` | No | `EGP` | Default payment currency. |
 | `PAYMENT_SUCCESS_URL` | No | derived from `APP_URL` | Success redirect URL. |
 | `PAYMENT_FAILURE_URL` | No | derived from `APP_URL` | Failure redirect URL. |
+| `PAYMENT_LINK_SECRET` | No | falls back to `JWT_SECRET` | Signs public manual-payment instruction links. |
+| `PAYMENT_WEBHOOK_SECRET` | No | none | Shared fallback secret for manual-gateway webhook signature verification. |
 
 ### Paymob
 
@@ -143,11 +146,14 @@ APP_URL=http://127.0.0.1:5173
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `FAWRY_MERCHANT_CODE` | Optional | none | Merchant code. |
-| `FAWRY_SECURITY_KEY` | Optional | none | Security key. |
+| `FAWRY_MERCHANT_CODE` | Optional | none | Merchant code displayed in payment instructions when available. |
+| `FAWRY_SECURITY_KEY` | Optional | none | Provider key that can also be used for signature validation. |
 | `FAWRY_API_URL` | No | Fawry production URL | API host. |
 | `FAWRY_ENABLED` | No | `false` | Feature flag. |
 | `FAWRY_FEES` | No | `1.5` | Fee percentage. |
+| `FAWRY_PAYMENT_CODE_LABEL` | No | `????? ???????` | Label shown with the reference number in the hosted instructions page. |
+| `FAWRY_BRANCH_HINT` | No | generic Fawry hint | Extra payment instructions shown on the hosted instructions page. |
+| `FAWRY_WEBHOOK_SECRET` | No | falls back to `PAYMENT_WEBHOOK_SECRET` or `FAWRY_SECURITY_KEY` | Optional Fawry webhook signature secret. |
 
 ### Vodafone Cash
 
@@ -158,6 +164,9 @@ APP_URL=http://127.0.0.1:5173
 | `VODAFONE_API_URL` | No | Vodafone production URL | API host. |
 | `VODAFONE_ENABLED` | No | `false` | Feature flag. |
 | `VODAFONE_FEES` | No | `2.0` | Fee percentage. |
+| `VODAFONE_CASH_NUMBER` | Optional | none | Wallet number shown in the hosted instructions page and deep link. |
+| `VODAFONE_ACCOUNT_NAME` | No | `PayQusta` | Display name shown beside the wallet destination. |
+| `VODAFONE_WEBHOOK_SECRET` | No | falls back to `PAYMENT_WEBHOOK_SECRET` or `VODAFONE_API_KEY` | Optional Vodafone webhook signature secret. |
 
 ### InstaPay
 
@@ -168,6 +177,10 @@ APP_URL=http://127.0.0.1:5173
 | `INSTAPAY_API_URL` | No | InstaPay production URL | API host. |
 | `INSTAPAY_ENABLED` | No | `false` | Feature flag. |
 | `INSTAPAY_FEES` | No | `0.5` | Fee percentage. |
+| `INSTAPAY_ACCOUNT` | Optional | none | Account or alias shown in the hosted instructions page and deep link. |
+| `INSTAPAY_ACCOUNT_NAME` | No | `PayQusta` | Display name shown beside the InstaPay destination. |
+| `INSTAPAY_BANK_NAME` | Optional | none | Optional bank name shown in the hosted instructions page. |
+| `INSTAPAY_WEBHOOK_SECRET` | No | falls back to `PAYMENT_WEBHOOK_SECRET` or `INSTAPAY_API_KEY` | Optional InstaPay webhook signature secret. |
 
 ## Shipping
 

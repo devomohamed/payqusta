@@ -4,6 +4,7 @@ jest.mock('axios', () => ({
 
 jest.mock('../../src/models/PaymentTransaction', () => ({
   findOne: jest.fn(),
+  findById: jest.fn(),
 }));
 
 jest.mock('../../src/models/Invoice', () => ({
@@ -21,12 +22,23 @@ jest.mock('../../src/config/paymentGateways', () => ({
   },
   fawry: {
     enabled: true,
+    merchantCode: 'FAWRY-001',
+    paymentCodeLabel: '????? ???????',
+    branchHint: '?? ?? ???? ????',
+    webhookSecret: '',
   },
   vodafoneCash: {
     enabled: true,
+    number: '01000000000',
+    accountName: 'PayQusta',
+    webhookSecret: '',
   },
   instaPay: {
     enabled: true,
+    account: 'payqusta@instapay',
+    accountName: 'PayQusta',
+    bankName: 'NBE',
+    webhookSecret: '',
   },
   settings: {
     linkExpiryHours: 24,
@@ -92,6 +104,98 @@ describe('PaymentGatewayService refunds', () => {
     );
     expect(updateInvoicePaymentSpy).toHaveBeenCalledWith(transaction);
     expect(transaction.save).toHaveBeenCalled();
+  });
+
+  it('creates a signed public payment page for Fawry instructions', async () => {
+    const transaction = {
+      _id: '507f191e810c19729de860ea',
+      transactionId: 'TXN-FAWRY-1',
+      status: 'pending',
+      save: jest.fn().mockResolvedValue(true),
+    };
+
+    const paymentLink = await paymentGatewayService.createFawryLink(transaction, {});
+
+    expect(transaction.gatewayTransactionId).toBe('TXN-FAWRY-1');
+    expect(transaction.gatewayOrderId).toBe('TXN-FAWRY-1');
+    expect(transaction.status).toBe('processing');
+    expect(transaction.save).toHaveBeenCalled();
+    expect(paymentLink).toContain('/payment/fawry/507f191e810c19729de860ea?access=');
+  });
+
+  it('returns a sanitized public payment session when the access token is valid', async () => {
+    const id = '507f191e810c19729de860eb';
+
+    PaymentTransaction.findById.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue({
+          _id: id,
+          transactionId: 'TXN-2',
+          gateway: 'instapay',
+          status: 'processing',
+          amount: 150,
+          fees: 0,
+          discount: 0,
+          netAmount: 150,
+          currency: 'EGP',
+          linkExpiresAt: new Date('2026-03-15T10:00:00.000Z'),
+          completedAt: null,
+          createdAt: new Date('2026-03-14T09:00:00.000Z'),
+          paymentLink: `http://localhost:5173/payment/instapay/${id}`,
+          invoice: { invoiceNumber: 'INV-22' },
+          customer: { name: 'Customer 1' },
+        }),
+      }),
+    });
+
+    const result = await paymentGatewayService.getPublicPaymentSession(
+      id,
+      paymentGatewayService.createPublicAccessToken(id)
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        id,
+        transactionId: 'TXN-2',
+        gateway: 'instapay',
+        invoiceNumber: 'INV-22',
+      })
+    );
+    expect(result.paymentMeta).toEqual(
+      expect.objectContaining({
+        providerName: 'InstaPay',
+        referenceValue: 'TXN-2',
+      })
+    );
+  });
+
+  it('marks Fawry transactions as successful and updates the invoice once', async () => {
+    const transaction = {
+      transactionId: 'TXN-FAWRY-2',
+      status: 'processing',
+      gatewayOrderId: null,
+      gatewayTransactionId: null,
+      markAsSuccess: jest.fn().mockResolvedValue(true),
+      save: jest.fn().mockResolvedValue(true),
+    };
+    PaymentTransaction.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(transaction),
+    });
+
+    const updateInvoicePaymentSpy = jest
+      .spyOn(paymentGatewayService, 'updateInvoicePayment')
+      .mockResolvedValue(true);
+
+    await paymentGatewayService.processFawryWebhook({
+      referenceNumber: 'TXN-FAWRY-2',
+      paymentId: 'FW-900',
+      status: 'PAID',
+    });
+
+    expect(transaction.gatewayOrderId).toBe('TXN-FAWRY-2');
+    expect(transaction.gatewayTransactionId).toBe('FW-900');
+    expect(transaction.markAsSuccess).toHaveBeenCalled();
+    expect(updateInvoicePaymentSpy).toHaveBeenCalledWith(transaction);
   });
 
   it('submits refunds to Paymob when the transaction has a valid gateway transaction id', async () => {

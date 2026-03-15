@@ -17,8 +17,13 @@ export function Modal({
 }) {
   const dialogRef = React.useRef(null);
   const closeButtonRef = React.useRef(null);
+  const onCloseRef = React.useRef(onClose);
   const titleId = React.useId();
   const bodyId = React.useId();
+
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   const handleBackdropClick = () => {
     if (closeOnOutsideClick && onClose) {
@@ -33,9 +38,16 @@ export function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    const preferredFocusableSelectors = [
+      '[autofocus]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+    ].join(', ');
+
     const focusableSelectors = [
-      'button:not([disabled])',
       '[href]',
+      'button:not([disabled])',
       'input:not([disabled])',
       'select:not([disabled])',
       'textarea:not([disabled])',
@@ -43,17 +55,18 @@ export function Modal({
     ].join(', ');
 
     const focusFirstElement = () => {
+      const preferredElement = dialogRef.current?.querySelector(preferredFocusableSelectors);
       const focusableElements = dialogRef.current?.querySelectorAll(focusableSelectors) || [];
-      const firstElement = focusableElements[0] || closeButtonRef.current || dialogRef.current;
+      const firstElement = preferredElement || focusableElements[0] || closeButtonRef.current || dialogRef.current;
       firstElement?.focus();
     };
 
     const rafId = window.requestAnimationFrame(focusFirstElement);
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && onClose) {
+      if (event.key === 'Escape' && onCloseRef.current) {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -91,7 +104,7 @@ export function Modal({
         previousActiveElement.focus();
       }
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const widths = {
     sm: 'sm:max-w-md',

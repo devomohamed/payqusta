@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle, ChevronDown, FolderTree } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { api, productsApi, customersApi, invoicesApi, useAuthStore } from '../store';
-import { Button, Badge, LoadingSpinner } from '../components/UI';
+import { api, productsApi, customersApi, invoicesApi, categoriesApi, useAuthStore } from '../store';
+import { Badge, LoadingSpinner } from '../components/UI';
 import BarcodeScanner, { useBarcodeScanner } from '../components/BarcodeScanner';
 import db, { syncProductsToLocal, syncCustomersToLocal, searchLocalProducts, searchLocalCustomers, savePendingInvoice } from '../db/posDatabase';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
@@ -27,11 +28,124 @@ function getAvailableStock(entry) {
   return Number(entry?.stock?.quantity ?? entry?.stockQuantity ?? entry?.stock) || 0;
 }
 
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getCategoryId(category) {
+  if (!category) return '';
+  if (typeof category === 'string') return category;
+  return category._id || category.id || category.name || '';
+}
+
+function getCategoryName(category) {
+  if (!category) return '';
+  if (typeof category === 'string') return category;
+  return category.name || category.label || category._id || '';
+}
+
+function findCategoryById(items, id) {
+  if (!Array.isArray(items) || !id) return null;
+  for (const item of items) {
+    if (getCategoryId(item) === id) return item;
+    const foundChild = findCategoryById(item.children, id);
+    if (foundChild) return foundChild;
+  }
+  return null;
+}
+
+function buildCategoryTreeFromProducts(items = []) {
+  const categoryMap = new Map();
+
+  items.forEach((product) => {
+    const categoryId = getCategoryId(product?.category);
+    const categoryName = getCategoryName(product?.category);
+    const subcategoryId = getCategoryId(product?.subcategory);
+    const subcategoryName = getCategoryName(product?.subcategory);
+
+    if (!categoryId && !categoryName) return;
+
+    const rootKey = categoryId || categoryName;
+    if (!categoryMap.has(rootKey)) {
+      categoryMap.set(rootKey, {
+        _id: rootKey,
+        name: categoryName || rootKey,
+        icon: product?.category?.icon || '',
+        children: [],
+      });
+    }
+
+    if (subcategoryId || subcategoryName) {
+      const root = categoryMap.get(rootKey);
+      const subKey = subcategoryId || subcategoryName;
+      const exists = root.children.some((child) => getCategoryId(child) === subKey);
+      if (!exists) {
+        root.children.push({
+          _id: subKey,
+          name: subcategoryName || subKey,
+          icon: product?.subcategory?.icon || '',
+          parent: rootKey,
+        });
+      }
+    }
+  });
+
+  return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+}
+
+function filterCategoriesBySearch(items, term) {
+  if (!Array.isArray(items)) return [];
+  if (!term) return items;
+
+  const normalizedTerm = normalizeText(term);
+  return items.reduce((acc, category) => {
+    const matchesParent = normalizeText(category?.name).includes(normalizedTerm);
+    const children = Array.isArray(category?.children) ? category.children : [];
+    const filteredChildren = children.filter((child) => normalizeText(child?.name).includes(normalizedTerm));
+
+    if (matchesParent || filteredChildren.length > 0) {
+      acc.push({
+        ...category,
+        children: matchesParent ? children : filteredChildren,
+      });
+    }
+    return acc;
+  }, []);
+}
+
+function matchesCategorySelection(product, selectedCategory, selectedSubcategory) {
+  const productCategoryId = getCategoryId(product?.category);
+  const productCategoryName = getCategoryName(product?.category);
+  const productSubcategoryId = getCategoryId(product?.subcategory);
+  const productSubcategoryName = getCategoryName(product?.subcategory);
+
+  if (selectedSubcategory) {
+    return (
+      productSubcategoryId === selectedSubcategory._id ||
+      normalizeText(productSubcategoryName) === normalizeText(selectedSubcategory.name)
+    );
+  }
+
+  if (!selectedCategory) return true;
+
+  return (
+    productCategoryId === selectedCategory._id ||
+    productSubcategoryId === selectedCategory._id ||
+    normalizeText(productCategoryName) === normalizeText(selectedCategory.name) ||
+    normalizeText(productSubcategoryName) === normalizeText(selectedCategory.name)
+  );
+}
+
 export default function QuickSalePage() {
   const [mode, setMode] = useState('sale'); // 'sale' | 'return'
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
   const [custSearch, setCustSearch] = useState('');
   const [cart, setCart] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -55,6 +169,7 @@ export default function QuickSalePage() {
   const [returnCreating, setReturnCreating] = useState(false);
 
   const searchRef = useRef(null);
+  const categoryPickerRef = useRef(null);
 
   // Sync status
   const [syncStatus, setSyncStatus] = useState('online'); // online, offline, syncing
@@ -130,11 +245,14 @@ export default function QuickSalePage() {
       Promise.all([
         productsApi.getAll({ limit: 500 }),
         customersApi.getAll({ limit: 500 }),
-      ]).then(([pRes, cRes]) => {
+        categoriesApi.getTree().catch(() => ({ data: { data: [] } })),
+      ]).then(([pRes, cRes, catRes]) => {
         const prods = pRes.data.data || [];
         const custs = cRes.data.data || [];
+        const cats = catRes?.data?.data || [];
         setProducts(prods);
         setCustomers(custs);
+        setCategories(Array.isArray(cats) && cats.length > 0 ? cats : buildCategoryTreeFromProducts(prods));
         // Background sync to local DB
         syncProductsToLocal(prods);
         syncCustomersToLocal(custs);
@@ -148,6 +266,7 @@ export default function QuickSalePage() {
       ]).then(([pRes, cRes]) => {
         setProducts(pRes);
         setCustomers(cRes);
+        setCategories(buildCategoryTreeFromProducts(pRes));
         toast.success('تم تحميل البيانات المحلية (وضع عدم الاتصال)');
       }).finally(() => setLoading(false));
     }
@@ -165,6 +284,30 @@ export default function QuickSalePage() {
       searchLocalCustomers(custSearch).then(setCustomers);
     }
   }, [custSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (categoryPickerRef.current && !categoryPickerRef.current.contains(event.target)) {
+        setShowCategoryPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCategoryId) {
+      setSelectedSubcategoryId('');
+      return;
+    }
+
+    const parentCategory = findCategoryById(categories, selectedCategoryId);
+    const hasSelectedSubcategory = (parentCategory?.children || []).some((child) => getCategoryId(child) === selectedSubcategoryId);
+    if (!hasSelectedSubcategory) {
+      setSelectedSubcategoryId('');
+    }
+  }, [categories, selectedCategoryId, selectedSubcategoryId]);
 
   useEffect(() => { searchRef.current?.focus(); }, []);
 
@@ -256,12 +399,27 @@ export default function QuickSalePage() {
 
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const totalProfit = cart.reduce((s, i) => s + (i.price - i.cost) * i.quantity, 0);
+  const selectedCategory = useMemo(() => findCategoryById(categories, selectedCategoryId), [categories, selectedCategoryId]);
+  const selectedSubcategory = useMemo(() => findCategoryById(categories, selectedSubcategoryId), [categories, selectedSubcategoryId]);
+  const filteredCategoryGroups = useMemo(() => filterCategoriesBySearch(categories, categorySearch), [categories, categorySearch]);
+  const selectedSubcategories = selectedCategory?.children || [];
+  const hasActiveCategoryFilter = Boolean(selectedCategoryId || selectedSubcategoryId);
 
-  const filteredProducts = search.length > 0 ? products.filter((p) =>
-    p.name.includes(search) ||
-    (p.sku || '').toLowerCase().includes(search.toLowerCase()) ||
-    getBarcodeSearchText(p).toLowerCase().includes(search.toLowerCase())
-  ).slice(0, 8) : [];
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = !search.trim() || (
+      p.name.includes(search) ||
+      (p.sku || '').toLowerCase().includes(search.toLowerCase()) ||
+      getBarcodeSearchText(p).toLowerCase().includes(search.toLowerCase())
+    );
+
+    const matchesCategory = matchesCategorySelection(p, selectedCategory, selectedSubcategory);
+    return matchesSearch && matchesCategory;
+  }).slice(0, 8);
+
+  const featuredProducts = products.filter((p) => {
+    if ((p.stock?.quantity || 0) <= 0) return false;
+    return matchesCategorySelection(p, selectedCategory, selectedSubcategory);
+  }).slice(0, 8);
 
   const filteredCustomers = custSearch.length > 0 ? customers.filter((c) =>
     c.name.includes(custSearch) || c.phone.includes(custSearch)
@@ -453,32 +611,203 @@ export default function QuickSalePage() {
               </div>
             </div>
 
-            <div className="flex gap-2 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث بالاسم أو الكود أو الباركود..."
-                  className="w-full pr-12 pl-4 py-3.5 rounded-2xl border-2 border-primary-200 dark:border-primary-500/30 bg-white dark:bg-gray-900 text-base font-medium focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm" autoFocus />
+            <div className="space-y-3 mb-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    ref={searchRef}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="ابحث بالاسم أو الكود أو الباركود..."
+                    className="w-full pr-12 pl-4 py-3.5 rounded-2xl border-2 border-primary-200 dark:border-primary-500/30 bg-white dark:bg-gray-900 text-base font-medium focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  onClick={() => setShowScanner(true)}
+                  className="px-4 py-3.5 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all flex items-center gap-2 font-bold"
+                >
+                  <Scan className="w-5 h-5" /> مسح
+                </button>
               </div>
-              <button onClick={() => setShowScanner(true)}
-                className="px-4 py-3.5 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all flex items-center gap-2 font-bold">
-                <Scan className="w-5 h-5" /> مسح
-              </button>
+
+              <div className="relative" ref={categoryPickerRef}>
+                <FolderTree className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
+                <input
+                  value={categorySearch}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value);
+                    setShowCategoryPicker(true);
+                  }}
+                  onFocus={() => setShowCategoryPicker(true)}
+                  placeholder="ابحث عن قسم أو قسم فرعي..."
+                  className="w-full pr-12 pl-12 py-3 rounded-2xl border border-emerald-200/80 dark:border-emerald-500/20 bg-emerald-50/60 dark:bg-emerald-500/5 text-sm font-semibold focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                />
+                {(selectedCategoryId || selectedSubcategoryId || categorySearch) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategorySearch('');
+                      setSelectedCategoryId('');
+                      setSelectedSubcategoryId('');
+                      setShowCategoryPicker(false);
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-red-500 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+
+                <AnimatePresence>
+                  {showCategoryPicker && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                      className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-3xl border border-emerald-100 dark:border-emerald-500/20 bg-white/95 dark:bg-gray-900/95 shadow-2xl backdrop-blur"
+                    >
+                      <div className="max-h-72 overflow-y-auto p-3 space-y-2">
+                        {filteredCategoryGroups.length === 0 ? (
+                          <div className="py-8 text-center text-sm font-semibold text-gray-400">
+                            لا توجد أقسام مطابقة لهذا البحث
+                          </div>
+                        ) : (
+                          filteredCategoryGroups.map((category) => {
+                            const categoryId = getCategoryId(category);
+                            const children = Array.isArray(category.children) ? category.children : [];
+                            const isActive = selectedCategoryId === categoryId;
+
+                            return (
+                              <div key={categoryId} className="space-y-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCategoryId(categoryId);
+                                    setSelectedSubcategoryId('');
+                                    setCategorySearch(category.name || '');
+                                    setShowCategoryPicker(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 text-right transition-all ${isActive ? 'bg-gradient-to-l from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-gray-50 dark:bg-gray-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-gray-700 dark:text-gray-200'}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xl">{category.icon || '📂'}</span>
+                                    <div>
+                                      <p className="font-black text-sm">{category.name}</p>
+                                      {children.length > 0 && (
+                                        <p className={`text-[10px] font-bold ${isActive ? 'text-white/75' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                          {children.length} أقسام فرعية
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {isActive ? <Check className="w-4 h-4" /> : <ChevronDown className="w-4 h-4 opacity-50" />}
+                                </button>
+
+                                {children.length > 0 && (
+                                  <div className="mr-4 border-r border-emerald-100 dark:border-emerald-500/10 pr-3 space-y-1">
+                                    {children.map((child) => {
+                                      const childId = getCategoryId(child);
+                                      const childActive = selectedSubcategoryId === childId;
+                                      return (
+                                        <button
+                                          key={childId}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedCategoryId(categoryId);
+                                            setSelectedSubcategoryId(childId);
+                                            setCategorySearch(child.name || '');
+                                            setShowCategoryPicker(false);
+                                          }}
+                                          className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-right text-sm transition-all ${childActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-500/20' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
+                                        >
+                                          <span className="font-semibold">{child.icon ? `${child.icon} ${child.name}` : child.name}</span>
+                                          {childActive && <Check className="w-4 h-4" />}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <AnimatePresence>
+                {selectedCategory && selectedSubcategories.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="rounded-2xl border border-emerald-100 dark:border-emerald-500/20 bg-gradient-to-l from-emerald-50 to-white dark:from-emerald-500/5 dark:to-gray-900 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="text-right">
+                        <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">عرض الأقسام الفرعية</p>
+                        <p className="text-sm font-bold text-gray-800 dark:text-white">{selectedCategory.icon ? `${selectedCategory.icon} ` : ''}{selectedCategory.name}</p>
+                      </div>
+                      <Badge variant="success" className="text-[10px]">{selectedSubcategories.length} فرعي</Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubcategoryId('')}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${!selectedSubcategoryId ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-emerald-100 dark:border-gray-700 hover:border-emerald-300'}`}
+                      >
+                        كل منتجات القسم
+                      </button>
+                      {selectedSubcategories.map((subcategory) => {
+                        const subcategoryId = getCategoryId(subcategory);
+                        const active = selectedSubcategoryId === subcategoryId;
+                        return (
+                          <button
+                            key={subcategoryId}
+                            type="button"
+                            onClick={() => setSelectedSubcategoryId(subcategoryId)}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${active ? 'bg-gray-900 text-white dark:bg-emerald-500 dark:text-white shadow-lg' : 'bg-white/90 dark:bg-gray-800 text-gray-600 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:border-emerald-300 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
+                          >
+                            {subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             <div className="relative">
-              {filteredProducts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-2xl z-50 overflow-hidden">
-                  {filteredProducts.map((p) => (
+              {(search.trim() || hasActiveCategoryFilter) && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-2xl z-40 overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50 flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-gray-500 dark:text-gray-300">
+                      {selectedSubcategory ? `نتائج القسم الفرعي: ${selectedSubcategory.name}` : selectedCategory ? `نتائج القسم: ${selectedCategory.name}` : 'نتائج البحث السريع'}
+                    </span>
+                    <span className="text-primary-500">{filteredProducts.length} منتج</span>
+                  </div>
+                  {filteredProducts.length > 0 ? filteredProducts.map((p) => (
                     <button key={p._id} onClick={() => addToCart(p)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors border-b border-gray-50 dark:border-gray-800 last:border-0">
                       <span className="text-xl">{catIcon(p.name)}</span>
                       <div className="flex-1 text-right">
                         <p className="font-semibold text-sm">{p.name}</p>
+                        <p className="text-[10px] text-gray-400">
+                          {(p.subcategory?.name || p.subcategory) ? `${p.category?.name || p.category || 'عام'} / ${p.subcategory?.name || p.subcategory}` : (p.category?.name || p.category || 'بدون قسم')}
+                        </p>
                         <p className="text-[10px] text-gray-400">{p.sku || '—'} · المخزون: {p.stock?.quantity || 0} {p.stock?.unit || 'قطعة'}</p>
                         {p.variants?.length > 0 && <Badge variant="primary" className="mt-1 text-[8px] py-0">متوفر بموديلات</Badge>}
                       </div>
                       <span className="text-sm font-extrabold text-primary-500">{fmt(p.price)} ج.م</span>
                       {(p.stock?.quantity || 0) <= 0 && <Badge variant="danger">نفذ</Badge>}
                     </button>
-                  ))}
+                  )) : (
+                    <div className="px-4 py-8 text-center text-sm font-semibold text-gray-400">
+                      لا توجد منتجات مطابقة لهذا القسم أو نص البحث الحالي
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -511,9 +840,9 @@ export default function QuickSalePage() {
               )}
             </div>
 
-            {search.length === 0 && (
+            {!search.trim() && !hasActiveCategoryFilter && (
               <div className="flex flex-wrap gap-2 pb-2">
-                {products.filter((p) => (p.stock?.quantity || 0) > 0).slice(0, 8).map((p) => (
+                {featuredProducts.map((p) => (
                   <button key={p._id} onClick={() => addToCart(p)}
                     className="px-3 py-2 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 text-xs font-semibold hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-all">
                     {catIcon(p.name)} {p.name.substring(0, 15)} — <span className="text-primary-500">{fmt(p.price)}</span>

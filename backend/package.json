@@ -18,6 +18,7 @@
     "test:smoke": "jest --runInBand tests/smoke",
     "release:preflight": "node scripts/release-preflight.js --env-file=../cloudrun.env",
     "release:smoke": "node scripts/post-deploy-smoke.js",
+    "release:validate": "node scripts/release-validate.js",
     "ops:snapshot": "node scripts/ops-snapshot.js",
     "client:install": "cd ../frontend && npm install --include=dev --no-package-lock",
     "client:dev": "cd ../frontend && npm run dev",

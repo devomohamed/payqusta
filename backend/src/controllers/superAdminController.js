@@ -9,6 +9,8 @@ const Branch = require('../models/Branch');
 const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
 const Customer = require('../models/Customer');
+const Plan = require('../models/Plan');
+const SystemConfig = require('../models/SystemConfig');
 const SubscriptionRequest = require('../models/SubscriptionRequest');
 const PublicLead = require('../models/PublicLead');
 const AppError = require('../utils/AppError');
@@ -16,6 +18,315 @@ const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const NotificationService = require('../services/NotificationService');
 const { getStarterCategorySettings } = require('../services/starterCatalogService');
+const { buildTenantJsonBackup } = require('../services/backupExportService');
+const backupController = require('./backupController');
+
+const PLATFORM_BACKUP_DOMAINS = ['plans', 'systemConfigs', 'publicLeads'];
+const PLATFORM_BACKUP_KNOWN_GAPS = [
+  'tenants',
+  'tenant_operational_data',
+  'tenant_users_and_sessions',
+  'runtime_env_secrets',
+  'payment_gateway_secrets',
+  'full_platform_disaster_recovery',
+];
+
+function sanitizePlan(plan = {}) {
+  const raw = typeof plan.toObject === 'function' ? plan.toObject() : plan;
+  const { _id, createdAt, updatedAt, __v, ...rest } = raw || {};
+  return rest;
+}
+
+function sanitizeSystemConfig(config = {}) {
+  const raw = typeof config.toObject === 'function' ? config.toObject() : config;
+  const { _id, createdAt, updatedAt, __v, ...rest } = raw || {};
+  return rest;
+}
+
+function sanitizePublicLead(lead = {}) {
+  const raw = typeof lead.toObject === 'function' ? lead.toObject() : lead;
+  const { _id, createdAt, updatedAt, __v, ...rest } = raw || {};
+  return rest;
+}
+
+function buildPlatformBackupValidationReport({ backup = null, results = {}, warnings = [] } = {}) {
+  const backupData = backup?.data || {};
+  const includedDomains = PLATFORM_BACKUP_DOMAINS.filter((domain) => (
+    Array.isArray(backupData[domain]) ? backupData[domain].length > 0 : Boolean(backupData[domain])
+  ));
+
+  return {
+    backupMetadata: backup ? {
+      version: backup.version || null,
+      appName: backup.appName || null,
+      exportedAt: backup.exportedAt || null,
+      scope: backup.scope || null,
+    } : null,
+    supportedDomains: PLATFORM_BACKUP_DOMAINS,
+    includedDomains,
+    missingSupportedDomains: PLATFORM_BACKUP_DOMAINS.filter((domain) => !includedDomains.includes(domain)),
+    results,
+    warnings,
+    knownGaps: PLATFORM_BACKUP_KNOWN_GAPS,
+  };
+}
+
+async function buildPlatformJsonBackup() {
+  const [plans, systemConfigs, publicLeads] = await Promise.all([
+    Plan.find().sort({ isActive: -1, price: 1, createdAt: -1 }).lean(),
+    SystemConfig.find().sort({ key: 1 }).lean(),
+    PublicLead.find().sort({ submittedAt: -1, createdAt: -1 }).lean(),
+  ]);
+
+  return {
+    version: 'platform-backup-v1',
+    appName: 'PayQusta',
+    scope: 'platform',
+    exportedAt: new Date().toISOString(),
+    counts: {
+      plans: plans.length,
+      systemConfigs: systemConfigs.length,
+      publicLeads: publicLeads.length,
+    },
+    data: {
+      plans: plans.map(sanitizePlan),
+      systemConfigs: systemConfigs.map(sanitizeSystemConfig),
+      publicLeads: publicLeads.map(sanitizePublicLead),
+    },
+  };
+}
+
+async function restorePlatformBackupObject(backup = {}) {
+  const exportedPlans = Array.isArray(backup.data?.plans) ? backup.data.plans : [];
+  const exportedSystemConfigs = Array.isArray(backup.data?.systemConfigs) ? backup.data.systemConfigs : [];
+  const exportedPublicLeads = Array.isArray(backup.data?.publicLeads) ? backup.data.publicLeads : [];
+
+  const results = {
+    plans: { imported: 0, updated: 0, skipped: 0 },
+    systemConfigs: { imported: 0, updated: 0, skipped: 0 },
+    publicLeads: { imported: 0, skipped: 0 },
+  };
+  const warnings = [];
+
+  for (const plan of exportedPlans) {
+    if (!plan?.name) {
+      results.plans.skipped += 1;
+      warnings.push('plan_missing_name');
+      continue;
+    }
+
+    const payload = sanitizePlan(plan);
+    const existing = await Plan.findOne({ name: plan.name });
+    if (existing) {
+      Object.assign(existing, payload);
+      await existing.save();
+      results.plans.updated += 1;
+    } else {
+      await Plan.create(payload);
+      results.plans.imported += 1;
+    }
+  }
+
+  for (const config of exportedSystemConfigs) {
+    const key = String(config?.key || 'default').trim() || 'default';
+    const payload = sanitizeSystemConfig({ ...config, key });
+    const existing = await SystemConfig.findOne({ key });
+    if (existing) {
+      Object.assign(existing, payload);
+      await existing.save();
+      results.systemConfigs.updated += 1;
+    } else {
+      await SystemConfig.create(payload);
+      results.systemConfigs.imported += 1;
+    }
+  }
+
+  for (const lead of exportedPublicLeads) {
+    const email = String(lead?.email || '').trim().toLowerCase();
+    const requestType = String(lead?.requestType || '').trim();
+    const submittedAt = lead?.submittedAt ? new Date(lead.submittedAt) : null;
+
+    if (!email || !requestType || !submittedAt || Number.isNaN(submittedAt.getTime())) {
+      results.publicLeads.skipped += 1;
+      warnings.push('public_lead_missing_identity_fields');
+      continue;
+    }
+
+    const existing = await PublicLead.findOne({
+      email,
+      requestType,
+      submittedAt,
+    });
+
+    if (existing) {
+      results.publicLeads.skipped += 1;
+      continue;
+    }
+
+    await PublicLead.create({
+      ...sanitizePublicLead(lead),
+      email,
+      submittedAt,
+    });
+    results.publicLeads.imported += 1;
+  }
+
+  return {
+    results,
+    validationReport: buildPlatformBackupValidationReport({
+      backup,
+      results,
+      warnings: [...new Set(warnings)],
+    }),
+  };
+}
+
+function buildTenantLookupCandidates(entry = {}) {
+  const candidates = [];
+  const metadata = entry.tenant || {};
+  const snapshot = entry.backup?.data?.tenantSnapshot || {};
+
+  if (metadata._id && mongoose.isValidObjectId(String(metadata._id))) {
+    candidates.push({ kind: 'id', value: String(metadata._id) });
+  }
+  if (metadata.slug || snapshot.slug) {
+    candidates.push({ kind: 'slug', value: String(metadata.slug || snapshot.slug).trim().toLowerCase() });
+  }
+  if (metadata.customDomain || snapshot.customDomain) {
+    candidates.push({ kind: 'customDomain', value: String(metadata.customDomain || snapshot.customDomain).trim().toLowerCase() });
+  }
+  if (metadata.name || snapshot.name) {
+    candidates.push({ kind: 'name', value: String(metadata.name || snapshot.name).trim() });
+  }
+
+  return candidates.filter((candidate) => candidate.value);
+}
+
+async function resolveOrCreateTargetTenant(entry = {}) {
+  const candidates = buildTenantLookupCandidates(entry);
+  let tenant = null;
+
+  for (const candidate of candidates) {
+    if (candidate.kind === 'id') {
+      tenant = await Tenant.findById(candidate.value);
+    } else if (candidate.kind === 'slug') {
+      tenant = await Tenant.findOne({ slug: candidate.value });
+    } else if (candidate.kind === 'customDomain') {
+      tenant = await Tenant.findOne({ customDomain: candidate.value });
+    } else if (candidate.kind === 'name') {
+      tenant = await Tenant.findOne({ name: candidate.value });
+    }
+
+    if (tenant) {
+      return { tenant, created: false, matchedBy: candidate.kind };
+    }
+  }
+
+  const metadata = entry.tenant || {};
+  const snapshot = entry.backup?.data?.tenantSnapshot || {};
+  tenant = await Tenant.create({
+    name: metadata.name || snapshot.name || `Restored Tenant ${Date.now()}`,
+    slug: metadata.slug || snapshot.slug || undefined,
+    customDomain: metadata.customDomain || snapshot.customDomain || undefined,
+    customDomainStatus: metadata.customDomainStatus || snapshot.customDomainStatus || undefined,
+    settings: {
+      categories: getStarterCategorySettings(),
+    },
+    subscription: {
+      status: metadata.subscriptionStatus || snapshot.subscription?.status || 'trial',
+      plan: metadata.plan || snapshot.subscription?.plan || null,
+    },
+    isActive: metadata.isActive !== false,
+  });
+
+  return { tenant, created: true, matchedBy: 'created' };
+}
+
+async function invokeTenantBackupRestore(tenantId, tenantBackup) {
+  const req = {
+    tenantId,
+    file: {
+      buffer: Buffer.from(JSON.stringify(tenantBackup)),
+    },
+  };
+
+  return new Promise((resolve, reject) => {
+    const res = {
+      statusCode: 200,
+      payload: null,
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(payload) {
+        this.payload = payload;
+        return payload;
+      },
+    };
+    const finalize = () => resolve({
+      statusCode: res.statusCode,
+      payload: res.payload,
+    });
+
+    Promise.resolve(
+      backupController.restoreJSON(req, res, (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        finalize();
+      })
+    )
+      .then(finalize)
+      .catch(reject);
+  });
+}
+
+async function buildFullPlatformJsonBackup() {
+  const [platform, tenants] = await Promise.all([
+    buildPlatformJsonBackup(),
+    Tenant.find({ isActive: true })
+      .select('name slug isActive subscription.status subscription.plan customDomain customDomainStatus createdAt updatedAt')
+      .sort({ createdAt: 1 })
+      .lean(),
+  ]);
+
+  const tenantBackups = [];
+  for (const tenant of tenants) {
+    const snapshot = await buildTenantJsonBackup(tenant._id);
+    tenantBackups.push({
+      tenant: {
+        _id: tenant._id,
+        name: tenant.name,
+        slug: tenant.slug || null,
+        isActive: tenant.isActive !== false,
+        customDomain: tenant.customDomain || null,
+        customDomainStatus: tenant.customDomainStatus || 'not_configured',
+        subscriptionStatus: tenant.subscription?.status || null,
+        plan: tenant.subscription?.plan || null,
+        createdAt: tenant.createdAt || null,
+        updatedAt: tenant.updatedAt || null,
+      },
+      backup: snapshot,
+    });
+  }
+
+  return {
+    version: 'platform-full-backup-v1',
+    appName: 'PayQusta',
+    scope: 'platform_full',
+    exportedAt: new Date().toISOString(),
+    counts: {
+      platformPlans: platform.counts.plans,
+      platformSystemConfigs: platform.counts.systemConfigs,
+      platformPublicLeads: platform.counts.publicLeads,
+      tenants: tenantBackups.length,
+      tenantRecords: tenantBackups.reduce((sum, entry) => sum + Number(entry.backup?.counts?.total || 0), 0),
+    },
+    platform: platform.data,
+    tenants: tenantBackups,
+  };
+}
 
 class SuperAdminController {
   /**
@@ -455,6 +766,164 @@ class SuperAdminController {
     await lead.save();
 
     ApiResponse.success(res, lead, '\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0637\u0644\u0628 \u0628\u0646\u062C\u0627\u062D');
+  });
+
+  /**
+   * GET /api/v1/super-admin/backup/stats
+   * Lightweight platform-level backup preview counts
+   */
+  getPlatformBackupStats = catchAsync(async (req, res) => {
+    const [plans, systemConfigs, publicLeads] = await Promise.all([
+      Plan.countDocuments(),
+      SystemConfig.countDocuments(),
+      PublicLead.countDocuments(),
+    ]);
+
+    ApiResponse.success(res, {
+      counts: { plans, systemConfigs, publicLeads },
+      supportedDomains: PLATFORM_BACKUP_DOMAINS,
+      knownGaps: PLATFORM_BACKUP_KNOWN_GAPS,
+    });
+  });
+
+  /**
+   * GET /api/v1/super-admin/backup/export-json
+   * Export platform-level non-tenant configuration snapshot
+   */
+  exportPlatformBackupJSON = catchAsync(async (req, res) => {
+    const backup = await buildPlatformJsonBackup();
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="payqusta-platform-backup-${stamp}.json"`);
+    res.send(JSON.stringify(backup, null, 2));
+  });
+
+  /**
+   * GET /api/v1/super-admin/backup/export-full-json
+   * Export a full-platform snapshot that embeds every active tenant backup
+   */
+  exportFullPlatformBackupJSON = catchAsync(async (req, res) => {
+    const backup = await buildFullPlatformJsonBackup();
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="payqusta-full-platform-backup-${stamp}.json"`);
+    res.send(JSON.stringify(backup, null, 2));
+  });
+
+  /**
+   * POST /api/v1/super-admin/backup/restore-json
+   * Restore platform-level non-tenant configuration snapshot
+   */
+  restorePlatformBackupJSON = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+      return next(AppError.badRequest('Backup file is required'));
+    }
+
+    let backup;
+    try {
+      backup = JSON.parse(String(req.file.buffer || '').trim());
+    } catch (error) {
+      return next(AppError.badRequest('Invalid platform backup JSON file'));
+    }
+
+    if (!backup?.data || backup.scope !== 'platform') {
+      return next(AppError.badRequest('This file is not a valid platform backup'));
+    }
+    const { results, validationReport } = await restorePlatformBackupObject(backup);
+
+    ApiResponse.success(res, {
+      results,
+      validationReport,
+    }, 'Platform backup restored successfully');
+  });
+
+  /**
+   * POST /api/v1/super-admin/backup/restore-full-json
+   * Restore platform control-plane data and tenant backups from one full snapshot
+   */
+  restoreFullPlatformBackupJSON = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+      return next(AppError.badRequest('Backup file is required'));
+    }
+
+    let backup;
+    try {
+      backup = JSON.parse(String(req.file.buffer || '').trim());
+    } catch {
+      return next(AppError.badRequest('Invalid full platform backup JSON file'));
+    }
+
+    if (!backup?.platform || !Array.isArray(backup.tenants) || backup.scope !== 'platform_full') {
+      return next(AppError.badRequest('This file is not a valid full platform backup'));
+    }
+
+    const platformPayload = {
+      version: backup.version || 'platform-backup-v1',
+      appName: backup.appName || 'PayQusta',
+      scope: 'platform',
+      exportedAt: backup.exportedAt || new Date().toISOString(),
+      data: backup.platform,
+    };
+
+    const platformRestore = await restorePlatformBackupObject(platformPayload);
+    const tenantResults = [];
+
+    for (const entry of backup.tenants) {
+      const tenantBackup = entry?.backup;
+      if (!tenantBackup?.data || !tenantBackup?.appName) {
+        tenantResults.push({
+          tenant: entry?.tenant || null,
+          success: false,
+          error: 'invalid_tenant_backup_payload',
+        });
+        continue;
+      }
+
+      try {
+        const { tenant, created, matchedBy } = await resolveOrCreateTargetTenant(entry);
+        const restoreResult = await invokeTenantBackupRestore(String(tenant._id), tenantBackup);
+        tenantResults.push({
+          tenant: {
+            _id: tenant._id,
+            name: tenant.name,
+            slug: tenant.slug || null,
+          },
+          success: true,
+          created,
+          matchedBy,
+          restore: restoreResult.payload?.data || null,
+        });
+      } catch (error) {
+        tenantResults.push({
+          tenant: entry?.tenant || null,
+          success: false,
+          error: error.message || 'tenant_restore_failed',
+        });
+      }
+    }
+
+    const summary = {
+      platform: platformRestore.results,
+      tenants: {
+        total: tenantResults.length,
+        restored: tenantResults.filter((entry) => entry.success).length,
+        failed: tenantResults.filter((entry) => !entry.success).length,
+        created: tenantResults.filter((entry) => entry.success && entry.created).length,
+      },
+    };
+
+    ApiResponse.success(res, {
+      summary,
+      platformValidationReport: platformRestore.validationReport,
+      tenantResults,
+      knownGaps: [
+        'environment_secrets_and_runtime_state',
+        'single-transaction_cross_tenant_restore',
+        'one-click_infrastructure_rebuild',
+      ],
+    }, 'Full platform backup restore completed');
   });
 }
 
