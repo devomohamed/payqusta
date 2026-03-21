@@ -22,8 +22,7 @@ export const syncProductsToLocal = async (productsList) => {
     if (!productsList || !Array.isArray(productsList)) return;
 
     try {
-        await db.products.clear();
-        await db.products.bulkAdd(productsList);
+        await db.products.bulkPut(productsList);
         console.log(`[POS DB] Synced ${productsList.length} products`);
     } catch (error) {
         console.error('[POS DB] Failed to sync products:', error);
@@ -38,8 +37,7 @@ export const syncCustomersToLocal = async (customersList) => {
     if (!customersList || !Array.isArray(customersList)) return;
 
     try {
-        await db.customers.clear();
-        await db.customers.bulkAdd(customersList);
+        await db.customers.bulkPut(customersList);
         console.log(`[POS DB] Synced ${customersList.length} customers`);
     } catch (error) {
         console.error('[POS DB] Failed to sync customers:', error);

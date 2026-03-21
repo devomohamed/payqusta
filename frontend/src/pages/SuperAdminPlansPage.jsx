@@ -186,9 +186,9 @@ export default function SuperAdminPlansPage() {
   if (loading && !plans.length) return <LoadingSpinner text="جاري تحميل الباقات..." />;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Plans Section */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
             <Crown className="w-5 h-5 text-white" />
@@ -211,10 +211,10 @@ export default function SuperAdminPlansPage() {
         </div>
       </div>
 
-      <Card className="overflow-x-auto">
+      <Card className="app-surface overflow-x-auto rounded-3xl">
         <table className="w-full min-w-[980px]">
           <thead>
-            <tr className="text-right text-xs text-gray-500 border-b border-gray-100 dark:border-gray-800">
+            <tr className="text-right text-xs text-gray-500 border-b border-gray-100/80 dark:border-white/10">
               <th className="px-4 py-3">الاسم</th>
               <th className="px-4 py-3">السعر</th>
               <th className="px-4 py-3">الفوترة</th>
@@ -225,7 +225,7 @@ export default function SuperAdminPlansPage() {
           </thead>
           <tbody>
             {plans.map((plan) => (
-              <tr key={plan._id} className="border-b border-gray-100 dark:border-gray-800">
+              <tr key={plan._id} className="border-b border-gray-100/80 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                 <td className="px-4 py-3">
                   <div className="font-bold">{plan.name}</div>
                   <div className="text-xs text-gray-500">{plan.description || '-'}</div>

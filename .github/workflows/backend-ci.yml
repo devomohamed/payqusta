@@ -74,6 +74,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Run frontend sanity checks
+        run: npm run sanity:check
+
+      - name: Run frontend route contract checks
+        run: npm run smoke:routes
+
       - name: Build frontend
         run: npm run build
 

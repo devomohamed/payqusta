@@ -106,8 +106,8 @@ const MarketingPage = () => {
     ];
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-6 app-text-soft">
+            <div className="app-surface-muted flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl p-5">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <TrendingUp className="w-8 h-8 text-indigo-600" />
@@ -131,7 +131,7 @@ const MarketingPage = () => {
             {showBroadcastModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowBroadcastModal(false)} />
-                    <div className="relative bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-slide-up">
+                    <div className="app-surface relative rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-slide-up">
                         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                             <MessageSquare className="w-6 h-6 text-indigo-600" />
                             إرسال حملة واتساب جماعية
@@ -143,7 +143,7 @@ const MarketingPage = () => {
                                 <select
                                     value={broadcastForm.segment}
                                     onChange={(e) => setBroadcastForm({ ...broadcastForm, segment: e.target.value })}
-                                    className="w-full p-3 rounded-xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                                    className="app-surface w-full p-3 rounded-xl border border-transparent focus:ring-2 focus:ring-primary-500/20"
                                 >
                                     <option value="vip">العملاء VIP</option>
                                     <option value="loyal">العملاء الملتزمون</option>
@@ -159,7 +159,7 @@ const MarketingPage = () => {
                                     onChange={(e) => setBroadcastForm({ ...broadcastForm, message: e.target.value })}
                                     rows={4}
                                     placeholder="اكتب رسالتك هنا... سيتم إرسالها لجميع العملاء في الشريحة المختارة"
-                                    className="w-full p-4 rounded-xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 resize-none focus:border-indigo-500 transition-colors"
+                                    className="app-surface w-full p-4 rounded-xl border border-transparent resize-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
                                 />
                                 <p className="text-[10px] text-gray-400 mt-2">
                                     * ملاحظة: الإرسال الجماعي يعتمد على رصيد الرسائل المتاح في حسابك.
@@ -181,7 +181,7 @@ const MarketingPage = () => {
                                 </button>
                                 <button
                                     onClick={() => setShowBroadcastModal(false)}
-                                    className="px-6 py-3 bg-gray-100 dark:bg-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                                    className="app-surface px-6 py-3 rounded-xl font-bold transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                                 >
                                     إلغاء
                                 </button>
@@ -196,7 +196,7 @@ const MarketingPage = () => {
                 {segmentCards.map((card) => (
                     <div
                         key={card.id}
-                        className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+                        className="app-surface-muted p-6 rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
                     >
                         <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-10 rounded-full transition-transform group-hover:scale-110 ${card.color.split(' ')[0]}`} />
 
@@ -221,8 +221,8 @@ const MarketingPage = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* VIP List */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col">
-                    <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm flex flex-col">
+                    <div className="app-surface-muted p-6 border-b border-gray-100/80 dark:border-white/10 flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <Crown className="w-5 h-5 text-amber-500" />
                             أفضل العملاء (VIP)
@@ -235,9 +235,9 @@ const MarketingPage = () => {
 
                     <div className="flex-1 overflow-y-auto max-h-[400px]">
                         {segments?.vip?.length > 0 ? (
-                            <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                            <div className="divide-y divide-gray-100/70 dark:divide-white/10">
                                 {segments.vip.map((customer) => (
-                                    <div key={customer._id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <div key={customer._id} className="p-4 flex items-center justify-between hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 font-bold">
                                                 {customer.name.charAt(0)}
@@ -266,8 +266,8 @@ const MarketingPage = () => {
                 </div>
 
                 {/* Inactive List */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col">
-                    <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm flex flex-col">
+                    <div className="app-surface-muted p-6 border-b border-gray-100/80 dark:border-white/10 flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <UserX className="w-5 h-5 text-gray-500" />
                             عملاء بحاجة لتواصل
@@ -280,11 +280,11 @@ const MarketingPage = () => {
 
                     <div className="flex-1 overflow-y-auto max-h-[400px]">
                         {segments?.inactive?.length > 0 ? (
-                            <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                            <div className="divide-y divide-gray-100/70 dark:divide-white/10">
                                 {segments.inactive.map((customer) => (
-                                    <div key={customer._id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <div key={customer._id} className="p-4 flex items-center justify-between hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 font-bold">
+                                            <div className="app-surface-muted w-10 h-10 rounded-full flex items-center justify-center text-gray-500 font-bold">
                                                 {customer.name.charAt(0)}
                                             </div>
                                             <div>

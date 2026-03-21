@@ -90,6 +90,7 @@ export default function PortalCheckout() {
     };
     const discount = couponData ? couponData.discountAmount : 0;
     const total = Math.max(0, subtotal + shipping - discount);
+    const branchRoutingNote = '?????? ?????? ??? ??????? ???????? ??? ????? ??????? ????? ???????? ???? ?????? ??? ??????? ???? ?? ????? ??????? ????? ?????.';
 
     const creditLimit = customer?.financials?.creditLimit ?? customer?.creditLimit ?? 0;
     const outstandingBalance = customer?.financials?.outstandingBalance ?? customer?.outstandingBalance ?? 0;
@@ -174,9 +175,9 @@ export default function PortalCheckout() {
     };
 
     const inputClass = (field) =>
-        `w-full px-4 py-3 rounded-xl border-2 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none transition-all ${errors[field]
-            ? 'border-red-400 focus:border-red-500'
-            : 'border-gray-200 dark:border-gray-700 focus:border-primary-500'}`;
+        `app-surface w-full px-4 py-3 rounded-xl border text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all ${errors[field]
+            ? 'border-red-400'
+            : 'border-transparent'}`;
 
     // ── SUCCESS / DONE ──────────────────────────────────────────
     if (step === 'done') {
@@ -189,7 +190,7 @@ export default function PortalCheckout() {
                 <p className="text-gray-500 dark:text-gray-400 mb-1">{t('checkout.success.order_number')}</p>
                 <p className="text-3xl font-black text-primary-600 mb-6">#{orderNumber}</p>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 w-full max-w-sm ltr:text-left rtl:text-right mb-6 space-y-3">
+                <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 w-full max-w-sm ltr:text-left rtl:text-right mb-6 space-y-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">{t('checkout.success.address')}</span>
                         <span className="font-bold text-gray-800 dark:text-gray-200">{form.address}، {selectedShippingZone?.label || form.governorate}</span>
@@ -229,10 +230,10 @@ export default function PortalCheckout() {
 
     // ── MAIN ────────────────────────────────────────────────────
     return (
-        <div className="pb-28" dir={i18n.dir()}>
+        <div className="pb-28 app-text-soft" dir={i18n.dir()}>
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-                <button onClick={() => step === 'review' ? setStep('shipping') : navigate(-1)} className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center ltr:rotate-180 transition-transform">
+                <button onClick={() => step === 'review' ? setStep('shipping') : navigate(-1)} className="app-surface-muted w-9 h-9 rounded-full flex items-center justify-center ltr:rotate-180 transition-transform">
                     <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
                 <div>
@@ -275,7 +276,7 @@ export default function PortalCheckout() {
                     )}
 
                     {/* Personal Info */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10">
                         <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-4 text-sm">
                             <User className="w-4 h-4 text-primary-500" /> {t('checkout.shipping.personal_info')}
                         </h3>
@@ -294,7 +295,7 @@ export default function PortalCheckout() {
                     </div>
 
                     {/* Address */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10">
                         <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-4 text-sm">
                             <MapPin className="w-4 h-4 text-primary-500" /> {t('checkout.shipping.address_title')}
                         </h3>
@@ -350,7 +351,7 @@ export default function PortalCheckout() {
                     </div>
 
                     {/* Coupon Code */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10">
                         <h3 className="font-bold text-gray-800 dark:text-white text-sm flex items-center gap-2 mb-3">
                             <Tag className="w-4 h-4 text-primary-500" /> {t('checkout.coupon.title')}
                         </h3>
@@ -373,7 +374,7 @@ export default function PortalCheckout() {
                                         onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
                                         onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
                                         placeholder={t('checkout.coupon.placeholder')}
-                                        className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-primary-500 transition-all"
+                                        className="app-surface flex-1 px-4 py-3 rounded-xl border border-transparent text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
                                         dir="ltr"
                                     />
                                     <button
@@ -403,15 +404,15 @@ export default function PortalCheckout() {
             {step === 'review' && (
                 <div className="space-y-4">
                     {/* Items */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-100/80 dark:border-white/10">
                             <h3 className="font-bold text-gray-800 dark:text-white text-sm flex items-center gap-2">
                                 <ShoppingBag className="w-4 h-4 text-primary-500" /> {t('checkout.review.products', { count: cart.length })}
                             </h3>
                         </div>
                         {cart.map((item, i) => (
                             <div key={i} className="flex items-center gap-3 px-5 py-3 border-b border-gray-50 dark:border-gray-800/50 last:border-0">
-                                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+                                <div className="app-surface-muted w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
                                     {item.product?.images?.[0] ? (
                                         <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
                                     ) : (
@@ -426,7 +427,7 @@ export default function PortalCheckout() {
                             </div>
                         ))}
                         {discount > 0 && (
-                            <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900/30 flex justify-between items-center border-t border-gray-100 dark:border-gray-700">
+                            <div className="app-surface-muted px-5 py-3 flex justify-between items-center border-t border-gray-100/80 dark:border-white/10">
                                 <span className="text-sm text-gray-500 dark:text-gray-400">{t('checkout.review.subtotal')}</span>
                                 <span className="text-sm text-gray-600 dark:text-gray-400">{subtotal.toLocaleString()} ج.م</span>
                             </div>
@@ -439,18 +440,18 @@ export default function PortalCheckout() {
                                 <span className="text-sm font-bold text-green-600">-{discount.toLocaleString()} ج.م</span>
                             </div>
                         )}
-                        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-900/30 flex justify-between items-center border-t border-gray-100 dark:border-gray-700">
+                        <div className="app-surface-muted px-5 py-3 flex justify-between items-center border-t border-gray-100/80 dark:border-white/10">
                             <span className="text-sm text-gray-500 dark:text-gray-400">الشحن</span>
                             <span className="text-sm text-gray-600 dark:text-gray-400">{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
                         </div>
-                        <div className="px-5 py-4 bg-gray-50 dark:bg-gray-900/30 flex justify-between items-center">
+                        <div className="app-surface-muted px-5 py-4 flex justify-between items-center">
                             <span className="font-bold text-gray-700 dark:text-gray-300">{t('checkout.review.total')}</span>
                             <span className="font-black text-xl text-primary-600">{total.toLocaleString()} ج.م</span>
                         </div>
                     </div>
 
                     {/* Delivery Details */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10">
                         <h3 className="font-bold text-gray-800 dark:text-white text-sm flex items-center gap-2 mb-3">
                             <MapPin className="w-4 h-4 text-primary-500" /> {t('checkout.review.delivery_details')}
                         </h3>
@@ -487,15 +488,24 @@ export default function PortalCheckout() {
                             )}
                         </div>
                     </div>
+                    <div className="app-surface rounded-2xl p-5 border border-primary-100/80 dark:border-primary-500/20">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0" />
+                            <div className="space-y-1">
+                                <p className="font-bold text-sm text-gray-900 dark:text-white">????? ????? ?????</p>
+                                <p className="text-xs leading-6 text-gray-600 dark:text-gray-300">{branchRoutingNote}</p>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Payment Method Selector */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 space-y-4">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 space-y-4">
                         <h3 className="font-bold text-gray-800 dark:text-white text-sm mb-3">{t('checkout.payment.title')}</h3>
                         <div className="grid grid-cols-2 gap-3">
                             {shippingConfig.supportsCashOnDelivery !== false && (
                                 <button
                                     onClick={() => setPaymentMethod('cash')}
-                                    className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                    className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'cash' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100/80 dark:border-white/10 text-gray-500 app-surface hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'}`}
                                 >
                                     <Building2 className="w-5 h-5" />
                                     <span className="font-bold text-sm">{t('checkout.payment.cash')}</span>
@@ -503,7 +513,7 @@ export default function PortalCheckout() {
                             )}
                             <button
                                 onClick={() => setPaymentMethod('deferred')}
-                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'deferred' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'} ${shippingConfig.supportsCashOnDelivery === false ? 'col-span-2' : ''}`}
+                                className={`py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${paymentMethod === 'deferred' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-gray-100/80 dark:border-white/10 text-gray-500 app-surface hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'} ${shippingConfig.supportsCashOnDelivery === false ? 'col-span-2' : ''}`}
                             >
                                 <Package className="w-5 h-5" />
                                 <span className="font-bold text-sm">{t('checkout.payment.deferred')}</span>
@@ -517,7 +527,7 @@ export default function PortalCheckout() {
                                     <select
                                         value={months}
                                         onChange={(e) => setMonths(Number(e.target.value))}
-                                        className="w-full px-4 py-2 border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 rounded-lg text-sm text-gray-800 dark:text-white"
+                                        className="app-surface w-full px-4 py-2 border border-blue-200 dark:border-blue-700 rounded-lg text-sm text-gray-800 dark:text-white"
                                     >
                                         {[...Array(maxMonths)].map((_, i) => (
                                             <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -560,7 +570,7 @@ export default function PortalCheckout() {
                     )}
 
                     {/* Electronic Signature */}
-                    <div className="bg-white dark:bg-gray-800/90 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10">
                         <h3 className="font-bold text-gray-800 dark:text-white text-sm mb-3">{t('checkout.signature.title')}</h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 px-1">
                             {t('checkout.signature.desc')}

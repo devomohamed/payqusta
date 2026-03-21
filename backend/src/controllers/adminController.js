@@ -17,6 +17,7 @@ const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const catchAsync = require('../utils/catchAsync');
 const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
+const { resolveUserRoleAssignment, resolveUserBranchAssignment } = require('../utils/userAccessHelpers');
 
 class AdminController {
   /**
@@ -267,6 +268,9 @@ class AdminController {
       User.find(filter)
         .populate('tenant', 'name slug')
         .populate('branch', 'name')
+        .populate('primaryBranch', 'name')
+        .populate('assignedBranches', 'name')
+        .populate('customRole', 'name')
         .sort('-createdAt')
         .skip(skip)
         .limit(limit)
@@ -283,7 +287,7 @@ class AdminController {
    * Create user in any tenant
    */
   createUser = catchAsync(async (req, res, next) => {
-    const { name, email, phone, password, role, tenantId, branch } = req.body;
+    const { name, email, phone, password, role, customRole, tenantId, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
 
     // Basic role string validation
     if (!role || typeof role !== 'string') {
@@ -309,14 +313,26 @@ class AdminController {
       return next(AppError.badRequest('البريد الإلكتروني مستخدم بالفعل'));
     }
 
+    const [roleAssignment, branchAssignment] = await Promise.all([
+      resolveUserRoleAssignment({ tenantId: targetTenantId, role, customRole }),
+      resolveUserBranchAssignment({
+        tenantId: targetTenantId,
+        branch,
+        primaryBranch,
+        assignedBranches,
+        branchAccessMode,
+      }),
+    ]);
+
     const user = await User.create({
       name,
       email,
       phone,
       password,
-      role,
+      role: roleAssignment.role,
+      customRole: roleAssignment.customRole,
       tenant: targetTenantId,
-      branch: branch || null,
+      ...(branchAssignment || {}),
     });
 
     ApiResponse.created(res, user, 'تم إنشاء المستخدم بنجاح');
@@ -327,22 +343,48 @@ class AdminController {
    * Update user
    */
   updateUser = catchAsync(async (req, res, next) => {
-    const allowedFields = ['name', 'email', 'phone', 'role', 'isActive', 'branch'];
-    const updateData = {};
-    allowedFields.forEach((f) => {
-      if (req.body[f] !== undefined) updateData[f] = req.body[f];
-    });
-
     const query = { _id: req.params.id };
     if (!req.user.isSuperAdmin) {
       query.tenant = req.user.tenant;
     }
 
-    const user = await User.findOneAndUpdate(
-      query,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('tenant', 'name');
+    const user = await User.findOne(query);
+    if (user) {
+      if (req.body.name !== undefined) user.name = req.body.name;
+      if (req.body.email !== undefined) user.email = req.body.email;
+      if (req.body.phone !== undefined) user.phone = req.body.phone;
+      if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
+
+      if (req.body.role !== undefined || req.body.customRole !== undefined) {
+        const roleAssignment = await resolveUserRoleAssignment({
+          tenantId: user.tenant,
+          role: req.body.role !== undefined ? req.body.role : user.role,
+          customRole: req.body.customRole,
+          fallbackRole: user.role || 'vendor',
+        });
+        user.role = roleAssignment.role;
+        user.customRole = roleAssignment.customRole;
+      }
+
+      const branchAssignment = await resolveUserBranchAssignment({
+        tenantId: user.tenant,
+        branch: req.body.branch,
+        primaryBranch: req.body.primaryBranch,
+        assignedBranches: req.body.assignedBranches,
+        branchAccessMode: req.body.branchAccessMode,
+        existingUser: user,
+      });
+
+      if (branchAssignment) {
+        user.branch = branchAssignment.branch;
+        user.primaryBranch = branchAssignment.primaryBranch;
+        user.assignedBranches = branchAssignment.assignedBranches;
+        user.branchAccessMode = branchAssignment.branchAccessMode;
+      }
+
+      await user.save();
+      await user.populate('tenant', 'name');
+    }
 
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
 
@@ -402,6 +444,7 @@ class AdminController {
 
     if (req.query.action) filter.action = req.query.action;
     if (req.query.resource) filter.resource = req.query.resource;
+    if (req.query.resourceId) filter.resourceId = req.query.resourceId;
 
     // Filter by tenant (force if not super admin)
     if (req.user.isSuperAdmin) {

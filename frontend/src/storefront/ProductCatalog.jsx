@@ -267,7 +267,7 @@ export default function ProductCatalog() {
               setSearch(e.target.value);
               setSearchFocused(true);
             }}
-            className="w-full pr-11 pl-10 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-primary-500 focus:outline-none transition-all"
+            className="app-surface w-full pr-11 pl-10 py-3 rounded-2xl border-2 border-gray-200/80 dark:border-white/10 text-sm focus:border-primary-500 focus:outline-none transition-all"
           />
           {search && (
             <button onClick={() => { setSearch(''); setSearchFocused(true); }} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -328,7 +328,7 @@ export default function ProductCatalog() {
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex min-w-[3.25rem] shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm font-bold transition-all dark:border-gray-700 sm:min-w-0 ${showFilters ? 'bg-primary-500 border-primary-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          className={`flex min-w-[3.25rem] shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-gray-200/80 px-4 py-3 text-sm font-bold transition-all dark:border-white/10 sm:min-w-0 ${showFilters ? 'bg-primary-500 border-primary-500 text-white' : 'app-surface text-gray-600 dark:text-gray-400'}`}
         >
           <SlidersHorizontal className="w-4 h-4" />
           {isPortal ? '' : 'فلتر'}
@@ -346,7 +346,7 @@ export default function ProductCatalog() {
         <div className="flex gap-2 overflow-x-auto pb-3 snap-x scrollbar-hide">
           <button
             onClick={() => setSelectedCategory('')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${!selectedCategory ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${!selectedCategory ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-white/10'}`}
           >
             الكل
           </button>
@@ -358,7 +358,7 @@ export default function ProductCatalog() {
               <button
                 key={catId || catName}
                 onClick={() => setSelectedCategory(selectedCategory === catId ? '' : catId)}
-                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${selectedCategory === catId ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${selectedCategory === catId ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-white/10'}`}
               >
                 {catIcon && <span className="mr-1">{catIcon}</span>}{catName}
               </button>
@@ -371,7 +371,7 @@ export default function ProductCatalog() {
 
       {/* ═══ PRICE FILTER (collapsible) ═══ */}
       {showFilters && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 animate-fade-in">
+        <div className="app-surface rounded-2xl p-4 border border-gray-200/80 dark:border-white/10 animate-fade-in">
           <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">نطاق السعر</p>
           <div className="flex flex-wrap gap-2">
             {priceRanges.map(r => (
@@ -418,7 +418,7 @@ export default function ProductCatalog() {
             return (
               <div
                 key={product._id}
-                className="bg-white dark:bg-gray-800/90 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-2xl hover:shadow-primary-500/10 cursor-pointer group"
+                className="app-surface rounded-2xl overflow-hidden border border-gray-100/80 dark:border-white/10 shadow-sm hover:shadow-2xl hover:shadow-primary-500/10 cursor-pointer group"
                 style={{
                   opacity: 0,
                   animation: `fadeSlideUp 0.4s ease forwards ${index * 55}ms`,
@@ -450,7 +450,7 @@ export default function ProductCatalog() {
 
                   {/* Category badge */}
                   {product.category && (
-                    <span className="absolute bottom-2 left-2 flex max-w-[70%] items-center gap-1 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-bold text-gray-600 backdrop-blur-sm dark:bg-gray-900/85 dark:text-gray-300">
+                    <span className="absolute bottom-2 left-2 flex max-w-[70%] items-center gap-1 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-bold text-gray-600 backdrop-blur-sm shadow-sm dark:bg-slate-900/85 dark:text-gray-300">
                       <Tag className="w-3 h-3" />
                       <span className="truncate">{typeof product.category === 'object' ? product.category.name : product.category}</span>
                     </span>
@@ -460,7 +460,7 @@ export default function ProductCatalog() {
                   {!isShowcasePlaceholder && (
                     <button
                       onClick={(e) => handleWishlist(e, product)}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                      className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur-sm transition-all hover:scale-110 active:scale-95 dark:bg-slate-900/90"
                     >
                       {loadingHeart ? (
                         <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
@@ -557,7 +557,7 @@ export default function ProductCatalog() {
                   {false && !isPortal && !outOfStock && !isShowcasePlaceholder && (
                     <button
                       onClick={(e) => handleBuyNow(e, product)}
-                      className="w-full mt-2 h-9 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:border-primary-300 hover:text-primary-600 transition-colors"
+                      className="w-full mt-2 h-9 rounded-xl border border-gray-200/80 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:border-primary-300 hover:text-primary-600 transition-colors"
                     >
                       اشترِ الآن
                     </button>

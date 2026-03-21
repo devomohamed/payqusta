@@ -18,6 +18,39 @@ const AGING_BUCKETS = [
   { key: 'over120', label: '+120 يوم', range: '120+', days: [121, Infinity], color: 'rose' },
 ];
 
+const BUCKET_STYLES = {
+  current: {
+    ring: 'ring-emerald-500',
+    dot: 'bg-emerald-500',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bar: 'bg-emerald-500',
+  },
+  days31_60: {
+    ring: 'ring-amber-500',
+    dot: 'bg-amber-500',
+    text: 'text-amber-600 dark:text-amber-400',
+    bar: 'bg-amber-500',
+  },
+  days61_90: {
+    ring: 'ring-orange-500',
+    dot: 'bg-orange-500',
+    text: 'text-orange-600 dark:text-orange-400',
+    bar: 'bg-orange-500',
+  },
+  days91_120: {
+    ring: 'ring-red-500',
+    dot: 'bg-red-500',
+    text: 'text-red-600 dark:text-red-400',
+    bar: 'bg-red-500',
+  },
+  over120: {
+    ring: 'ring-rose-500',
+    dot: 'bg-rose-500',
+    text: 'text-rose-600 dark:text-rose-400',
+    bar: 'bg-rose-500',
+  },
+};
+
 export default function AgingReportPage() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -225,12 +258,12 @@ export default function AgingReportPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/25">
-            <Clock className="w-6 h-6 text-white" />
+          <div className="app-surface flex h-12 w-12 items-center justify-center rounded-2xl text-orange-600 dark:text-orange-300">
+            <Clock className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-2xl font-extrabold">تقرير أعمار الديون</h1>
@@ -253,7 +286,7 @@ export default function AgingReportPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+        <Card className="app-surface-muted p-4">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-slate-500" />
             <span className="text-xs text-gray-500">إجمالي المديونية</span>
@@ -265,14 +298,14 @@ export default function AgingReportPage() {
         {AGING_BUCKETS.map((bucket) => (
           <Card 
             key={bucket.key}
-            className={`p-4 cursor-pointer transition-all hover:scale-105 ${filterBucket === bucket.key ? `ring-2 ring-${bucket.color}-500` : ''}`}
+            className={`app-surface-muted cursor-pointer p-4 transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${filterBucket === bucket.key ? `ring-2 ${BUCKET_STYLES[bucket.key]?.ring}` : ''}`}
             onClick={() => setFilterBucket(filterBucket === bucket.key ? 'all' : bucket.key)}
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-3 h-3 rounded-full bg-${bucket.color}-500`} />
+              <div className={`h-3 w-3 rounded-full ${BUCKET_STYLES[bucket.key]?.dot}`} />
               <span className="text-xs text-gray-500">{bucket.label}</span>
             </div>
-            <p className={`text-xl font-bold text-${bucket.color}-600`}>
+            <p className={`text-xl font-bold ${BUCKET_STYLES[bucket.key]?.text}`}>
               {fmt(summary[bucket.key])}
             </p>
             <p className="text-xs text-gray-400">
@@ -283,7 +316,7 @@ export default function AgingReportPage() {
       </div>
 
       {/* Visual Chart */}
-      <Card className="p-6">
+      <Card className="app-surface rounded-3xl p-6">
         <h3 className="font-bold mb-4 flex items-center gap-2">
           <PieChart className="w-5 h-5 text-primary-500" />
           توزيع المديونيات حسب العمر
@@ -294,7 +327,7 @@ export default function AgingReportPage() {
             return (
               <div key={bucket.key} className="flex items-center gap-2">
                 <div 
-                  className={`h-8 bg-${bucket.color}-500 rounded`} 
+                  className={`h-8 rounded ${BUCKET_STYLES[bucket.key]?.bar}`} 
                   style={{ width: `${Math.max(percentage * 3, 20)}px` }}
                 />
                 <div className="text-sm">
@@ -308,7 +341,7 @@ export default function AgingReportPage() {
       </Card>
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="app-surface-muted p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <Input
@@ -321,7 +354,7 @@ export default function AgingReportPage() {
           <select
             value={filterBucket}
             onChange={(e) => { setFilterBucket(e.target.value); setPage(1); }}
-            className="px-4 py-2 border rounded-xl bg-white dark:bg-gray-800"
+            className="app-surface rounded-xl border border-transparent px-4 py-2"
           >
             <option value="all">كل الفترات</option>
             {AGING_BUCKETS.map((bucket) => (
@@ -348,19 +381,19 @@ export default function AgingReportPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <table className="w-full text-sm">
+                <thead className="app-surface-muted">
                   <tr>
-                    <th className="px-4 py-3 text-right font-semibold cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('name')}>
+                    <th className="px-4 py-3 text-right font-semibold cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]" onClick={() => toggleSort('name')}>
                       <div className="flex items-center gap-1">العميل <SortIcon field="name" /></div>
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('outstanding')}>
+                    <th className="px-4 py-3 text-center font-semibold cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]" onClick={() => toggleSort('outstanding')}>
                       <div className="flex items-center justify-center gap-1">الإجمالي <SortIcon field="outstanding" /></div>
                     </th>
                     {AGING_BUCKETS.map((bucket) => (
                       <th 
                         key={bucket.key}
-                        className={`px-4 py-3 text-center font-semibold cursor-pointer hover:bg-gray-100 text-${bucket.color}-600`}
+                        className={`px-4 py-3 text-center font-semibold cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${BUCKET_STYLES[bucket.key]?.text}`}
                         onClick={() => toggleSort(bucket.key)}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -374,7 +407,7 @@ export default function AgingReportPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {paginatedCustomers.map((customer) => (
                     <React.Fragment key={customer._id}>
-                      <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <tr className="transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-bold">
@@ -392,7 +425,7 @@ export default function AgingReportPage() {
                           {fmt(customer.financials?.outstandingBalance)} ج.م
                         </td>
                         {AGING_BUCKETS.map((bucket) => (
-                          <td key={bucket.key} className={`px-4 py-3 text-center text-${bucket.color}-600 font-medium`}>
+                          <td key={bucket.key} className={`px-4 py-3 text-center font-medium ${BUCKET_STYLES[bucket.key]?.text}`}>
                             {customer.aging?.[bucket.key] > 0 ? fmt(customer.aging[bucket.key]) : '-'}
                           </td>
                         ))}
@@ -400,7 +433,7 @@ export default function AgingReportPage() {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => setExpandedCustomer(expandedCustomer === customer._id ? null : customer._id)}
-                              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                              className="rounded-lg p-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                               title="عرض التفاصيل"
                             >
                               <Eye className="w-4 h-4 text-gray-500" />
@@ -447,7 +480,7 @@ export default function AgingReportPage() {
                     <td className="px-4 py-3 text-right">الإجمالي ({filteredCustomers.length} عميل)</td>
                     <td className="px-4 py-3 text-center">{fmt(summary.totalOutstanding)} ج.م</td>
                     {AGING_BUCKETS.map((bucket) => (
-                      <td key={bucket.key} className={`px-4 py-3 text-center text-${bucket.color}-600`}>
+                      <td key={bucket.key} className={`px-4 py-3 text-center ${BUCKET_STYLES[bucket.key]?.text}`}>
                         {fmt(summary[bucket.key])}
                       </td>
                     ))}
@@ -458,7 +491,7 @@ export default function AgingReportPage() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="border-t border-gray-100/80 p-4 dark:border-white/10">
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}

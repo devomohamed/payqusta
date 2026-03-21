@@ -26,7 +26,9 @@ const { createApiClient } = require('../helpers/apiClient');
 const api = createApiClient();
 
 const createSelectQuery = (result) => ({
-  select: jest.fn().mockResolvedValue(result),
+  select: jest.fn(() => ({
+    populate: jest.fn().mockResolvedValue(result),
+  })),
 });
 
 describe('Ops routes', () => {

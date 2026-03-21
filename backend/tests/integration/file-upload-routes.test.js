@@ -72,7 +72,9 @@ const { createApiClient } = require('../helpers/apiClient');
 const api = createApiClient();
 
 const createSelectResult = (result) => ({
-  select: jest.fn().mockResolvedValue(result),
+  select: jest.fn(() => ({
+    populate: jest.fn().mockResolvedValue(result),
+  })),
 });
 
 describe('File upload route hardening', () => {

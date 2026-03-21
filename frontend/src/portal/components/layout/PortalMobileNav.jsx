@@ -16,7 +16,7 @@ export default function PortalMobileNav({ navItems = [], isActive, toggleCart })
 
     return (
         <>
-            <nav className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 md:hidden z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
+            <nav className="fixed bottom-0 left-0 right-0 app-surface-glass border-t border-gray-200/70 dark:border-white/10 md:hidden z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
                 <div className="flex justify-around items-center px-1 py-1">
                     {primaryItems.map((item) => {
                         const active = isActive(item.path) && !item.isCart;
@@ -77,8 +77,8 @@ export default function PortalMobileNav({ navItems = [], isActive, toggleCart })
             {showMore && (
                 <>
                     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-20 md:hidden animate-fade-in" onClick={() => setShowMore(false)} aria-hidden="true" />
-                    <div className="fixed bottom-16 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl border-t border-gray-100 dark:border-gray-800 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-20 md:hidden p-4 animate-slide-up transform transition-transform">
-                        <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4" />
+                    <div className="fixed bottom-16 left-0 right-0 app-surface rounded-t-3xl border-t border-gray-100/80 dark:border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-20 md:hidden p-4 animate-slide-up transform transition-transform">
+                        <div className="w-12 h-1.5 app-surface-muted rounded-full mx-auto mb-4" />
                         <div className="grid grid-cols-4 gap-4">
                             {secondaryItems.map((item) => (
                                 <button
@@ -87,9 +87,9 @@ export default function PortalMobileNav({ navItems = [], isActive, toggleCart })
                                         setShowMore(false);
                                         item.isCart ? toggleCart() : navigate(item.path);
                                     }}
-                                    className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                    className="flex flex-col items-center gap-2 rounded-2xl p-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                                 >
-                                    <div className="relative w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300">
+                                    <div className="relative flex h-12 w-12 items-center justify-center rounded-full app-surface-muted text-gray-600 dark:text-gray-300">
                                         <item.icon className="w-5 h-5" />
                                         {item.badge > 0 && (
                                             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-gray-900">

@@ -1,30 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Plus, Edit2, Trash2, Save, X, Users, ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft,
+  Edit2,
+  Plus,
+  Save,
+  Shield,
+  Trash2,
+  Users,
+  X,
+} from 'lucide-react';
 import { api } from '../store';
-import { Button, Card, Input, Modal, Badge, LoadingSpinner, EmptyState } from '../components/UI';
+import { Button, Card, EmptyState, Input, LoadingSpinner, Modal, Badge } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import { confirm } from '../components/ConfirmDialog';
 
-const RESOURCES = [
+const PERMISSION_ACTIONS = [
+  { id: 'create', label: 'إنشاء' },
+  { id: 'read', label: 'عرض' },
+  { id: 'update', label: 'تعديل' },
+  { id: 'delete', label: 'حذف' },
+];
+
+const PERMISSION_RESOURCES = [
   { id: 'products', label: 'المنتجات' },
+  { id: 'stock_adjustments', label: 'تعديلات المخزون' },
+  { id: 'purchase_orders', label: 'أوامر الشراء' },
+  { id: 'suppliers', label: 'الموردون' },
   { id: 'customers', label: 'العملاء' },
-  { id: 'suppliers', label: 'الموردين' },
   { id: 'invoices', label: 'الفواتير' },
+  { id: 'cash_shifts', label: 'الخزائن والورديات' },
+  { id: 'branches', label: 'الفروع' },
   { id: 'expenses', label: 'المصروفات' },
   { id: 'reports', label: 'التقارير' },
   { id: 'settings', label: 'الإعدادات' },
-  { id: 'users', label: 'المستخدمين' },
-  { id: 'stock_adjustments', label: 'تعديلات المخزون' },
-  { id: 'cash_shifts', label: 'إدارة الخزينة' },
+  { id: 'users', label: 'المستخدمون' },
 ];
 
-const ACTIONS = [
-  { id: 'create', label: 'إنشاء', color: 'success' },
-  { id: 'read', label: 'عرض', color: 'info' },
-  { id: 'update', label: 'تعديل', color: 'warning' },
-  { id: 'delete', label: 'حذف', color: 'danger' },
+const PERMISSION_GROUPS = [
+  {
+    id: 'catalog',
+    label: 'الكتالوج والمخزون',
+    description: 'المنتجات، المخزون، الموردون، وأوامر الشراء.',
+    resources: ['products', 'stock_adjustments', 'purchase_orders', 'suppliers'],
+  },
+  {
+    id: 'sales',
+    label: 'المبيعات والعملاء',
+    description: 'العملاء، الفواتير، والخزائن اليومية.',
+    resources: ['customers', 'invoices', 'cash_shifts'],
+  },
+  {
+    id: 'operations',
+    label: 'التشغيل والإدارة',
+    description: 'الفروع، التقارير، الإعدادات، المستخدمون، والمصروفات.',
+    resources: ['branches', 'expenses', 'reports', 'settings', 'users'],
+  },
 ];
+
+const EMPTY_FORM = {
+  name: '',
+  description: '',
+  permissions: [],
+};
 
 export default function RolesPage() {
   const navigate = useNavigate();
@@ -33,23 +71,28 @@ export default function RolesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    permissions: [],
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
     loadRoles();
   }, []);
 
+  const roleStats = useMemo(() => {
+    const customRoles = roles.filter((role) => !role.isSystem).length;
+    const systemRoles = roles.filter((role) => role.isSystem).length;
+    const totalPermissions = roles.reduce((count, role) => (
+      count + role.permissions.reduce((innerCount, permission) => innerCount + permission.actions.length, 0)
+    ), 0);
+
+    return { customRoles, systemRoles, totalPermissions };
+  }, [roles]);
+
   const loadRoles = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/roles');
-      setRoles(res.data.data);
-    } catch (err) {
+      const response = await api.get('/roles');
+      setRoles(response.data.data || []);
+    } catch (error) {
       notify.error('فشل تحميل الأدوار');
     } finally {
       setLoading(false);
@@ -58,7 +101,7 @@ export default function RolesPage() {
 
   const handleOpenAdd = () => {
     setEditId(null);
-    setForm({ name: '', description: '', permissions: [] });
+    setForm(EMPTY_FORM);
     setShowModal(true);
   };
 
@@ -67,14 +110,21 @@ export default function RolesPage() {
     setForm({
       name: role.name,
       description: role.description || '',
-      permissions: role.permissions,
+      permissions: role.permissions || [],
     });
     setShowModal(true);
   };
 
   const handleSave = async () => {
-    if (!form.name) return notify.warning('اسم الدور مطلوب');
-    if (form.permissions.length === 0) return notify.warning('يجب تحديد صلاحية واحدة على الأقل');
+    if (!form.name.trim()) {
+      notify.warning('اسم الدور مطلوب');
+      return;
+    }
+
+    if (form.permissions.length === 0) {
+      notify.warning('يجب تحديد صلاحية واحدة على الأقل');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -85,85 +135,132 @@ export default function RolesPage() {
         await api.post('/roles', form);
         notify.success('تم إنشاء الدور');
       }
+
       setShowModal(false);
-      loadRoles();
-    } catch (err) {
-      notify.error(err.response?.data?.message || 'حدث خطأ');
+      setForm(EMPTY_FORM);
+      setEditId(null);
+      await loadRoles();
+    } catch (error) {
+      notify.error(error.response?.data?.message || 'حدث خطأ أثناء حفظ الدور');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (roleId) => {
     const ok = await confirm.delete('هل أنت متأكد من حذف هذا الدور؟');
     if (!ok) return;
+
     try {
-      await api.delete(`/roles/${id}`);
+      await api.delete(`/roles/${roleId}`);
       notify.success('تم حذف الدور');
-      loadRoles();
-    } catch (err) {
-      notify.error(err.response?.data?.message || 'فشل الحذف');
+      await loadRoles();
+    } catch (error) {
+      notify.error(error.response?.data?.message || 'فشل حذف الدور');
     }
   };
 
   const togglePermission = (resource, action) => {
-    const permissions = [...form.permissions];
-    const permIndex = permissions.findIndex(p => p.resource === resource);
+    setForm((prev) => {
+      const permissions = [...prev.permissions];
+      const permissionIndex = permissions.findIndex((permission) => permission.resource === resource);
 
-    if (permIndex === -1) {
-      permissions.push({ resource, actions: [action] });
-    } else {
-      const actions = permissions[permIndex].actions;
-      if (actions.includes(action)) {
-        permissions[permIndex].actions = actions.filter(a => a !== action);
-        if (permissions[permIndex].actions.length === 0) {
-          permissions.splice(permIndex, 1);
-        }
+      if (permissionIndex === -1) {
+        permissions.push({ resource, actions: [action] });
       } else {
-        permissions[permIndex].actions.push(action);
-      }
-    }
+        const nextActions = permissions[permissionIndex].actions.includes(action)
+          ? permissions[permissionIndex].actions.filter((entry) => entry !== action)
+          : [...permissions[permissionIndex].actions, action];
 
-    setForm({ ...form, permissions });
+        if (nextActions.length === 0) {
+          permissions.splice(permissionIndex, 1);
+        } else {
+          permissions[permissionIndex] = {
+            ...permissions[permissionIndex],
+            actions: nextActions,
+          };
+        }
+      }
+
+      return { ...prev, permissions };
+    });
   };
 
   const hasPermission = (resource, action) => {
-    const perm = form.permissions.find(p => p.resource === resource);
-    return perm && perm.actions.includes(action);
+    const permission = form.permissions.find((entry) => entry.resource === resource);
+    return Boolean(permission && permission.actions.includes(action));
   };
 
+  const getRoleActionCount = (role) => (
+    role.permissions.reduce((count, permission) => count + permission.actions.length, 0)
+  );
+
+  const getRoleGroupLabels = (role) => (
+    PERMISSION_GROUPS
+      .filter((group) => role.permissions.some((permission) => group.resources.includes(permission.resource)))
+      .map((group) => group.label)
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 app-text-soft">
+      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="w-7 h-7 text-primary-500" />
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
+            <Shield className="h-7 w-7 text-primary-500" />
             إدارة الأدوار والصلاحيات
           </h1>
-          <p className="text-gray-500 text-sm mt-1">تخصيص صلاحيات المستخدمين حسب الدور</p>
+          <p className="mt-1 text-sm text-gray-500">
+            أنشئ أدوارًا مخصصة، واجمع الصلاحيات حسب نطاق العمل، واترك ربط الفروع لشاشة الموظفين.
+          </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => navigate('/admin/users')} icon={<Users className="w-4 h-4" />}>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" onClick={() => navigate('/admin/users')} icon={<Users className="h-4 w-4" />}>
             إدارة الموظفين
           </Button>
-          <Button onClick={handleOpenAdd} icon={<Plus className="w-4 h-4" />}>دور جديد</Button>
+          <Button onClick={handleOpenAdd} icon={<Plus className="h-4 w-4" />}>
+            دور جديد
+          </Button>
         </div>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex items-start gap-4">
-        <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-300 shrink-0">
-          <Shield className="w-5 h-5" />
-        </div>
-        <div>
-          <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-1">كيف تعمل الصلاحيات؟</h3>
-          <p className="text-sm text-blue-600 dark:text-blue-400 mb-3">
-            1. قم بإنشاء <strong>دور جديد</strong> (مثال: بائع، محاسب، مدير مخزن).<br />
-            2. حدد <strong>الصلاحيات</strong> المناسبة لهذا الدور (عرض، إضافة، تعديل، حذف).<br />
-            3. اذهب إلى صفحة <strong>إدارة الموظفين</strong> وقم بتعيين هذا الدور للموظف المطلوب.
-          </p>
-          <Button size="sm" onClick={() => navigate('/admin/users')} icon={<ArrowLeft className="w-4 h-4" />} className="bg-blue-600 hover:bg-blue-700 text-white border-0">
-            الذهاب لتعيين الأدوار للموظفين
-          </Button>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="app-surface p-5">
+          <p className="text-xs font-bold text-gray-500">الأدوار المخصصة</p>
+          <p className="mt-2 text-3xl font-black text-gray-900 dark:text-white">{roleStats.customRoles}</p>
+          <p className="mt-2 text-sm text-gray-500">أدوار أنشأها صاحب المتجر حسب احتياج الفريق.</p>
+        </Card>
+        <Card className="app-surface p-5">
+          <p className="text-xs font-bold text-gray-500">الأدوار الافتراضية</p>
+          <p className="mt-2 text-3xl font-black text-gray-900 dark:text-white">{roleStats.systemRoles}</p>
+          <p className="mt-2 text-sm text-gray-500">مرجع سريع لتجميع الصلاحيات المعتادة داخل النظام.</p>
+        </Card>
+        <Card className="app-surface p-5">
+          <p className="text-xs font-bold text-gray-500">إجمالي الصلاحيات النشطة</p>
+          <p className="mt-2 text-3xl font-black text-gray-900 dark:text-white">{roleStats.totalPermissions}</p>
+          <p className="mt-2 text-sm text-gray-500">مجموع الإجراءات الموزعة حاليًا على جميع الأدوار.</p>
+        </Card>
+      </div>
+
+      <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 dark:border-blue-800 dark:bg-blue-900/20">
+        <div className="flex items-start gap-4">
+          <div className="rounded-2xl bg-blue-100 p-2 text-blue-700 dark:bg-blue-800 dark:text-blue-300">
+            <Shield className="h-5 w-5" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-bold text-blue-900 dark:text-blue-200">كيف تُقرأ هذه الشاشة؟</h3>
+            <p className="text-sm leading-6 text-blue-800 dark:text-blue-300">
+              الدور يحدد ماذا يستطيع الموظف أن يفعل داخل النظام. أما الفرع أو الفروع التي يمكنه الوصول إليها فتُحدد من شاشة الموظفين،
+              وليس من نموذج الدور نفسه.
+            </p>
+            <Button
+              size="sm"
+              onClick={() => navigate('/admin/users')}
+              icon={<ArrowLeft className="h-4 w-4" />}
+              className="border-0 bg-blue-600 text-white hover:bg-blue-700"
+            >
+              الذهاب لتعيين الأدوار للموظفين
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -171,44 +268,64 @@ export default function RolesPage() {
         <LoadingSpinner />
       ) : roles.length === 0 ? (
         <EmptyState
-          icon={<Shield className="w-12 h-12" />}
+          icon={<Shield className="h-12 w-12" />}
           title="لا توجد أدوار مخصصة"
-          description="قم بإنشاء أدوار مخصصة لتحديد صلاحيات دقيقة للمستخدمين"
+          description="أنشئ أول دور لتوزيع الصلاحيات بين فريق العمل."
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {roles.map(role => (
-            <Card key={role._id} className="p-5">
-              <div className="flex justify-between items-start mb-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {roles.map((role) => (
+            <Card key={role._id} className="app-surface p-5">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-bold text-lg">{role.name}</h3>
-                  {role.description && <p className="text-xs text-gray-400 mt-1">{role.description}</p>}
-                  {role.isSystem && <Badge variant="info" className="mt-2">افتراضي</Badge>}
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{role.name}</h3>
+                  {role.description && (
+                    <p className="mt-1 text-sm text-gray-500">{role.description}</p>
+                  )}
                 </div>
                 {!role.isSystem && (
                   <div className="flex gap-1">
-                    <button onClick={() => handleOpenEdit(role)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-blue-500">
-                      <Edit2 className="w-4 h-4" />
+                    <button
+                      onClick={() => handleOpenEdit(role)}
+                      className="rounded-xl p-2 text-blue-500 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                    >
+                      <Edit2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(role._id)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-red-500">
-                      <Trash2 className="w-4 h-4" />
+                    <button
+                      onClick={() => handleDelete(role._id)}
+                      className="rounded-xl p-2 text-red-500 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-1 text-xs">
-                <p className="font-semibold text-gray-500">الصلاحيات:</p>
-                {role.permissions.slice(0, 3).map(perm => (
-                  <div key={perm.resource} className="flex gap-1 flex-wrap">
-                    <span className="font-medium">{RESOURCES.find(r => r.id === perm.resource)?.label}:</span>
-                    {perm.actions.map(action => (
-                      <Badge key={action} variant="gray" className="text-xs">{ACTIONS.find(a => a.id === action)?.label}</Badge>
-                    ))}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {role.isSystem && <Badge variant="info">افتراضي</Badge>}
+                <Badge variant="gray">إجراءات: {getRoleActionCount(role)}</Badge>
+                {getRoleGroupLabels(role).map((label) => (
+                  <Badge key={label} variant="primary">{label}</Badge>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2 text-sm">
+                {role.permissions.slice(0, 4).map((permission) => (
+                  <div key={permission.resource} className="rounded-2xl border border-gray-100/80 px-3 py-2 dark:border-white/10">
+                    <p className="font-semibold text-gray-800 dark:text-gray-200">
+                      {PERMISSION_RESOURCES.find((entry) => entry.id === permission.resource)?.label || permission.resource}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {permission.actions.map((action) => (
+                        <Badge key={action} variant="gray">
+                          {PERMISSION_ACTIONS.find((entry) => entry.id === action)?.label || action}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 ))}
-                {role.permissions.length > 3 && (
-                  <p className="text-gray-400">+{role.permissions.length - 3} أخرى...</p>
+                {role.permissions.length > 4 && (
+                  <p className="text-xs text-gray-500">+{role.permissions.length - 4} صلاحيات إضافية</p>
                 )}
               </div>
             </Card>
@@ -222,58 +339,82 @@ export default function RolesPage() {
         title={editId ? 'تعديل الدور' : 'إنشاء دور جديد'}
         size="lg"
       >
-        <div className="space-y-4">
-          <Input
-            label="اسم الدور"
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            placeholder="مثال: مدير المخزون"
-          />
-          <Input
-            label="الوصف (اختياري)"
-            value={form.description}
-            onChange={e => setForm({ ...form, description: e.target.value })}
-            placeholder="وصف مختصر للدور"
-          />
+        <div className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label="اسم الدور"
+              value={form.name}
+              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              placeholder="مثال: مدير مخزون"
+            />
+            <Input
+              label="وصف مختصر"
+              value={form.description}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              placeholder="الدور المناسب لهذا المستخدم"
+            />
+          </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-3">الصلاحيات</label>
-            <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="p-3 text-right font-semibold">المورد</th>
-                    {ACTIONS.map(action => (
-                      <th key={action.id} className="p-3 text-center font-semibold">{action.label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {RESOURCES.map(resource => (
-                    <tr key={resource.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="p-3 font-medium">{resource.label}</td>
-                      {ACTIONS.map(action => (
-                        <td key={action.id} className="p-3 text-center">
-                          <input
-                            type="checkbox"
-                            checked={hasPermission(resource.id, action.id)}
-                            onChange={() => togglePermission(resource.id, action.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-900/10">
+            <p className="font-bold text-amber-900 dark:text-amber-200">مهم</p>
+            <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-amber-300">
+              هذا النموذج يحدد الصلاحيات فقط. أما نطاق الفروع، والفرع الرئيسي، والفروع المسندة للمستخدم فتُدار من شاشة الموظفين.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-sm font-bold">الصلاحيات حسب نطاق العمل</label>
+            <div className="space-y-4">
+              {PERMISSION_GROUPS.map((group) => (
+                <div key={group.id} className="overflow-hidden rounded-2xl border border-gray-100/80 dark:border-white/10">
+                  <div className="app-surface-muted px-4 py-3">
+                    <p className="font-bold text-gray-900 dark:text-white">{group.label}</p>
+                    <p className="mt-1 text-xs text-gray-500">{group.description}</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[520px] text-sm">
+                      <thead className="app-surface-muted">
+                        <tr>
+                          <th className="px-4 py-3 text-right font-semibold">المورد</th>
+                          {PERMISSION_ACTIONS.map((action) => (
+                            <th key={action.id} className="px-4 py-3 text-center font-semibold">{action.label}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {group.resources.map((resourceId) => {
+                          const resource = PERMISSION_RESOURCES.find((entry) => entry.id === resourceId);
+                          if (!resource) return null;
+
+                          return (
+                            <tr key={resource.id} className="transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
+                              <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{resource.label}</td>
+                              {PERMISSION_ACTIONS.map((action) => (
+                                <td key={action.id} className="px-4 py-3 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={hasPermission(resource.id, action.id)}
+                                    onChange={() => togglePermission(resource.id, action.id)}
+                                    className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="pt-4 flex gap-3">
-            <Button className="flex-1" onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>
+          <div className="flex gap-3 pt-2">
+            <Button className="flex-1" onClick={handleSave} loading={saving} icon={<Save className="h-4 w-4" />}>
               {editId ? 'حفظ التعديلات' : 'إنشاء الدور'}
             </Button>
-            <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)} icon={<X className="w-4 h-4" />}>
+            <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)} icon={<X className="h-4 w-4" />}>
               إلغاء
             </Button>
           </div>

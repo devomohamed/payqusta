@@ -77,7 +77,7 @@ export default function PortalStatement() {
   const balanceBg = balance > 0 ? 'from-red-500 to-red-600' : 'from-green-500 to-green-600';
 
   return (
-    <div className="space-y-4 pb-24 font-['Cairo']" dir={i18n.dir()}>
+    <div className="space-y-4 pb-24 font-['Cairo'] app-text-soft" dir={i18n.dir()}>
 
       {/* ══ PAGE HEADER ══ */}
       <div className="flex items-center justify-between">
@@ -101,7 +101,7 @@ export default function PortalStatement() {
       </div>
 
       {/* ══ DATE RANGE ══ */}
-      <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm space-y-3">
+      <div className="app-surface rounded-2xl border border-gray-100/80 p-4 shadow-sm space-y-3 dark:border-white/10">
         {/* Quick chips */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {QUICK_RANGES.map((r) => (
@@ -110,7 +110,7 @@ export default function PortalStatement() {
               onClick={() => applyQuickRange(r.days)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${activeRange === r.days
                 ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-primary-50 hover:text-primary-600'}`}
+                : 'app-surface-muted text-gray-600 dark:text-gray-400 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/20'}`}
             >
               {r.label}
             </button>
@@ -124,7 +124,7 @@ export default function PortalStatement() {
             <input
               type="date" value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setActiveRange(null); }}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary-500 focus:outline-none"
+              className="app-surface w-full rounded-xl border border-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             />
           </div>
           <div className="flex-1">
@@ -132,7 +132,7 @@ export default function PortalStatement() {
             <input
               type="date" value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setActiveRange(null); }}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:border-primary-500 focus:outline-none"
+              className="app-surface w-full rounded-xl border border-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             />
           </div>
           <button
@@ -176,7 +176,7 @@ export default function PortalStatement() {
 
           {/* ══ SUMMARY CARDS ══ */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+            <div className="app-surface rounded-2xl border border-gray-100/80 p-3 text-center shadow-sm dark:border-white/10">
               <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center mx-auto mb-2">
                 <TrendingUp className="w-5 h-5 text-blue-500" />
               </div>
@@ -186,7 +186,7 @@ export default function PortalStatement() {
               </p>
               <p className="text-[9px] text-gray-400">{currency}</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+            <div className="app-surface rounded-2xl border border-gray-100/80 p-3 text-center shadow-sm dark:border-white/10">
               <div className="w-9 h-9 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center justify-center mx-auto mb-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
               </div>
@@ -196,7 +196,7 @@ export default function PortalStatement() {
               </p>
               <p className="text-[9px] text-gray-400">{currency}</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+            <div className="app-surface rounded-2xl border border-gray-100/80 p-3 text-center shadow-sm dark:border-white/10">
               <div className="w-9 h-9 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-center mx-auto mb-2">
                 <CreditCard className="w-5 h-5 text-purple-500" />
               </div>
@@ -221,7 +221,7 @@ export default function PortalStatement() {
                 icon={FileText}
                 title={t('statement.empty_title')}
                 message={t('statement.empty_message')}
-                className="my-4 border-none bg-gray-50 dark:bg-gray-800/30"
+                className="my-4 border-none app-surface-muted"
               />
             ) : (
               <div className="space-y-2">
@@ -231,11 +231,11 @@ export default function PortalStatement() {
                   return (
                     <div
                       key={idx}
-                      className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden transition-all"
+                      className="app-surface overflow-hidden rounded-2xl border border-gray-100/80 transition-all dark:border-white/10"
                     >
                       <button
                         onClick={() => setExpandedEntry(isExpanded ? null : idx)}
-                        className="w-full flex items-center gap-3 p-3.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-right"
+                        className="w-full flex items-center gap-3 p-3.5 text-right transition hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                       >
                         {/* Icon */}
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isPayment
@@ -279,7 +279,7 @@ export default function PortalStatement() {
 
                       {/* Expandable details */}
                       {isExpanded && (
-                        <div className="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 animate-fade-in">
+                        <div className="app-surface-muted animate-fade-in border-t border-gray-100/80 px-4 pb-4 pt-1 dark:border-white/10">
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <p className="text-[10px] text-gray-400">{t('statement.entry_type')}</p>
@@ -307,7 +307,7 @@ export default function PortalStatement() {
                             </div>
                           </div>
                           {entry.reference && (
-                            <div className="mt-3 p-2 bg-white dark:bg-gray-800 rounded-xl">
+                            <div className="app-surface mt-3 rounded-xl p-2">
                               <p className="text-[10px] text-gray-400">{t('statement.reference')}</p>
                               <p className="text-xs font-bold text-primary-600 font-mono">{entry.reference}</p>
                             </div>
@@ -323,7 +323,7 @@ export default function PortalStatement() {
 
           {/* ══ FOOTER SUMMARY ══ */}
           {data.entries?.length > 0 && (
-            <div className="bg-gray-100 dark:bg-gray-800/60 rounded-2xl p-4 text-sm text-center text-gray-600 dark:text-gray-400">
+            <div className="app-surface-muted rounded-2xl p-4 text-center text-sm text-gray-600 dark:text-gray-400">
               {t('statement.footer_from')}
               <span className="font-bold text-gray-900 dark:text-white mx-1">{startDate || '—'}</span>
               {t('statement.footer_to')}

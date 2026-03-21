@@ -22,6 +22,11 @@ const invoiceItemSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     default: null,
   },
+  allocatedBranch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    default: null,
+  },
   productName: { type: String, required: true },
   sku: { type: String },
   barcode: { type: String },
@@ -63,6 +68,11 @@ const paymentRecordSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  shift: { // ID of the CashShift during which this payment was collected
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CashShift',
+    index: true,
+  },
 });
 
 const invoiceSchema = new mongoose.Schema(
@@ -93,6 +103,11 @@ const invoiceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: false, // portal orders use customer as originator
+    },
+    shift: { // Directly link the invoice to a specific Cash Shift
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CashShift',
+      index: true,
     },
     // Items
     items: [invoiceItemSchema],

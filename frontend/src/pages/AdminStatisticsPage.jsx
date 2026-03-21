@@ -45,9 +45,9 @@ export default function AdminStatisticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 app-text-soft">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
             <TrendingUp className="w-6 h-6 text-white" />
@@ -59,7 +59,7 @@ export default function AdminStatisticsPage() {
         </div>
         <button
           onClick={loadStatistics}
-          className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+          className="app-surface flex items-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
         >
           <Activity className="w-4 h-4" />
           <span className="text-sm font-medium">تحديث</span>
@@ -77,7 +77,7 @@ export default function AdminStatisticsPage() {
             {data?.topTenants?.map((tenant, index) => (
               <div
                 key={tenant._id}
-                className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="app-surface-muted flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               >
                 <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500 text-white font-bold text-sm">
                   {index + 1}

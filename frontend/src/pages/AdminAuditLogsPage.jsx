@@ -1,25 +1,146 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FileText, Search, Filter, Calendar, User, Activity,
-  Shield, AlertCircle, CheckCircle, XCircle, Eye,
+  Activity,
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  Eye,
+  FileSearch,
+  Filter,
+  Shield,
+  User,
+  XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { adminApi } from '../store';
-import { Input, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
-import Pagination from '../components/Pagination';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useSearchParams } from 'react-router-dom';
+import { adminApi } from '../store';
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  LoadingSpinner,
+} from '../components/UI';
+import Pagination from '../components/Pagination';
+
+const LIMIT = 8;
+
+const ACTION_OPTIONS = [
+  { value: '', label: 'كل الإجراءات' },
+  { value: 'create', label: 'إنشاء' },
+  { value: 'update', label: 'تحديث' },
+  { value: 'delete', label: 'حذف' },
+  { value: 'bulk_delete', label: 'حذف جماعي' },
+  { value: 'payment', label: 'تسجيل دفعة' },
+  { value: 'stock_change', label: 'تغيير مخزون' },
+  { value: 'import', label: 'استيراد' },
+  { value: 'restore', label: 'استعادة' },
+  { value: 'login', label: 'تسجيل دخول' },
+  { value: 'logout', label: 'تسجيل خروج' },
+  { value: 'logout_all', label: 'تسجيل خروج من جميع الأجهزة' },
+];
+
+const RESOURCE_OPTIONS = [
+  { value: '', label: 'كل الموارد' },
+  { value: 'tenant', label: 'المتجر' },
+  { value: 'user', label: 'الموظفون' },
+  { value: 'branch', label: 'الفروع' },
+  { value: 'role', label: 'الأدوار' },
+  { value: 'product', label: 'المنتجات' },
+  { value: 'customer', label: 'العملاء' },
+  { value: 'invoice', label: 'الفواتير' },
+  { value: 'supplier', label: 'الموردون' },
+  { value: 'expense', label: 'المصروفات' },
+  { value: 'settings', label: 'الإعدادات' },
+  { value: 'auth', label: 'الجلسات' },
+];
+
+const ACTION_LABELS = Object.fromEntries(ACTION_OPTIONS.map((option) => [option.value, option.label]));
+const RESOURCE_LABELS = Object.fromEntries(RESOURCE_OPTIONS.map((option) => [option.value, option.label]));
+
+function getActionLabel(action) {
+  return ACTION_LABELS[action] || action;
+}
+
+function getResourceLabel(resource) {
+  return RESOURCE_LABELS[resource] || resource;
+}
+
+function getActionColor(action) {
+  switch (action) {
+    case 'create':
+    case 'payment':
+    case 'login':
+      return 'success';
+    case 'update':
+    case 'stock_change':
+    case 'import':
+    case 'restore':
+      return 'info';
+    case 'delete':
+    case 'bulk_delete':
+      return 'danger';
+    case 'view':
+      return 'gray';
+    default:
+      return 'warning';
+  }
+}
+
+function getActionIcon(action) {
+  switch (action) {
+    case 'create':
+    case 'payment':
+    case 'login':
+      return <CheckCircle2 className="h-4 w-4" />;
+    case 'update':
+    case 'stock_change':
+    case 'import':
+    case 'restore':
+    case 'logout':
+    case 'logout_all':
+      return <Activity className="h-4 w-4" />;
+    case 'delete':
+    case 'bulk_delete':
+      return <XCircle className="h-4 w-4" />;
+    case 'view':
+      return <Eye className="h-4 w-4" />;
+    default:
+      return <AlertCircle className="h-4 w-4" />;
+  }
+}
 
 export default function AdminAuditLogsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [resourceFilter, setResourceFilter] = useState('');
+  const [resourceIdFilter, setResourceIdFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
 
-  const LIMIT = 8;
+  useEffect(() => {
+    setSearch(searchParams.get('search') || '');
+    setActionFilter(searchParams.get('action') || '');
+    setResourceFilter(searchParams.get('resource') || '');
+    setResourceIdFilter(searchParams.get('resourceId') || '');
+    setPage(Math.max(Number(searchParams.get('page') || '1'), 1));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = {};
+    if (search) params.search = search;
+    if (actionFilter) params.action = actionFilter;
+    if (resourceFilter) params.resource = resourceFilter;
+    if (resourceIdFilter) params.resourceId = resourceIdFilter;
+    if (page > 1) params.page = String(page);
+    setSearchParams(params, { replace: true });
+  }, [actionFilter, page, resourceFilter, resourceIdFilter, search, setSearchParams]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -28,6 +149,7 @@ export default function AdminAuditLogsPage() {
       if (search) params.search = search;
       if (actionFilter) params.action = actionFilter;
       if (resourceFilter) params.resource = resourceFilter;
+      if (resourceIdFilter) params.resourceId = resourceIdFilter;
 
       const res = await adminApi.getAuditLogs(params);
       setLogs(res.data.data || []);
@@ -35,247 +157,202 @@ export default function AdminAuditLogsPage() {
         totalPages: res.data.pagination?.pages || 1,
         total: res.data.pagination?.total || 0,
       });
-    } catch (err) {
-      toast.error('خطأ في تحميل السجلات');
+    } catch (error) {
+      toast.error('تعذر تحميل سجلات التدقيق');
     } finally {
       setLoading(false);
     }
-  }, [page, search, actionFilter, resourceFilter]);
+  }, [actionFilter, page, resourceFilter, resourceIdFilter, search]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  useEffect(() => {
+  const summary = useMemo(() => ({
+    scoped: Boolean(resourceFilter || resourceIdFilter),
+    hasQuery: Boolean(search || actionFilter || resourceFilter || resourceIdFilter),
+    focusLabel: resourceFilter ? getResourceLabel(resourceFilter) : 'السجلات',
+  }), [actionFilter, resourceFilter, resourceIdFilter, search]);
+
+  const resetFilters = () => {
+    setSearch('');
+    setActionFilter('');
+    setResourceFilter('');
+    setResourceIdFilter('');
     setPage(1);
-  }, [search, actionFilter, resourceFilter]);
-
-  const getActionIcon = (action) => {
-    switch (action) {
-      case 'create':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'update':
-        return <Activity className="w-4 h-4" />;
-      case 'delete':
-      case 'bulk_delete':
-        return <XCircle className="w-4 h-4" />;
-      case 'login':
-        return <CheckCircle className="w-4 h-4 text-emerald-500" />;
-      case 'logout':
-        return <Activity className="w-4 h-4 text-gray-500" />;
-      case 'payment':
-        return <CheckCircle className="w-4 h-4 text-blue-500" />;
-      case 'stock_change':
-        return <Activity className="w-4 h-4 text-amber-500" />;
-      case 'import':
-      case 'restore':
-        return <Activity className="w-4 h-4 text-purple-500" />;
-      case 'view':
-        return <Eye className="w-4 h-4" />;
-      default:
-        return <AlertCircle className="w-4 h-4" />;
-    }
-  };
-
-  const getActionColor = (action) => {
-    switch (action) {
-      case 'create':
-        return 'success';
-      case 'update':
-        return 'info';
-      case 'delete':
-        return 'danger';
-      case 'view':
-        return 'gray';
-      default:
-        return 'warning';
-    }
-  };
-
-  const getActionLabel = (action) => {
-    const labels = {
-      create: 'إنشاء',
-      update: 'تحديث',
-      delete: 'حذف',
-      bulk_delete: 'حذف جماعي',
-      view: 'عرض',
-      login: 'تسجيل دخول',
-      logout: 'تسجيل خروج',
-      payment: 'تسجيل دفعة',
-      stock_change: 'تغيير مخزون',
-      import: 'استيراد',
-      restore: 'استعادة',
-    };
-    return labels[action] || action;
-  };
-
-  const getResourceLabel = (resource) => {
-    const labels = {
-      tenant: 'متجر',
-      user: 'مستخدم',
-      product: 'منتج',
-      customer: 'عميل',
-      invoice: 'فاتورة',
-      supplier: 'مورد',
-      expense: 'مصروف',
-      settings: 'إعدادات',
-    };
-    return labels[resource] || resource;
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-          <FileText className="w-6 h-6 text-white" />
+    <div className="space-y-6 app-text-soft">
+      <div className="app-surface-muted flex flex-col gap-4 rounded-[1.75rem] p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="rounded-[1.35rem] bg-gradient-to-br from-primary-500 to-cyan-500 p-3 text-white shadow-xl shadow-primary-500/25">
+            <Shield className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-black app-text-strong">سجل التدقيق والأثر</h1>
+              <Badge variant="info">Audit Trail</Badge>
+            </div>
+            <p className="mt-2 text-sm leading-7 app-text-muted">
+              راجع تعديلات الموظفين، الفروع، الإعدادات، والعمليات الحساسة من شاشة واحدة مع فلاتر قابلة للمشاركة بالرابط.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-extrabold">سجلات النظام (Audit Logs)</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {pagination.total} سجل إجمالاً
-          </p>
+
+        <div className="grid grid-cols-2 gap-3 sm:w-auto">
+          <Card className="min-w-[140px] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">إجمالي السجلات</p>
+            <p className="mt-2 text-2xl font-black app-text-strong">{pagination.total}</p>
+          </Card>
+          <Card className="min-w-[140px] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">النطاق الحالي</p>
+            <p className="mt-2 text-base font-black app-text-strong">{summary.focusLabel}</p>
+          </Card>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <div className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="بحث في السجلات (اسم، بريد، إجراء...)"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pr-10 h-11"
-              />
+      {summary.scoped && (
+        <Card className="border border-primary-200/60 bg-primary-50/70 p-4 dark:border-primary-500/20 dark:bg-primary-500/10">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-bold app-text-strong">أنت تعرض سجلًا موجهًا</p>
+              <p className="mt-1 text-sm app-text-muted">
+                {resourceFilter ? `تم تضييق النتائج إلى ${getResourceLabel(resourceFilter)}.` : 'تم تضييق النتائج بحسب السجل المطلوب.'}
+                {resourceIdFilter ? ' الرابط الحالي يحتفظ بمعرّف السجل المحدد لسهولة المتابعة.' : ''}
+              </p>
             </div>
-            <select
-              value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
-              className="px-4 h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">كل الإجراءات</option>
-              {/* CRUD */}
-              <option value="create">إنشاء</option>
-              <option value="update">تحديث</option>
-              <option value="delete">حذف</option>
-              <option value="bulk_delete">حذف جماعي</option>
-
-              {/* Business Actions */}
-              <option value="payment">تسجيل دفعة</option>
-              <option value="stock_change">تغيير مخزون</option>
-
-              {/* System Actions */}
-              <option value="import">استيراد بيانات</option>
-              <option value="restore">استعادة نسخة احتياطية</option>
-
-              {/* Auth */}
-              <option value="login">تسجيل دخول</option>
-              <option value="logout">تسجيل خروج</option>
-            </select>
-            <select
-              value={resourceFilter}
-              onChange={(e) => setResourceFilter(e.target.value)}
-              className="px-4 h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">كل الموارد</option>
-              <option value="tenant">متجر</option>
-              <option value="user">مستخدم</option>
-              <option value="product">منتج</option>
-              <option value="customer">عميل</option>
-              <option value="invoice">فاتورة</option>
-              <option value="supplier">مورد</option>
-              <option value="expense">مصروف</option>
-              <option value="auth">جلسات (دخول/خروج)</option>
-            </select>
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              عرض كل السجلات
+            </Button>
           </div>
+        </Card>
+      )}
+
+      <Card className="app-surface-muted p-4 sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[1.5fr_repeat(2,minmax(0,0.75fr))]">
+          <Input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            placeholder="ابحث باسم المستخدم أو البريد أو الوصف أو عنوان العملية..."
+          />
+
+          <select
+            value={actionFilter}
+            onChange={(event) => {
+              setActionFilter(event.target.value);
+              setPage(1);
+            }}
+            className="app-surface h-11 rounded-xl border border-transparent px-4 text-sm focus:ring-2 focus:ring-primary-500"
+          >
+            {ACTION_OPTIONS.map((option) => (
+              <option key={option.value || 'all-actions'} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={resourceFilter}
+            onChange={(event) => {
+              setResourceFilter(event.target.value);
+              setPage(1);
+            }}
+            className="app-surface h-11 rounded-xl border border-transparent px-4 text-sm focus:ring-2 focus:ring-primary-500"
+          >
+            {RESOURCE_OPTIONS.map((option) => (
+              <option key={option.value || 'all-resources'} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {summary.hasQuery && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {search && <Badge variant="gray">بحث: {search}</Badge>}
+            {actionFilter && <Badge variant="gray">إجراء: {getActionLabel(actionFilter)}</Badge>}
+            {resourceFilter && <Badge variant="gray">مورد: {getResourceLabel(resourceFilter)}</Badge>}
+            {resourceIdFilter && <Badge variant="gray">معرّف السجل: {resourceIdFilter.slice(-8)}</Badge>}
+            <Button variant="ghost" size="sm" icon={<Filter className="h-4 w-4" />} onClick={resetFilters}>
+              إعادة ضبط الفلاتر
+            </Button>
+          </div>
+        )}
       </Card>
 
-      {/* Logs Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <LoadingSpinner size="lg" />
-        </div>
+        <Card className="p-8">
+          <LoadingSpinner size="lg" text="جاري تحميل السجلات..." />
+        </Card>
       ) : logs.length === 0 ? (
         <EmptyState
-          icon={FileText}
-          title="لا توجد سجلات"
-          description="لم يتم تسجيل أي إجراءات بعد"
+          icon={FileSearch}
+          title="لا توجد سجلات مطابقة"
+          description="جرّب توسيع الفلاتر أو إعادة ضبطها لعرض سجل النظام بالكامل."
+          action={summary.hasQuery ? { label: 'إعادة ضبط الفلاتر', onClick: resetFilters } : null}
         />
       ) : (
-        <Card>
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <Card className="overflow-hidden rounded-[1.75rem]">
+          <div className="divide-y divide-black/5 dark:divide-white/10">
             {logs.map((log) => (
               <div
                 key={log._id}
-                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                className="p-5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
               >
                 <div className="flex items-start gap-4">
-                  {/* User Avatar */}
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/20">
                     {log.user?.name?.charAt(0) || 'م'}
                   </div>
 
-                  {/* Log Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-sm">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-black app-text-strong">
                         {log.user?.name || 'مستخدم محذوف'}
                       </h3>
                       <Badge variant={getActionColor(log.action)}>
-                        <span className="flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1">
                           {getActionIcon(log.action)}
                           {getActionLabel(log.action)}
                         </span>
                       </Badge>
-                      <Badge variant="gray">
-                        {getResourceLabel(log.resource)}
-                      </Badge>
+                      <Badge variant="gray">{getResourceLabel(log.resource)}</Badge>
                     </div>
 
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {log.description || `${getActionLabel(log.action)} ${getResourceLabel(log.resource)}`}
-                    </div>
+                    <p className="mt-2 text-sm leading-7 app-text-muted">
+                      {log.description || `${getActionLabel(log.action)} على ${getResourceLabel(log.resource)}`}
+                    </p>
 
-                    {/* Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-500">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs app-text-muted">
                       {log.user?.email && (
-                        <div className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          <span className="truncate">{log.user.email}</span>
-                        </div>
-                      )}
-                      {log.tenant && (
-                        <div className="flex items-center gap-1">
-                          <Shield className="w-3 h-3" />
-                          <span className="truncate">{log.tenant.name}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          {format(new Date(log.createdAt), 'dd MMM yyyy - hh:mm a', { locale: ar })}
+                        <span className="inline-flex items-center gap-1">
+                          <User className="h-3.5 w-3.5" />
+                          {log.user.email}
                         </span>
-                      </div>
+                      )}
+                      {log.tenant?.name && (
+                        <span className="inline-flex items-center gap-1">
+                          <Shield className="h-3.5 w-3.5" />
+                          {log.tenant.name}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {format(new Date(log.createdAt), 'dd MMM yyyy - hh:mm a', { locale: ar })}
+                      </span>
+                      {log.ipAddress && <span>IP: {log.ipAddress}</span>}
+                      {log.resourceId && <span>Ref: {String(log.resourceId).slice(-8)}</span>}
                     </div>
 
-                    {/* IP Address */}
-                    {log.ipAddress && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        IP: {log.ipAddress}
-                      </div>
-                    )}
-
-                    {/* Details Object */}
                     {log.details && Object.keys(log.details).length > 0 && (
-                      <details className="mt-2">
-                        <summary className="text-xs text-primary-500 cursor-pointer hover:text-primary-600">
+                      <details className="mt-3 rounded-2xl app-surface-muted p-4">
+                        <summary className="cursor-pointer text-sm font-semibold text-primary-500">
                           عرض التفاصيل الكاملة
                         </summary>
-                        <pre className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs overflow-x-auto">
+                        <pre className="mt-3 overflow-x-auto rounded-2xl bg-black/5 p-3 text-xs leading-6 text-slate-700 dark:bg-white/5 dark:text-slate-200">
                           {JSON.stringify(log.details, null, 2)}
                         </pre>
                       </details>
@@ -287,7 +364,7 @@ export default function AdminAuditLogsPage() {
           </div>
 
           {pagination.totalPages > 1 && (
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="border-t border-black/5 p-4 dark:border-white/10">
               <Pagination
                 currentPage={page}
                 totalPages={pagination.totalPages}

@@ -34,10 +34,10 @@ export default function ProductCard({
 
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-3xl p-3 shadow-sm hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300 group cursor-pointer border border-gray-100 dark:border-gray-700/50"
+      className="app-surface rounded-3xl border border-gray-100/80 p-3 shadow-sm transition-all duration-300 group cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-primary-500/10 dark:border-white/10"
       onClick={handleCardClick}
     >
-      <div className="aspect-[4/5] sm:aspect-square bg-gray-50 dark:bg-gray-900/50 rounded-2xl mb-3 relative overflow-hidden">
+      <div className="aspect-[4/5] sm:aspect-square app-surface-muted rounded-2xl mb-3 relative overflow-hidden">
         {displayImage ? (
           <img
             src={displayImage}
@@ -87,7 +87,7 @@ export default function ProductCard({
             onClick={handleToggleWishlist}
             aria-label="Add to wishlist"
             title="Add to wishlist"
-            className="h-10 w-10 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="app-surface-muted h-10 w-10 rounded-xl border border-transparent text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
           >
             <Heart className={`w-4 h-4 transition-colors ${isWishlisted ? 'text-red-500 fill-red-500' : 'text-gray-600 dark:text-gray-300'}`} />
           </button>

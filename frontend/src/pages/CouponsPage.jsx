@@ -60,10 +60,7 @@ function CouponForm({ coupon, onSave, onCancel }) {
     setLoading(false);
   };
 
-  const inputClass = `w-full px-3 py-2.5 rounded-xl border text-sm ${dark
-      ? 'bg-gray-800 border-gray-700 text-white focus:border-primary-500'
-      : 'bg-white border-gray-200 text-gray-900 focus:border-primary-500'
-    } focus:outline-none transition`;
+  const inputClass = 'app-surface w-full px-3 py-2.5 rounded-xl border border-transparent text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition';
 
   const labelClass = 'block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1';
 
@@ -263,9 +260,9 @@ export default function CouponsPage() {
   const isActive = (coupon) => coupon.isActive && !isExpired(coupon);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Tag className="w-6 h-6 text-primary-500" />
@@ -284,19 +281,19 @@ export default function CouponsPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-primary-500">{stats.total || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">إجمالي الكوبونات</p>
           </Card>
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-green-500">{stats.active || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">نشطة</p>
           </Card>
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-blue-500">{stats.totalUsages || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">مرات الاستخدام</p>
           </Card>
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-amber-500">{stats.totalSavings?.toLocaleString() || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">إجمالي التوفير (ج.م)</p>
           </Card>
@@ -305,7 +302,7 @@ export default function CouponsPage() {
 
       {/* Create/Edit Form */}
       {showForm && (
-        <Card className="p-5">
+        <Card className="app-surface p-5 rounded-3xl">
           <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <Tag className="w-5 h-5 text-primary-500" />
             {editCoupon ? 'تعديل الكوبون' : 'إنشاء كوبون جديد'}
@@ -322,7 +319,7 @@ export default function CouponsPage() {
       {loading ? (
         <div className="py-10 flex justify-center"><LoadingSpinner /></div>
       ) : coupons.length === 0 ? (
-        <Card className="p-10 text-center">
+        <Card className="app-surface-muted p-10 text-center rounded-3xl">
           <Tag className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
           <p className="text-gray-500 dark:text-gray-400">لا توجد كوبونات بعد</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">أنشئ أول كوبون خصم لعملائك</p>
@@ -335,11 +332,11 @@ export default function CouponsPage() {
             const expired = isExpired(coupon);
 
             return (
-              <Card key={coupon._id} className="p-4">
+              <Card key={coupon._id} className="app-surface p-4 rounded-3xl">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${active ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                        : 'app-surface-muted text-gray-400'
                       }`}>
                       <TypeIcon className="w-5 h-5" />
                     </div>
@@ -361,13 +358,13 @@ export default function CouponsPage() {
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                       : expired
                         ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                        : 'app-surface-muted text-gray-500'
                     }`}>
                     {active ? <><CheckCircle className="w-3 h-3" /> نشط</> : expired ? <><XCircle className="w-3 h-3" /> منتهي</> : <><XCircle className="w-3 h-3" /> معطل</>}
                   </span>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 mb-3">
+                <div className="app-surface-muted rounded-xl p-3 mb-3">
                   <div className="grid grid-cols-2 gap-2 text-center">
                     <div>
                       <p className="text-[10px] text-gray-500 dark:text-gray-400">الخصم</p>

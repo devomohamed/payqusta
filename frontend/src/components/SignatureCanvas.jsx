@@ -1,8 +1,3 @@
-/**
- * Signature Canvas Component
- * Digital signature capture for field collectors
- */
-
 import React, { useRef, useState } from 'react';
 import { X, RotateCcw, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -12,37 +7,38 @@ const SignatureCanvas = ({ onSave, onClose }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
 
-  const startDrawing = (e) => {
+  const startDrawing = (event) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    
-    ctx.beginPath();
-    ctx.moveTo(
-      e.clientX - rect.left || e.touches[0].clientX - rect.left,
-      e.clientY - rect.top || e.touches[0].clientY - rect.top
-    );
-    
+    const pointX = event.clientX ?? event.touches?.[0]?.clientX;
+    const pointY = event.clientY ?? event.touches?.[0]?.clientY;
+
+    if (pointX == null || pointY == null) return;
+
+    context.beginPath();
+    context.moveTo(pointX - rect.left, pointY - rect.top);
     setIsDrawing(true);
     setIsEmpty(false);
   };
 
-  const draw = (e) => {
+  const draw = (event) => {
     if (!isDrawing) return;
-    
+
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    
-    ctx.lineTo(
-      e.clientX - rect.left || e.touches[0].clientX - rect.left,
-      e.clientY - rect.top || e.touches[0].clientY - rect.top
-    );
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
+    const pointX = event.clientX ?? event.touches?.[0]?.clientX;
+    const pointY = event.clientY ?? event.touches?.[0]?.clientY;
+
+    if (pointX == null || pointY == null) return;
+
+    context.lineTo(pointX - rect.left, pointY - rect.top);
+    context.strokeStyle = '#111827';
+    context.lineWidth = 2;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.stroke();
   };
 
   const stopDrawing = () => {
@@ -51,47 +47,39 @@ const SignatureCanvas = ({ onSave, onClose }) => {
 
   const clear = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
     setIsEmpty(true);
   };
 
   const save = () => {
     if (isEmpty) return;
-    
-    const canvas = canvasRef.current;
-    const dataURL = canvas.toDataURL('image/png');
-    onSave(dataURL);
+    onSave(canvasRef.current.toDataURL('image/png'));
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm md:items-center">
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl w-full md:max-w-lg p-6"
+        className="app-surface w-full rounded-t-3xl p-6 md:max-w-lg md:rounded-2xl"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-            التوقيع الرقمي
-          </h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">التوقيع الرقمي</h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            className="app-surface-muted rounded-xl p-2 text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400"
           >
             <X size={24} />
           </button>
         </div>
 
-        {/* Instructions */}
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          وقع بإصبعك أو القلم في المربع أدناه
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          وقّع بإصبعك أو بالقلم داخل المساحة التالية.
         </p>
 
-        {/* Canvas */}
-        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white">
+        <div className="app-surface-muted mb-4 rounded-2xl border-2 border-dashed border-gray-300/80 p-2 dark:border-white/10">
           <canvas
             ref={canvasRef}
             width={500}
@@ -103,28 +91,29 @@ const SignatureCanvas = ({ onSave, onClose }) => {
             onTouchStart={startDrawing}
             onTouchMove={draw}
             onTouchEnd={stopDrawing}
-            className="w-full cursor-crosshair touch-none"
+            className="w-full cursor-crosshair touch-none rounded-xl bg-white"
             style={{ touchAction: 'none' }}
           />
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
           <button
             onClick={clear}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            className="app-surface-muted flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-gray-700 transition-colors hover:border-primary-500/30 dark:text-gray-300"
           >
             <RotateCcw size={18} />
             مسح
           </button>
-          
+
           <button
             onClick={save}
             disabled={isEmpty}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-bold transition"
+            className="flex-1 rounded-xl bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
           >
-            <Check size={18} />
-            حفظ التوقيع
+            <span className="flex items-center justify-center gap-2">
+              <Check size={18} />
+              حفظ التوقيع
+            </span>
           </button>
         </div>
       </motion.div>

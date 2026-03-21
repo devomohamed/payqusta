@@ -376,20 +376,177 @@ export default function PurchaseOrdersPage() {
 
   const handleOpenPdf = async (orderId, orderNumber = '') => {
     try {
-      const res = await api.get(`/purchase-orders/${orderId}/pdf`, { responseType: 'blob' });
-      const blobUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      const res = await api.get(`/purchase-orders/${orderId}`);
+      const order = res.data?.data;
+      if (!order) return notify.error('فشل تحميل بيانات الأمر');
 
-      if (!popup) {
-        const anchor = document.createElement('a');
-        anchor.href = blobUrl;
-        anchor.download = `PO-${orderNumber || orderId}.pdf`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-      }
+      const fmt = (n) => Number(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 });
+      const statusLabel = STATUS_LABELS[order.status] || order.status;
+      const payLabel = order.paymentType === 'cash' ? 'نقدي' : 'آجل';
+      const dateStr = new Date(order.createdAt).toLocaleDateString('ar-EG', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      });
+      const deliveryStr = order.expectedDeliveryDate
+        ? new Date(order.expectedDeliveryDate).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+        : '—';
 
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 30_000);
+      const itemsRows = (order.items || []).map((item, i) => `
+        <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8faff'}">
+          <td style="padding:10px 14px;font-weight:600;color:#1e293b">${item.product?.name || '—'}</td>
+          <td style="padding:10px 14px;color:#64748b;font-family:monospace;font-size:12px">${item.product?.sku || '—'}</td>
+          <td style="padding:10px 14px;text-align:center;font-weight:700">${item.quantity || 0}</td>
+          <td style="padding:10px 14px;text-align:center;color:#16a34a;font-weight:700">${item.receivedQuantity || 0}</td>
+          <td style="padding:10px 14px;text-align:center;color:#f59e0b;font-weight:700">${Number(item.quantity || 0) - Number(item.receivedQuantity || 0)}</td>
+          <td style="padding:10px 14px;text-align:center">${fmt(item.unitCost)}</td>
+          <td style="padding:10px 14px;text-align:center;font-weight:700;color:#2563eb">${fmt(item.totalCost)}</td>
+        </tr>
+      `).join('');
+
+      const html = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>أمر شراء - ${order.orderNumber}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Cairo',Arial,sans-serif;background:#f1f5f9;color:#1e293b;direction:rtl;font-size:14px}
+    .page{background:#fff;max-width:800px;margin:20px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 30px rgba(0,0,0,.12)}
+    .header{background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:36px 40px;display:flex;justify-content:space-between;align-items:center}
+    .brand-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px}
+    .brand-sub{font-size:12px;color:#93c5fd;margin-top:4px}
+    .po-badge{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:12px;padding:10px 20px;text-align:center}
+    .po-badge-label{font-size:10px;color:#93c5fd;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+    .po-badge-number{font-size:18px;font-weight:900;color:#fff;margin-top:2px;font-family:monospace}
+    .status-pill{display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;margin-top:6px;
+      background:${order.status === 'received' ? '#dcfce7' : order.status === 'partial' ? '#fef3c7' : order.status === 'cancelled' ? '#fee2e2' : '#dbeafe'};
+      color:${order.status === 'received' ? '#15803d' : order.status === 'partial' ? '#92400e' : order.status === 'cancelled' ? '#b91c1c' : '#1d4ed8'}}
+    .body{padding:32px 40px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .info-card{background:#f8faff;border:1px solid #e2e8f0;border-radius:12px;padding:20px}
+    .info-card-title{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .info-card-title::before{content:'';display:inline-block;width:3px;height:14px;background:#2563eb;border-radius:2px}
+    .info-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px dashed #e2e8f0}
+    .info-row:last-child{border-bottom:none}
+    .info-label{font-size:12px;color:#64748b}
+    .info-value{font-size:13px;font-weight:700;color:#1e293b;text-align:left}
+    .supplier-name{font-size:18px;font-weight:900;color:#1e293b;margin-bottom:6px}
+    .supplier-meta{font-size:12px;color:#64748b;line-height:1.7}
+    .table-section{padding:0 40px 32px}
+    table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0}
+    thead tr{background:linear-gradient(135deg,#1e3a5f,#2563eb)}
+    th{padding:12px 14px;color:#fff;font-size:12px;font-weight:700;text-align:center}
+    th:first-child{text-align:right}
+    th:nth-child(2){text-align:right}
+    td{border-bottom:1px solid #f1f5f9;font-size:13px}
+    .totals{padding:0 40px 32px;display:flex;justify-content:flex-end}
+    .totals-card{background:#f8faff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;width:280px}
+    .total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+    .total-row.main{border-top:2px solid #2563eb;margin-top:8px;padding-top:14px;font-size:16px;font-weight:900;color:#2563eb}
+    .notes-section{padding:0 40px 24px}
+    .notes-box{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px}
+    .notes-title{font-size:11px;font-weight:700;color:#92400e;margin-bottom:8px}
+    .notes-text{font-size:13px;color:#78350f;line-height:1.7}
+    .footer{background:#f8faff;border-top:1px solid #e2e8f0;padding:16px 40px;display:flex;justify-content:space-between;align-items:center}
+    .footer-text{font-size:11px;color:#94a3b8}
+    .footer-brand{font-size:12px;font-weight:700;color:#2563eb}
+    @media print{
+      body{background:#fff}
+      .page{box-shadow:none;border-radius:0;margin:0;max-width:100%}
+      .no-print{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <div class="brand-name">${order.tenant?.name || 'PayQusta Store'}</div>
+        <div class="brand-sub">نظام إدارة المشتريات والموردين</div>
+      </div>
+      <div class="po-badge">
+        <div class="po-badge-label">Purchase Order</div>
+        <div class="po-badge-number">${order.orderNumber}</div>
+        <div class="status-pill">${statusLabel}</div>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="body">
+      <div class="info-card">
+        <div class="info-card-title">بيانات المورد</div>
+        <div class="supplier-name">${order.supplier?.name || '—'}</div>
+        <div class="supplier-meta">
+          ${order.supplier?.phone ? `📞 ${order.supplier.phone}<br/>` : ''}
+          ${order.supplier?.email ? `✉️ ${order.supplier.email}<br/>` : ''}
+          ${order.supplier?.contactPerson ? `👤 ${order.supplier.contactPerson}` : ''}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">تفاصيل الأمر</div>
+        <div class="info-row"><span class="info-label">رقم الأمر</span><span class="info-value" style="font-family:monospace">${order.orderNumber}</span></div>
+        <div class="info-row"><span class="info-label">التاريخ</span><span class="info-value">${dateStr}</span></div>
+        <div class="info-row"><span class="info-label">الفرع</span><span class="info-value">${order.branch?.name || 'الفرع الرئيسي'}</span></div>
+        <div class="info-row"><span class="info-label">طريقة السداد</span><span class="info-value">${payLabel}</span></div>
+        ${order.paymentType === 'deferred' ? `<div class="info-row"><span class="info-label">عدد الأقساط</span><span class="info-value">${order.installments || 1}</span></div>` : ''}
+        <div class="info-row"><span class="info-label">تاريخ التسليم</span><span class="info-value">${deliveryStr}</span></div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-section">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:right;width:30%">المنتج</th>
+            <th style="text-align:right;width:12%">الكود</th>
+            <th>الكمية</th>
+            <th>المستلَم</th>
+            <th>المتبقي</th>
+            <th>سعر الوحدة (ج.م)</th>
+            <th>الإجمالي (ج.م)</th>
+          </tr>
+        </thead>
+        <tbody>${itemsRows}</tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div class="totals">
+      <div class="totals-card">
+        <div class="total-row"><span>إجمالي الطلب</span><span>${fmt(order.totalAmount)} ج.م</span></div>
+        <div class="total-row"><span>قيمة المستلَم</span><span style="color:#16a34a">${fmt(order.receivedValue)} ج.م</span></div>
+        <div class="total-row"><span>المبلغ المسدَّد</span><span style="color:#16a34a">${fmt(order.paidAmount)} ج.م</span></div>
+        <div class="total-row main"><span>المتبقي (مستحق)</span><span>${fmt(order.outstandingAmount)} ج.م</span></div>
+      </div>
+    </div>
+
+    ${order.notes ? `
+    <!-- Notes -->
+    <div class="notes-section">
+      <div class="notes-box">
+        <div class="notes-title">📝 ملاحظات</div>
+        <div class="notes-text">${order.notes}</div>
+      </div>
+    </div>` : ''}
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-text">طُبع بتاريخ: ${new Date().toLocaleDateString('ar-EG')}</div>
+      <div class="footer-brand">Powered by PayQusta ⚡</div>
+    </div>
+  </div>
+
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>`;
+
+      const win = window.open('', '_blank', 'width=860,height=900');
+      if (!win) return notify.warning('يرجى السماح للنوافذ المنبثقة في المتصفح');
+      win.document.write(html);
+      win.document.close();
     } catch (error) {
       notify.error(error.response?.data?.message || 'فشل فتح ملف أمر الشراء');
     }

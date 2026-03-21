@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { ROLES } = require('../config/constants');
+const BRANCH_ACCESS_MODES = ['all_branches', 'assigned_branches', 'single_branch'];
 
 const userSchema = new mongoose.Schema(
   {
@@ -28,6 +29,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],
       trim: true,
+      match: [/^01[0125][0-9]{8}$/, 'رقم هاتف غير صالح، يجب أن يبدأ بـ 01 ويتكون من 11 رقم'],
     },
     password: {
       type: String,
@@ -50,6 +52,20 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch',
       // Optional - for branch-level users
+    },
+    primaryBranch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
+    },
+    assignedBranches: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+    }],
+    branchAccessMode: {
+      type: String,
+      enum: BRANCH_ACCESS_MODES,
+      default: 'all_branches',
     },
     isSuperAdmin: {
       type: Boolean,
@@ -101,6 +117,27 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ email: 1, tenant: 1 }, { unique: true });
 userSchema.index({ phone: 1, tenant: 1 });
 userSchema.index({ role: 1, tenant: 1 });
+userSchema.index({ primaryBranch: 1, tenant: 1 });
+
+userSchema.pre('validate', function (next) {
+  if (this.primaryBranch && !this.branch) {
+    this.branch = this.primaryBranch;
+  }
+
+  if (this.branch && !this.primaryBranch) {
+    this.primaryBranch = this.branch;
+  }
+
+  if (this.primaryBranch) {
+    const primaryBranchId = String(this.primaryBranch);
+    const assignedBranchIds = (this.assignedBranches || []).map((branchId) => String(branchId));
+    if (!assignedBranchIds.includes(primaryBranchId)) {
+      this.assignedBranches = [...(this.assignedBranches || []), this.primaryBranch];
+    }
+  }
+
+  next();
+});
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

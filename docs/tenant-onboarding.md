@@ -174,9 +174,30 @@ Before inviting the merchant to real usage:
 - Backup has been tested
 - One end-to-end order flow has been exercised
 
+## Scripted readiness check
+
+The repo now ships a tenant onboarding readiness helper:
+
+- `npm --prefix backend run release:onboarding -- --app-url=https://service-url --auth-token=...`
+
+What it validates:
+
+- public health endpoint
+- authenticated `auth/me`
+- tenant settings access
+- dashboard overview access
+- backup stats access
+- storefront settings resolution
+- public catalog resolution
+
+Use it after initial provisioning and again before declaring a tenant production-ready.
+
+The backoffice now also includes an in-app onboarding wizard at `/onboarding` for tenant admins. It walks through the same readiness areas inside the product, supports inline editing for store profile, branding, subdomain, and backup settings, and links directly to the catalog, branches, users, backup, and storefront surfaces when deeper work is still needed.
+
+
 ## Current onboarding gaps
 
-- There is no dedicated in-app onboarding wizard yet.
+- The in-app wizard covers the highest-value setup actions, but catalog management, branches, staff, and advanced branding still hand off to their dedicated screens rather than being edited fully inline.
 - Email is not tenant-scoped configuration.
 - Backup/restore is tenant-scoped but not full-platform.
 - Shipping/returns lifecycle is still maturing and should be validated separately before declaring a store fully ready for high-volume commerce.

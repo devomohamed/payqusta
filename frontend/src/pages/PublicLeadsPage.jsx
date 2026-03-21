@@ -120,8 +120,8 @@ export default function PublicLeadsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-6 animate-fade-in app-text-soft">
+      <div className="app-surface-muted flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between rounded-3xl p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25">
             <Inbox className="h-6 w-6" />
@@ -156,7 +156,7 @@ export default function PublicLeadsPage() {
           { key: 'closed', label: 'مغلقة', value: statsMap.closed, tone: 'text-slate-600' },
           { key: 'spam', label: 'Spam', value: statsMap.spam, tone: 'text-rose-600' },
         ].map((item) => (
-          <div key={item.key} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div key={item.key} className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">{item.label}</p>
             <p className={`mt-3 text-3xl font-black ${item.tone}`}>{item.value}</p>
           </div>
@@ -180,10 +180,10 @@ export default function PublicLeadsPage() {
           description="لم يصل أي طلب يطابق عوامل التصفية الحالية، أو لم تُرسل طلبات من صفحة التواصل بعد."
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="app-surface overflow-hidden rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-right text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-950/60">
+              <thead className="app-surface-muted">
                 <tr>
                   <th className="px-5 py-4 font-bold text-gray-500">المرسل</th>
                   <th className="px-5 py-4 font-bold text-gray-500">النشاط</th>
@@ -196,7 +196,7 @@ export default function PublicLeadsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {leads.map((lead) => (
-                  <tr key={lead._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                  <tr key={lead._id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                     <td className="px-5 py-4 align-top">
                       <div className="font-black text-gray-900 dark:text-white">{lead.name}</div>
                       <div className="mt-1 text-xs text-gray-500">{lead.email}</div>
@@ -239,7 +239,7 @@ export default function PublicLeadsPage() {
         {selectedLead && (
           <div className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
+              <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-4">
                 <div className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                   <UserRound className="h-4 w-4 text-primary-500" />
                   {selectedLead.name}
@@ -248,7 +248,7 @@ export default function PublicLeadsPage() {
                 {selectedLead.phone && <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{selectedLead.phone}</p>}
                 <p className="mt-1 text-xs text-gray-500">{selectedLead.businessName || 'بدون اسم نشاط واضح'}</p>
               </div>
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
+              <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-4">
                 <div className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                   <Sparkles className="h-4 w-4 text-amber-500" />
                   {typeLabel[selectedLead.requestType] || selectedLead.requestType}
@@ -259,7 +259,7 @@ export default function PublicLeadsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 p-4">
               <div className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                 <MessageSquareText className="h-4 w-4 text-emerald-500" />
                 الرسالة

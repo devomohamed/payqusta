@@ -11,6 +11,41 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import CommandCenterPage from './CommandCenterPage';
 
+const DASHBOARD_COLOR_STYLES = {
+  primary: {
+    line: 'from-primary-500 to-primary-600',
+    icon: 'from-primary-500 to-primary-600 shadow-primary-500/25',
+    linkSurface: 'hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-200 dark:hover:border-primary-500/30',
+    linkIcon: 'bg-primary-100 dark:bg-primary-500/20',
+    linkIconText: 'text-primary-600 dark:text-primary-400',
+    linkArrow: 'group-hover:bg-primary-500',
+  },
+  blue: {
+    line: 'from-blue-500 to-blue-600',
+    icon: 'from-blue-500 to-blue-600 shadow-blue-500/25',
+    linkSurface: 'hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30',
+    linkIcon: 'bg-blue-100 dark:bg-blue-500/20',
+    linkIconText: 'text-blue-600 dark:text-blue-400',
+    linkArrow: 'group-hover:bg-blue-500',
+  },
+  emerald: {
+    line: 'from-emerald-500 to-emerald-600',
+    icon: 'from-emerald-500 to-emerald-600 shadow-emerald-500/25',
+    linkSurface: 'hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:border-emerald-200 dark:hover:border-emerald-500/30',
+    linkIcon: 'bg-emerald-100 dark:bg-emerald-500/20',
+    linkIconText: 'text-emerald-600 dark:text-emerald-400',
+    linkArrow: 'group-hover:bg-emerald-500',
+  },
+  purple: {
+    line: 'from-purple-500 to-purple-600',
+    icon: 'from-purple-500 to-purple-600 shadow-purple-500/25',
+    linkSurface: 'hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-200 dark:hover:border-purple-500/30',
+    linkIcon: 'bg-purple-100 dark:bg-purple-500/20',
+    linkIconText: 'text-purple-600 dark:text-purple-400',
+    linkArrow: 'group-hover:bg-purple-500',
+  },
+};
+
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
 
@@ -63,13 +98,15 @@ export default function AdminDashboardPage() {
 
   const stats = systemData?.statistics || {};
 
-  const StatCard = ({ icon: Icon, label, value, subtitle, color = 'primary', badge }) => (
-    <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-default">
-      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-${color}-500 to-${color}-600`} />
+  const StatCard = ({ icon: Icon, label, value, subtitle, color = 'primary', badge }) => {
+    const tone = DASHBOARD_COLOR_STYLES[color] || DASHBOARD_COLOR_STYLES.primary;
+    return (
+    <Card className="app-surface-muted relative cursor-default overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <div className={`absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${tone.line}`} />
       <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-white/10 to-transparent rounded-full group-hover:scale-150 transition-transform duration-500 blur-xl" />
       <div className="p-5 relative z-10">
         <div className="flex items-start justify-between mb-3">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-${color}-500 to-${color}-600 flex items-center justify-center shadow-lg shadow-${color}-500/25`}>
+          <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg ${tone.icon}`}>
             <Icon className="w-6 h-6 text-white" />
           </div>
           {badge && (
@@ -85,12 +122,12 @@ export default function AdminDashboardPage() {
         )}
       </div>
     </Card>
-  );
+  )};
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-primary-500/30">
             <Crown className="w-7 h-7 text-white" />
@@ -104,23 +141,23 @@ export default function AdminDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-gray-100 dark:bg-gray-800 p-1 flex rounded-xl">
+          <div className="app-surface flex rounded-2xl p-1">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'overview' ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300' : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'}`}
             >
               نظرة عامة
             </button>
             <button
               onClick={() => setActiveTab('operations')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'operations' ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'operations' ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300' : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'}`}
             >
               العمليات الحية
             </button>
           </div>
           <button
             onClick={loadAllData}
-            className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+            className="app-surface flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
             title="تحديث البيانات"
           >
             <Activity className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -209,14 +246,14 @@ export default function AdminDashboardPage() {
           {/* Recent Tenants & Users */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Tenants */}
-            <Card className="flex flex-col h-full border-gray-100 shadow-sm">
-              <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
+            <Card className="app-surface flex flex-col h-full shadow-sm">
+              <div className="app-surface-muted p-5 border-b border-gray-100/80 dark:border-white/10">
                 <h2 className="text-lg font-black flex items-center gap-2 text-gray-800 dark:text-gray-100">
                   <Store className="w-5 h-5 text-primary-500" />
                   المتاجر الحديثة الانضمام
                 </h2>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800 flex-1">
+              <div className="divide-y divide-gray-100/80 dark:divide-white/10 flex-1">
                 {systemData?.recentTenants?.length > 0 ? (
                   systemData.recentTenants.map((tenant) => (
                     <div key={tenant._id} className="p-4 hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-colors group cursor-pointer">
@@ -253,14 +290,14 @@ export default function AdminDashboardPage() {
             </Card>
 
             {/* Recent Users */}
-            <Card className="flex flex-col h-full border-gray-100 shadow-sm">
-              <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
+            <Card className="app-surface flex flex-col h-full shadow-sm">
+              <div className="app-surface-muted p-5 border-b border-gray-100/80 dark:border-white/10">
                 <h2 className="text-lg font-black flex items-center gap-2 text-gray-800 dark:text-gray-100">
                   <UserPlus className="w-5 h-5 text-emerald-500" />
                   أحدث تسجيلات الموظفين
                 </h2>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-[400px] overflow-y-auto">
+              <div className="divide-y divide-gray-100/80 dark:divide-white/10 max-h-[400px] overflow-y-auto">
                 {systemData?.recentUsers?.length > 0 ? (
                   systemData.recentUsers.map((user) => (
                     <div key={user._id} className="p-4 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
@@ -348,7 +385,7 @@ export default function AdminDashboardPage() {
                       <p className="text-3xl font-black text-primary-600">{fmt(commandData.summary?.collectionsTodayTotal)} <span className="text-sm">ج.م</span></p>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 font-bold bg-gray-100 dark:bg-gray-800 inline-block px-3 py-1 rounded-full w-max">
+                  <p className="app-surface-muted text-xs text-gray-400 font-bold inline-block px-3 py-1 rounded-full w-max">
                     من إجمالي {commandData.summary?.collectionsTodayCount} قسط مستحق
                   </p>
                 </Card>
@@ -380,7 +417,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {commandData.suggestions.map((s, i) => (
-                  <div key={i} className={`p-4 rounded-xl border-l-4 ${s.priority === 'high' ? 'border-red-500 bg-white dark:bg-gray-800 shadow-sm' : 'border-amber-500 bg-white/50 dark:bg-gray-800/50'}`}>
+                  <div key={i} className={`p-4 rounded-xl border-l-4 ${s.priority === 'high' ? 'border-red-500 app-surface shadow-sm' : 'border-amber-500 bg-white/70 dark:bg-white/[0.03]'}`}>
                     <div className="flex items-start gap-3">
                       <span className="text-2xl mt-1">{s.icon}</span>
                       <div className="flex-1">
@@ -411,7 +448,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : (
                   commandData.lowStockProducts.map((p, i) => (
-                    <div key={i} className="flex flex-col p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 transition-colors">
+                    <div key={i} className="app-surface-muted flex flex-col p-3 rounded-xl border border-gray-100/80 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors">
                       <div className="flex justify-between items-start mb-2">
                         <p className="font-bold text-sm text-gray-800">{p.name}</p>
                         <Badge variant={p.status === 'out_of_stock' ? 'danger' : 'warning'} className="text-[10px]">
@@ -419,7 +456,7 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className="text-[11px] text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded">SKU: {p.sku}</p>
+                        <p className="app-surface text-[11px] text-gray-500 font-mono px-2 py-0.5 rounded">SKU: {p.sku}</p>
                         {p.branchName && <p className="text-[10px] font-bold text-primary-600">📍 فرع {p.branchName}</p>}
                       </div>
                     </div>
@@ -470,16 +507,17 @@ export default function AdminDashboardPage() {
 }
 
 function QuickLink({ to, icon: Icon, label, desc, color = 'primary' }) {
+  const tone = DASHBOARD_COLOR_STYLES[color] || DASHBOARD_COLOR_STYLES.primary;
   return (
     <a
       href={to}
-      className={`group p-5 rounded-2xl bg-white dark:bg-gray-900 hover:bg-${color}-50 dark:hover:bg-${color}-500/10 shadow-sm hover:shadow-lg transition-all duration-300 border-2 border-transparent hover:border-${color}-200 dark:hover:border-${color}-500/30 flex flex-col justify-between min-h-[120px]`}
+      className={`app-surface group flex min-h-[120px] flex-col justify-between rounded-2xl border-2 border-transparent p-5 shadow-sm transition-all duration-300 hover:shadow-lg ${tone.linkSurface}`}
     >
       <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl bg-${color}-100 dark:bg-${color}-500/20 flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 text-${color}-600 dark:text-${color}-400`} />
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone.linkIcon}`}>
+          <Icon className={`w-5 h-5 ${tone.linkIconText}`} />
         </div>
-        <div className={`w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center group-hover:bg-${color}-500 group-hover:text-white transition-colors`}>
+        <div className={`app-surface-muted flex h-8 w-8 items-center justify-center rounded-full transition-colors ${tone.linkArrow}`}>
           <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
         </div>
       </div>
@@ -490,4 +528,3 @@ function QuickLink({ to, icon: Icon, label, desc, color = 'primary' }) {
     </a>
   );
 }
-

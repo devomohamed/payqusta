@@ -13,11 +13,11 @@ export default function PortalInput({
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
     const hasError = !!error;
 
-    const baseInputClasses = "w-full rounded-xl border bg-white dark:bg-gray-900 transition-all focus:outline-none text-sm";
+    const baseInputClasses = "w-full rounded-xl border transition-all focus:outline-none text-sm app-surface shadow-sm";
     const paddingClasses = Icon ? "px-10 py-2.5" : "px-4 py-2.5";
     const stateClasses = hasError
-        ? "border-red-300 dark:border-red-800 text-red-900 dark:text-red-100 placeholder-red-300 dark:placeholder-red-700 focus:border-red-500 focus:ring-red-500"
-        : "border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500";
+        ? "border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 dark:border-red-800 dark:text-red-100 dark:placeholder-red-700"
+        : "border-transparent text-gray-900 placeholder-gray-400 focus:border-primary-500/30 focus:ring-2 focus:ring-primary-500/20 dark:text-white";
 
     return (
         <div className={`space-y-1.5 ${containerClassName}`}>

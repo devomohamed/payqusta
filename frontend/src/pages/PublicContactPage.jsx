@@ -124,14 +124,14 @@ export default function PublicContactPage() {
       <section className="grid gap-6 lg:grid-cols-[1.02fr,0.98fr] lg:items-start">
         <div className="text-right">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">التواصل والخطوات التالية</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">إذا كنت تريد تقييم PayQusta بجدية، أرسل طلبك من هنا وسيظهر مباشرة داخل المنصة</h1>
-          <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">إذا كنت تريد تقييم PayQusta بجدية، أرسل طلبك من هنا وسيظهر مباشرة داخل المنصة</h1>
+          <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">
             هذه الصفحة لم تعد مجرد توجيه. الآن يمكنك إرسال طلب ديمو أو استفسار أسعار أو طلب نقل بيانات، وسيتم حفظه داخل لوحة المراجعة بدل أن يضيع خارج النظام.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               to="/pricing"
-              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+              className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
               الأسعار والباقات
             </Link>
@@ -157,18 +157,18 @@ export default function PublicContactPage() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm sm:p-8">
+        <div className="app-surface rounded-[2rem] p-6 text-right sm:p-8">
           {submitted ? (
-            <div className="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-6">
+            <div className="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-400/20 dark:bg-emerald-400/10">
               <div className="inline-flex rounded-2xl bg-emerald-600 p-3 text-white">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">تم استلام طلبك بنجاح</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <h2 className="mt-5 text-2xl font-black text-slate-950 dark:text-white">تم استلام طلبك بنجاح</h2>
+              <p className="app-text-soft mt-3 text-sm leading-7">
                 وصل طلبك الآن إلى لوحة المراجعة داخل المنصة. إذا كان هدفك مشاهدة الديمو أو مراجعة الأسعار، يمكنك متابعة الصفحات المرتبطة أدناه، وسنتواصل معك أيضًا على بياناتك المرسلة.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-                <Link to="/demo" className="rounded-full border border-slate-300 bg-white px-5 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950">
+                <Link to="/demo" className="app-surface-muted rounded-full px-5 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10">
                   شاهد الديمو
                 </Link>
                 <button
@@ -184,9 +184,9 @@ export default function PublicContactPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">أرسل طلبك</p>
-                <h2 className="mt-3 text-3xl font-black text-slate-950">طلب ديمو أو استفسار فعلي</h2>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أرسل طلبك</p>
+                <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">طلب ديمو أو استفسار فعلي</h2>
+                <p className="app-text-soft mt-3 text-sm leading-7">
                   اكتب باختصار نوع نشاطك وما الذي تريد تقييمه. هذا النموذج مخصص للطلبات الجادة قبل التسجيل أو قبل اختيار الباقة.
                 </p>
               </div>
@@ -219,7 +219,7 @@ export default function PublicContactPage() {
                 required
               />
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold leading-7 text-slate-700">
+              <div className="app-surface-muted rounded-2xl px-4 py-4 text-sm font-bold leading-7 text-slate-700 dark:text-slate-100">
                 الطلبات الجيدة هنا تكون محددة: نوع النشاط، ما الذي تريد مراجعته، وهل تبحث عن ديمو أم عرض أسعار أم نقل بيانات.
               </div>
 
@@ -235,12 +235,12 @@ export default function PublicContactPage() {
         {contactTracks.map((track) => {
           const Icon = track.icon;
           return (
-            <article key={track.title} className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
+            <article key={track.title} className="app-surface rounded-[1.75rem] p-6 text-right">
               <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                 <Icon className="h-5 w-5" />
               </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">{track.title}</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{track.description}</p>
+              <h2 className="mt-5 text-2xl font-black text-slate-950 dark:text-white">{track.title}</h2>
+              <p className="app-text-soft mt-4 text-sm leading-7">{track.description}</p>
               <div className="mt-6">
                 <Link to={track.to} className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15">
                   {track.ctaLabel}
@@ -252,38 +252,38 @@ export default function PublicContactPage() {
         })}
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">ابدأ من الصفحة الأقرب لقرارك</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950">ثلاث صفحات تكمل الصورة بسرعة</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ابدأ من الصفحة الأقرب لقرارك</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">ثلاث صفحات تكمل الصورة بسرعة</h2>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {journeyCards.map((card) => {
             const Icon = card.icon;
             return (
-              <Link key={card.title} to={card.to} className="rounded-[1.5rem] border border-white bg-white p-5 text-right shadow-sm transition-transform hover:-translate-y-1">
+              <Link key={card.title} to={card.to} className="app-surface rounded-[1.5rem] p-5 text-right transition-transform hover:-translate-y-1">
                 <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                   <Icon className="h-5 w-5" />
                 </div>
-                <p className="mt-4 text-lg font-black text-slate-950">{card.title}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{card.text}</p>
+                <p className="mt-4 text-lg font-black text-slate-950 dark:text-white">{card.title}</p>
+                <p className="app-text-soft mt-3 text-sm leading-7">{card.text}</p>
               </Link>
             );
           })}
         </div>
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] p-6 text-right sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">للمراجعة النهائية</p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950">إذا كنت جادًا في التقييم، اعبر بهذا الترتيب: ديمو ثم أسعار ثم حساب</h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">للمراجعة النهائية</p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">إذا كنت جادًا في التقييم، اعبر بهذا الترتيب: ديمو ثم أسعار ثم حساب</h2>
+            <p className="app-text-soft mt-3 text-base leading-8">
               هذا الترتيب يختصر الوقت: فهم سريع للقيمة، مراجعة الباقة المناسبة، ثم الدخول إلى التجربة الفعلية داخل الحساب.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-            <Link to="/demo" className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950">
+            <Link to="/demo" className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10">
               شاهد الديمو
             </Link>
             <Link to="/login?mode=register" className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15">

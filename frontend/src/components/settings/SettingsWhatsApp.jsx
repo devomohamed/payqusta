@@ -30,6 +30,9 @@ export default function SettingsWhatsApp() {
 
   useEffect(() => {
     if (tenant) {
+      setWhatsappStatus(null);
+      setWhatsappStatus(tenant.whatsapp?.enabled && tenant.whatsapp?.accessToken ? 'success' : null);
+      
       setWhatsappForm({
         phoneNumber: tenant.whatsapp?.phoneNumber || '',
         accessToken: tenant.whatsapp?.accessToken || '',
@@ -45,9 +48,6 @@ export default function SettingsWhatsApp() {
         templateLanguages: tenant.whatsapp?.templateLanguages || {},
       });
       setQuota(tenant.whatsapp?.quota || { limit: 0, used: 0 });
-      if (tenant.whatsapp?.enabled && tenant.whatsapp?.accessToken) {
-        setWhatsappStatus('success');
-      }
     }
   }, [tenant]);
 
@@ -152,12 +152,14 @@ export default function SettingsWhatsApp() {
             <MessageCircle className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">WhatsApp Business API</h2>
-            <p className="text-sm text-gray-400">إرسال الإشعارات عبر واتساب</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">WhatsApp Business API</h2>
+            <p className="text-sm text-subtle">إرسال الإشعارات عبر واتساب</p>
           </div>
         </div>
-        {whatsappStatus === 'success' && <Badge variant="success"><CheckCircle className="w-3 h-3 ml-1" />متصل</Badge>}
-        {whatsappStatus === 'error' && <Badge variant="danger"><AlertTriangle className="w-3 h-3 ml-1" />غير متصل</Badge>}
+        <div className="flex items-center gap-2">
+          {whatsappStatus === 'success' && <Badge variant="success"><CheckCircle className="w-3 h-3 ml-1" />متصل</Badge>}
+          {whatsappStatus === 'error' && <Badge variant="danger"><AlertTriangle className="w-3 h-3 ml-1" />غير متصل</Badge>}
+        </div>
       </div>
 
       {/* Warning Box */}
@@ -174,29 +176,30 @@ export default function SettingsWhatsApp() {
       </div>
 
       {/* Quota Section */}
-      <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+      <div className="p-4 rounded-xl bg-gray-50/50 dark:bg-slate-950 border border-gray-100 dark:border-white/5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-gray-500" />
-            <h3 className="font-bold">رصيد الرسائل (Quota)</h3>
+            <MessageCircle className="w-5 h-5 text-primary-500" />
+            <h3 className="font-bold text-gray-900 dark:text-gray-100">رصيد الرسائل (Quota)</h3>
           </div>
           <Button
             onClick={handleTopup}
             loading={toppingUp}
             icon={<Zap className="w-4 h-4" />}
+            size="sm"
           >
             شحن الرصيد (500 رسالة)
           </Button>
         </div>
 
         <div className="mb-2 flex justify-between text-sm">
-          <span className="text-gray-500 dark:text-gray-400">المستهلك: {quota.used}</span>
-          <span className="font-bold">الحصة الإجمالية: {quota.limit} رسالة</span>
+          <span className="text-subtle">المستهلك: {quota.used}</span>
+          <span className="font-bold text-gray-900 dark:text-gray-100">الحصة الإجمالية: {quota.limit} رسالة</span>
         </div>
 
-        <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="w-full h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-200/50 dark:border-white/5">
           <div
-            className={`h-full transition-all duration-500 ${quota.used >= quota.limit && quota.limit > 0 ? 'bg-red-500' : (quota.limit - quota.used <= 20) && quota.limit > 0 ? 'bg-amber-500' : 'bg-primary-500'}`}
+            className={`h-full transition-all duration-500 ${quota.used >= quota.limit && quota.limit > 0 ? 'bg-rose-500' : (quota.limit - quota.used <= 20) && quota.limit > 0 ? 'bg-amber-500' : 'bg-primary-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]'}`}
             style={{ width: `${quota.limit > 0 ? Math.min((quota.used / quota.limit) * 100, 100) : 0}%` }}
           />
         </div>
@@ -220,7 +223,7 @@ export default function SettingsWhatsApp() {
       <Input label="Access Token" type="password" placeholder="من Meta Business Suite" value={whatsappForm.accessToken} onChange={(e) => setWhatsappForm({ ...whatsappForm, accessToken: e.target.value })} />
 
       {/* WABA ID — Dynamic Switching */}
-      <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+      <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <Hash className="w-5 h-5 text-blue-500" />
           <h3 className="font-bold text-blue-700 dark:text-blue-400">WABA ID (حساب واتساب للأعمال)</h3>
@@ -249,7 +252,7 @@ export default function SettingsWhatsApp() {
 
       {/* Detected Templates Results */}
       {detectedTemplates && (
-        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-5 h-5 text-emerald-500" />
             <h3 className="font-bold text-emerald-700 dark:text-emerald-400">
@@ -262,11 +265,11 @@ export default function SettingsWhatsApp() {
 
           <div className="grid gap-2 mb-3">
             {detectedTemplates.allTemplates?.map((t) => (
-              <div key={t.name} className="flex items-center justify-between p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 text-sm">
+              <div key={t.name} className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-gray-950/50 border border-gray-100 dark:border-white/5 text-sm transition-colors hover:border-emerald-200 dark:hover:border-emerald-500/20">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-emerald-500" />
-                  <span className="font-medium">{t.name}</span>
-                  <span className="text-xs text-gray-400">{t.language}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{t.name}</span>
+                  <span className="text-xs text-muted">{t.language}</span>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${t.status === 'APPROVED' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' :
                     t.status === 'PENDING' ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
@@ -287,12 +290,12 @@ export default function SettingsWhatsApp() {
       )}
 
       {/* Template Name Mapping */}
-      <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div className="pt-4 border-t border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-purple-500" />
-          <h3 className="font-bold">ربط القوالب (Template Mapping)</h3>
+          <h3 className="font-bold text-gray-900 dark:text-white">ربط القوالب (Template Mapping)</h3>
         </div>
-        <p className="text-xs text-gray-400 mb-3">
+        <p className="text-xs text-subtle mb-3">
           حدد اسم القالب لكل نوع إشعار. يتم ملؤها تلقائياً عند اكتشاف القوالب.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -303,10 +306,10 @@ export default function SettingsWhatsApp() {
             { key: 'payment', label: 'تأكيد دفعة', icon: '✅', defaultLang: 'ar_EG' },
             { key: 'restock', label: 'طلب تخزين', icon: '📦', defaultLang: 'en' },
           ].map((item) => (
-            <div key={item.key} className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+            <div key={item.key} className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-slate-950 border border-gray-100 dark:border-white/5 shadow-sm">
               <span className="text-lg">{item.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{item.label}</p>
+                <p className="text-xs font-medium text-subtle mb-1">{item.label}</p>
                 <input
                   type="text"
                   placeholder={`اسم القالب (مثال: payqusta_${item.key})`}
@@ -315,7 +318,7 @@ export default function SettingsWhatsApp() {
                     ...whatsappForm,
                     templateNames: { ...whatsappForm.templateNames, [item.key]: e.target.value }
                   })}
-                  className="w-full px-3 py-1.5 rounded-lg border text-xs bg-transparent border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  className="w-full px-3 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 />
               </div>
               <div className="w-20">
@@ -327,7 +330,7 @@ export default function SettingsWhatsApp() {
                     ...whatsappForm,
                     templateLanguages: { ...whatsappForm.templateLanguages, [item.key]: e.target.value }
                   })}
-                  className="w-full px-2 py-1.5 rounded-lg border text-xs text-center bg-transparent border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  className="w-full px-2 py-1.5 rounded-lg border text-xs text-center bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 />
               </div>
             </div>
@@ -336,8 +339,8 @@ export default function SettingsWhatsApp() {
       </div>
 
       {/* Notifications Toggles */}
-      <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-        <h3 className="font-bold mb-3">إشعارات واتساب</h3>
+      <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+        <h3 className="font-bold mb-3 text-gray-900 dark:text-white">إشعارات واتساب</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { key: 'installmentReminder', label: 'تذكير الأقساط', icon: '⏰' },
@@ -345,7 +348,7 @@ export default function SettingsWhatsApp() {
             { key: 'lowStock', label: 'نقص المخزون', icon: '📦' },
             { key: 'supplierReminder', label: 'تذكير المورد', icon: '🚛' },
           ].map((item) => (
-            <label key={item.key} className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+            <label key={item.key} className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950 cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-white/5 hover:border-primary-200 dark:hover:border-primary-500/30">
               <input
                 type="checkbox"
                 checked={whatsappForm.notifications[item.key]}
@@ -353,17 +356,17 @@ export default function SettingsWhatsApp() {
                   ...whatsappForm,
                   notifications: { ...whatsappForm.notifications, [item.key]: e.target.checked }
                 })}
-                className="w-4 h-4 rounded text-green-500"
+                className="w-4 h-4 rounded text-green-500 focus:ring-green-500"
               />
               <span className="text-lg">{item.icon}</span>
-              <span className="text-sm">{item.label}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.label}</span>
             </label>
           ))}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 pt-6 border-t border-gray-100 dark:border-white/10">
         <Button onClick={handleSaveWhatsApp} loading={saving} icon={<Save className="w-4 h-4" />}>حفظ الإعدادات</Button>
         <Button variant="outline" onClick={handleTestWhatsApp} loading={testingWhatsApp} icon={<TestTube className="w-4 h-4" />}>اختبار الاتصال</Button>
         <a href="https://business.facebook.com/latest/whatsapp_manager/message_templates" target="_blank" rel="noopener noreferrer">

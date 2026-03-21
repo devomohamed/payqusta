@@ -293,7 +293,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
       headerClassName="bg-white/95 backdrop-blur-sm dark:bg-slate-950/95"
     >
       <div className="relative bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_100%)]">
-        <div className="max-h-[88vh] overflow-y-auto p-5 sm:p-6">
+        <div className="p-5 sm:p-6">
           <div className="space-y-5">
             <Surface className="overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)]">

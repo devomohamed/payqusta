@@ -180,3 +180,16 @@ Some boundaries are intentionally shared rather than duplicated:
 - Do not assume customer portal auth is the same as staff auth.
 - Do not assume every public page is tenant-scoped.
 - Do not assume custom domains bypass tenant isolation logic; they are just another tenant-resolution input.
+
+## Critical route contract
+
+These route anchors are treated as ownership contracts and are now checked by the frontend route smoke script:
+
+- Public marketing: '/', '/features', '/faq', '/contact'
+- Storefront: '/store/*' path-mode routes, product catalog, checkout, and order tracking
+- Customer portal: '/portal/*' dashboard, orders, support, and profile flows
+- Tenant backoffice: '/dashboard', '/products', '/customers', '/quick-sale', '/settings'
+- Super admin: '/super-admin/*' plan management and tenant administration entries
+
+If a route moves between surfaces, update both 'frontend/src/App.jsx' and this document in the same change.
+

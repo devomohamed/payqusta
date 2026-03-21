@@ -15,14 +15,6 @@ export default function CamerasPage() {
   const [playing, setPlaying] = useState(true);
 
   // Load cameras (stored in Tenant settings)
-  // For now, we assume an API endpoint updates the current tenant's cameras
-  // Since we don't have a dedicated /cameras endpoint yet, we might use /settings/store or similar
-  // OR we create a new endpoint. 
-  // Let's assume we fetch 'current tenant' via /auth/me or a dedicated /tenants/cameras endpoint.
-  // For simplicity MVP, I'll allow "local storage" simulation if backend isn't ready, OR 
-  // better: Update Tenant via /admin/tenants if admin, or /settings/store if vendor.
-  // Actually, let's fetch from /auth/me -> tenant -> cameras.
-
   const fetchCameras = async () => {
     setLoading(true);
     try {
@@ -44,28 +36,32 @@ export default function CamerasPage() {
     if (!form.name || !form.url) return toast.error('الاسم والرابط مطلوبين');
 
     try {
-      // We need to update the FULL tenant object or just cameras.
-      // Since we modified Tenant model, we need an endpoint to update it.
-      // We can use PUT /settings/store if we update backend to handle 'cameras'.
-      // Let's assume we'll update the backend controller to allow 'cameras' in updates.
-      // For now, let's optimistic update.
-
-      const newCameras = editingId
+      // Sanitize cameras for backend (Mongoose will fail if _id is not a valid ObjectId)
+      const sanitizedCameras = (editingId
         ? cameras.map(c => c._id === editingId ? { ...c, ...form } : c)
-        : [...cameras, { ...form, _id: Date.now().toString() }]; // Temp ID
+        : [...cameras, { ...form }])
+        .map(cam => {
+          const { _id, ...rest } = cam;
+          // If _id is not a valid 24-character hex string (ObjectId), remove it so backend generates one
+          if (!_id || !/^[0-9a-fA-F]{24}$/.test(String(_id))) {
+            return rest;
+          }
+          return cam;
+        });
 
       // Send update to backend
-      // Warning: We need to ensure the backend accepts this.
-      // I'll send to /settings/store assuming it accepts arbitrary fields or I'll implement it.
-      await api.put('/settings/store', { cameras: newCameras });
-
-      setCameras(newCameras);
+      const res = await api.put('/settings/store', { cameras: sanitizedCameras });
+      
+      // Update local state with returned cameras (which now have real IDs from DB)
+      setCameras(res.data.data.tenant.cameras || sanitizedCameras);
+      
       toast.success(editingId ? 'تم تعديل الكاميرا' : 'تم إضافة الكاميرا');
       setShowModal(false);
       setForm({ name: '', url: '', type: 'stream' });
       setEditingId(null);
     } catch (err) {
-      toast.error('حدث خطأ في الحفظ');
+      console.error('Save error:', err);
+      toast.error(err.response?.data?.message || 'حدث خطأ في الحفظ');
     }
   };
 
@@ -74,8 +70,8 @@ export default function CamerasPage() {
     if (!ok) return;
     try {
       const newCameras = cameras.filter(c => c._id !== id);
-      await api.put('/settings/store', { cameras: newCameras });
-      setCameras(newCameras);
+      const res = await api.put('/settings/store', { cameras: newCameras });
+      setCameras(res.data.data.tenant.cameras || newCameras);
       toast.success('تم الحذف');
     } catch (err) {
       toast.error('حدث خطأ');

@@ -138,16 +138,16 @@ export function Modal({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={bodyId}
         tabIndex={-1}
-        className={`relative ${panelSizeClass} bg-white dark:bg-gray-900 rounded-t-[1.75rem] sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col ${contentClassName}`}
+        className={`relative ${panelSizeClass} app-surface rounded-t-[1.75rem] sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col border border-[color:var(--surface-border)] ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 ${headerClassName}`}>
-          <h3 id={titleId} className="text-base sm:text-lg font-bold truncate">{title}</h3>
+        <div className={`shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-[color:var(--surface-border)] ${headerClassName}`}>
+          <h3 id={titleId} className="app-text-strong text-base sm:text-lg font-bold truncate">{title}</h3>
           {showCloseButton && (
             <button
               ref={closeButtonRef}
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
+              className="app-surface-muted app-text-muted p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors"
               aria-label="إغلاق النافذة"
             >
               <X className="w-5 h-5" />
@@ -163,12 +163,12 @@ export function Modal({
 // ========== BADGE ==========
 export function Badge({ children, variant = 'primary', className = '' }) {
   const variants = {
-    primary: 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400',
-    success: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    warning: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    danger: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400',
-    info: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    gray: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+    primary: 'bg-primary-50 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300',
+    success: 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300',
+    warning: 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300',
+    danger: 'bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-300',
+    info: 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300',
+    gray: 'app-surface-muted app-text-soft',
   };
 
   return (
@@ -188,8 +188,8 @@ export function Button({
     danger: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25',
     warning: 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25',
     whatsapp: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25',
-    ghost: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
-    outline: 'border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
+    ghost: 'app-surface-muted app-text-body hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
+    outline: 'app-surface app-text-body border-2 border-[color:var(--surface-border)] hover:bg-black/[0.02] dark:hover:bg-white/[0.03]',
   };
   const sizes = {
     sm: 'px-3 py-1.5 text-xs gap-1.5',
@@ -217,7 +217,7 @@ export function Button({
 }
 
 // ========== INPUT ==========
-export function Input({ label, error, tooltip, className = '', id: providedId, ...props }) {
+export const Input = React.forwardRef(({ label, error, tooltip, className = '', id: providedId, ...props }, ref) => {
   const inputId = providedId || React.useId();
   const errorId = error ? `${inputId}-error` : undefined;
   const describedBy = [props['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined;
@@ -226,32 +226,34 @@ export function Input({ label, error, tooltip, className = '', id: providedId, .
     <div className={className}>
       {label && (
         <div className="flex items-center gap-1.5 mb-1.5">
-          <label htmlFor={inputId} className="block text-sm font-semibold text-gray-600 dark:text-gray-400">{label}</label>
+          <label htmlFor={inputId} className="app-text-soft block text-sm font-semibold">{label}</label>
           {tooltip && (
             <div className="group relative z-10">
-              <Info className="w-4 h-4 text-gray-400 hover:text-primary-500 cursor-help transition-colors" />
-              <div className="absolute bottom-full mb-2 right-0 w-48 p-2.5 bg-gray-900 border border-gray-700 text-white text-xs leading-relaxed rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              <Info className="w-4 h-4 app-text-muted hover:text-primary-500 cursor-help transition-colors" />
+              <div className="app-surface absolute bottom-full mb-2 right-0 w-48 rounded-xl border border-[color:var(--surface-border)] p-2.5 text-xs leading-relaxed app-text-body shadow-xl opacity-0 invisible transition-all group-hover:visible group-hover:opacity-100">
                 {tooltip}
-                <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-900" />
+                <div className="absolute top-full right-2 border-4 border-transparent border-t-[color:var(--surface-elevated)]" />
               </div>
             </div>
           )}
         </div>
       )}
       <input
+        ref={ref}
         id={inputId}
         aria-invalid={!!error}
         aria-describedby={describedBy}
-        className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${error
+        className={`app-surface app-field w-full px-4 py-2.5 rounded-xl border-2 transition-all duration-200 ${error
           ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
-          : 'border-gray-200 dark:border-gray-700 focus:border-primary-500 dark:focus:border-primary-400'
+          : 'border-transparent focus:border-primary-500/30 dark:focus:border-primary-400/40 focus:ring-2 focus:ring-primary-500/20'
           }`}
         {...props}
       />
       {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
-}
+});
+Input.displayName = 'Input';
 
 // ========== TEXT AREA ==========
 export function TextArea({ label, error, className = '', id: providedId, ...props }) {
@@ -262,15 +264,15 @@ export function TextArea({ label, error, className = '', id: providedId, ...prop
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
+        <label htmlFor={inputId} className="app-text-soft block text-sm font-semibold mb-1.5">{label}</label>
       )}
       <textarea
         id={inputId}
         aria-invalid={!!error}
         aria-describedby={describedBy}
-        className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 ${error
+        className={`app-surface app-field w-full px-4 py-2.5 rounded-xl border-2 transition-all duration-200 ${error
           ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
-          : 'border-gray-200 dark:border-gray-700 focus:border-primary-500 dark:focus:border-primary-400'
+          : 'border-transparent focus:border-primary-500/30 dark:focus:border-primary-400/40 focus:ring-2 focus:ring-primary-500/20'
           }`}
         {...props}
       />
@@ -288,15 +290,15 @@ export function Select({ label, options = [], children, error, className = '', i
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</label>
+        <label htmlFor={inputId} className="app-text-soft block text-sm font-semibold mb-1.5">{label}</label>
       )}
       <select
         id={inputId}
         aria-invalid={!!error}
         aria-describedby={describedBy}
-        className={`w-full px-4 py-2.5 rounded-xl border-2 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 transition-all duration-200 appearance-none cursor-pointer ${error
+        className={`app-surface app-field w-full px-4 py-2.5 rounded-xl border-2 transition-all duration-200 appearance-none cursor-pointer ${error
           ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
-          : 'border-gray-200 dark:border-gray-700 focus:border-primary-500'
+          : 'border-transparent focus:border-primary-500/30 focus:ring-2 focus:ring-primary-500/20'
           }`}
         {...props}
       >
@@ -342,8 +344,9 @@ export function StatCard({ title, value, icon, change, gradient, delay = 0, subt
 export function Card({ children, className = '', hover = false, ...props }) {
   return (
     <div
-      className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm ${hover ? 'hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer' : ''
-        } ${className}`}
+      className={`app-surface rounded-2xl transition-all duration-300 dark:hover:border-primary-500/30 ${
+        hover ? 'hover:shadow-lg hover:-translate-y-1 cursor-pointer' : ''
+      } ${className}`}
       {...props}
     >
       {children}
@@ -382,15 +385,15 @@ export function EmptyState({ icon, title, description, action, className = '' })
 
   return (
     <div className={`flex items-center justify-center py-10 sm:py-16 ${className}`}>
-      <div className="w-full max-w-xl rounded-[1.75rem] border border-gray-100 bg-white/90 px-5 py-8 text-center shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80 sm:px-8 sm:py-10">
-        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-emerald-50 text-primary-500 shadow-inner dark:border-primary-500/20 dark:from-primary-500/10 dark:via-gray-900 dark:to-emerald-500/10">
+      <div className="app-surface w-full max-w-xl rounded-[1.75rem] border border-[color:var(--surface-border)] px-5 py-8 text-center shadow-sm backdrop-blur-sm sm:px-8 sm:py-10">
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] border border-primary-100 bg-gradient-to-br from-primary-50 via-[color:var(--surface-elevated)] to-emerald-50 text-primary-500 shadow-inner dark:border-primary-500/20 dark:from-primary-900/40 dark:via-slate-900 dark:to-emerald-900/40">
           <div className="text-current [&_svg]:h-9 [&_svg]:w-9">
             {renderIcon()}
           </div>
         </div>
-        <h3 className="text-lg sm:text-xl font-black text-gray-800 dark:text-gray-100">{title}</h3>
+        <h3 className="app-text-body text-lg sm:text-xl font-black">{title}</h3>
         {description && (
-          <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-gray-500 dark:text-gray-400">{description}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-7 app-text-muted">{description}</p>
         )}
         {actionNode && (
           <div className="mt-6 flex justify-center">
@@ -420,13 +423,13 @@ export function LoadingSpinner({ text, size = 'md', className = '' }) {
       text: 'text-xs',
     },
     md: {
-      shell: 'h-14 w-14 rounded-2xl border border-primary-100 bg-white shadow-sm dark:border-primary-500/20 dark:bg-gray-900',
+      shell: 'app-surface h-14 w-14 rounded-2xl border border-primary-100 shadow-sm dark:border-primary-500/20',
       spinner: 'h-8 w-8 border-[3px]',
       wrapper: 'flex flex-col items-center justify-center gap-3 py-12',
       text: 'text-sm',
     },
     lg: {
-      shell: 'h-20 w-20 rounded-[1.75rem] border border-primary-100 bg-white shadow-sm dark:border-primary-500/20 dark:bg-gray-900',
+      shell: 'app-surface h-20 w-20 rounded-[1.75rem] border border-primary-100 shadow-sm dark:border-primary-500/20',
       spinner: 'h-10 w-10 border-4',
       wrapper: 'flex flex-col items-center justify-center gap-4 py-16',
       text: 'text-sm',
@@ -449,7 +452,7 @@ export function LoadingSpinner({ text, size = 'md', className = '' }) {
         <div className={`${config.spinner} rounded-full border-primary-200 border-t-primary-500 dark:border-primary-900 dark:border-t-primary-400 animate-spin`} aria-hidden="true" />
       )}
       {shouldShowText && (
-        <p className={`${config.text} font-medium text-gray-500 dark:text-gray-400`}>{label}</p>
+        <p className={`${config.text} font-medium app-text-muted`}>{label}</p>
       )}
     </div>
   );
@@ -458,26 +461,26 @@ export function LoadingSpinner({ text, size = 'md', className = '' }) {
 // ========== OWNER TABLE SKELETON ==========
 export function OwnerTableSkeleton({ rows = 8, columns = 6 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-      <div className="border-b border-gray-100 dark:border-gray-800 p-4">
+    <div className="app-surface overflow-hidden rounded-2xl border border-[color:var(--surface-border)] shadow-sm">
+      <div className="border-b border-[color:var(--surface-border)] p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-4 w-40 rounded bg-black/[0.08] dark:bg-white/[0.12] animate-pulse" />
           <div className="flex gap-2">
-            <div className="h-10 w-28 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-            <div className="h-10 w-24 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div className="app-surface-muted h-10 w-28 rounded-xl animate-pulse" />
+            <div className="app-surface-muted h-10 w-24 rounded-xl animate-pulse" />
           </div>
         </div>
       </div>
 
       <div className="space-y-3 p-4 sm:hidden">
         {Array.from({ length: Math.min(rows, 4) }).map((_, rowIdx) => (
-          <div key={`mobile-${rowIdx}`} className="rounded-2xl border border-gray-100 dark:border-gray-800 p-4 space-y-3">
-            <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div key={`mobile-${rowIdx}`} className="rounded-2xl border border-[color:var(--surface-border)] p-4 space-y-3">
+            <div className="h-4 w-32 rounded bg-black/[0.08] dark:bg-white/[0.12] animate-pulse" />
             <div className="grid grid-cols-2 gap-3">
-              <div className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-              <div className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className="app-surface-muted h-12 rounded-xl animate-pulse" />
+              <div className="app-surface-muted h-12 rounded-xl animate-pulse" />
             </div>
-            <div className="h-10 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            <div className="app-surface-muted h-10 rounded-xl animate-pulse" />
           </div>
         ))}
       </div>
@@ -488,7 +491,7 @@ export function OwnerTableSkeleton({ rows = 8, columns = 6 }) {
             {Array.from({ length: columns }).map((__, colIdx) => (
               <div
                 key={`${rowIdx}-${colIdx}`}
-                className="h-4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"
+                className="h-4 rounded bg-black/[0.08] dark:bg-white/[0.12] animate-pulse"
               />
             ))}
           </div>

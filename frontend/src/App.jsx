@@ -11,6 +11,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import RouteMetadata from './components/RouteMetadata';
 import InstallPrompt from './components/InstallPrompt';
+import UpdateBanner from './components/UpdateBanner';
 import AnimatedBrandLogo from './components/AnimatedBrandLogo';
 import { LoadingSpinner } from './components/UI';
 import { storefrontPath } from './utils/storefrontHost';
@@ -95,6 +96,7 @@ const AdminAuditLogsPage = React.lazy(() => import('./pages/AdminAuditLogsPage')
 const AdminStatisticsPage = React.lazy(() => import('./pages/AdminStatisticsPage'));
 const ImportDataPage = React.lazy(() => import('./pages/ImportDataPage'));
 const BackupRestorePage = React.lazy(() => import('./pages/BackupRestorePage'));
+const OnboardingPage = React.lazy(() => import('./pages/OnboardingPage'));
 const BranchManagement = React.lazy(() => import('./pages/BranchManagement'));
 const TenantManagementPage = React.lazy(() => import('./pages/TenantManagementPage'));
 const SuperAdminPlansPage = React.lazy(() => import('./pages/SuperAdminPlansPage'));
@@ -111,10 +113,11 @@ const RevenueAnalyticsPage = React.lazy(() => import('./pages/RevenueAnalyticsPa
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'));
 const StockSearchPage = React.lazy(() => import('./pages/StockSearchPage'));
 const ShiftManagementPage = React.lazy(() => import('./pages/ShiftManagementPage'));
+const AdminShiftsPage = React.lazy(() => import('./pages/AdminShiftsPage'));
 const SupplierAgingReportPage = React.lazy(() => import('./pages/SupplierAgingReportPage'));
 const PurchaseReturnsPage = React.lazy(() => import('./pages/PurchaseReturnsPage'));
 
-const hasBrokenEncoding = (value = '') => /[ØÙðâ]|^\?{3,}/.test(String(value));
+const hasBrokenEncoding = (value = '') => /[Ã˜Ã™Ã°Ã¢]|^\?{3,}/.test(String(value));
 const normalizeLoadingMessage = (message) => {
   if (!message || hasBrokenEncoding(message)) return 'Loading...';
   return message;
@@ -152,10 +155,10 @@ function ProtectedRoute({ children }) {
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (loadingUser || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+      <div className="app-shell-bg min-h-screen flex items-center justify-center">
+        <div className="app-surface app-eye-candy-ring flex items-center gap-3 rounded-2xl px-5 py-4 app-text-soft">
           <span className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-          <span className="text-sm font-medium">Loading your workspace...</span>
+          <span className="app-text-strong text-sm font-semibold">Loading your workspace...</span>
         </div>
       </div>
     );
@@ -163,133 +166,78 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-const isSystemSuperAdminUser = (user) =>
-  !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
-
-// Admin Route wrapper - Only for Admin users
-function AdminRoute({ children }) {
-  const { isAuthenticated, user } = useAuthStore();
-
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== 'admin') {
-    // Non-admin users trying to access admin pages
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
-
-function SuperAdminRoute({ children }) {
-  const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isSystemSuperAdminUser(user)) return <Navigate to="/" replace />;
-  return children;
-}
-
-// Main Layout with Sidebar + Header
 function MainLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { dark } = useThemeStore();
   const location = useLocation();
-  const { user } = useAuthStore();
-  const { t } = useTranslation('admin');
-  const isSystemSuperAdmin = isSystemSuperAdminUser(user);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Close sidebar on route change (mobile)
   useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
-
-  // Dashboard Component Selection based on role
-  const getDashboardComponent = () => {
-    if (user?.role === 'admin' || isSystemSuperAdmin) {
-      return <LazyRoute component={DashboardPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù„ÙˆØ­Ø© Ø§Ù„ØªØ­ÙƒÙ…..." />;
-    }
-    return <LazyRoute component={BranchDashboardPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù„ÙˆØ­Ø© Ø§Ù„ÙØ±Ø¹..." />;
-  };
+    setMobileSidebarOpen(false);
+  }, [location.pathname, location.search]);
 
   return (
-    <div className={`flex min-h-svh md:h-screen overflow-x-hidden md:overflow-hidden ${dark ? 'dark' : ''}`}>
-      <div className="app-shell-pattern flex min-h-svh md:h-full w-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-        {/* Sidebar */}
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-svh md:min-h-0 overflow-hidden">
-          <Header onMenuClick={() => setSidebarOpen(true)} />
-
-          {isSystemSuperAdmin && (
-            <div className="px-4 md:px-6 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200/60 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-sm font-semibold">
-              {t('header.super_admin_banner')}
-            </div>
-          )}
-
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+    <div className="app-shell-bg flex h-screen overflow-hidden">
+      <Sidebar open={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header onMenuClick={() => setMobileSidebarOpen(true)} />
+        <div className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth flex flex-col">
+          <main className="flex-1 p-4 lg:p-6 w-full max-w-[1600px] mx-auto">
             <ErrorBoundary>
               <Routes>
-                {/* Admin Routes - Protected */}
-                <Route path="/admin/dashboard" element={<AdminRoute><LazyRoute component={AdminDashboardPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù„ÙˆØ­Ø© Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©..." /></AdminRoute>} />
-                <Route path="/admin/statistics" element={<AdminRoute><LazyRoute component={AdminStatisticsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø­ØµØ§Ø¡Ø§Øª..." /></AdminRoute>} />
-                <Route path="/admin/import" element={<AdminRoute><LazyRoute component={ImportDataPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯..." /></AdminRoute>} />
-                <Route path="/admin/backup" element={<AdminRoute><LazyRoute component={BackupRestorePage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù†Ø³Ø® Ø§Ù„Ø§Ø­ØªÙŠØ§Ø·ÙŠ..." /></AdminRoute>} />
-
-                <Route path="/admin/tenants" element={<AdminRoute><LazyRoute component={AdminTenantsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…ØªØ§Ø¬Ø±..." /></AdminRoute>} />
-                <Route path="/admin/users" element={<AdminRoute><LazyRoute component={AdminUsersPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…ÙŠÙ†..." /></AdminRoute>} />
-                <Route path="/admin/audit-logs" element={<AdminRoute><LazyRoute component={AdminAuditLogsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø³Ø¬Ù„Ø§Øª Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©..." /></AdminRoute>} />
-
-                {/* Regular Routes */}
-                <Route path="/" element={getDashboardComponent()} />
-                <Route path="/quick-sale" element={<LazyRoute component={QuickSalePage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨ÙŠØ¹ Ø§Ù„Ø³Ø±ÙŠØ¹..." />} />
-                <Route path="/command-center" element={<LazyRoute component={CommandCenterPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù…Ø±ÙƒØ² Ø§Ù„Ù‚ÙŠØ§Ø¯Ø©..." />} />
-                <Route path="/products" element={<LazyRoute component={ProductsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª..." />} />
-                <Route path="/categories" element={<LazyRoute component={CategoriesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ù‚Ø³Ø§Ù…..." />} />
-                <Route path="/stock-search" element={<LazyRoute component={StockSearchPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¨Ø­Ø« Ø§Ù„Ù…Ø®Ø²ÙˆÙ†..." />} />
-                <Route path="/stocktake" element={<LazyRoute component={StocktakePage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¬Ø±Ø¯..." />} />
-                <Route path="/stock-adjustments" element={<LazyRoute component={StockAdjustmentsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØ¹Ø¯ÙŠÙ„Ø§Øª Ø§Ù„Ù…Ø®Ø²ÙˆÙ†..." />} />
-                <Route path="/low-stock" element={<LazyRoute component={LowStockPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª Ù…Ù†Ø®ÙØ¶Ø© Ø§Ù„Ù…Ø®Ø²ÙˆÙ†..." />} />
-                <Route path="/customers" element={<LazyRoute component={CustomersPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡..." />} />
-                <Route path="/marketing" element={<LazyRoute component={MarketingPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªØ³ÙˆÙŠÙ‚..." />} />
-                <Route path="/financials" element={<LazyRoute component={FinancialsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªÙ‚Ø§Ø±ÙŠØ± Ø§Ù„Ù…Ø§Ù„ÙŠØ©..." />} />
-                <Route path="/staff-performance" element={<LazyRoute component={StaffPerformancePage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø£Ø¯Ø§Ø¡ Ø§Ù„Ù…ÙˆØ¸ÙÙŠÙ†..." />} />
-                <Route path="/invoices" element={<LazyRoute component={InvoicesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ÙÙˆØ§ØªÙŠØ±..." />} />
-                <Route path="/suppliers" element={<LazyRoute component={SuppliersPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ†..." />} />
-                <Route path="/supplier-purchase-invoices" element={<LazyRoute component={SupplierPurchaseInvoicesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ÙÙˆØ§ØªÙŠØ± Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ†..." />} />
-                <Route path="/purchase-returns" element={<LazyRoute component={PurchaseReturnsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù…Ø±ØªØ¬Ø¹Ø§Øª Ø§Ù„Ø´Ø±Ø§Ø¡..." />} />
-                <Route path="/notifications" element={<LazyRoute component={NotificationsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø´Ø¹Ø§Ø±Ø§Øª..." />} />
-                <Route path="/expenses" element={<LazyRoute component={ExpensesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª..." />} />
-                <Route path="/reports" element={<LazyRoute component={ReportsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªÙ‚Ø§Ø±ÙŠØ±..." />} />
-                <Route path="/business-reports" element={<LazyRoute component={BusinessReportsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªÙ‚Ø§Ø±ÙŠØ± Ø§Ù„Ø£Ø¹Ù…Ø§Ù„..." />} />
-                <Route path="/aging-report" element={<LazyRoute component={AgingReportPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªÙ‚Ø±ÙŠØ± Ø£Ø¹Ù…Ø§Ø± Ø§Ù„Ø¯ÙŠÙˆÙ†..." />} />
-                <Route path="/supplier-aging-report" element={<LazyRoute component={SupplierAgingReportPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªÙ‚Ø±ÙŠØ± Ø£Ø¹Ù…Ø§Ø± Ø¯ÙŠÙˆÙ† Ø§Ù„Ù…ÙˆØ±Ø¯ÙŠÙ†..." />} />
-                <Route path="/installments" element={<LazyRoute component={InstallmentsDashboardPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ù‚Ø³Ø§Ø·..." />} />
-                <Route path="/addon-store" element={<LazyRoute component={AddonStorePage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù…ØªØ¬Ø± Ø§Ù„Ø¥Ø¶Ø§ÙØ§Øª..." />} />
-                <Route path="/referrals" element={<LazyRoute component={ReferralPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø­Ø§Ù„Ø§Øª..." />} />
-                <Route path="/settings" element={<LazyRoute component={SettingsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª..." />} />
-                <Route
-                  path="/subscriptions"
-                  element={isSystemSuperAdmin ? <Navigate to="/super-admin/plans" replace /> : <LazyRoute component={SubscriptionPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø§Ø´ØªØ±Ø§ÙƒØ§Øª..." />}
-                />
-                <Route path="/cameras" element={<LazyRoute component={CamerasPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ÙƒØ§Ù…ÙŠØ±Ø§Øª..." />} />
-                <Route path="/branches" element={<LazyRoute component={BranchManagement} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ÙØ±ÙˆØ¹..." />} />
-                {/* Super Admin Routes */}
-                <Route path="/super-admin/plans" element={<SuperAdminRoute><LazyRoute component={SuperAdminPlansPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨Ø§Ù‚Ø§Øª..." /></SuperAdminRoute>} />
-                <Route path="/super-admin/requests" element={<SuperAdminRoute><LazyRoute component={SubscriptionRequestsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ..." /></SuperAdminRoute>} />
-                <Route path="/super-admin/analytics" element={<SuperAdminRoute><LazyRoute component={RevenueAnalyticsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØ­Ù„ÙŠÙ„Ø§Øª Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª..." /></SuperAdminRoute>} />
-                <Route path="/tenant-management" element={<SuperAdminRoute><LazyRoute component={TenantManagementPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…ØªØ§Ø¬Ø±..." /></SuperAdminRoute>} />
-                <Route path="/cash-drawer" element={<LazyRoute component={CashDrawerPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø®Ø²ÙŠÙ†Ø©..." />} />
-                <Route path="/shift" element={<LazyRoute component={ShiftManagementPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„ÙˆØ±Ø¯ÙŠØ§Øª..." />} />
-
-                <Route path="/roles" element={<LazyRoute component={RolesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ§Øª..." />} />
-                <Route path="/activity-logs" element={<LazyRoute component={ActivityLogsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø³Ø¬Ù„ Ø§Ù„Ù†Ø´Ø§Ø·..." />} />
-                <Route path="/purchase-orders" element={<LazyRoute component={PurchaseOrdersPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø£ÙˆØ§Ù…Ø± Ø§Ù„Ø´Ø±Ø§Ø¡..." />} />
-                <Route path="/import" element={<LazyRoute component={ImportDataPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø§Ø³ØªÙŠØ±Ø§Ø¯..." />} />
-                <Route path="/backup" element={<LazyRoute component={BackupRestorePage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù†Ø³Ø® Ø§Ù„Ø§Ø­ØªÙŠØ§Ø·ÙŠ..." />} />
-                <Route path="/portal-orders" element={<LazyRoute component={PortalOrdersAdminPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø¨ÙˆØ§Ø¨Ø©..." />} />
-                <Route path="/returns-management" element={<LazyRoute component={ReturnsManagementPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø±ØªØ¬Ø¹Ø§Øª..." />} />
-                <Route path="/kyc-review" element={<LazyRoute component={KYCReviewPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù…Ø±Ø§Ø¬Ø¹Ø© Ø§Ù„Ù‡ÙˆÙŠØ©..." />} />
-                <Route path="/support-messages" element={<LazyRoute component={SupportMessagesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø¯Ø¹Ù…..." />} />
-                <Route path="/reviews" element={<LazyRoute component={ReviewsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªÙ‚ÙŠÙŠÙ…Ø§Øª..." />} />
-                <Route path="/coupons" element={<LazyRoute component={CouponsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ÙƒÙˆØ¨ÙˆÙ†Ø§Øª..." />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<LazyRoute component={DashboardPage} message="جاري تحميل اللوحة..." />} />
+                <Route path="/products" element={<LazyRoute component={ProductsPage} message="جاري تحميل المنتجات..." />} />
+                <Route path="/customers" element={<LazyRoute component={CustomersPage} message="جاري تحميل العملاء..." />} />
+                <Route path="/invoices" element={<LazyRoute component={InvoicesPage} message="جاري تحميل الفواتير..." />} />
+                <Route path="/settings" element={<LazyRoute component={SettingsPage} message="جاري تحميل الإعدادات..." />} />
+                <Route path="/branch-dashboard" element={<LazyRoute component={BranchDashboardPage} message="جاري تحميل لوحة الفرع..." />} />
+                <Route path="/categories" element={<LazyRoute component={CategoriesPage} message="جاري تحميل التصنيفات..." />} />
+                <Route path="/stocktake" element={<LazyRoute component={StocktakePage} message="جاري تحميل الجرد..." />} />
+                <Route path="/stock-adjustments" element={<LazyRoute component={StockAdjustmentsPage} message="جاري تحميل تسويات المخزون..." />} />
+                <Route path="/marketing" element={<LazyRoute component={MarketingPage} message="جاري تحميل التسويق..." />} />
+                <Route path="/staff-performance" element={<LazyRoute component={StaffPerformancePage} message="جاري تحميل أداء الموظفين..." />} />
+                <Route path="/financials" element={<LazyRoute component={FinancialsPage} message="جاري تحميل المالية..." />} />
+                <Route path="/suppliers" element={<LazyRoute component={SuppliersPage} message="جاري تحميل الموردين..." />} />
+                <Route path="/quick-sale" element={<LazyRoute component={QuickSalePage} message="جاري تحميل الكاشير..." />} />
+                <Route path="/reports" element={<LazyRoute component={ReportsPage} message="جاري تحميل التقارير..." />} />
+                <Route path="/business-reports" element={<LazyRoute component={BusinessReportsPage} message="جاري تحميل تقارير الأعمال..." />} />
+                <Route path="/command-center" element={<LazyRoute component={CommandCenterPage} message="جاري تحميل مركز التحكم..." />} />
+                <Route path="/expenses" element={<LazyRoute component={ExpensesPage} message="جاري تحميل المصاريف..." />} />
+                <Route path="/low-stock" element={<LazyRoute component={LowStockPage} message="جاري تحميل النواقص..." />} />
+                <Route path="/subscriptions" element={<LazyRoute component={SubscriptionPage} message="جاري تحميل الاشتراكات..." />} />
+                <Route path="/cameras" element={<LazyRoute component={CamerasPage} message="جاري تحميل الكاميرات..." />} />
+                <Route path="/cash-drawer" element={<LazyRoute component={CashDrawerPage} message="جاري تحميل الخزينة..." />} />
+                <Route path="/roles" element={<LazyRoute component={RolesPage} message="جاري تحميل الأدوار..." />} />
+                <Route path="/activity-logs" element={<LazyRoute component={ActivityLogsPage} message="جاري تحميل سجل النشاط..." />} />
+                <Route path="/purchase-orders" element={<LazyRoute component={PurchaseOrdersPage} message="جاري تحميل أوامر الشراء..." />} />
+                <Route path="/supplier-purchase-invoices" element={<LazyRoute component={SupplierPurchaseInvoicesPage} message="جاري تحميل فواتير المشتريات..." />} />
+                <Route path="/aging-report" element={<LazyRoute component={AgingReportPage} message="جاري تحميل تقرير الأعمار..." />} />
+                <Route path="/installments" element={<LazyRoute component={InstallmentsDashboardPage} message="جاري تحميل الأقساط..." />} />
+                <Route path="/admin/dashboard" element={<LazyRoute component={AdminDashboardPage} message="جاري تحميل لوحة الإدارة..." />} />
+                <Route path="/admin/tenants" element={<LazyRoute component={AdminTenantsPage} message="جاري تحميل المستأجرين..." />} />
+                <Route path="/admin/users" element={<LazyRoute component={AdminUsersPage} message="جاري تحميل المستخدمين..." />} />
+                <Route path="/admin/audit-logs" element={<LazyRoute component={AdminAuditLogsPage} message="جاري تحميل سجلات التدقيق..." />} />
+                <Route path="/admin/statistics" element={<LazyRoute component={AdminStatisticsPage} message="جاري تحميل الإحصائيات..." />} />
+                <Route path="/import" element={<LazyRoute component={ImportDataPage} message="جاري تحميل الاستيراد..." />} />
+                <Route path="/backup" element={<LazyRoute component={BackupRestorePage} message="جاري تحميل النسخ الاحتياطي..." />} />
+                <Route path="/onboarding" element={<LazyRoute component={OnboardingPage} message="جاري تحميل الإعداد الأولي..." />} />
+                <Route path="/branches" element={<LazyRoute component={BranchManagement} message="جاري تحميل الفروع..." />} />
+                <Route path="/tenant-management" element={<LazyRoute component={TenantManagementPage} message="جاري تحميل إدارة المتجر..." />} />
+                <Route path="/super-admin/plans" element={<LazyRoute component={SuperAdminPlansPage} message="جاري تحميل الخطط..." />} />
+                <Route path="/super-admin/requests" element={<LazyRoute component={SubscriptionRequestsPage} message="جاري تحميل الطلبات..." />} />
+                <Route path="/portal-orders" element={<LazyRoute component={PortalOrdersAdminPage} message="جاري تحميل طلبات البوابة..." />} />
+                <Route path="/returns-management" element={<LazyRoute component={ReturnsManagementPage} message="جاري تحميل إدارة المرتجعات..." />} />
+                <Route path="/kyc-review" element={<LazyRoute component={KYCReviewPage} message="جاري تحميل مراجعة الهوية..." />} />
+                <Route path="/support-messages" element={<LazyRoute component={SupportMessagesPage} message="جاري تحميل رسائل الدعم..." />} />
+                <Route path="/reviews" element={<LazyRoute component={ReviewsPage} message="جاري تحميل التقييمات..." />} />
+                <Route path="/coupons" element={<LazyRoute component={CouponsPage} message="جاري تحميل الكوبونات..." />} />
+                <Route path="/referral" element={<LazyRoute component={ReferralPage} message="جاري تحميل الإحالات..." />} />
+                <Route path="/revenue-analytics" element={<LazyRoute component={RevenueAnalyticsPage} message="جاري تحميل التحليلات..." />} />
+                <Route path="/notifications" element={<LazyRoute component={NotificationsPage} message="جاري تحميل الإشعارات..." />} />
+                <Route path="/stock-search" element={<LazyRoute component={StockSearchPage} message="جاري تحميل البحث..." />} />
+                <Route path="/shift" element={<LazyRoute component={ShiftManagementPage} message="جاري تحميل الورديات..." />} />
+                <Route path="/admin-shifts" element={<LazyRoute component={AdminShiftsPage} message="جاري تحميل مراقبة الورديات..." />} />
+                <Route path="/supplier-aging-report" element={<LazyRoute component={SupplierAgingReportPage} message="جاري تحميل تقرير الموردين..." />} />
+                <Route path="/purchase-returns" element={<LazyRoute component={PurchaseReturnsPage} message="جاري تحميل مرتجعات الشراء..." />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </ErrorBoundary>
@@ -301,7 +249,7 @@ function MainLayout() {
 }
 
 export default function App() {
-  const { dark } = useThemeStore();
+  const { dark, syncWithSystem } = useThemeStore();
   const { isAuthenticated, getMe, user, loadingUser, loggingOut } = useAuthStore();
 
   useEffect(() => {
@@ -309,9 +257,11 @@ export default function App() {
     getMe().catch(() => { });
   }, [isAuthenticated, user, loadingUser, getMe]);
 
+  useEffect(() => syncWithSystem(), [syncWithSystem]);
+
   useEffect(() => {
     if (!isAuthenticated || !user) return;
-    if (!isSystemSuperAdminUser(user)) return;
+    if (user.role !== 'super_admin') return;
 
     const key = `super-login-toast:${user.email?.toLowerCase()}`;
     if (sessionStorage.getItem(key)) return;
@@ -322,14 +272,14 @@ export default function App() {
 
   if (loggingOut) {
     return (
-      <div className={`fixed inset-0 z-[9999] flex items-center justify-center ${dark ? 'bg-gray-950' : 'bg-white'}`}>
+      <div className={`app-shell-bg fixed inset-0 z-[9999] flex items-center justify-center ${dark ? 'dark' : ''}`}>
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{
             backgroundImage: 'linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)',
             backgroundSize: '40px 40px',
           }}
         />
-        <div className="relative flex flex-col items-center gap-6">
+        <div className="app-surface relative flex flex-col items-center gap-6 rounded-[2rem] px-8 py-10">
           <div className="relative w-24 h-24 mb-2">
             <div className="absolute inset-0 bg-primary-500/10 rounded-3xl animate-pulse" />
             <div className="absolute inset-0 border-2 border-primary-500/20 rounded-3xl animate-spin-slow" />
@@ -353,12 +303,9 @@ export default function App() {
     <div className={dark ? 'dark' : ''}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <RouteMetadata />
-        {/* Beautiful Animated Notifications */}
         <AnimatedNotification />
-        {/* Global Confirm Dialog */}
         <ConfirmDialog />
 
-        {/* Keep Toaster for backward compatibility */}
         <Toaster
           position="top-center"
           toastOptions={{
@@ -371,85 +318,78 @@ export default function App() {
           }}
         />
 
-        {/* PWA Install Prompt */}
         <InstallPrompt />
+        <UpdateBanner />
 
         <Routes>
-          {/* Customer Portal Routes */}
           <Route path="/portal/login" element={
-            /* If we had a portal specific auth check in store, we could redirect if logged in. 
-               For now, PortalLogin handles it or just renders login. 
-            */
-            <LazyRoute component={PortalLogin} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„..." />
+            <LazyRoute component={PortalLogin} message="جاري تحميل تسجيل الدخول..." />
           } />
 
-          <Route path="/portal" element={<LazyRoute component={PortalLayout} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨ÙˆØ§Ø¨Ø©..." />}>
+          <Route path="/portal" element={<LazyRoute component={PortalLayout} message="جاري تحميل البوابة..." />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<LazyRoute component={PortalHome} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¨ÙˆØ§Ø¨Ø©..." />} />
-            <Route path="invoices" element={<LazyRoute component={PortalInvoices} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ÙÙˆØ§ØªÙŠØ± Ø§Ù„Ø¨ÙˆØ§Ø¨Ø©..." />} />
-            <Route path="returns" element={<LazyRoute component={PortalReturns} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø±ØªØ¬Ø¹Ø§Øª..." />} />
-            <Route path="statement" element={<LazyRoute component={PortalStatement} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ÙƒØ´Ù Ø§Ù„Ø­Ø³Ø§Ø¨..." />} />
-            <Route path="calculator" element={<LazyRoute component={PortalInstallmentCalculator} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø­Ø§Ø³Ø¨Ø© Ø§Ù„Ø£Ù‚Ø³Ø§Ø·..." />} />
-            <Route path="documents" element={<LazyRoute component={PortalDocuments} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø³ØªÙ†Ø¯Ø§Øª..." />} />
-            <Route path="addresses" element={<LazyRoute component={PortalAddresses} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¹Ù†Ø§ÙˆÙŠÙ†..." />} />
-            <Route path="profile" element={<LazyRoute component={PortalProfile} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ù„Ù Ø§Ù„Ø´Ø®ØµÙŠ..." />} />
-            <Route path="orders" element={<LazyRoute component={PortalOrders} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø·Ù„Ø¨Ø§Øª..." />} />
-            <Route path="wishlist" element={<LazyRoute component={PortalWishlist} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…ÙØ¶Ù„Ø©..." />} />
-            <Route path="support" element={<LazyRoute component={PortalSupport} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¯Ø¹Ù…..." />} />
-            <Route path="support/:id" element={<LazyRoute component={PortalSupportChat} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø©..." />} />
-            <Route path="notifications" element={<LazyRoute component={PortalNotifications} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø´Ø¹Ø§Ø±Ø§Øª..." />} />
-            <Route path="points" element={<LazyRoute component={PortalPointsHistory} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø³Ø¬Ù„ Ø§Ù„Ù†Ù‚Ø§Ø·..." />} />
-            <Route path="reviews" element={<LazyRoute component={PortalReviews} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØªÙ‚ÙŠÙŠÙ…Ø§Øª..." />} />
-            <Route path="products" element={<LazyRoute component={PortalProducts} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª..." />} />
-            <Route path="products/:id" element={<LazyRoute component={PortalProductDetails} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ù…Ù†ØªØ¬..." />} />
-            <Route path="cart" element={<LazyRoute component={ShoppingCart} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø³Ù„Ø©..." />} />
-            <Route path="checkout" element={<LazyRoute component={PortalCheckout} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø·Ù„Ø¨..." />} />
-            <Route path="payment/result" element={<LazyRoute component={PortalPaymentResult} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ù†ØªÙŠØ¬Ø© Ø§Ù„Ø¯ÙØ¹..." />} />
+            <Route path="dashboard" element={<LazyRoute component={PortalHome} message="جاري تحميل البوابة..." />} />
+            <Route path="invoices" element={<LazyRoute component={PortalInvoices} message="جاري تحميل فواتير البوابة..." />} />
+            <Route path="returns" element={<LazyRoute component={PortalReturns} message="جاري تحميل المرتجعات..." />} />
+            <Route path="statement" element={<LazyRoute component={PortalStatement} message="جاري تحميل كشف الحساب..." />} />
+            <Route path="calculator" element={<LazyRoute component={PortalInstallmentCalculator} message="جاري تحميل حاسبة الأقساط..." />} />
+            <Route path="documents" element={<LazyRoute component={PortalDocuments} message="جاري تحميل المستندات..." />} />
+            <Route path="addresses" element={<LazyRoute component={PortalAddresses} message="جاري تحميل العناوين..." />} />
+            <Route path="profile" element={<LazyRoute component={PortalProfile} message="جاري تحميل الملف الشخصي..." />} />
+            <Route path="orders" element={<LazyRoute component={PortalOrders} message="جاري تحميل الطلبات..." />} />
+            <Route path="wishlist" element={<LazyRoute component={PortalWishlist} message="جاري تحميل المفضلة..." />} />
+            <Route path="support" element={<LazyRoute component={PortalSupport} message="جاري تحميل الدعم..." />} />
+            <Route path="support/:id" element={<LazyRoute component={PortalSupportChat} message="جاري تحميل المحادثة..." />} />
+            <Route path="notifications" element={<LazyRoute component={PortalNotifications} message="جاري تحميل الإشعارات..." />} />
+            <Route path="points" element={<LazyRoute component={PortalPointsHistory} message="جاري تحميل سجل النقاط..." />} />
+            <Route path="reviews" element={<LazyRoute component={PortalReviews} message="جاري تحميل التقييمات..." />} />
+            <Route path="products" element={<LazyRoute component={PortalProducts} message="جاري تحميل المنتجات..." />} />
+            <Route path="products/:id" element={<LazyRoute component={PortalProductDetails} message="جاري تحميل تفاصيل المنتج..." />} />
+            <Route path="cart" element={<LazyRoute component={ShoppingCart} message="جاري تحميل السلة..." />} />
+            <Route path="checkout" element={<LazyRoute component={PortalCheckout} message="جاري تحميل إتمام الطلب..." />} />
+            <Route path="payment/result" element={<LazyRoute component={PortalPaymentResult} message="جاري تحميل نتيجة الدفع..." />} />
           </Route>
 
-
-          {/* Storefront Routes (Public) */}
-          <Route path={storefrontPath('/')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontHome} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…ØªØ¬Ø±..." />} />
-          <Route path={storefrontPath('/products')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductCatalog} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ÙƒØªØ§Ù„ÙˆØ¬ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª..." />} />
-          <Route path={storefrontPath('/products/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductDetails} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ù…Ù†ØªØ¬..." />} />
-          <Route path={storefrontPath('/collections/:slug')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontLandingPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹Ø©..." />} />
-          <Route path={storefrontPath('/about')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontAbout} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„Ù…ØªØ¬Ø±..." />} />
-          <Route path={storefrontPath('/cart')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ShoppingCart} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø³Ù„Ø©..." />} />
-          <Route path={storefrontPath('/checkout')} element={<LazyLayoutRoute layout={StorefrontLayout} component={Checkout} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø·Ù„Ø¨..." />} />
-          <Route path={storefrontPath('/order/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderConfirmation} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø·Ù„Ø¨..." />} />
-          <Route path={storefrontPath('/track-order')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderTracking} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØªØ¨Ø¹ Ø§Ù„Ø·Ù„Ø¨..." />} />
+          <Route path={storefrontPath('/')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontHome} message="جاري تحميل المتجر..." />} />
+          <Route path={storefrontPath('/products')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductCatalog} message="جاري تحميل كتالوج المنتجات..." />} />
+          <Route path={storefrontPath('/products/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductDetails} message="جاري تحميل تفاصيل المنتج..." />} />
+          <Route path={storefrontPath('/collections/:slug')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontLandingPage} message="جاري تحميل المجموعة..." />} />
+          <Route path={storefrontPath('/about')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontAbout} message="جاري تحميل صفحة المتجر..." />} />
+          <Route path={storefrontPath('/cart')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ShoppingCart} message="جاري تحميل السلة..." />} />
+          <Route path={storefrontPath('/checkout')} element={<LazyLayoutRoute layout={StorefrontLayout} component={Checkout} message="جاري تحميل إتمام الطلب..." />} />
+          <Route path={storefrontPath('/order/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderConfirmation} message="جاري تحميل تفاصيل الطلب..." />} />
+          <Route path={storefrontPath('/track-order')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderTracking} message="جاري تحميل تتبع الطلب..." />} />
 
           <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/" replace /> : <LazyRoute component={LoginPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„..." />
+            isAuthenticated ? <Navigate to="/" replace /> : <LazyRoute component={LoginPage} message="جاري تحميل تسجيل الدخول..." />
           } />
-          <Route path="/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ø³ØªØ¹Ø§Ø¯Ø© ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±..." />} />
-          <Route path="/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø¥Ø¹Ø§Ø¯Ø© Ø§Ù„ØªØ¹ÙŠÙŠÙ†..." />} />
+          <Route path="/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message="جاري تحميل استعادة كلمة المرور..." />} />
+          <Route path="/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message="جاري تحميل إعادة التعيين..." />} />
           <Route path="/" element={
             isAuthenticated ? (
               <ProtectedRoute>
                 <MainLayout />
               </ProtectedRoute>
             ) : (
-              <LazyLayoutRoute layout={PublicSiteLayout} component={PublicLandingPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙØ­Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©..." />
+              <LazyLayoutRoute layout={PublicSiteLayout} component={PublicLandingPage} message="جاري تحميل الصفحة الرئيسية..." />
             )
           } />
-          <Route path="/features" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFeaturesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ù…Ø²Ø§ÙŠØ§..." />} />
-          <Route path="/use-cases" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicUseCasesPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø­Ø§Ù„Ø§Øª Ø§Ù„Ø§Ø³ØªØ®Ø¯Ø§Ù…..." />} />
-          <Route path="/how-it-works" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicHowItWorksPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø´Ø±Ø­ Ø§Ù„Ù…Ù†ØµØ©..." />} />
-          <Route path="/faq" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFaqPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ø³Ø¦Ù„Ø© Ø§Ù„Ø´Ø§Ø¦Ø¹Ø©..." />} />
-          <Route path="/privacy" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicPrivacyPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø³ÙŠØ§Ø³Ø© Ø§Ù„Ø®ØµÙˆØµÙŠØ©..." />} />
-          <Route path="/terms" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicTermsPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø´Ø±ÙˆØ· ÙˆØ§Ù„Ø£Ø­ÙƒØ§Ù…..." />} />
-          <Route path="/contact" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicContactPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„ØªÙˆØ§ØµÙ„..." />} />
-          <Route path="/payment/:gateway/:id" element={<LazyRoute component={PublicPaymentInstructionPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØªØ¹Ù„ÙŠÙ…Ø§Øª Ø§Ù„Ø¯ÙØ¹..." />} />
-          <Route path="/sales-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª..." />} />
-          <Route path="/inventory-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø®Ø²ÙˆÙ†..." />} />
-          <Route path="/installments-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„Ø£Ù‚Ø³Ø§Ø· ÙˆØ§Ù„ØªØ­ØµÙŠÙ„..." />} />
-          <Route path="/pos-system" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„ÙƒØ§Ø´ÙŠØ± ÙˆÙ†Ù‚Ø·Ø© Ø§Ù„Ø¨ÙŠØ¹..." />} />
-          <Route path="/ecommerce-platform" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ ØµÙØ­Ø© Ø§Ù„Ù…ØªØ¬Ø± Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ..." />} />
-          <Route path="/pricing" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ø³Ø¹Ø§Ø± ÙˆØ§Ù„Ø¨Ø§Ù‚Ø§Øª..." />} />
-          <Route path="/demo" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="Ø¬Ø§Ø±ÙŠ ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¯ÙŠÙ…Ùˆ ÙˆØ§Ù„ØªØ¬Ø±Ø¨Ø©..." />} />
+          <Route path="/features" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFeaturesPage} message="جاري تحميل المزايا..." />} />
+          <Route path="/use-cases" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicUseCasesPage} message="جاري تحميل حالات الاستخدام..." />} />
+          <Route path="/how-it-works" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicHowItWorksPage} message="جاري تحميل شرح المنصة..." />} />
+          <Route path="/faq" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFaqPage} message="جاري تحميل الأسئلة الشائعة..." />} />
+          <Route path="/privacy" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicPrivacyPage} message="جاري تحميل سياسة الخصوصية..." />} />
+          <Route path="/terms" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicTermsPage} message="جاري تحميل الشروط والأحكام..." />} />
+          <Route path="/contact" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicContactPage} message="جاري تحميل صفحة التواصل..." />} />
+          <Route path="/payment/:gateway/:id" element={<LazyRoute component={PublicPaymentInstructionPage} message="جاري تحميل تعليمات الدفع..." />} />
+          <Route path="/sales-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة إدارة المبيعات..." />} />
+          <Route path="/inventory-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة إدارة المخزون..." />} />
+          <Route path="/installments-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة الأقساط والتحصيل..." />} />
+          <Route path="/pos-system" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة الكاشير ونقطة البيع..." />} />
+          <Route path="/ecommerce-platform" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة المتجر الإلكتروني..." />} />
+          <Route path="/pricing" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل الأسعار والباقات..." />} />
+          <Route path="/demo" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل الديمو والتجربة..." />} />
 
-          {/* Main App Routes (Protected) - Must be last */}
           <Route path="/*" element={
             <ProtectedRoute>
               <MainLayout />
@@ -460,7 +400,4 @@ export default function App() {
     </div>
   );
 }
-
-
-
 

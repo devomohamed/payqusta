@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Users, Plus, Search, Edit2, Trash2, Mail, Phone, Shield,
-  CheckCircle, XCircle, MoreVertical
-} from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Users, Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { api } from '../../store';
 import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../UI';
 import { notify } from '../AnimatedNotification';
@@ -18,7 +15,6 @@ export default function SettingsUsers() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -31,10 +27,10 @@ export default function SettingsUsers() {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/auth/users?page=${page}&limit=10&search=${search}`);
-      setUsers(res.data.data);
-      setPagination(res.data.pagination);
-    } catch (err) {
+      const response = await api.get(`/auth/users?page=${page}&limit=10&search=${search}`);
+      setUsers(response.data.data);
+      setPagination(response.data.pagination);
+    } catch (error) {
       notify.error('فشل تحميل المستخدمين');
     } finally {
       setLoading(false);
@@ -47,7 +43,14 @@ export default function SettingsUsers() {
 
   const handleOpenAdd = () => {
     setEditId(null);
-    setForm({ name: '', email: '', phone: '', password: '', role: 'coordinator', isActive: true });
+    setForm({
+      name: '',
+      email: '',
+      phone: '',
+      password: '',
+      role: 'coordinator',
+      isActive: true
+    });
     setShowModal(true);
   };
 
@@ -59,14 +62,21 @@ export default function SettingsUsers() {
       phone: user.phone || '',
       role: user.role,
       isActive: user.isActive,
-      password: '' // Don't fill password
+      password: ''
     });
     setShowModal(true);
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.email || !form.role) return notify.warning('البيانات الأساسية مطلوبة');
-    if (!editId && !form.password) return notify.warning('كلمة المرور مطلوبة للمستخدم الجديد');
+    if (!form.name || !form.email || !form.role) {
+      notify.warning('البيانات الأساسية مطلوبة');
+      return;
+    }
+
+    if (!editId && !form.password) {
+      notify.warning('كلمة المرور مطلوبة للمستخدم الجديد');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -79,43 +89,52 @@ export default function SettingsUsers() {
       }
       setShowModal(false);
       loadUsers();
-    } catch (err) {
-      notify.error(err.response?.data?.message || 'حدث خطأ');
+    } catch (error) {
+      notify.error(error.response?.data?.message || 'حدث خطأ أثناء الحفظ');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    const ok = await confirm.show({ title: 'تعطيل مستخدم', message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول بعد ذلك.', confirmLabel: 'تعطيل', type: 'warning' });
-    if (!ok) return;
+    const approved = await confirm.show({
+      title: 'تعطيل مستخدم',
+      message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول بعد ذلك.',
+      confirmLabel: 'تعطيل',
+      type: 'warning'
+    });
+
+    if (!approved) return;
+
     try {
       await api.delete(`/auth/users/${id}`);
       notify.success('تم تعطيل المستخدم');
       loadUsers();
-    } catch (err) {
+    } catch (error) {
       notify.error('فشل التعطيل');
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">إدارة الموظفين</h2>
-          <p className="text-gray-500 text-sm">إضافة وتعديل صلاحيات المستخدمين</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">إدارة الموظفين</h2>
+          <p className="text-sm text-subtle">إضافة المستخدمين وتعديل صلاحياتهم</p>
         </div>
-        <Button onClick={handleOpenAdd} icon={<Plus className="w-4 h-4" />}>مستخدم جديد</Button>
+        <Button onClick={handleOpenAdd} icon={<Plus className="h-4 w-4" />}>
+          مستخدم جديد
+        </Button>
       </div>
 
       <Card>
-        <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="border-b border-gray-100 p-4 dark:border-white/5">
           <div className="relative max-w-sm">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="بحث بالاسم أو البريد..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               className="pr-10"
             />
           </div>
@@ -125,14 +144,14 @@ export default function SettingsUsers() {
           <LoadingSpinner />
         ) : users.length === 0 ? (
           <EmptyState
-            icon={<Users className="w-8 h-8" />}
-            title="لا يوجد مستخدمين"
-            description="قم بإضافة موظفين لمساعدتك في إدارة المتجر"
+            icon={<Users className="h-8 w-8" />}
+            title="لا يوجد مستخدمون"
+            description="أضف موظفين ليساعدوك في إدارة المتجر"
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 font-medium">
+              <thead className="border-b border-gray-100 bg-gray-50/50 font-medium text-subtle dark:border-white/5 dark:bg-white/5">
                 <tr>
                   <th className="p-4 text-right">المستخدم</th>
                   <th className="p-4 text-right">الدور</th>
@@ -140,24 +159,24 @@ export default function SettingsUsers() {
                   <th className="p-4 text-center">الإجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {users.map(user => (
-                  <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                {users.map((user) => (
+                  <tr key={user._id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/5">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-600 dark:bg-primary-900/30">
                           {user.name[0]}
                         </div>
                         <div>
-                          <p className="font-bold">{user.name}</p>
-                          <p className="text-xs text-gray-400">{user.email}</p>
-                          {user.phone && <p className="text-xs text-gray-400">{user.phone}</p>}
+                          <p className="font-bold text-gray-900 dark:text-gray-100">{user.name}</p>
+                          <p className="text-xs text-muted">{user.email}</p>
+                          {user.phone && <p className="text-xs text-muted">{user.phone}</p>}
                         </div>
                       </div>
                     </td>
                     <td className="p-4">
                       <Badge variant={user.role === 'vendor' ? 'primary' : 'info'}>
-                        {user.role === 'vendor' ? 'مسؤول (Vendor)' : 'منسق (Coordinator)'}
+                        {user.role === 'vendor' ? 'مسؤول' : 'منسق'}
                       </Badge>
                     </td>
                     <td className="p-4">
@@ -165,12 +184,18 @@ export default function SettingsUsers() {
                         {user.isActive ? 'نشط' : 'معطل'}
                       </Badge>
                     </td>
-                    <td className="p-4 flex justify-center gap-2">
-                      <button onClick={() => handleOpenEdit(user)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-blue-500">
-                        <Edit2 className="w-4 h-4" />
+                    <td className="flex justify-center gap-2 p-4">
+                      <button
+                        onClick={() => handleOpenEdit(user)}
+                        className="rounded-lg p-2 text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10"
+                      >
+                        <Edit2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleDelete(user._id)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-red-500">
-                        <Trash2 className="w-4 h-4" />
+                      <button
+                        onClick={() => handleDelete(user._id)}
+                        className="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
@@ -187,38 +212,27 @@ export default function SettingsUsers() {
         )}
       </Card>
 
-      <Modal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        title={editId ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}
-      >
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}>
         <div className="space-y-4">
-          <Input
-            label="الاسم"
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-          />
+          <Input label="الاسم" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           <Input
             label="البريد الإلكتروني"
             type="email"
             value={form.email}
-            onChange={e => setForm({ ...form, email: e.target.value })}
-            disabled={!!editId} // Email immutable on edit usually
+            onChange={(event) => setForm({ ...form, email: event.target.value })}
+            disabled={Boolean(editId)}
           />
-          <Input
-            label="رقم الهاتف"
-            value={form.phone}
-            onChange={e => setForm({ ...form, phone: e.target.value })}
-          />
+          <Input label="رقم الهاتف" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+
           <div>
-            <label className="block text-sm font-bold mb-2">الدور</label>
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">الدور</label>
             <select
               value={form.role}
-              onChange={e => setForm({ ...form, role: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+              onChange={(event) => setForm({ ...form, role: event.target.value })}
+              className="app-surface-muted w-full rounded-xl border-2 border-gray-100/80 px-4 py-2.5 text-gray-900 outline-none transition-all focus:border-primary-500 dark:border-white/10 dark:text-white dark:focus:border-primary-400"
             >
-              <option value="coordinator">منسق (Coordinator)</option>
-              <option value="vendor">مسؤول (Vendor Admin)</option>
+              <option value="coordinator">منسق</option>
+              <option value="vendor">مسؤول</option>
             </select>
           </div>
 
@@ -226,17 +240,17 @@ export default function SettingsUsers() {
             label={editId ? 'تغيير كلمة المرور (اختياري)' : 'كلمة المرور'}
             type="password"
             value={form.password}
-            onChange={e => setForm({ ...form, password: e.target.value })}
-            placeholder={editId ? 'اتركه فارغاً للإبقاء على الحالية' : ''}
+            onChange={(event) => setForm({ ...form, password: event.target.value })}
+            placeholder={editId ? 'اتركه فارغًا للإبقاء على الحالية' : ''}
           />
 
           {editId && (
             <div>
-              <label className="block text-sm font-bold mb-2">الحالة</label>
+              <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">الحالة</label>
               <select
                 value={form.isActive}
-                onChange={e => setForm({ ...form, isActive: e.target.value === 'true' })}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                onChange={(event) => setForm({ ...form, isActive: event.target.value === 'true' })}
+                className="app-surface-muted w-full rounded-xl border-2 border-gray-100/80 px-4 py-2.5 text-gray-900 outline-none transition-all focus:border-primary-500 dark:border-white/10 dark:text-white dark:focus:border-primary-400"
               >
                 <option value="true">نشط</option>
                 <option value="false">معطل</option>
@@ -244,9 +258,13 @@ export default function SettingsUsers() {
             </div>
           )}
 
-          <div className="pt-4 flex gap-3">
-            <Button className="flex-1" onClick={handleSave} loading={saving}>حفظ</Button>
-            <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
+          <div className="flex gap-3 pt-4">
+            <Button className="flex-1" onClick={handleSave} loading={saving}>
+              حفظ
+            </Button>
+            <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)}>
+              إلغاء
+            </Button>
           </div>
         </div>
       </Modal>

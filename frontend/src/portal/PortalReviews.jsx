@@ -35,7 +35,7 @@ function ReviewCard({ review, t }) {
   const [showReply, setShowReply] = useState(false);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+    <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div>
           <StarRating value={review.rating} />
@@ -69,7 +69,7 @@ function ReviewCard({ review, t }) {
 
       {/* Vendor Reply */}
       {review.reply?.body && (
-        <div className="mt-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700">
+        <div className="app-surface-muted mt-3 rounded-xl p-3 border border-gray-100/80 dark:border-white/10">
           <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
             <MessageSquare className="w-3.5 h-3.5 text-primary-500" />
             {t('reviews.store_reply')}
@@ -147,7 +147,7 @@ export default function PortalReviews() {
   };
 
   return (
-    <div className="space-y-4 pb-20" dir={i18n.dir()}>
+    <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function PortalReviews() {
 
       {/* New Review Form */}
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+        <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-white">{t('reviews.add_review')}</h3>
 
           {/* Type */}
@@ -179,7 +179,7 @@ export default function PortalReviews() {
                 onClick={() => setForm({ ...form, type: tp.value })}
                 className={`px-4 py-2 rounded-xl text-sm font-bold transition ${form.type === tp.value
                   ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  : 'app-surface-muted text-gray-600 dark:text-gray-400'
                   }`}
               >
                 {tp.label}
@@ -205,7 +205,7 @@ export default function PortalReviews() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder={t('reviews.title_placeholder')}
               maxLength={100}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+              className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition"
             />
           </div>
 
@@ -218,7 +218,7 @@ export default function PortalReviews() {
               onChange={(e) => setForm({ ...form, body: e.target.value })}
               placeholder={t('reviews.body_placeholder')}
               maxLength={2000}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
+              className="app-surface w-full resize-none rounded-xl border border-transparent px-4 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition"
             />
             <p className="text-xs text-gray-400 mt-1 text-left">{form.body.length}/2000</p>
           </div>

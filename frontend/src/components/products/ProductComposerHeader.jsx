@@ -12,7 +12,7 @@ export default function ProductComposerHeader({
   stepErrors
 }) {
   return (
-    <div className="shrink-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-40">
+    <div className="app-surface shrink-0 border-b border-gray-100/80 dark:border-white/10 sticky top-0 z-40">
       <div className="flex items-center justify-between px-6 py-4">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -22,7 +22,7 @@ export default function ProductComposerHeader({
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
+          className="app-surface-muted p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -47,8 +47,8 @@ export default function ProductComposerHeader({
                       : hasError
                         ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-2 border-red-100 dark:border-red-500/20'
                         : isVisited
-                          ? 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-2 border-transparent'
-                          : 'bg-transparent text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/60 border-opacity-80'
+                          ? 'app-surface-muted text-gray-700 dark:text-gray-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] border-2 border-transparent'
+                          : 'bg-transparent text-gray-500 border-2 border-dashed border-gray-200/80 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] border-opacity-80'
                     }
                   `}
                 >
@@ -63,7 +63,7 @@ export default function ProductComposerHeader({
                   {step.label}
                 </button>
                 {idx < steps.length - 1 && (
-                  <div className={`w-8 h-0.5 rounded shrink-0 ${isPast ? 'bg-primary-200 dark:bg-primary-800' : 'bg-gray-100 dark:bg-gray-800'}`} />
+                  <div className={`w-8 h-0.5 rounded shrink-0 ${isPast ? 'bg-primary-200 dark:bg-primary-800' : 'bg-gray-100/90 dark:bg-white/10'}`} />
                 )}
               </React.Fragment>
             );

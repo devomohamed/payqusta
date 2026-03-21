@@ -59,7 +59,7 @@ export default function AdminTenantsPage() {
   // ... (keep existing handlers) ...
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 app-text-soft">
       {/* ... (keep existing Header and Filters) ... */}
 
       {/* Tenants Table */}
@@ -75,7 +75,7 @@ export default function AdminTenantsPage() {
           action={<Button onClick={openAdd} icon={<Plus className="w-4 h-4" />}>إضافة متجر</Button>}
         />
       ) : (
-        <Card>
+        <Card className="app-surface overflow-hidden rounded-3xl">
           <div className="overflow-x-auto">
             <table className="w-full">
               {/* ... (keep table header) ... */}
@@ -83,7 +83,7 @@ export default function AdminTenantsPage() {
                 {tenants.map((tenant) => (
                   <tr
                     key={tenant._id}
-                    className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                    className="border-b border-gray-100/70 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors"
                   >
                     {/* ... (keep existing columns) ... */}
                     
@@ -155,19 +155,19 @@ export default function AdminTenantsPage() {
             <div className="space-y-6">
               {/* Stats Overview */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="p-4 bg-gray-50 dark:bg-gray-800 border-none">
+                <Card className="app-surface-muted p-4 border-none">
                    <p className="text-xs text-gray-500 mb-1">إجمالي المبيعات</p>
                    <p className="text-lg font-bold text-primary-600">{selectedTenant.stats?.revenue?.toLocaleString()} د.ك</p>
                 </Card>
-                <Card className="p-4 bg-gray-50 dark:bg-gray-800 border-none">
+                <Card className="app-surface-muted p-4 border-none">
                    <p className="text-xs text-gray-500 mb-1">عدد الفواتير</p>
                    <p className="text-lg font-bold">{selectedTenant.stats?.invoices}</p>
                 </Card>
-                <Card className="p-4 bg-gray-50 dark:bg-gray-800 border-none">
+                <Card className="app-surface-muted p-4 border-none">
                    <p className="text-xs text-gray-500 mb-1">العملاء</p>
                    <p className="text-lg font-bold">{selectedTenant.stats?.customers}</p>
                 </Card>
-                <Card className="p-4 bg-gray-50 dark:bg-gray-800 border-none">
+                <Card className="app-surface-muted p-4 border-none">
                    <p className="text-xs text-gray-500 mb-1">المنتجات</p>
                    <p className="text-lg font-bold">{selectedTenant.stats?.products}</p>
                 </Card>
@@ -179,7 +179,7 @@ export default function AdminTenantsPage() {
                   <Building2 className="w-4 h-4" />
                   بيانات الشركة
                 </h3>
-                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl space-y-2 text-sm border border-gray-100 dark:border-gray-800">
+                <div className="app-surface-muted p-4 rounded-xl space-y-2 text-sm border border-gray-100/80 dark:border-white/10">
                     <div className="flex justify-between">
                       <span className="text-gray-500">الاسم التجاري:</span>
                       <span className="font-semibold">{selectedTenant.tenant?.name}</span>
@@ -205,9 +205,9 @@ export default function AdminTenantsPage() {
                   <ExternalLink className="w-4 h-4" />
                   الفروع ({selectedTenant.branches?.length || 0})
                 </h3>
-                <div className="border rounded-xl overflow-hidden border-gray-200 dark:border-gray-700">
+                <div className="app-surface rounded-xl overflow-hidden border border-gray-200/80 dark:border-white/10">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-800">
+                    <thead className="app-surface-muted">
                       <tr>
                         <th className="p-3 text-right">الاسم</th>
                         <th className="p-3 text-right">النوع</th>
@@ -218,7 +218,7 @@ export default function AdminTenantsPage() {
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                       {selectedTenant.branches?.length > 0 ? (
                         selectedTenant.branches.map(branch => (
-                          <tr key={branch._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                          <tr key={branch._id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                             <td className="p-3 font-medium">{branch.name}</td>
                             <td className="p-3 text-gray-500">{branch.type === 'physical' ? 'فرع فعلي' : 'متجر إلكتروني'}</td>
                             <td className="p-3">{branch.managerName || '-'}</td>
@@ -274,7 +274,7 @@ export default function AdminTenantsPage() {
                   <select
                     value={form.isActive ? 'active' : 'inactive'}
                     onChange={(e) => setForm({ ...form, isActive: e.target.value === 'active' })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    className="app-surface w-full px-4 py-2.5 rounded-xl border border-transparent focus:ring-2 focus:ring-primary-500/20"
                   >
                     <option value="active">نشط</option>
                     <option value="inactive">معطل</option>
@@ -288,7 +288,7 @@ export default function AdminTenantsPage() {
                       ...form,
                       subscription: { ...form.subscription, plan: e.target.value }
                     })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    className="app-surface w-full px-4 py-2.5 rounded-xl border border-transparent focus:ring-2 focus:ring-primary-500/20"
                   >
                     <option value="free">مجاني</option>
                     <option value="basic">أساسي</option>
@@ -351,7 +351,7 @@ export default function AdminTenantsPage() {
                   <select
                     value={form.plan}
                     onChange={(e) => setForm({ ...form, plan: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    className="app-surface w-full px-4 py-2.5 rounded-xl border border-transparent focus:ring-2 focus:ring-primary-500/20"
                   >
                     <option value="free">مجاني</option>
                     <option value="basic">أساسي</option>

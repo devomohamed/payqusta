@@ -12,6 +12,7 @@ import {
 import {
   brandArabicName,
   brandDisplayName,
+  brandSearchAliases,
   featurePillars,
   platformHighlights,
   workflowSteps,
@@ -42,34 +43,49 @@ const heroMetrics = [
   { label: 'التوسع', value: 'طلبات ومتابعة من نفس المنصة' },
 ];
 
+const brandAliasPreview = brandSearchAliases.slice(0, 10);
+
 export default function PublicLandingPage() {
   return (
     <>
       <section className="mx-auto max-w-7xl px-4 pb-12 pt-12 sm:px-6 lg:px-8 lg:pb-16 lg:pt-16">
         <div className="grid gap-8 lg:grid-cols-[1.02fr,0.98fr] lg:items-center">
           <div className="text-right">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-black text-amber-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-xs font-black text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
               <Sparkles className="h-3.5 w-3.5" />
               {brandDisplayName} منصة تشغيل للمتاجر تربط البيع بالمخزون والتحصيل
             </div>
 
-            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
               {brandDisplayName} يقدم لك
               <span className="block bg-[linear-gradient(135deg,#0f172a_0%,#0f766e_55%,#f59e0b_100%)] bg-clip-text text-transparent">
                 تشغيل يومي أوضح + واجهة احترافية + متجر إلكتروني متصل
               </span>
             </h1>
 
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+            <p className="app-text-soft mt-5 max-w-3xl text-base leading-8 sm:text-lg">
               {brandDisplayName} لا يقدم شاشة إدارة فقط، بل منظومة كاملة تساعدك على البيع، متابعة المخزون، إدارة الأقساط، واستقبال الطلبات من واجهة يعرف منها العميل من أنت وماذا تقدم.
             </p>
 
-            <div className="mt-5 rounded-[1.75rem] border border-slate-200 bg-white/90 p-5 text-right shadow-sm">
-              <p className="text-sm font-black text-slate-900">اسم البراند</p>
-              <p className="mt-2 text-sm leading-7 text-slate-600">
-                إذا عرفت المنصة باسم <span className="font-black text-slate-950">PayQusta</span> أو
-                <span className="font-black text-slate-950"> {brandArabicName}</span> فأنت تتحدث عن نفس البراند: منصة تساعد المتجر على البيع، المتابعة، والتحصيل مع واجهة احترافية للعميل.
+            <div className="app-surface mt-5 rounded-[1.75rem] p-5 text-right">
+              <p className="text-sm font-black text-slate-900 dark:text-white">اسم البراند</p>
+              <p className="app-text-soft mt-2 text-sm leading-7">
+                إذا عرفت المنصة باسم <span className="font-black text-slate-950 dark:text-white">PayQusta</span> أو
+                <span className="font-black text-slate-950 dark:text-white"> {brandArabicName}</span> فأنت تتحدث عن نفس البراند: منصة تساعد المتجر على البيع، المتابعة، والتحصيل مع واجهة احترافية للعميل.
               </p>
+              <p className="app-text-soft mt-3 text-sm leading-7">
+                وقد يبحث بعض المستخدمين أيضًا عن المنصة بهذه الكتابات: {brandAliasPreview.join('، ')}.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                {brandAliasPreview.map((alias) => (
+                  <span
+                    key={alias}
+                    className="app-surface-muted rounded-full px-3 py-1.5 text-xs font-black text-slate-700 dark:text-slate-100"
+                  >
+                    {alias}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -82,7 +98,7 @@ export default function PublicLandingPage() {
               </Link>
               <Link
                 to="/features"
-                className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+                className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
               >
                 استكشف المزايا
               </Link>
@@ -90,9 +106,9 @@ export default function PublicLandingPage() {
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {heroMetrics.map((item) => (
-                <div key={item.label} className="rounded-[1.5rem] border border-white bg-white/90 p-4 text-right shadow-sm">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">{item.value}</p>
+                <div key={item.label} className="app-surface rounded-[1.5rem] p-4 text-right">
+                  <p className="app-text-muted text-[11px] font-black uppercase tracking-[0.18em]">{item.label}</p>
+                  <p className="mt-2 text-sm font-black text-slate-900 dark:text-white">{item.value}</p>
                 </div>
               ))}
             </div>
@@ -133,9 +149,9 @@ export default function PublicLandingPage() {
                   })}
                 </div>
 
-                <div className="mt-5 rounded-[1.75rem] bg-white p-5 text-right text-slate-900">
-                  <p className="text-sm font-black text-emerald-700">الفرق الحقيقي</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                <div className="mt-5 rounded-[1.75rem] bg-white p-5 text-right text-slate-900 dark:bg-white/10 dark:text-white">
+                  <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">الفرق الحقيقي</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-200">
                     العميل يرى واجهة واضحة ومنظمة، بينما يرى الفريق في الداخل البيع والمخزون والتحصيل في صورة مترابطة أسهل في المتابعة.
                   </p>
                 </div>
@@ -146,13 +162,13 @@ export default function PublicLandingPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="app-surface rounded-[2rem] p-6 sm:p-8">
           <div className="max-w-3xl text-right">
             <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">الركائز الأساسية</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white">
               من أول زيارة عامة إلى إدارة التشغيل داخل المتجر
             </h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <p className="app-text-soft mt-3 text-base leading-8">
               الفكرة هنا أن تظهر قيمة المنصة كما هي في الواقع: جزء يخدم العميل أمامك، وجزء يخدم التشغيل داخل النشاط، وكلاهما يتحركان معًا.
             </p>
           </div>
@@ -161,12 +177,12 @@ export default function PublicLandingPage() {
             {featurePillars.map((pillar) => (
               <article
                 key={pillar.slug}
-                className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-right transition-transform hover:-translate-y-1 hover:border-emerald-200 hover:bg-white"
+                className="app-surface-muted rounded-[1.75rem] p-6 text-right transition-transform hover:-translate-y-1 hover:bg-white dark:hover:bg-white/10"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-lg font-black text-slate-900">{pillar.title}</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{pillar.summary}</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white">{pillar.title}</p>
+                    <p className="app-text-soft mt-2 text-sm leading-7">{pillar.summary}</p>
                   </div>
                   <div className="rounded-2xl bg-slate-950 p-3 text-white">
                     {pillar.slug === 'sales' ? <BarChart3 className="h-5 w-5" /> : null}
@@ -178,7 +194,7 @@ export default function PublicLandingPage() {
 
                 <div className="mt-5 grid gap-2">
                   {pillar.bullets.map((bullet) => (
-                    <div key={bullet} className="rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">
+                    <div key={bullet} className="rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
                       {bullet}
                     </div>
                   ))}
@@ -192,20 +208,20 @@ export default function PublicLandingPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {platformHighlights.map((item) => (
-            <div key={item} className="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-right shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Highlight</p>
-              <p className="mt-3 text-base font-black text-slate-900">{item}</p>
+            <div key={item} className="app-surface rounded-[1.5rem] p-5 text-right">
+              <p className="app-text-muted text-[11px] font-black uppercase tracking-[0.18em]">Highlight</p>
+              <p className="mt-3 text-base font-black text-slate-900 dark:text-white">{item}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm sm:p-8">
+        <div className="app-surface rounded-[2rem] p-6 text-right sm:p-8">
           <div className="max-w-3xl">
             <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">ابدأ من الجزء الأقرب لاحتياجك</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">اختر المسار الذي يشبه طريقة عمل نشاطك الآن</h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white">اختر المسار الذي يشبه طريقة عمل نشاطك الآن</h2>
+            <p className="app-text-soft mt-3 text-base leading-8">
               إذا كان تركيزك الآن على المبيعات، أو المخزون، أو الأقساط، أو المتجر الإلكتروني، ستجد صفحة تبدأ من نفس الزاوية التي تفكر منها.
             </p>
           </div>
@@ -217,14 +233,14 @@ export default function PublicLandingPage() {
                 <Link
                   key={card.path}
                   to={card.path}
-                  className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-right transition-transform hover:-translate-y-1 hover:border-emerald-200 hover:bg-white"
+                  className="app-surface-muted rounded-[1.75rem] p-5 text-right transition-transform hover:-translate-y-1 hover:bg-white dark:hover:bg-white/10"
                 >
                   <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="mt-4 text-sm font-black uppercase tracking-[0.18em] text-slate-400">{card.eyebrow}</p>
-                  <h3 className="mt-2 text-xl font-black text-slate-950">{card.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{card.description}</p>
+                  <p className="app-text-muted mt-4 text-sm font-black uppercase tracking-[0.18em]">{card.eyebrow}</p>
+                  <h3 className="mt-2 text-xl font-black text-slate-950 dark:text-white">{card.title}</h3>
+                  <p className="app-text-soft mt-3 text-sm leading-7">{card.description}</p>
                 </Link>
               );
             })}
@@ -235,10 +251,10 @@ export default function PublicLandingPage() {
       <section className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 lg:px-8 lg:pb-16">
         <div className="grid gap-5 lg:grid-cols-4">
           {workflowSteps.map((item) => (
-            <div key={item.step} className="rounded-[1.75rem] border border-white bg-white p-6 text-right shadow-sm">
+            <div key={item.step} className="app-surface rounded-[1.75rem] p-6 text-right">
               <span className="text-sm font-black text-amber-600">{item.step}</span>
-              <h3 className="mt-3 text-xl font-black text-slate-950">{item.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+              <h3 className="mt-3 text-xl font-black text-slate-950 dark:text-white">{item.title}</h3>
+              <p className="app-text-soft mt-3 text-sm leading-7">{item.text}</p>
             </div>
           ))}
         </div>

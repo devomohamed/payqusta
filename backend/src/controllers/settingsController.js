@@ -5,6 +5,7 @@
 
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
+const Branch = require('../models/Branch');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const WhatsAppService = require('../services/WhatsAppService');
@@ -20,87 +21,68 @@ const {
 const { processImage } = require('../middleware/upload');
 const logger = require('../utils/logger');
 
-const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
-  .trim()
-  .toLowerCase();
-const RESERVED_PLATFORM_SUBDOMAINS = new Set(
-  (process.env.RESERVED_PLATFORM_SUBDOMAINS || 'www,api,admin,app,portal,mail')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean)
-);
+const {
+  buildStoreUrl,
+  getPlatformRootDomain,
+  getPlatformSubdomain,
+  getRequestHost,
+  isLocalOrRunHost,
+  markCustomDomainConnected,
+  normalizeCustomDomain,
+  normalizeSubdomain,
+} = require('../utils/tenantDomainHelpers');
 
-const normalizeCustomDomain = (value) => {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
+const PLATFORM_ROOT_DOMAIN = getPlatformRootDomain();
 
-  const raw = String(value).trim().toLowerCase();
-  if (!raw) return null;
+const ONLINE_FULFILLMENT_MODES = new Set([
+  'default_branch',
+  'branch_priority',
+  'customer_branch',
+]);
 
-  const withoutProtocol = raw.replace(/^https?:\/\//, '');
-  const hostOnly = withoutProtocol.split('/')[0].split(':')[0].trim();
+function normalizeObjectIdValue(value) {
+  if (!value) return null;
+  if (typeof value === 'object' && value._id) return String(value._id);
+  const normalized = String(value).trim();
+  return normalized || null;
+}
 
-  if (!hostOnly || !hostOnly.includes('.')) {
-    throw AppError.badRequest('يرجى إدخال نطاق صحيح مثل shop.example.com');
-  }
+async function applyTenantOnlineFulfillmentSettings(tenantId, onlineFulfillment = {}) {
+  const branches = await Branch.find({
+    tenant: tenantId,
+    isActive: true,
+  }).select('_id participatesInOnlineOrders');
 
-  return hostOnly;
-};
+  const activeBranchIds = new Set(branches.map((branch) => String(branch._id)));
+  const onlineBranchIds = new Set(
+    branches
+      .filter((branch) => branch.participatesInOnlineOrders)
+      .map((branch) => String(branch._id))
+  );
 
-const normalizeSubdomain = (value) => {
-  if (value === undefined) return undefined;
-  if (value === null) return null;
+  const defaultOnlineBranchId = normalizeObjectIdValue(onlineFulfillment.defaultOnlineBranchId);
+  const branchPriorityOrder = [...new Set(
+    (Array.isArray(onlineFulfillment.branchPriorityOrder) ? onlineFulfillment.branchPriorityOrder : [])
+      .map((branchId) => normalizeObjectIdValue(branchId))
+      .filter((branchId) => branchId && activeBranchIds.has(branchId))
+  )];
 
-  const normalized = String(value)
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  if (!normalized) {
-    throw AppError.badRequest('Please enter a valid store subdomain');
-  }
-
-  if (!/^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/.test(normalized)) {
-    throw AppError.badRequest('Store subdomain must be 3-63 characters and use letters, numbers, or hyphens');
-  }
-
-  if (RESERVED_PLATFORM_SUBDOMAINS.has(normalized)) {
-    throw AppError.badRequest('This store subdomain is reserved');
-  }
-
-  return normalized;
-};
-
-const buildStoreUrl = (slug) => {
-  if (!slug || !PLATFORM_ROOT_DOMAIN) return null;
-  return `https://${slug}.${PLATFORM_ROOT_DOMAIN}`;
-};
-
-const extractRequestHost = (req) =>
-  (req.headers['x-forwarded-host'] || req.headers.host || '')
-    .split(',')[0]
-    .trim()
-    .split(':')[0]
-    .toLowerCase();
-
-const isLocalOrRunHost = (host) =>
-  !host ||
-  host === 'localhost' ||
-  host === '127.0.0.1' ||
-  host.endsWith('.run.app') ||
-  host.endsWith('.a.run.app');
-
-const getPlatformSubdomain = (host) => {
-  if (!host || !PLATFORM_ROOT_DOMAIN || host === PLATFORM_ROOT_DOMAIN) return null;
-  if (!host.endsWith(`.${PLATFORM_ROOT_DOMAIN}`)) return null;
-
-  const candidate = host.slice(0, -(PLATFORM_ROOT_DOMAIN.length + 1)).trim().toLowerCase();
-  if (!candidate || candidate.includes('.')) return null;
-  if (RESERVED_PLATFORM_SUBDOMAINS.has(candidate)) return null;
-  return candidate;
-};
+  return {
+    mode: ONLINE_FULFILLMENT_MODES.has(onlineFulfillment.mode)
+      ? onlineFulfillment.mode
+      : 'branch_priority',
+    defaultOnlineBranchId:
+      defaultOnlineBranchId && activeBranchIds.has(defaultOnlineBranchId)
+        ? defaultOnlineBranchId
+        : null,
+    branchPriorityOrder,
+    allowCrossBranchOnlineAllocation: Boolean(onlineFulfillment.allowCrossBranchOnlineAllocation),
+    allowMixedBranchOrders:
+      Boolean(onlineFulfillment.allowMixedBranchOrders) &&
+      Boolean(onlineFulfillment.allowCrossBranchOnlineAllocation) &&
+      onlineBranchIds.size > 1,
+  };
+}
 
 class SettingsController {
 
@@ -172,7 +154,7 @@ class SettingsController {
    */
   getStorefrontSettings = catchAsync(async (req, res, next) => {
     const tenantId = req.query.tenant || req.headers['x-tenant-id'];
-    const requestHost = extractRequestHost(req);
+    const requestHost = getRequestHost(req);
     const platformSubdomain = getPlatformSubdomain(requestHost);
     let tenant;
 
@@ -183,15 +165,7 @@ class SettingsController {
     } else if (!isLocalOrRunHost(requestHost)) {
       tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
       if (tenant) {
-        Tenant.updateOne(
-          { _id: tenant._id },
-          {
-            $set: {
-              customDomainStatus: 'connected',
-              customDomainLastCheckedAt: new Date(),
-            },
-          }
-        ).catch(() => { });
+        markCustomDomainConnected(Tenant, tenant._id);
       }
     } else {
       // No identifier provided and host is not a platform subdomain or custom domain
@@ -245,8 +219,9 @@ class SettingsController {
     }
 
     let tenantSettingsSnapshot = null;
-    if (settings?.barcode || settings?.shipping) {
-      tenantSettingsSnapshot = await Tenant.findById(req.tenantId).select('settings.barcode settings.shipping');
+    if (settings?.barcode || settings?.shipping || settings?.onlineFulfillment) {
+      tenantSettingsSnapshot = await Tenant.findById(req.tenantId)
+        .select('settings.barcode settings.shipping settings.onlineFulfillment');
       if (!tenantSettingsSnapshot) return next(AppError.notFound('المتجر غير موجود'));
     }
 
@@ -261,6 +236,17 @@ class SettingsController {
         settings.shipping,
         tenantSettingsSnapshot
       );
+    }
+
+    if (settings?.onlineFulfillment) {
+      updateData['settings.onlineFulfillment'] = await applyTenantOnlineFulfillmentSettings(
+        req.tenantId,
+        settings.onlineFulfillment
+      );
+    }
+
+    if (settings?.shiftDurationHours !== undefined) {
+      updateData['settings.shiftDurationHours'] = settings.shiftDurationHours;
     }
 
     const tenant = await Tenant.findByIdAndUpdate(

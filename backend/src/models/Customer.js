@@ -30,6 +30,7 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],
       trim: true,
+      match: [/^01[0125][0-9]{8}$/, 'رقم هاتف غير صالح، يجب أن يبدأ بـ 01 ويتكون من 11 رقم'],
     },
     email: { type: String, trim: true, lowercase: true },
     address: { type: String, trim: true },

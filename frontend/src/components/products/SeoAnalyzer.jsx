@@ -5,38 +5,35 @@ export const analyzeSeoContent = ({ text = '', title = '' } = {}) => {
     const results = [];
     let score = 0;
 
-    // Title Length
     if (title.length >= 10 && title.length <= 60) {
-        results.push({ text: 'طول العنوان مثالي لتحركات البحث', type: 'success' });
+        results.push({ text: 'طول العنوان مناسب لمحركات البحث.', type: 'success' });
         score += 30;
     } else if (title.length < 10) {
-        results.push({ text: 'العنوان قصير جداً، حاول إضافة كلمات مفتاحية', type: 'warning' });
+        results.push({ text: 'العنوان قصير جدًا، حاول إضافة كلمات أكثر دقة.', type: 'warning' });
         score += 10;
     } else {
-        results.push({ text: 'العنوان طويل جداً، قد يتم اقتطاعه في نتائج البحث', type: 'warning' });
+        results.push({ text: 'العنوان طويل وقد يتم اقتطاعه في نتائج البحث.', type: 'warning' });
         score += 15;
     }
 
-    // Description Length
     const plainText = text.replace(/<[^>]*>/g, '');
+
     if (plainText.length > 60) {
-        results.push({ text: 'وصف المنتج مثالي لمحركات البحث', type: 'success' });
+        results.push({ text: 'الوصف جيد ويعطي محركات البحث محتوى كافيًا.', type: 'success' });
         score += 30;
     } else if (plainText.length > 20) {
-        results.push({ text: 'الوصف جيد ولكن يفضل زيادته قليلاً', type: 'warning' });
+        results.push({ text: 'الوصف جيد، لكن يفضَّل زيادته قليلًا.', type: 'warning' });
         score += 15;
     } else {
-        results.push({ text: 'الوصف قصير جداً لمحركات البحث', type: 'error' });
+        results.push({ text: 'الوصف قصير جدًا لمحركات البحث.', type: 'error' });
     }
 
-    // Keyword usage
     if (title && plainText.toLowerCase().includes(title.toLowerCase())) {
-        results.push({ text: 'العنوان مستخدم في الوصف (ممتاز)', type: 'success' });
+        results.push({ text: 'العنوان مستخدم داخل الوصف، وهذا يعزز الصلة.', type: 'success' });
         score += 30;
     }
 
-    // Image usage (placeholder check)
-    score += 10; // Assume image is added by ProductMediaStep
+    score += 10;
 
     return { score, results };
 };
@@ -48,17 +45,17 @@ const SeoAnalyzer = ({ text = '', title = '' }) => {
     const progressColor = analysis.score > 80 ? 'bg-emerald-500' : analysis.score > 50 ? 'bg-amber-500' : 'bg-rose-500';
 
     return (
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 dark:border-gray-700/50 flex items-center justify-between">
+        <div className="app-surface overflow-hidden rounded-2xl border border-gray-100/80 dark:border-white/10">
+            <div className="flex items-center justify-between border-b border-gray-100/80 p-4 dark:border-white/10">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                        <Search className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                    <div className="rounded-lg bg-primary-100 p-2 dark:bg-primary-900/30">
+                        <Search className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">تحليل الـ SEO الذكي</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">تحليل SEO الذكي</span>
                 </div>
                 <div className="text-right">
                     <div className={`text-xl font-black ${scoreColor}`}>{analysis.score}%</div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">نقاط السيو</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">نقاط السيو</div>
                 </div>
             </div>
 
@@ -69,30 +66,30 @@ const SeoAnalyzer = ({ text = '', title = '' }) => {
                 />
             </div>
 
-            <div className="p-4 space-y-3">
-                {analysis.results.map((res, i) => (
-                    <div key={i} className="flex gap-2.5 items-start">
-                        {res.type === 'success' ? (
-                            <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                        ) : res.type === 'warning' ? (
-                            <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+            <div className="space-y-3 p-4">
+                {analysis.results.map((result, index) => (
+                    <div key={index} className="flex items-start gap-2.5">
+                        {result.type === 'success' ? (
+                            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                        ) : result.type === 'warning' ? (
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                         ) : (
-                            <Info className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
+                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
                         )}
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {res.text}
+                        <span className="text-xs font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                            {result.text}
                         </span>
                     </div>
                 ))}
 
                 <div className="pt-2">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/30">
-                        <div className="flex gap-2 items-center mb-1">
-                            <BarChart className="w-3 h-3 text-blue-600" />
-                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">نصيحة الخبراء</span>
+                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-800/30 dark:bg-blue-900/20">
+                        <div className="mb-1 flex items-center gap-2">
+                            <BarChart className="h-3 w-3 text-blue-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-tighter text-blue-600">نصيحة الخبراء</span>
                         </div>
-                        <p className="text-[11px] text-blue-800 dark:text-blue-300 leading-normal">
-                            كلما كان العنوان والوصف يحتويان على كلمات يبحث عنها العملاء، زاد ظهور منتجك في جوجل ومحركات البحث.
+                        <p className="text-[11px] leading-normal text-blue-800 dark:text-blue-300">
+                            كلما كان العنوان والوصف قريبين من الكلمات التي يبحث بها العملاء، زادت فرصة ظهور المنتج في نتائج البحث.
                         </p>
                     </div>
                 </div>

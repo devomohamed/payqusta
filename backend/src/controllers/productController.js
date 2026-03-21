@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Tenant = require('../models/Tenant');
+const Branch = require('../models/Branch');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
@@ -42,6 +43,110 @@ function normalizeInventoryItems(rawInventory = [], fallbackMinQuantity = 5) {
       };
     })
     .filter(Boolean);
+}
+
+function normalizeBranchAvailabilityItems(rawAvailability = []) {
+  return (Array.isArray(rawAvailability) ? rawAvailability : [])
+    .map((item) => {
+      const branch = item?.branch?._id || item?.branch;
+      if (!branch) return null;
+
+      const priorityRank = Number(item?.priorityRank);
+      const safetyStock = Number(item?.safetyStock);
+      const onlineReserveQty = Number(item?.onlineReserveQty);
+
+      return {
+        branch: String(branch),
+        isAvailableInBranch: item?.isAvailableInBranch !== undefined ? Boolean(item.isAvailableInBranch) : true,
+        isSellableInPos: item?.isSellableInPos !== undefined ? Boolean(item.isSellableInPos) : true,
+        isSellableOnline: item?.isSellableOnline !== undefined ? Boolean(item.isSellableOnline) : false,
+        safetyStock: Number.isFinite(safetyStock) && safetyStock >= 0 ? safetyStock : 0,
+        onlineReserveQty: Number.isFinite(onlineReserveQty) && onlineReserveQty >= 0 ? onlineReserveQty : 0,
+        priorityRank: Number.isFinite(priorityRank) && priorityRank >= 1 ? priorityRank : 100,
+      };
+    })
+    .filter(Boolean);
+}
+
+function parseBranchAvailabilityPayload(rawAvailability) {
+  if (!rawAvailability) return [];
+  if (typeof rawAvailability !== 'string') return Array.isArray(rawAvailability) ? rawAvailability : [];
+  try {
+    const parsed = JSON.parse(rawAvailability);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function normalizeBooleanFlag(value, fallback) {
+  if (value === undefined) return fallback;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return fallback;
+}
+
+async function resolveBranchAvailability(req, rawAvailability = [], fallbackInventory = []) {
+  const normalizedAvailability = normalizeBranchAvailabilityItems(rawAvailability);
+  const isAdminLikeUser = req.user?.role === 'admin' || !!req.user?.isSuperAdmin;
+  const userBranchId = (!isAdminLikeUser && req.user?.branch) ? String(req.user.branch?._id || req.user.branch) : '';
+  const mainBranchId = String(req.tenantId);
+  const activeBranches = await Branch.find({ tenant: req.tenantId, isActive: true }).select('_id');
+  const activeBranchIds = new Set(activeBranches.map((branch) => branch._id.toString()));
+
+  const isSupportedBranch = (branchId) => branchId === mainBranchId || activeBranchIds.has(branchId);
+
+  if (normalizedAvailability.some((item) => !isSupportedBranch(String(item.branch)))) {
+    throw AppError.badRequest('يوجد فرع غير صالح ضمن إعدادات توافر المنتج.');
+  }
+
+  const inventoryBranchIds = normalizeInventoryItems(fallbackInventory).map((item) => String(item.branch));
+  const defaultBranchIds = normalizedAvailability.length > 0
+    ? normalizedAvailability.map((item) => String(item.branch))
+    : inventoryBranchIds;
+
+  if (userBranchId) {
+    if (!isSupportedBranch(userBranchId)) {
+      throw AppError.badRequest('فرع الحساب الحالي غير نشط أو غير صالح.');
+    }
+
+    const scopedItem = normalizedAvailability.find((item) => String(item.branch) === userBranchId);
+    return [{
+      branch: userBranchId,
+      isAvailableInBranch: normalizeBooleanFlag(scopedItem?.isAvailableInBranch, true),
+      isSellableInPos: normalizeBooleanFlag(scopedItem?.isSellableInPos, true),
+      isSellableOnline: normalizeBooleanFlag(scopedItem?.isSellableOnline, false),
+      safetyStock: toNonNegativeNumber(scopedItem?.safetyStock, 0),
+      onlineReserveQty: toNonNegativeNumber(scopedItem?.onlineReserveQty, 0),
+      priorityRank: Math.max(1, toNonNegativeNumber(scopedItem?.priorityRank, 100)),
+    }];
+  }
+
+  if (defaultBranchIds.length === 0) {
+    return [{
+      branch: mainBranchId,
+      isAvailableInBranch: true,
+      isSellableInPos: true,
+      isSellableOnline: false,
+      safetyStock: 0,
+      onlineReserveQty: 0,
+      priorityRank: 100,
+    }];
+  }
+
+  return Array.from(new Set(defaultBranchIds)).map((branchId) => {
+    const existingItem = normalizedAvailability.find((item) => String(item.branch) === branchId);
+    return {
+      branch: branchId,
+      isAvailableInBranch: normalizeBooleanFlag(existingItem?.isAvailableInBranch, true),
+      isSellableInPos: normalizeBooleanFlag(existingItem?.isSellableInPos, true),
+      isSellableOnline: normalizeBooleanFlag(existingItem?.isSellableOnline, false),
+      safetyStock: toNonNegativeNumber(existingItem?.safetyStock, 0),
+      onlineReserveQty: toNonNegativeNumber(existingItem?.onlineReserveQty, 0),
+      priorityRank: Math.max(1, toNonNegativeNumber(existingItem?.priorityRank, 100)),
+    };
+  });
 }
 
 function mapImagesToOriginals(currentImages = [], currentOriginalImages = [], selectedImages = []) {
@@ -233,7 +338,20 @@ class ProductController {
       }
     }
     if (queryConditions.length > 0) filter.$and = queryConditions;
-    if (req.query.stockStatus) filter.stockStatus = req.query.stockStatus;
+    
+    if (req.query.stockStatus) {
+      if (req.query.stockStatus === 'out_of_stock') {
+        filter['stock.quantity'] = { $lte: 0 };
+      } else if (req.query.stockStatus === 'low_stock') {
+        filter['stock.quantity'] = { $gt: 0 };
+        filter.$expr = { ...filter.$expr, $lte: ['$stock.quantity', '$stock.minQuantity'] };
+      } else if (req.query.stockStatus === 'in_stock') {
+        filter.$expr = { ...filter.$expr, $gt: ['$stock.quantity', '$stock.minQuantity'] };
+      } else {
+        filter.stockStatus = req.query.stockStatus;
+      }
+    }
+
     if (req.query.supplier) filter.supplier = req.query.supplier;
 
     const Review = require('../models/Review');
@@ -243,6 +361,7 @@ class ProductController {
         .populate('category', 'name icon')
         .populate('subcategory', 'name icon')
         .populate('inventory.branch', 'name')
+        .populate('branchAvailability.branch', 'name')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -279,7 +398,8 @@ class ProductController {
       .populate('supplier', 'name contactPerson phone')
       .populate('category', 'name icon')
       .populate('subcategory', 'name icon')
-      .populate('inventory.branch', 'name');
+      .populate('inventory.branch', 'name')
+      .populate('branchAvailability.branch', 'name');
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
     ApiResponse.success(res, product);
   });
@@ -318,6 +438,11 @@ class ProductController {
     let stockQuantity = toNonNegativeNumber(req.body['stock[quantity]'] ?? req.body.stockQuantity ?? 0, 0);
     let minQuantity = toNonNegativeNumber(req.body['stock[minQuantity]'] ?? req.body.minQuantity ?? 5, 5);
     const resolvedInventory = await resolveCreateInventory(req, stockQuantity, minQuantity);
+    const resolvedBranchAvailability = await resolveBranchAvailability(
+      req,
+      parseBranchAvailabilityPayload(req.body.branchAvailability),
+      resolvedInventory.inventory
+    );
     stockQuantity = resolvedInventory.stockQuantity;
     minQuantity = resolvedInventory.minQuantity;
     const tenant = await loadTenantForWrite(req.tenantId);
@@ -339,6 +464,7 @@ class ProductController {
       stock: { quantity: stockQuantity, minQuantity, unit: req.body.unit || 'قطعة' },
       variants: parseVariantsPayload(req.body.variants),
       inventory: resolvedInventory.inventory,
+      branchAvailability: resolvedBranchAvailability,
       images: [...existingImages, ...uploadedImages],
       originalImages: [...existingImages.map(() => ''), ...uploadedOriginalImages],
       thumbnail: req.body.primaryImage || existingImages[0] || uploadedImages[0] || undefined,
@@ -355,6 +481,12 @@ class ProductController {
     if (!product) return next(AppError.notFound('المنتج غير موجود'));
     if (req.body.variants) product.variants = parseVariantsPayload(req.body.variants);
     if (req.body.inventory) product.inventory = normalizeInventoryItems(parseInventoryPayload(req.body.inventory), product.stock?.minQuantity || 5);
+    if (req.body.branchAvailability !== undefined || req.body.inventory !== undefined) {
+      const parsedAvailability = req.body.branchAvailability !== undefined
+        ? parseBranchAvailabilityPayload(req.body.branchAvailability)
+        : product.branchAvailability;
+      product.branchAvailability = await resolveBranchAvailability(req, parsedAvailability, product.inventory);
+    }
     const tenant = await loadTenantForWrite(req.tenantId);
     const watermarkOptions = tenant?.settings?.watermark || {};
     const { processImage, deleteFile } = require('../middleware/upload');

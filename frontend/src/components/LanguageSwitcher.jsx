@@ -18,7 +18,7 @@ export default function LanguageSwitcher() {
     return (
         <button
             onClick={toggleLanguage}
-            className="flex items-center justify-center gap-1.5 p-2 sm:px-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all shadow-sm"
+            className="app-surface-muted flex items-center justify-center gap-1.5 rounded-xl border border-gray-100/80 p-2 shadow-sm transition-all hover:bg-black/[0.04] dark:border-white/10 dark:hover:bg-white/[0.05] sm:px-3"
             title={currentLang === 'ar' ? 'Switch to English' : 'Switch to Arabic'}
         >
             <Globe className="w-4 h-4 text-primary-500" />

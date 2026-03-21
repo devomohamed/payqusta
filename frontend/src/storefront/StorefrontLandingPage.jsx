@@ -276,7 +276,7 @@ export default function StorefrontLandingPage() {
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div className="text-right">
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <Badge className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-gray-900 shadow-sm">
+              <Badge className="rounded-full bg-white/90 px-3 py-1 text-xs font-black text-gray-900 dark:text-gray-900 shadow-sm">
                 {landingPage.eyebrow}
               </Badge>
               <Badge className="rounded-full bg-gray-900 px-3 py-1 text-xs font-black text-white">
@@ -325,7 +325,7 @@ export default function StorefrontLandingPage() {
             </div>
             <div className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-sm">
               <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">مصدر المتابعة</p>
-              <p className="mt-2 text-2xl font-black text-gray-900">{landingPage.sourceLabel}</p>
+              <p className="mt-2 text-2xl font-black text-gray-900 dark:text-gray-900">{landingPage.sourceLabel}</p>
               <p className="mt-2 text-xs font-medium leading-6 text-gray-500">
                 يتم حفظ مصدر الحملة الحالي مع هذه الصفحة لتسهيل مراجعة الأداء لاحقًا.
               </p>

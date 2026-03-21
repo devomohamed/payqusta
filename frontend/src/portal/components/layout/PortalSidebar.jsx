@@ -8,8 +8,8 @@ export default function PortalSidebar({ navItems = [], isActive }) {
 
     return (
         <aside className="hidden md:block w-64 p-4 shrink-0">
-            <div className="sticky top-24 bg-white dark:bg-gray-900 rounded-3xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm space-y-2">
-                <h3 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4 px-2">
+            <div className="app-surface sticky top-24 space-y-2 rounded-3xl p-4">
+                <h3 className="app-text-muted mb-4 px-2 text-xs font-black uppercase tracking-wider">
                     {t('layout.main_menu')}
                 </h3>
                 {navItems.map((item) => {
@@ -20,15 +20,15 @@ export default function PortalSidebar({ navItems = [], isActive }) {
                             key={item.path}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all group ${active
-                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-bold'
-                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white font-medium'
+                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-300 font-bold ring-1 ring-primary-200/70 dark:ring-primary-500/20'
+                                : 'app-text-soft hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white font-medium'
                                 }`}
                         >
                             <div className="flex items-center gap-3">
                                 <div
                                     className={`p-2 rounded-xl transition-colors ${active
                                         ? 'bg-primary-100 dark:bg-primary-900/30'
-                                        : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-white dark:group-hover:bg-gray-700'
+                                        : 'app-surface-muted group-hover:bg-white dark:group-hover:bg-gray-700'
                                         }`}
                                 >
                                     <item.icon className={`w-5 h-5 ${active ? 'fill-current/20' : ''}`} />

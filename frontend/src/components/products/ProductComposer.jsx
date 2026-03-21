@@ -13,7 +13,7 @@ export const COMPOSER_STEPS = [
     { id: 'basics', label: 'الأساسيات', desc: 'الاسم والأقسام' },
     { id: 'pricing', label: 'التسعير والمخزون', desc: 'السعر والكميات' },
     { id: 'media', label: 'الصور والموديلات', desc: 'الوسائط والمتغيرات' },
-    { id: 'review', label: 'المراجعة والحفظ', desc: 'الملخص النهائي' }
+    { id: 'review', label: 'المراجعة والحفظ', desc: 'الملخص النهائي' },
 ];
 
 export default function ProductComposer({
@@ -34,7 +34,9 @@ export default function ProductComposer({
     mainBranchOption = null,
     productImages = [],
     pendingImages = [],
+    maxImageCount = 10,
     onImagesChange,
+    onPendingImageReplace,
     onPrimaryImageSelect,
     onRemoveImage,
     onSubmit,
@@ -52,18 +54,20 @@ export default function ProductComposer({
 
     const handleCloseRequest = async () => {
         if (loading) return;
+
         if (isDirty) {
             const approved = await confirm.warn(
                 'لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟',
-                'تأكيد الإغلاق'
+                'تأكيد الإغلاق',
             );
+
             if (approved) onClose();
-        } else {
-            onClose();
+            return;
         }
+
+        onClose();
     };
 
-    // Reset wizard on open
     useEffect(() => {
         if (open) {
             setActiveStep('basics');
@@ -71,40 +75,41 @@ export default function ProductComposer({
         }
     }, [open]);
 
-    // 3.2 — Navigate to first step with error when validation fails
     useEffect(() => {
         if (!open) return;
-        const errorStep = Object.keys(stepErrors).find(key => stepErrors[key]);
-        if (errorStep) {
-            setActiveStep(errorStep);
-            if (!visitedSteps.includes(errorStep)) {
-                setVisitedSteps(prev => [...prev, errorStep]);
-            }
-        }
-    }, [stepErrors]);
 
+        const errorStep = Object.keys(stepErrors).find((key) => stepErrors[key]);
+        if (!errorStep) return;
+
+        setActiveStep(errorStep);
+        if (!visitedSteps.includes(errorStep)) {
+            setVisitedSteps((prev) => [...prev, errorStep]);
+        }
+    }, [open, stepErrors, visitedSteps]);
 
     const handleStepClick = (stepId) => {
         setActiveStep(stepId);
-        if (!visitedSteps.includes(stepId)) setVisitedSteps(prev => [...prev, stepId]);
+        if (!visitedSteps.includes(stepId)) {
+            setVisitedSteps((prev) => [...prev, stepId]);
+        }
     };
 
     const handleNext = () => {
-        const currentIndex = COMPOSER_STEPS.findIndex(s => s.id === activeStep);
+        const currentIndex = COMPOSER_STEPS.findIndex((step) => step.id === activeStep);
         if (currentIndex < COMPOSER_STEPS.length - 1) {
             handleStepClick(COMPOSER_STEPS[currentIndex + 1].id);
         }
     };
 
     const handlePrev = () => {
-        const currentIndex = COMPOSER_STEPS.findIndex(s => s.id === activeStep);
+        const currentIndex = COMPOSER_STEPS.findIndex((step) => step.id === activeStep);
         if (currentIndex > 0) {
             handleStepClick(COMPOSER_STEPS[currentIndex - 1].id);
         }
     };
 
     const isLastStep = activeStep === 'review';
-    const hasGlobalErrors = Object.keys(stepErrors).some(k => stepErrors[k]);
+    const hasGlobalErrors = Object.keys(stepErrors).some((key) => stepErrors[key]);
 
     return (
         <Modal
@@ -113,15 +118,15 @@ export default function ProductComposer({
             size="fullscreen"
             showCloseButton={false}
             closeOnOutsideClick={false}
-            bodyClassName="p-0 flex flex-col h-full bg-gray-50/50 dark:bg-gray-900/50"
+            bodyClassName="app-surface-muted flex h-full flex-col p-0"
             contentClassName="h-[95vh] rounded-2xl"
-            headerClassName="hidden" // Hiding the default header to use our custom composer header
+            headerClassName="hidden"
             title="إضافة منتج"
         >
-            <div className="flex flex-col h-full w-full bg-white dark:bg-gray-900 overflow-hidden relative">
+            <div className="app-surface relative flex h-full w-full flex-col overflow-hidden">
                 <ProductComposerHeader
                     title={mode === 'edit' ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد'}
-                    subtitle="أدخل تفاصيل المنتج خطوة بخطوة واحفظ التعديلات"
+                    subtitle="أدخل تفاصيل المنتج خطوة بخطوة ثم احفظ التعديلات"
                     onClose={handleCloseRequest}
                     steps={COMPOSER_STEPS}
                     activeStep={activeStep}
@@ -130,11 +135,9 @@ export default function ProductComposer({
                     stepErrors={stepErrors}
                 />
 
-                {/* 3.3 — Responsive Layout: Sidebar below form on mobile, side-by-side on desktop */}
-                <div className="flex-1 min-h-0 flex flex-col lg:flex-row relative">
-                    {/* Main Form Area */}
-                    <div className="flex-1 overflow-y-auto no-scrollbar pb-24 lg:pb-0">
-                        <div className="max-w-4xl mx-auto p-6 lg:p-8">
+                <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
+                    <div className="flex-1 overflow-y-auto pb-24 no-scrollbar lg:pb-0">
+                        <div className="mx-auto max-w-4xl p-6 lg:p-8">
                             {activeStep === 'basics' && (
                                 <ProductBasicsStep
                                     form={form}
@@ -149,6 +152,7 @@ export default function ProductComposer({
                                     onCategoriesReload={onCategoriesReload}
                                 />
                             )}
+
                             {activeStep === 'pricing' && (
                                 <ProductPricingStep
                                     form={form}
@@ -161,6 +165,7 @@ export default function ProductComposer({
                                     pricingErrors={pricingErrors}
                                 />
                             )}
+
                             {activeStep === 'media' && (
                                 <ProductMediaStep
                                     form={form}
@@ -168,7 +173,9 @@ export default function ProductComposer({
                                     branches={branches}
                                     productImages={productImages}
                                     pendingImages={pendingImages}
+                                    maxImageCount={maxImageCount}
                                     onImagesChange={onImagesChange}
+                                    onPendingImageReplace={onPendingImageReplace}
                                     onPrimaryImageSelect={onPrimaryImageSelect}
                                     onRemoveImage={onRemoveImage}
                                     onAddVariant={onAddVariant}
@@ -176,6 +183,7 @@ export default function ProductComposer({
                                     onRemoveVariant={onRemoveVariant}
                                 />
                             )}
+
                             {activeStep === 'review' && (
                                 <ProductReviewStep
                                     form={form}
@@ -187,22 +195,19 @@ export default function ProductComposer({
                                 />
                             )}
 
-                            {/* 3.3 — Mobile Sidebar: compact preview below form content */}
-                            <div className="lg:hidden mt-8 border-t pt-6 border-gray-100 dark:border-gray-800">
+                            <div className="mt-8 border-t border-gray-100/80 pt-6 dark:border-white/10 lg:hidden">
                                 <ProductComposerSidebar form={form} categories={categories} compact />
                             </div>
                         </div>
                     </div>
 
-                    {/* Desktop Sidebar */}
-                    <div className="hidden lg:block h-full">
+                    <div className="hidden h-full lg:block">
                         <ProductComposerSidebar form={form} categories={categories} />
                     </div>
                 </div>
 
-                {/* Sticky Footer Actions */}
-                <div className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 lg:p-6 sticky bottom-0 z-40">
-                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="app-surface sticky bottom-0 z-40 shrink-0 border-t border-gray-100/80 p-4 dark:border-white/10 lg:p-6">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between">
                         <Button variant="ghost" onClick={handleCloseRequest} disabled={loading}>
                             إلغاء
                         </Button>
@@ -235,10 +240,10 @@ export default function ProductComposer({
                                         variant={hasGlobalErrors ? 'danger' : 'success'}
                                         onClick={onSubmit}
                                         loading={loading}
-                                        icon={hasGlobalErrors ? <AlertCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                                        icon={hasGlobalErrors ? <AlertCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                                     >
                                         {loading
-                                            ? (mode === 'edit' ? 'جاري حفظ المنتج...' : 'جاري إضافة المنتج...')
+                                            ? (mode === 'edit' ? 'جارٍ حفظ المنتج...' : 'جارٍ إضافة المنتج...')
                                             : (mode === 'edit' ? 'حفظ التعديلات' : 'إضافة المنتج')}
                                     </Button>
                                 </>
@@ -248,10 +253,10 @@ export default function ProductComposer({
                 </div>
 
                 {loading && (
-                    <div className="absolute inset-0 z-50 bg-white/55 dark:bg-gray-900/55 backdrop-blur-[1px] flex items-center justify-center">
-                        <div className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-lg flex items-center gap-2 text-sm font-bold">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary-500" />
-                            <span>{mode === 'edit' ? 'جاري حفظ المنتج...' : 'جاري إضافة المنتج...'}</span>
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/55 backdrop-blur-[1px] dark:bg-gray-900/55">
+                        <div className="app-surface flex items-center gap-2 rounded-xl border border-gray-100/80 px-4 py-2.5 text-sm font-bold text-gray-800 shadow-lg dark:border-white/10 dark:text-gray-100">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary-500" />
+                            <span>{mode === 'edit' ? 'جارٍ حفظ المنتج...' : 'جارٍ إضافة المنتج...'}</span>
                         </div>
                     </div>
                 )}

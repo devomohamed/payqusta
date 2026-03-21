@@ -211,8 +211,16 @@ const supplierValidations = {
   create: [
     commonValidations.name('name'),
     commonValidations.phone(),
-    body('contactPerson').optional().trim().isLength({ max: 100 }),
-    body('email').optional().isEmail().normalizeEmail(),
+    body('contactPerson').optional({ checkFalsy: true }).trim().isLength({ max: 100 }).withMessage('اسم المسؤول طويل جداً'),
+    commonValidations.email().optional({ checkFalsy: true }),
+    handleValidationErrors,
+  ],
+
+  update: [
+    commonValidations.mongoId('id'),
+    commonValidations.name('name').optional(),
+    commonValidations.phone().optional(),
+    commonValidations.email().optional({ checkFalsy: true }),
     handleValidationErrors,
   ],
 };

@@ -8,11 +8,15 @@ const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
 const Tenant = require('../models/Tenant');
+const Branch = require('../models/Branch');
 const AppError = require('../utils/AppError');
 const Helpers = require('../utils/helpers');
 const {
+  buildOnlineBranchCandidateIds,
   collectUniqueBranchIds,
   deductInventoryAllocation,
+  getBranchAvailableQuantity,
+  getOnlineFulfillmentSettings,
   resolveInventoryAllocation,
 } = require('../utils/inventoryAllocation');
 const {
@@ -87,7 +91,7 @@ class InvoiceService {
       if (session) customerQuery.session(session);
       const customer = await customerQuery;
 
-      const tenantQuery = Tenant.findById(tenantId).select('settings.shipping whatsapp');
+      const tenantQuery = Tenant.findById(tenantId).select('settings.shipping settings.onlineFulfillment whatsapp');
       if (session) tenantQuery.session(session);
       const tenant = await tenantQuery;
 
@@ -100,6 +104,32 @@ class InvoiceService {
       // Check if sales blocked for this customer
       if (customer.salesBlocked) {
         throw AppError.badRequest(`⛔ البيع ممنوع لهذا العميل: ${customer.salesBlockedReason || 'تم منع البيع'}`);
+      }
+
+      // --- SHIFT VALIDATION FOR POS ---
+      let activeShift = null;
+      if (!source || source === 'pos') {
+        const CashShift = require('../models/CashShift');
+        const shiftQuery = CashShift.findOne({
+          user: userId,
+          status: 'open',
+          tenant: tenantId
+        });
+        if (session) shiftQuery.session(session);
+        activeShift = await shiftQuery;
+
+        if (!activeShift) {
+          throw AppError.badRequest('يجب فتح وردية أولاً قبل إجراء عملية بيع');
+        }
+
+        // Lazy Auto-Close Check
+        if (activeShift.autoCloseAt && new Date() > activeShift.autoCloseAt) {
+          activeShift.status = 'closed';
+          activeShift.closedBySystem = true;
+          activeShift.endTime = activeShift.autoCloseAt;
+          await activeShift.save({ session });
+          throw AppError.badRequest('⛔ انتهى وقت الوردية تلقائياً. يرجى العودة لصفحة إدارة الورديات وفتح وردية جديدة.');
+        }
       }
 
       // Validate and prepare items (read stock without modifying yet)
@@ -116,8 +146,12 @@ class InvoiceService {
         user = await userQuery;
       }
 
-      const preferredBranchId = data.branchId || (user ? user.branch : null);
-      const strictPreferredBranch = Boolean(preferredBranchId);
+      const isOnlineFulfillmentSource = source === 'online_store' || source === 'portal';
+      const onlineFulfillmentSettings = getOnlineFulfillmentSettings(tenant);
+      const fallbackPreferredBranchId = isOnlineFulfillmentSource
+        ? null
+        : (data.branchId || (user ? user.branch : null));
+      const preparedItems = [];
 
       for (const item of items) {
         const productQuery = Product.findOne({
@@ -134,15 +168,76 @@ class InvoiceService {
         }
 
         const variant = item.variantId ? product.variants.id(item.variantId) : null;
+        preparedItems.push({
+          item,
+          product,
+          variant,
+          quantity: Math.max(1, Number(item.quantity) || 1),
+        });
+      }
+
+      let candidateBranchIds = [];
+      let forcedOnlineBranchId = null;
+
+      if (isOnlineFulfillmentSource) {
+        const branchQuery = Branch.find({
+          tenant: tenantId,
+          isActive: true,
+        }).select('_id participatesInOnlineOrders isFulfillmentCenter onlinePriority');
+        if (session) branchQuery.session(session);
+        const onlineBranches = await branchQuery;
+
+        candidateBranchIds = buildOnlineBranchCandidateIds({
+          tenant,
+          branches: onlineBranches,
+          source: source || 'online_store',
+          customerBranchId: customer?.branch || null,
+        });
+
+        if (candidateBranchIds.length === 0) {
+          throw AppError.badRequest('لا يوجد فرع مفعّل حاليًا لاستقبال طلبات المتجر أو البوابة');
+        }
+
+        if (!onlineFulfillmentSettings.allowMixedBranchOrders) {
+          forcedOnlineBranchId = candidateBranchIds.find((branchId) => (
+            preparedItems.every(({ product, variant, quantity }) => (
+              getBranchAvailableQuantity({
+                product,
+                variant,
+                branchId,
+                channel: 'online',
+              }) >= quantity
+            ))
+          )) || null;
+
+          if (!forcedOnlineBranchId) {
+            throw AppError.badRequest('لا يوجد فرع واحد قادر حاليًا على تنفيذ كامل الطلب من المخزون المتاح');
+          }
+        }
+      }
+
+      for (const { item, product, variant, quantity } of preparedItems) {
+        const effectiveCandidateBranchIds = isOnlineFulfillmentSource
+          ? (
+              forcedOnlineBranchId
+                ? [forcedOnlineBranchId]
+                : onlineFulfillmentSettings.allowCrossBranchOnlineAllocation
+                  ? candidateBranchIds
+                  : candidateBranchIds.slice(0, 1)
+            )
+          : [];
+        const preferredBranchId = forcedOnlineBranchId || fallbackPreferredBranchId;
         const stockAllocation = resolveInventoryAllocation({
           product,
           variant,
-          quantity: item.quantity,
+          quantity,
           preferredBranchId,
-          strictPreferredBranch,
+          strictPreferredBranch: Boolean(preferredBranchId),
+          candidateBranchIds: effectiveCandidateBranchIds,
+          channel: isOnlineFulfillmentSource ? 'online' : 'pos',
         });
 
-        if (stockAllocation.availableQuantity < item.quantity) {
+        if (stockAllocation.availableQuantity < quantity) {
           throw AppError.badRequest(
             `الكمية المطلوبة من "${product.name}${variant ? ` - ${variant.sku}` : ''}" غير متوفرة (المتاح: ${stockAllocation.availableQuantity})`
           );
@@ -150,19 +245,20 @@ class InvoiceService {
 
         productsToUpdate.push({
           product,
-          quantity: item.quantity,
+          quantity,
           branchId: stockAllocation.branchId,
           variantId: item.variantId,
         });
 
         const itemPrice = (variant && variant.price) ? variant.price : product.price;
-        const totalPrice = itemPrice * item.quantity;
+        const totalPrice = itemPrice * quantity;
         subtotal += totalPrice;
-        totalProfit += (itemPrice - (product.cost || 0)) * item.quantity;
+        totalProfit += (itemPrice - (product.cost || 0)) * quantity;
 
         invoiceItems.push({
           product: product._id,
           variant: item.variantId,
+          allocatedBranch: stockAllocation.branchId || null,
           productName: product.name,
           sku: variant ? variant.sku : product.sku,
           barcode: variant?.internationalBarcode || variant?.barcode || product.internationalBarcode || product.barcode,
@@ -170,7 +266,7 @@ class InvoiceService {
           internationalBarcodeType: variant?.internationalBarcodeType || product.internationalBarcodeType || undefined,
           localBarcode: variant?.localBarcode || product.localBarcode,
           localBarcodeType: variant?.localBarcodeType || product.localBarcodeType,
-          quantity: item.quantity,
+          quantity,
           unitPrice: itemPrice,
           totalPrice,
         });
@@ -285,6 +381,7 @@ class InvoiceService {
         invoiceNumber: Helpers.generateInvoiceNumber(),
         customer: customer._id,
         createdBy: userId,
+        shift: activeShift ? activeShift._id : undefined,
         items: invoiceItems,
         subtotal,
         discount: discountAmount,

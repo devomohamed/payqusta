@@ -14,6 +14,7 @@ const Invoice = require('../../src/models/Invoice');
 const Notification = require('../../src/models/Notification');
 const ReturnRequest = require('../../src/models/ReturnRequest');
 const SupportMessage = require('../../src/models/SupportMessage');
+const Branch = require('../../src/models/Branch');
 
 const api = createApiClient();
 const describeDb = hasDbTestEnv() ? describe : describe.skip;
@@ -59,6 +60,33 @@ const createProduct = async (tenant, overrides = {}) => Product.create({
   images: [],
   ...overrides,
 });
+
+const createBranch = async (tenant, overrides = {}) => Branch.create({
+  tenant: tenant._id,
+  name: `Branch ${Date.now()}-${Math.round(Math.random() * 1000)}`,
+  phone: `010${Math.floor(10000000 + Math.random() * 89999999)}`,
+  branchType: 'store',
+  participatesInOnlineOrders: false,
+  isFulfillmentCenter: false,
+  onlinePriority: 100,
+  pickupEnabled: true,
+  shippingOrigin: {
+    governorate: 'Cairo',
+    city: 'Cairo',
+    area: 'Nasr City',
+    addressLine: 'Test address',
+    postalCode: '11511',
+  },
+  ...overrides,
+});
+
+const getBranchInventoryQuantity = (product, branchId) => {
+  const row = (product.inventory || []).find(
+    (entry) => entry.branch?.toString() === branchId.toString()
+  );
+
+  return row ? row.quantity : 0;
+};
 
 const createCustomer = async (tenant, overrides = {}) => Customer.create({
   tenant: tenant._id,
@@ -208,6 +236,114 @@ describeDb('Portal storefront DB-backed E2E', () => {
     expect(trackingRes.body.data.customer.phone).toBe('01022334455');
   });
 
+  it('routes storefront online deduction to the configured fulfillment branch and persists line allocation', async () => {
+    const preferredBranch = await createBranch(await createTenant({
+      settings: {
+        shipping: {
+          enabled: false,
+          provider: 'local',
+          supportsCashOnDelivery: true,
+          baseFee: 0,
+        },
+        onlineFulfillment: {
+          mode: 'default_branch',
+          allowCrossBranchOnlineAllocation: true,
+          allowMixedBranchOrders: false,
+        },
+      },
+    }), {
+      name: 'Default Online Branch',
+      participatesInOnlineOrders: true,
+      isFulfillmentCenter: true,
+      onlinePriority: 1,
+    });
+
+    const tenant = await Tenant.findById(preferredBranch.tenant);
+    const fallbackBranch = await createBranch(tenant, {
+      name: 'Fallback Online Branch',
+      participatesInOnlineOrders: true,
+      isFulfillmentCenter: false,
+      onlinePriority: 2,
+    });
+
+    tenant.settings.onlineFulfillment = {
+      mode: 'default_branch',
+      defaultOnlineBranchId: preferredBranch._id,
+      branchPriorityOrder: [preferredBranch._id, fallbackBranch._id],
+      allowCrossBranchOnlineAllocation: true,
+      allowMixedBranchOrders: false,
+    };
+    await tenant.save();
+
+    const product = await createProduct(tenant, {
+      name: 'Branch-routed Guest Product',
+      sku: `ALLOC-${Math.round(Math.random() * 100000)}`,
+      stock: {
+        quantity: 8,
+        minQuantity: 1,
+        unit: 'piece',
+      },
+      inventory: [
+        { branch: preferredBranch._id, quantity: 5, minQuantity: 1 },
+        { branch: fallbackBranch._id, quantity: 3, minQuantity: 1 },
+      ],
+      branchAvailability: [
+        {
+          branch: preferredBranch._id,
+          isAvailableInBranch: true,
+          isSellableInPos: true,
+          isSellableOnline: true,
+          safetyStock: 1,
+          onlineReserveQty: 0,
+          priorityRank: 1,
+        },
+        {
+          branch: fallbackBranch._id,
+          isAvailableInBranch: true,
+          isSellableInPos: true,
+          isSellableOnline: true,
+          safetyStock: 0,
+          onlineReserveQty: 0,
+          priorityRank: 2,
+        },
+      ],
+    });
+    const guestCustomer = await createGuestCustomer(tenant, {
+      name: 'Allocated Guest Buyer',
+      phone: '01022334466',
+      address: '11 Fulfillment Road',
+    });
+
+    const checkoutRes = await api
+      .post('/api/v1/invoices')
+      .set('x-tenant-id', tenant._id.toString())
+      .send({
+        source: 'online_store',
+        customerId: guestCustomer._id,
+        paymentMethod: 'cash',
+        items: [{ productId: product._id.toString(), quantity: 2 }],
+        shippingAddress: {
+          fullName: 'Allocated Guest Buyer',
+          phone: '01022334466',
+          address: '11 Fulfillment Road',
+          city: 'Giza',
+          governorate: 'Giza',
+        },
+      });
+
+    expect(checkoutRes.statusCode).toBe(201);
+    expect(checkoutRes.body.success).toBe(true);
+
+    const storedInvoice = await Invoice.findById(checkoutRes.body.data._id).lean();
+    const storedProduct = await Product.findById(product._id).lean();
+
+    expect(storedInvoice.branch?.toString()).toBe(preferredBranch._id.toString());
+    expect(storedInvoice.items).toHaveLength(1);
+    expect(storedInvoice.items[0].allocatedBranch?.toString()).toBe(preferredBranch._id.toString());
+    expect(getBranchInventoryQuantity(storedProduct, preferredBranch._id)).toBe(3);
+    expect(getBranchInventoryQuantity(storedProduct, fallbackBranch._id)).toBe(3);
+  });
+
   it('lets a portal customer cancel an eligible order and reorder its available items', async () => {
     const tenant = await createTenant();
     const product = await createProduct(tenant, {
@@ -275,6 +411,129 @@ describeDb('Portal storefront DB-backed E2E', () => {
     expect(reorderRes.body.data.items).toHaveLength(1);
     expect(reorderRes.body.data.items[0].product._id.toString()).toBe(product._id.toString());
     expect(reorderRes.body.data.items[0].quantity).toBe(2);
+  });
+
+  it('prefers the customer branch for portal orders and restores the same branch inventory on cancel', async () => {
+    const tenant = await createTenant({
+      settings: {
+        shipping: {
+          enabled: false,
+          provider: 'local',
+          supportsCashOnDelivery: true,
+          baseFee: 0,
+        },
+        onlineFulfillment: {
+          mode: 'customer_branch',
+          allowCrossBranchOnlineAllocation: true,
+          allowMixedBranchOrders: false,
+        },
+      },
+    });
+    const customerBranch = await createBranch(tenant, {
+      name: 'Customer Branch',
+      participatesInOnlineOrders: true,
+      isFulfillmentCenter: false,
+      onlinePriority: 2,
+    });
+    const defaultBranch = await createBranch(tenant, {
+      name: 'Default Branch',
+      participatesInOnlineOrders: true,
+      isFulfillmentCenter: true,
+      onlinePriority: 1,
+    });
+
+    tenant.settings.onlineFulfillment = {
+      mode: 'customer_branch',
+      defaultOnlineBranchId: defaultBranch._id,
+      branchPriorityOrder: [defaultBranch._id, customerBranch._id],
+      allowCrossBranchOnlineAllocation: true,
+      allowMixedBranchOrders: false,
+    };
+    await tenant.save();
+
+    const product = await createProduct(tenant, {
+      name: 'Customer Branch Product',
+      sku: `CUST-BR-${Math.round(Math.random() * 100000)}`,
+      stock: {
+        quantity: 10,
+        minQuantity: 1,
+        unit: 'piece',
+      },
+      inventory: [
+        { branch: customerBranch._id, quantity: 4, minQuantity: 1 },
+        { branch: defaultBranch._id, quantity: 6, minQuantity: 1 },
+      ],
+      branchAvailability: [
+        {
+          branch: customerBranch._id,
+          isAvailableInBranch: true,
+          isSellableInPos: true,
+          isSellableOnline: true,
+          safetyStock: 0,
+          onlineReserveQty: 0,
+          priorityRank: 2,
+        },
+        {
+          branch: defaultBranch._id,
+          isAvailableInBranch: true,
+          isSellableInPos: true,
+          isSellableOnline: true,
+          safetyStock: 0,
+          onlineReserveQty: 0,
+          priorityRank: 1,
+        },
+      ],
+    });
+    const customer = await createCustomer(tenant, {
+      name: 'Branch-pref Customer',
+      phone: '01099881122',
+      branch: customerBranch._id,
+    });
+
+    const token = await portalLogin(tenant._id, customer.phone);
+
+    const checkoutRes = await api
+      .post('/api/v1/portal/cart/checkout')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        items: [{ productId: product._id.toString(), quantity: 2 }],
+        paymentMethod: 'cash',
+        shippingAddress: {
+          fullName: 'Branch-pref Customer',
+          phone: '01099881122',
+          address: '21 Branch Street',
+          city: 'Cairo',
+          governorate: 'Cairo',
+        },
+      });
+
+    expect(checkoutRes.statusCode).toBe(201);
+    expect(checkoutRes.body.success).toBe(true);
+
+    const orderId = checkoutRes.body.data.orderId;
+    const allocatedInvoice = await Invoice.findById(orderId).lean();
+    let storedProduct = await Product.findById(product._id).lean();
+
+    expect(allocatedInvoice.branch?.toString()).toBe(customerBranch._id.toString());
+    expect(allocatedInvoice.items[0].allocatedBranch?.toString()).toBe(customerBranch._id.toString());
+    expect(getBranchInventoryQuantity(storedProduct, customerBranch._id)).toBe(2);
+    expect(getBranchInventoryQuantity(storedProduct, defaultBranch._id)).toBe(6);
+
+    const cancelRes = await api
+      .post(`/api/v1/portal/orders/${orderId.toString()}/cancel`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
+
+    expect(cancelRes.statusCode).toBe(200);
+    expect(cancelRes.body.success).toBe(true);
+
+    const cancelledInvoice = await Invoice.findById(orderId).lean();
+    storedProduct = await Product.findById(product._id).lean();
+
+    expect(cancelledInvoice.orderStatus).toBe('cancelled');
+    expect(cancelledInvoice.inventoryRestoredAt).toBeTruthy();
+    expect(getBranchInventoryQuantity(storedProduct, customerBranch._id)).toBe(4);
+    expect(getBranchInventoryQuantity(storedProduct, defaultBranch._id)).toBe(6);
   });
 
   it('lets a portal customer create return/support requests and lets staff manage them end-to-end', async () => {

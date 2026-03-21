@@ -47,7 +47,7 @@ const StaffPerformancePage = () => {
     };
 
     const PerformanceCard = ({ staff, rank }) => (
-        <Card className="hover:shadow-lg transition-all duration-300 border-2 border-transparent hover:border-indigo-500 overflow-hidden group">
+        <Card className="app-surface-muted overflow-hidden border-2 border-transparent transition-all duration-300 group hover:border-indigo-500 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg">
             <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -78,14 +78,14 @@ const StaffPerformancePage = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <div className="app-surface rounded-xl p-3">
                         <p className="text-[10px] text-gray-500 mb-1">حمولة التحصيل</p>
                         <div className="flex items-center justify-between">
                             <span className="font-bold text-sm">%{Math.round((staff.stats.collected / (staff.stats.sales || 1)) * 100)}</span>
                             <Activity className="w-3 h-3 text-indigo-500" />
                         </div>
                     </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50">
+                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-900/20">
                         <p className="text-[10px] text-blue-500 mb-1">العمولة الـمـقدرة</p>
                         <div className="flex items-center justify-between">
                             <span className="font-bold text-sm text-blue-600">{staff.stats.commissionEarned.toLocaleString('ar-EG')} ج.م</span>
@@ -129,10 +129,10 @@ const StaffPerformancePage = () => {
     );
 
     return (
-        <div className="space-y-6 animate-fade-in p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-6 animate-fade-in p-6 app-text-soft">
+            <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/20">
+                    <div className="app-surface flex h-14 w-14 items-center justify-center rounded-3xl text-indigo-600 dark:text-indigo-300">
                         <Trophy className="w-7 h-7 text-white" />
                     </div>
                     <div>
@@ -142,7 +142,7 @@ const StaffPerformancePage = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div className="app-surface flex items-center gap-2 rounded-2xl p-2">
                         <Calendar className="w-4 h-4 text-gray-400" />
                         <input
                             type="date"
@@ -178,7 +178,7 @@ const StaffPerformancePage = () => {
                             </div>
                         </Card>
 
-                        <Card className="p-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                        <Card className="app-surface-muted p-6">
                             <h4 className="text-gray-400 text-xs font-bold mb-1">العمولات المستحقة</h4>
                             <div className="text-3xl font-black text-gray-900 dark:text-white">{summary?.totalCommission.toLocaleString('ar-EG')} ج.م</div>
                             <div className="mt-4 flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 w-fit px-3 py-1.5 rounded-full">
@@ -187,7 +187,7 @@ const StaffPerformancePage = () => {
                             </div>
                         </Card>
 
-                        <Card className="p-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                        <Card className="app-surface-muted p-6">
                             <h4 className="text-gray-400 text-xs font-bold mb-1">متوسط نشاط الموظف</h4>
                             <div className="text-3xl font-black text-gray-900 dark:text-white">
                                 {Math.round(performance.reduce((s, p) => s + p.stats.actionCount, 0) / (performance.length || 1))} عملية

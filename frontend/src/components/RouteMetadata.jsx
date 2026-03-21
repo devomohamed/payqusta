@@ -5,15 +5,19 @@ import {
   getStorefrontBasePath,
   isStorefrontSubdomainHost,
 } from '../utils/storefrontHost';
-import { publicPageMeta } from '../publicSite/content';
+import { brandSearchAliases, publicPageMeta } from '../publicSite/content';
 import { seoLandingMeta } from '../publicSite/seoLandingPages';
 import { applySeoMetadata } from '../utils/seo';
 
 const PLATFORM_NAME = 'PayQusta';
-const PLATFORM_ARABIC_NAME = 'بيكوستا';
-const PLATFORM_DISPLAY_NAME = 'PayQusta | بيكوستا';
 const PRIMARY_PUBLIC_ORIGIN = 'https://payqusta.store';
 const PLATFORM_DESCRIPTION = 'PayQusta بيكوستا منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد.';
+const PLATFORM_KEYWORDS = [
+  ...brandSearchAliases,
+  'منصة إدارة المبيعات',
+  'برنامج مخزون وفواتير',
+  'منصة متجر إلكتروني',
+];
 
 function normalizePath(pathname = '/') {
   if (!pathname) return '/';
@@ -54,6 +58,9 @@ export default function RouteMetadata() {
     const socialImage = `${PRIMARY_PUBLIC_ORIGIN}/hero-banner.png`;
     const publicCanonicalUrl = pathname === '/' ? publicRootUrl : `${PRIMARY_PUBLIC_ORIGIN}${pathname}`;
     const publicMeta = publicPageMeta[pathname] || seoLandingMeta[pathname];
+    const pageKeywords = Array.isArray(publicMeta?.keywords) && publicMeta.keywords.length > 0
+      ? publicMeta.keywords
+      : PLATFORM_KEYWORDS;
 
     if (publicMeta && !(pathname === '/' && isAuthenticated)) {
       applySeoMetadata({
@@ -61,6 +68,7 @@ export default function RouteMetadata() {
         description: publicMeta.description,
         robots: 'index,follow',
         canonical: publicCanonicalUrl,
+        keywords: pageKeywords,
         openGraph: {
           title: publicMeta.title,
           description: publicMeta.description,
@@ -78,7 +86,7 @@ export default function RouteMetadata() {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: PLATFORM_NAME,
-            alternateName: [PLATFORM_ARABIC_NAME, PLATFORM_DISPLAY_NAME],
+            alternateName: brandSearchAliases,
             url: publicRootUrl,
             logo: logoUrl,
             image: [logoUrl, socialImage],
@@ -88,7 +96,7 @@ export default function RouteMetadata() {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: PLATFORM_NAME,
-            alternateName: [PLATFORM_ARABIC_NAME, PLATFORM_DISPLAY_NAME],
+            alternateName: brandSearchAliases,
             url: publicRootUrl,
             description: PLATFORM_DESCRIPTION,
             image: logoUrl,
@@ -98,7 +106,7 @@ export default function RouteMetadata() {
               '@context': 'https://schema.org',
               '@type': 'SoftwareApplication',
               name: PLATFORM_NAME,
-              alternateName: [PLATFORM_ARABIC_NAME, PLATFORM_DISPLAY_NAME],
+              alternateName: brandSearchAliases,
               url: publicRootUrl,
               applicationCategory: 'BusinessApplication',
               operatingSystem: 'Web',
@@ -134,6 +142,7 @@ export default function RouteMetadata() {
         description,
         robots: shouldNoindex ? 'noindex,nofollow' : 'index,follow',
         canonical: shouldNoindex ? null : currentUrl,
+        keywords: PLATFORM_KEYWORDS,
         openGraph: {
           title,
           description,
@@ -166,6 +175,7 @@ export default function RouteMetadata() {
       description: PLATFORM_DESCRIPTION,
       robots: 'noindex,nofollow',
       canonical: null,
+      keywords: PLATFORM_KEYWORDS,
       openGraph: {
         title: PLATFORM_NAME,
         description: PLATFORM_DESCRIPTION,

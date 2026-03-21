@@ -11,6 +11,7 @@ module.exports = {
     SUPPLIER: 'supplier',
     CUSTOMER: 'customer',
     COORDINATOR: 'coordinator',
+    CASHIER: 'cashier',
   },
 
   // Customer Tiers

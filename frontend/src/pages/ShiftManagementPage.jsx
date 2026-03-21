@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Clock, DollarSign, X, PlayCircle, StopCircle, History, TrendingUp, ShoppingBag, Wallet } from 'lucide-react';
-import { api } from '../store';
+import { Clock, DollarSign, X, PlayCircle, StopCircle, History, TrendingUp, ShoppingBag, Wallet, Banknote } from 'lucide-react';
+import { api, useShiftStore } from '../store';
 import toast from 'react-hot-toast';
 import { EmptyState, LoadingSpinner } from '../components/UI';
 
 const fmt = (n) => Number(n || 0).toLocaleString('ar-EG');
 
 export default function ShiftManagementPage() {
+    const { fetchCurrentShift: syncHeaderWidget } = useShiftStore();
     const [currentShift, setCurrentShift] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,6 +23,20 @@ export default function ShiftManagementPage() {
     const [actualCash, setActualCash] = useState('');
     const [closeNotes, setCloseNotes] = useState('');
     const [closeLoading, setCloseLoading] = useState(false);
+    const [denominations, setDenominations] = useState({
+        '200': '', '100': '', '50': '', '20': '', '10': '', '5': '', '1': ''
+    });
+
+    const totalFromDenominations = Object.entries(denominations).reduce((acc, [bill, count]) => {
+        return acc + (parseInt(bill) * (parseInt(count) || 0));
+    }, 0);
+
+    useEffect(() => {
+        if (totalFromDenominations > 0) {
+            setActualCash(totalFromDenominations.toString());
+        }
+    }, [totalFromDenominations]);
+
 
     useEffect(() => { fetchCurrent(); }, []);
 
@@ -50,6 +65,7 @@ export default function ShiftManagementPage() {
             setCurrentShift(res.data.data);
             setOpeningBalance('');
             toast.success('✅ تم فتح الوردية بنجاح');
+            syncHeaderWidget(); // Sync header widget
         } catch (err) { toast.error(err.response?.data?.message || 'خطأ في فتح الوردية'); }
         finally { setOpenLoading(false); }
     };
@@ -61,7 +77,9 @@ export default function ShiftManagementPage() {
             setCurrentShift(null);
             setShowCloseModal(false);
             setActualCash(''); setCloseNotes('');
+            setDenominations({ '200': '', '100': '', '50': '', '20': '', '10': '', '5': '', '1': '' });
             toast.success('✅ تم إغلاق الوردية بنجاح');
+            syncHeaderWidget(); // Sync header widget
             if (showHistory) fetchHistory();
         } catch (err) { toast.error(err.response?.data?.message || 'خطأ في إغلاق الوردية'); }
         finally { setCloseLoading(false); }
@@ -234,8 +252,8 @@ export default function ShiftManagementPage() {
             {/* Close Shift Modal */}
             {showCloseModal && currentShift && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl">
-                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                    <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
                             <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                                 <StopCircle className="w-5 h-5 text-red-500" />
                                 إغلاق الوردية
@@ -244,41 +262,76 @@ export default function ShiftManagementPage() {
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
-                        <div className="p-5 space-y-4" dir="rtl">
-                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 space-y-1 text-sm">
-                                <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">النقدية الافتتاحية</span><span className="font-bold">{fmt(currentShift.openingBalance)} ج.م</span></div>
-                                <div className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">إجمالي المبيعات</span><span className="font-bold text-green-600">+{fmt(currentShift.currentSales)} ج.م</span></div>
-                                <div className="border-t border-blue-200 dark:border-blue-700 pt-1 flex justify-between font-bold">
-                                    <span>المتوقع في الدرج</span>
-                                    <span className="text-primary-600">{fmt(currentShift.expectedNow)} ج.م</span>
+                        
+                        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto" dir="rtl">
+                            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20 space-y-2 text-sm shadow-sm">
+                                <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">الرصيد الافتتاحي</span><span className="font-extrabold text-blue-700 dark:text-blue-400">{fmt(currentShift.openingBalance)} ج.م</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">المبيعات النقدية (+)</span><span className="font-extrabold text-emerald-600 dark:text-emerald-400">+{fmt(currentShift.currentSales)} ج.م</span></div>
+                                <div className="border-t border-blue-200 dark:border-blue-700/50 pt-2 flex justify-between items-center font-black text-lg">
+                                    <span className="text-gray-700 dark:text-gray-200">الإجمالي المتوقع</span>
+                                    <span className="text-primary-600 dark:text-primary-400">{fmt(currentShift.expectedNow)} ج.م</span>
                                 </div>
                             </div>
+
+                            {/* Reconciliation Assistant */}
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                <h4 className="text-xs font-black text-gray-500 mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                                    <Banknote className="w-3.5 h-3.5" /> مساعد جرد الخزينة (اختياري)
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[200, 100, 50, 20, 10, 5, 1].map(val => (
+                                        <div key={val} className="flex items-center gap-2 bg-white dark:bg-gray-900 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                                            <span className="text-[10px] font-black text-gray-400 w-8 text-center">{val} ج</span>
+                                            <input 
+                                                type="number" min="0" 
+                                                value={denominations[val.toString()]}
+                                                onChange={(e) => setDenominations(p => ({ ...p, [val.toString()]: e.target.value }))}
+                                                className="w-full bg-transparent border-none p-0 text-center font-bold text-xs focus:ring-0"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    ))}
+                                    <div className="col-span-2 mt-1 py-1.5 bg-primary-50 dark:bg-primary-900/20 rounded-xl text-center">
+                                        <span className="text-[10px] font-bold text-gray-500">مجموع الجرد: </span>
+                                        <span className="text-sm font-black text-primary-600 dark:text-primary-400">{fmt(totalFromDenominations)} ج.م</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">النقدية الفعلية في الدرج</label>
-                                <input
-                                    type="number" min="0" value={actualCash}
-                                    onChange={(e) => setActualCash(e.target.value)}
-                                    placeholder="0"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                />
+                                <label className="block text-xs font-black text-gray-600 dark:text-gray-400 mb-2 mr-1">النقدية الفعلية (الموجودة حالياً)</label>
+                                <div className="relative">
+                                    <input
+                                        type="number" min="0" value={actualCash}
+                                        onChange={(e) => setActualCash(e.target.value)}
+                                        placeholder="0.00"
+                                        className="w-full px-4 py-3 bg-white dark:bg-gray-950 rounded-2xl border-2 border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white text-center text-2xl font-black focus:outline-none focus:border-red-500 transition-all shadow-inner"
+                                    />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-xs pointer-events-none uppercase">EGP</div>
+                                </div>
                                 {actualCash && (
-                                    <p className={`text-center text-xs mt-1 font-bold ${Number(actualCash) - currentShift.expectedNow < 0 ? 'text-red-600' : Number(actualCash) - currentShift.expectedNow > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
-                                        الفرق: {Number(actualCash) - currentShift.expectedNow >= 0 ? '+' : ''}{fmt(Number(actualCash) - currentShift.expectedNow)} ج.م
-                                    </p>
+                                    <div className={`mt-3 p-2.5 rounded-xl border-l-4 text-center transition-all animate-fade-in ${Number(actualCash) - currentShift.expectedNow < 0 ? 'bg-rose-50 border-rose-500 text-rose-700' : Number(actualCash) - currentShift.expectedNow > 0 ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-emerald-50 border-emerald-500 text-emerald-700'}`}>
+                                        <p className="text-[10px] font-bold opacity-80 mb-0.5">فرق التسوية النهائي</p>
+                                        <p className="font-black text-sm" dir="ltr">
+                                            {Number(actualCash) - currentShift.expectedNow > 0 ? '+' : ''}{fmt(Number(actualCash) - currentShift.expectedNow)} ج.م
+                                        </p>
+                                    </div>
                                 )}
                             </div>
+
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">ملاحظات (اختياري)</label>
-                                <textarea rows={2} value={closeNotes} onChange={(e) => setCloseNotes(e.target.value)} placeholder="أي ملاحظات عن الوردية..."
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
+                                <label className="block text-[10px] font-black text-gray-500 mb-1.5 mr-1 uppercase">ملاحظات إضافية</label>
+                                <textarea rows={2} value={closeNotes} onChange={(e) => setCloseNotes(e.target.value)} placeholder="أي ملاحظات عن العجز أو الزيادة..."
+                                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-medium" />
                             </div>
-                            <div className="flex gap-3">
-                                <button onClick={() => setShowCloseModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition">إلغاء</button>
-                                <button onClick={handleClose} disabled={closeLoading}
-                                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition disabled:opacity-50 flex items-center justify-center gap-2">
-                                    {closeLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><StopCircle className="w-4 h-4" />تأكيد الإغلاق</>}
-                                </button>
-                            </div>
+                        </div>
+
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex gap-3">
+                            <button onClick={() => setShowCloseModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-bold text-sm hover:bg-white dark:hover:bg-gray-800 transition shadow-sm">إلغاء</button>
+                            <button onClick={handleClose} disabled={closeLoading}
+                                className="flex-[2] py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 active:scale-[0.98]">
+                                {closeLoading ? <LoadingSpinner size="sm" /> : <><StopCircle className="w-5 h-5 fill-current" />إغلاق وتصفية الوردية</>}
+                            </button>
                         </div>
                     </div>
                 </div>

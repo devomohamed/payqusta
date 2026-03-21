@@ -627,3 +627,57 @@ export const reviewsApi = {
   delete: (id) => api.delete(`/reviews/${id}`),
   getProductReviews: (productId, params) => api.get(`/reviews/product/${productId}`, { params }),
 };
+
+// Cash Shifts API
+export const cashShiftsApi = {
+  getCurrent: () => api.get('/cash-shifts/current'),
+  open: (data) => api.post('/cash-shifts/open', data),
+  close: (data) => api.post('/cash-shifts/close', data),
+  getHistory: (params) => api.get('/cash-shifts/history', { params }),
+};
+
+// ========== SHIFT STORE ==========
+export const useShiftStore = create((set, get) => ({
+  activeShift: null,
+  loading: false,
+  error: null,
+
+  fetchCurrentShift: async () => {
+    // Only fetch if authenticated
+    if (!useAuthStore.getState().isAuthenticated) return;
+    
+    set({ loading: true, error: null });
+    try {
+      const { data } = await cashShiftsApi.getCurrent();
+      set({ activeShift: data.data || null, loading: false });
+    } catch (error) {
+      set({ error: error?.response?.data?.message || 'Failed to load shift', loading: false });
+    }
+  },
+
+  openShift: async (openingBalance) => {
+    set({ loading: true, error: null });
+    try {
+      const { data } = await cashShiftsApi.open({ openingBalance });
+      set({ activeShift: data.data, loading: false });
+      return data;
+    } catch (error) {
+      set({ error: error?.response?.data?.message || 'Failed to open shift', loading: false });
+      throw error;
+    }
+  },
+
+  closeShift: async (actualCash, notes) => {
+    set({ loading: true, error: null });
+    try {
+      const { data } = await cashShiftsApi.close({ actualCash, notes });
+      set({ activeShift: null, loading: false });
+      return data;
+    } catch (error) {
+      set({ error: error?.response?.data?.message || 'Failed to close shift', loading: false });
+      throw error;
+    }
+  },
+
+  clearShift: () => set({ activeShift: null })
+}));

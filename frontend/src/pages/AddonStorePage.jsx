@@ -47,7 +47,7 @@ export default function AddonStorePage() {
   if (loading) return <LoadingSpinner size="lg" text="جاري تحميل الإضافات..." />;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 lg:p-6">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 lg:p-6 app-text-soft">
       <div className="flex flex-col justify-between gap-4 rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white shadow-xl md:flex-row md:items-end md:p-10">
         <div className="max-w-2xl">
           <div className="mb-4 inline-flex items-center justify-center rounded-xl bg-white/20 p-2 backdrop-blur-sm">
@@ -76,7 +76,7 @@ export default function AddonStorePage() {
             return (
               <div
                 key={addon._id}
-                className="flex flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                className="app-surface flex flex-col rounded-3xl border border-gray-100/80 dark:border-white/10 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <div className="mb-4 flex items-start justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 dark:bg-purple-900/30">

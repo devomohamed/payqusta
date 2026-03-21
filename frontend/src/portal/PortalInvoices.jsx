@@ -74,7 +74,7 @@ export default function PortalInvoices() {
   const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
 
   return (
-    <div className="space-y-4 pb-20" dir={i18n.dir()}>
+    <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -92,7 +92,7 @@ export default function PortalInvoices() {
             onClick={() => setStatusFilter(f.value)}
             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${statusFilter === f.value
               ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+              : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-100/80 dark:border-white/10'
               }`}
           >
             {f.label}
@@ -119,7 +119,7 @@ export default function PortalInvoices() {
               <div
                 key={inv._id}
                 onClick={() => openDetails(inv._id)}
-                className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 sm:p-5 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:shadow-md hover:border-primary-200 dark:hover:border-primary-700 transition-all"
+                className="app-surface rounded-2xl border border-gray-100/80 p-4 shadow-sm transition-all cursor-pointer hover:shadow-md hover:border-primary-200 dark:border-white/10 dark:hover:border-primary-700 sm:p-5"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3">
                   <div>
@@ -135,7 +135,7 @@ export default function PortalInvoices() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700">
+                <div className="app-surface-muted grid grid-cols-1 gap-0 overflow-hidden rounded-xl divide-y divide-gray-200/80 dark:divide-white/10 sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
                   <div className="text-center p-3">
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">{t('invoices.total')}</p>
                     <p className="font-bold text-sm text-gray-900 dark:text-white">{inv.totalAmount?.toLocaleString()}</p>
@@ -168,7 +168,7 @@ export default function PortalInvoices() {
           <button
             onClick={() => loadInvoices(pagination.page - 1, statusFilter)}
             disabled={pagination.page <= 1}
-            className="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-40"
+            className="app-surface rounded-xl border border-gray-100/80 p-2 disabled:opacity-40 dark:border-white/10"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -178,7 +178,7 @@ export default function PortalInvoices() {
           <button
             onClick={() => loadInvoices(pagination.page + 1, statusFilter)}
             disabled={pagination.page >= pagination.pages}
-            className="p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 disabled:opacity-40"
+            className="app-surface rounded-xl border border-gray-100/80 p-2 disabled:opacity-40 dark:border-white/10"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -189,7 +189,7 @@ export default function PortalInvoices() {
       {(selectedInvoice || detailsLoading) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center" onClick={() => !detailsLoading && setSelectedInvoice(null)}>
           <div
-            className="bg-white dark:bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
+            className="app-surface w-full max-h-[85vh] overflow-y-auto rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {detailsLoading ? (
@@ -199,7 +199,7 @@ export default function PortalInvoices() {
             ) : selectedInvoice && (
               <>
                 {/* Modal Header */}
-                <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-4 flex items-start justify-between gap-3 z-10">
+                <div className="app-surface sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-gray-100/80 p-4 dark:border-white/10">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white">
                     {t('invoices.invoice_num', { num: selectedInvoice.invoiceNumber })}
                   </h3>
@@ -214,7 +214,7 @@ export default function PortalInvoices() {
                       <Download className="w-4 h-4" />
                       PDF
                     </button>
-                    <button onClick={() => setSelectedInvoice(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <button onClick={() => setSelectedInvoice(null)} className="app-surface-muted p-2 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
                       <X className="w-5 h-5 text-gray-500" />
                     </button>
                   </div>
@@ -223,25 +223,25 @@ export default function PortalInvoices() {
                 <div className="p-4 space-y-4">
                   {/* Summary */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                    <div className="app-surface-muted rounded-xl p-3">
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.date')}</p>
                       <p className="font-bold text-gray-900 dark:text-white text-sm mt-1">
                         {new Date(selectedInvoice.date).toLocaleDateString(locale)}
                       </p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                    <div className="app-surface-muted rounded-xl p-3">
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.status')}</p>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold mt-1 ${(statusConfig[selectedInvoice.status] || statusConfig.pending).color}`}>
                         {t(`invoices.statuses.${(statusConfig[selectedInvoice.status] || statusConfig.pending).key}`)}
                       </span>
                     </div>
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3">
+                    <div className="rounded-xl bg-green-50 p-3 dark:bg-green-900/20">
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.paid_amount')}</p>
                       <p className="font-bold text-green-600 dark:text-green-400 text-sm mt-1">
                         {selectedInvoice.paidAmount?.toLocaleString()} {currency}
                       </p>
                     </div>
-                    <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
+                    <div className="rounded-xl bg-red-50 p-3 dark:bg-red-900/20">
                       <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.remaining')}</p>
                       <p className="font-bold text-red-600 dark:text-red-400 text-sm mt-1">
                         {selectedInvoice.remainingAmount?.toLocaleString()} {currency}
@@ -268,11 +268,11 @@ export default function PortalInvoices() {
                   {/* Items Table */}
                   <div>
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm">{t('invoices.products')}</h4>
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden">
+                    <div className="app-surface-muted rounded-xl overflow-hidden">
                       <div className="overflow-x-auto">
                       <table className="w-full min-w-[580px] text-sm">
                         <thead>
-                          <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <tr className="border-b border-gray-200/80 dark:border-white/10">
                             <th className="text-right p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.product')}</th>
                             <th className="text-center p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.quantity')}</th>
                             <th className="text-center p-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{t('invoices.price')}</th>
@@ -281,7 +281,7 @@ export default function PortalInvoices() {
                         </thead>
                         <tbody>
                           {selectedInvoice.items?.map((item, idx) => (
-                            <tr key={idx} className="border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+                            <tr key={idx} className="border-b border-gray-100/80 dark:border-white/10 last:border-0">
                               <td className="p-3 font-medium text-gray-900 dark:text-white">{item.productName || item.product?.name || '-'}</td>
                               <td className="p-3 text-center text-gray-600 dark:text-gray-400">{item.quantity}</td>
                               <td className="p-3 text-center text-gray-600 dark:text-gray-400">{item.price?.toLocaleString()}</td>
@@ -306,7 +306,7 @@ export default function PortalInvoices() {
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr className="bg-gray-100 dark:bg-gray-700/50">
+                          <tr className="app-surface">
                             <td colSpan="3" className="p-3 font-bold text-gray-900 dark:text-white">{t('invoices.total')}</td>
                             <td className="p-3 text-left font-black text-primary-600 dark:text-primary-400">{selectedInvoice.totalAmount?.toLocaleString()} {currency}</td>
                           </tr>
@@ -331,7 +331,7 @@ export default function PortalInvoices() {
                               ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
                               : inst.status === 'overdue'
                                 ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
-                                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                                : 'app-surface border-gray-100/80 dark:border-white/10'
                               }`}
                           >
                             <div>
@@ -359,7 +359,7 @@ export default function PortalInvoices() {
 
                   {/* Notes */}
                   {selectedInvoice.notes && (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl p-3 border border-yellow-200 dark:border-yellow-800">
+                    <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/10">
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('invoices.notes')}</p>
                       <p className="text-sm text-gray-700 dark:text-gray-300">{selectedInvoice.notes}</p>
                     </div>
@@ -374,20 +374,20 @@ export default function PortalInvoices() {
       {/* Payment Modal — Gateway based */}
       {payModalOpen && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+          <div className="app-surface w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-100/80 p-4 dark:border-white/10">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-primary-500" />
                 سداد الفاتورة #{selectedInvoice.invoiceNumber}
               </h3>
-              <button onClick={() => setPayModalOpen(false)} disabled={payLoading} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+              <button onClick={() => setPayModalOpen(false)} disabled={payLoading} className="app-surface-muted p-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
               {/* Amount summary */}
-              <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl p-3 text-center">
+              <div className="rounded-xl bg-primary-50 p-3 text-center dark:bg-primary-900/20">
                 <p className="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي</p>
                 <p className="text-2xl font-black text-primary-600 dark:text-primary-400">
                   {selectedInvoice.remainingAmount?.toLocaleString('ar-EG')} ج.م
@@ -409,7 +409,7 @@ export default function PortalInvoices() {
                       onClick={() => setPayMethod(g.id)}
                       className={`p-3 rounded-xl border-2 text-right transition-all ${payMethod === g.id
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                        : 'border-gray-100/80 dark:border-white/10 hover:border-primary-300'
                         }`}
                     >
                       <div className="text-2xl mb-1">{g.icon}</div>
@@ -457,8 +457,8 @@ export default function PortalInvoices() {
       {/* Return Request Modal */}
       {returnItem && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+          <div className="app-surface w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100/80 p-4 dark:border-white/10">
               <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                 <RefreshCcw className="w-5 h-5 text-primary-500" />
                 {t('invoices.return_request')}
@@ -466,14 +466,14 @@ export default function PortalInvoices() {
               <button
                 onClick={() => setReturnItem(null)}
                 disabled={returnLoading}
-                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                className="app-surface-muted p-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+              <div className="app-surface-muted rounded-xl p-3">
                 <p className="font-bold text-gray-900 dark:text-white text-sm">{returnItem.productName || returnItem.product?.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('invoices.purchased_qty', { qty: returnItem.quantity })}</p>
               </div>
@@ -486,7 +486,7 @@ export default function PortalInvoices() {
                   max={returnItem.quantity}
                   value={returnQuantity}
                   onChange={(e) => setReturnQuantity(Math.min(parseInt(e.target.value) || 1, returnItem.quantity))}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                  className="app-surface w-full rounded-xl border border-transparent px-4 py-2 text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:text-white"
                 />
               </div>
 
@@ -495,7 +495,7 @@ export default function PortalInvoices() {
                 <select
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                  className="app-surface w-full rounded-xl border border-transparent px-4 py-2 text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:text-white"
                 >
                   <option value="defective">{t('invoices.reason_defective')}</option>
                   <option value="wrong_item">{t('invoices.reason_wrong')}</option>
@@ -511,7 +511,7 @@ export default function PortalInvoices() {
                   value={returnDesc}
                   onChange={(e) => setReturnDesc(e.target.value)}
                   placeholder={t('invoices.explain_issue')}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
+                  className="app-surface w-full resize-none rounded-xl border border-transparent px-4 py-2 text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:text-white"
                 />
               </div>
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShoppingCart, Search, Package, Clock,
-  LogOut, User, RotateCcw, FileText, Menu,
+  User, RotateCcw, FileText,
   LayoutGrid, Target, TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, api } from '../store';
-import { Button, Card, Input, Badge, LoadingSpinner, StatCard } from '../components/UI';
+import { Button, Card, Badge, LoadingSpinner } from '../components/UI';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -59,7 +59,7 @@ export default function BranchDashboardPage() {
   }, [branchId]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
@@ -130,7 +130,7 @@ export default function BranchDashboardPage() {
           </div>
 
           {/* Level & XP Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden">
+          <div className="app-surface rounded-2xl p-6 border border-gray-100/80 dark:border-white/10 shadow-sm relative overflow-hidden">
             <div className="text-center">
               <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center text-amber-500 font-black text-2xl mb-2 border-4 border-amber-50 dark:border-amber-900/40">
                 {stats?.gamification?.level || user?.gamification?.level || 1}
@@ -138,7 +138,7 @@ export default function BranchDashboardPage() {
               <h3 className="font-bold text-gray-800 dark:text-gray-100">بائع نشيط</h3>
               <p className="text-xs text-gray-400 mb-3">المستوى الحالي</p>
 
-              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-1">
+              <div className="mb-1 h-2 w-full rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
                 <div
                   className="bg-amber-500 h-full rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${Math.min(100, ((stats?.gamification?.points || user?.gamification?.points || 0) % 1000) / 10)}%` }}
@@ -157,28 +157,28 @@ export default function BranchDashboardPage() {
       </h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link to="/quick-sale" className="group p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-primary-500 transition-all flex flex-col items-center justify-center gap-3 text-center">
+        <Link to="/quick-sale" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-primary-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center group-hover:bg-primary-500 group-hover:text-white transition-colors text-primary-500">
             <ShoppingCart className="w-7 h-7" />
           </div>
           <span className="font-bold text-gray-700 dark:text-gray-300">نقطة البيع</span>
         </Link>
 
-        <Link to="/products" className="group p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-blue-500 transition-all flex flex-col items-center justify-center gap-3 text-center">
+        <Link to="/products" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors text-blue-500">
             <Package className="w-7 h-7" />
           </div>
           <span className="font-bold text-gray-700 dark:text-gray-300">المخزون والمنتجات</span>
         </Link>
 
-        <Link to="/invoices" className="group p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-emerald-500 transition-all flex flex-col items-center justify-center gap-3 text-center">
+        <Link to="/invoices" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-emerald-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-emerald-500 transition-colors text-emerald-500">
             <FileText className="w-7 h-7" />
           </div>
           <span className="font-bold text-gray-700 dark:text-gray-300">الفواتير السابقة</span>
         </Link>
 
-        <Link to="/returns-management" className="group p-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-amber-500 transition-all flex flex-col items-center justify-center gap-3 text-center">
+        <Link to="/returns-management" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-amber-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors text-amber-500">
             <RotateCcw className="w-7 h-7" />
           </div>
@@ -202,9 +202,9 @@ export default function BranchDashboardPage() {
           ) : stats?.recentInvoices?.length > 0 ? (
             <div className="space-y-3">
               {stats.recentInvoices.slice(0, 5).map((inv, index) => (
-                <div key={inv._id || index} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 transition-colors">
+                <div key={inv._id || index} className="app-surface-muted flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center shadow-sm">
+                    <div className="app-surface flex h-10 w-10 items-center justify-center rounded-lg shadow-sm">
                       <FileText className="w-5 h-5 text-gray-500" />
                     </div>
                     <div>
@@ -235,19 +235,19 @@ export default function BranchDashboardPage() {
             معلومات الموظف
           </h3>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+            <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
               <span className="text-gray-500 text-sm">الاسم</span>
               <span className="font-bold">{user?.name}</span>
             </div>
-            <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+            <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
               <span className="text-gray-500 text-sm">الدور الوظيفي</span>
               <Badge variant="primary">{user?.role === 'vendor' ? 'موظف مبيعات' : user?.role}</Badge>
             </div>
-            <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+            <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
               <span className="text-gray-500 text-sm">الفرع الحالي</span>
               <span className="font-bold">{user?.branch?.name || 'الفرع الرئيسي'}</span>
             </div>
-            <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+            <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
               <span className="text-gray-500 text-sm">وقت الدخول</span>
               <span className="font-bold font-mono">{format(new Date(), 'hh:mm a', { locale: ar })}</span>
             </div>

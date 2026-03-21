@@ -1,99 +1,150 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Store, User, MessageCircle, Tag, CreditCard, Palette, Users, Globe
+  Store,
+  User,
+  MessageCircle,
+  CreditCard,
+  Palette,
+  Users,
+  Globe,
 } from 'lucide-react';
 import { useThemeStore, useAuthStore } from '../store';
 import { LoadingSpinner } from '../components/UI';
+import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
-// Lazy load all settings components to improve performance
 const SettingsStore = lazy(() => import('../components/settings/SettingsStore'));
 const SettingsProfile = lazy(() => import('../components/settings/SettingsProfile'));
 const SettingsWhatsApp = lazy(() => import('../components/settings/SettingsWhatsApp'));
 const SettingsInstallments = lazy(() => import('../components/settings/SettingsInstallments'));
 const SettingsUsers = lazy(() => import('../components/settings/SettingsUsers'));
 const SettingsWhiteLabel = lazy(() => import('../components/settings/SettingsWhiteLabel'));
+const SettingsSystem = lazy(() => import('../components/settings/SettingsSystem'));
 
-// Settings tabs configuration
 const ALL_TABS = [
-  { id: 'store', label: 'المتجر', icon: Store, color: 'primary', adminOnly: true }, // Only for admin
-  { id: 'profile', label: 'حسابي', icon: User, color: 'emerald', adminOnly: false },
-  { id: 'users', label: 'المستخدمين', icon: Users, color: 'blue', adminOnly: true }, // Only for admin
-  { id: 'whatsapp', superOnly: true, label: 'واتساب', icon: MessageCircle, color: 'green', adminOnly: true }, // Changed to adminOnly
-  { id: 'installments', label: 'الأقساط', icon: CreditCard, color: 'blue', adminOnly: true },
-  { id: 'whitelabel', label: 'المظهر والهوية البصرية', icon: Palette, color: 'violet', adminOnly: true },
+  { id: 'store', label: 'المتجر', icon: Store, adminOnly: true },
+  { id: 'profile', label: 'حسابي', icon: User, adminOnly: false },
+  { id: 'users', label: 'المستخدمون', icon: Users, adminOnly: true },
+  { id: 'whatsapp', label: 'واتساب', icon: MessageCircle, adminOnly: true, superOnly: true },
+  { id: 'installments', label: 'الأقساط', icon: CreditCard, adminOnly: true },
+  { id: 'whitelabel', label: 'المظهر والهوية البصرية', icon: Palette, adminOnly: true },
+  { id: 'system', label: 'معلومات النظام', icon: Globe, adminOnly: false },
 ];
 
 export default function SettingsPage() {
-  const { dark, toggleTheme } = useThemeStore();
+  const { dark, themeMode } = useThemeStore();
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter tabs based on user role
-  const TABS = ALL_TABS.filter((tab) => {
+  const tabs = ALL_TABS.filter((tab) => {
     if (tab.superOnly && !user?.isSuperAdmin) return false;
     if (tab.adminOnly && !(user?.role === 'admin' || user?.isSuperAdmin)) return false;
     return true;
   });
 
-  const defaultTab = TABS.length > 0 ? TABS[0].id : 'profile';
+  const defaultTab = tabs.length > 0 ? tabs[0].id : 'profile';
   const urlTab = searchParams.get('tab');
-  const activeTab = (urlTab && TABS.some(t => t.id === urlTab)) ? urlTab : defaultTab;
+  const activeTab = (urlTab && tabs.some((tab) => tab.id === urlTab)) ? urlTab : defaultTab;
+  const currentThemeLabel = themeMode === 'system' ? 'تلقائي' : themeMode === 'dark' ? 'داكن' : 'فاتح';
+  const currentThemeDescription =
+    themeMode === 'system'
+      ? `المنصة تتبع إعدادات الجهاز الآن على الوضع ${dark ? 'الداكن' : 'الفاتح'}.`
+      : themeMode === 'dark'
+        ? 'مظهر مريح للعين مع أسطح أهدأ وتباين أعلى.'
+        : 'مظهر واضح ومضيء مناسب لبيئات العمل اليومية.';
 
   const setActiveTab = (id) => setSearchParams({ tab: id });
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'store': return <SettingsStore />;
-      case 'profile': return <SettingsProfile />;
-      case 'users': return <SettingsUsers />;
-      case 'whatsapp': return <SettingsWhatsApp />;
-      case 'installments': return <SettingsInstallments />;
-      case 'whitelabel': return <SettingsWhiteLabel />;
-      default: return null;
+      case 'store':
+        return <SettingsStore />;
+      case 'profile':
+        return <SettingsProfile />;
+      case 'users':
+        return <SettingsUsers />;
+      case 'whatsapp':
+        return <SettingsWhatsApp />;
+      case 'installments':
+        return <SettingsInstallments />;
+      case 'whitelabel':
+        return <SettingsWhiteLabel />;
+      case 'system':
+        return <SettingsSystem />;
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]">
-      {/* Sidebar Navigation for Settings */}
-      <div className="w-full lg:w-64 flex-shrink-0">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden sticky top-6">
-          <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="font-bold text-lg">الإعدادات</h2>
+    <div className="space-y-6">
+      <section className="app-surface rounded-[1.75rem] p-5 sm:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-2xl">
+            <p className="app-text-muted text-xs font-black uppercase tracking-[0.18em]">التفضيلات العامة</p>
+            <h1 className="mt-2 text-2xl font-black text-gray-900 dark:text-white">الإعدادات وتجربة العرض</h1>
+            <p className="app-text-soft mt-2 text-sm leading-7">
+              نظّم طريقة ظهور المنصة للمستخدمين ووحّد تجربة الدارك مود واللايت مود عبر النظام كله.
+            </p>
           </div>
-          <nav className="p-2 space-y-1">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              // Hardcoded colors for now to match original styles roughly
-              const colorClass = isActive
-                ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800';
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${colorClass}`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-primary-500' : 'text-gray-400'}`} />
-                  <span className="font-medium">{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+          <div className="app-surface-muted rounded-2xl p-4 text-right xl:max-w-sm">
+            <p className="app-text-muted text-xs font-black uppercase tracking-[0.18em]">الوضع الحالي</p>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-lg font-black text-gray-900 dark:text-white">{currentThemeLabel}</p>
+                <p className="app-text-soft mt-1 text-sm leading-6">{currentThemeDescription}</p>
+              </div>
+              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ${dark ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-white text-primary-600'}`}>
+                <Palette className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 min-w-0 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 overflow-y-auto">
-        <Suspense fallback={<LoadingSpinner text="جاري التحميل..." />}>
-          {renderTabContent()}
-        </Suspense>
+        <div className="mt-5 border-t border-gray-200/70 pt-5 dark:border-white/10">
+          <ThemeModeSwitcher />
+        </div>
+      </section>
+
+      <div className="flex min-h-[calc(100vh-240px)] flex-col gap-6 lg:h-[calc(100vh-240px)] lg:flex-row">
+        <div className="w-full flex-shrink-0 lg:w-72">
+          <div className="app-surface sticky top-6 h-full overflow-hidden rounded-[1.75rem]">
+            <div className="border-b border-gray-200/70 p-4 dark:border-white/10">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">الإعدادات</h2>
+            </div>
+
+            <nav className="space-y-1.5 p-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                const colorClass = isActive
+                  ? 'bg-primary-50 text-primary-600 shadow-sm ring-1 ring-primary-200/70 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-500/20'
+                  : 'app-text-soft hover:bg-gray-50 dark:hover:bg-white/5';
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right transition-all ${colorClass}`}
+                  >
+                    <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isActive ? 'bg-white text-primary-600 dark:bg-primary-500/10 dark:text-primary-300' : 'app-surface-muted app-text-muted'}`}>
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="font-bold">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        <div className="app-surface min-w-0 flex-1 overflow-y-auto rounded-[1.75rem] p-6">
+          <Suspense fallback={<LoadingSpinner text="جاري التحميل..." />}>
+            {renderTabContent()}
+          </Suspense>
+        </div>
       </div>
     </div>
   );
 }
-
-

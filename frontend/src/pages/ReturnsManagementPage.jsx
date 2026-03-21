@@ -82,16 +82,16 @@ export default function ReturnsManagementPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+      <div className="app-surface-muted flex flex-col items-start justify-between gap-4 rounded-3xl p-4 sm:flex-row sm:items-center sm:p-5">
         <div>
           <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             <RefreshCcw className="w-6 h-6 text-orange-500" /> إدارة المرتجعات
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">مراجعة طلبات المرتجعات من العملاء</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+        <button onClick={load} className="app-surface flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300">
           <RefreshCcw className="w-4 h-4" /> تحديث
         </button>
       </div>
@@ -107,7 +107,7 @@ export default function ReturnsManagementPage() {
           <button
             key={s.filter}
             onClick={() => setStatusFilter(statusFilter === s.filter ? '' : s.filter)}
-            className={`p-4 rounded-2xl text-center transition-all border-2 ${statusFilter === s.filter ? 'border-primary-500 shadow-md' : 'border-transparent'} ${s.color}`}
+            className={`rounded-2xl border p-4 text-center transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${statusFilter === s.filter ? 'border-primary-500 shadow-lg shadow-primary-500/10' : 'border-transparent'} ${s.color}`}
           >
             <p className="text-2xl font-black">{s.count}</p>
             <p className="text-xs font-bold mt-1 opacity-70">{s.label}</p>
@@ -122,7 +122,7 @@ export default function ReturnsManagementPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="بحث باسم العميل أو رقم الفاتورة..."
-          className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 outline-none transition"
+          className="app-surface w-full rounded-2xl border border-transparent py-2.5 pl-4 pr-10 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
         />
       </div>
 
@@ -134,11 +134,11 @@ export default function ReturnsManagementPage() {
           description={statusFilter ? 'لا توجد مرتجعات بهذه الحالة' : 'لم يتم استلام أي طلبات مرتجعات بعد'}
         />
       ) : (
-        <Card className="overflow-hidden border-0 shadow-lg shadow-gray-100/50 dark:shadow-none">
+        <Card className="overflow-hidden rounded-3xl">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-right">
               <thead>
-                <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                <tr className="border-b border-gray-100/80 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.03]">
                   <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">العميل</th>
                   <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">المنتج</th>
                   <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">الفاتورة</th>
@@ -149,9 +149,9 @@ export default function ReturnsManagementPage() {
                   <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400 text-center">إجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+              <tbody className="divide-y divide-gray-100/70 dark:divide-white/5">
                 {returns.map((ret) => (
-                  <tr key={ret._id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <tr key={ret._id} className="group transition-colors duration-200 hover:bg-primary-500/[0.03] dark:hover:bg-white/[0.03]">
                     <td className="px-5 py-4">
                       <div className="font-bold text-gray-800 dark:text-gray-200">{ret.customer?.name || '—'}</div>
                       <div className="text-xs text-gray-400">{ret.customer?.phone}</div>
@@ -161,7 +161,7 @@ export default function ReturnsManagementPage() {
                         {ret.product?.images?.[0] ? (
                           <img src={ret.product.images[0]} alt="" className="w-8 h-8 rounded-lg object-cover" />
                         ) : (
-                          <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                          <div className="app-surface-muted flex h-8 w-8 items-center justify-center rounded-lg">
                             <Package className="w-4 h-4 text-gray-400" />
                           </div>
                         )}
@@ -175,7 +175,7 @@ export default function ReturnsManagementPage() {
                     <td className="px-5 py-4"><StatusBadge status={ret.status} /></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => setSelected(ret)} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition" title="عرض التفاصيل">
+                        <button onClick={() => setSelected(ret)} className="rounded-xl bg-blue-50 p-2 text-blue-600 transition-all duration-200 hover:bg-blue-100 motion-safe:hover:-translate-y-0.5 dark:bg-blue-900/20" title="عرض التفاصيل">
                           <Eye className="w-4 h-4" />
                         </button>
                         {ret.status === 'pending' && (
@@ -183,14 +183,14 @@ export default function ReturnsManagementPage() {
                             <button
                               onClick={() => updateReturn(ret._id, 'approved')}
                               disabled={actionLoading}
-                              className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100 transition disabled:opacity-50"
+                              className="rounded-xl bg-green-50 p-2 text-green-600 transition-all duration-200 hover:bg-green-100 motion-safe:hover:-translate-y-0.5 disabled:opacity-50 dark:bg-green-900/20"
                               title="موافقة"
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setShowRejectModal(ret._id)}
-                              className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 transition"
+                              className="rounded-xl bg-red-50 p-2 text-red-500 transition-all duration-200 hover:bg-red-100 motion-safe:hover:-translate-y-0.5 dark:bg-red-900/20"
                               title="رفض"
                             >
                               <XCircle className="w-4 h-4" />
@@ -201,7 +201,7 @@ export default function ReturnsManagementPage() {
                           <button
                             onClick={() => updateReturn(ret._id, 'completed')}
                             disabled={actionLoading}
-                            className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition disabled:opacity-50"
+                            className="rounded-xl bg-blue-50 p-2 text-blue-600 transition-all duration-200 hover:bg-blue-100 motion-safe:hover:-translate-y-0.5 disabled:opacity-50 dark:bg-blue-900/20"
                             title="إكمال واستلام المرتجع"
                           >
                             <Package className="w-4 h-4" />
@@ -211,7 +211,7 @@ export default function ReturnsManagementPage() {
                           <button
                             onClick={() => updateReturn(ret._id, 'completed')}
                             disabled={actionLoading}
-                            className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100 transition disabled:opacity-50"
+                            className="rounded-xl bg-emerald-50 p-2 text-emerald-600 transition-all duration-200 hover:bg-emerald-100 motion-safe:hover:-translate-y-0.5 disabled:opacity-50 dark:bg-emerald-900/20"
                             title="معالجة الاسترداد"
                           >
                             <RefreshCcw className="w-4 h-4" />
@@ -266,19 +266,19 @@ export default function ReturnsManagementPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+              <div className="app-surface-muted rounded-2xl p-4">
                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-2 flex items-center gap-1"><User className="w-3 h-3" /> العميل</h4>
                 <p className="font-bold">{selected.customer?.name}</p>
                 <p className="text-xs text-gray-400 mt-1">{selected.customer?.phone}</p>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+              <div className="app-surface-muted rounded-2xl p-4">
                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-2 flex items-center gap-1"><Package className="w-3 h-3" /> المنتج</h4>
                 <p className="font-bold">{selected.product?.name}</p>
                 <p className="text-xs text-gray-400 mt-1">الكمية: {selected.quantity}</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+            <div className="app-surface-muted rounded-2xl p-4">
               <h4 className="font-bold text-xs text-gray-400 uppercase mb-2">سبب الإرجاع</h4>
               <p className="font-bold text-orange-600">{REASON_LABELS[selected.reason]}</p>
               {selected.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{selected.description}</p>}
@@ -346,7 +346,7 @@ export default function ReturnsManagementPage() {
             value={rejectNotes}
             onChange={(e) => setRejectNotes(e.target.value)}
             placeholder="سبب الرفض..."
-            className="w-full p-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm resize-none h-24 focus:border-red-400 outline-none"
+            className="app-surface h-24 w-full resize-none rounded-2xl border border-transparent p-3 text-sm outline-none transition-all duration-200 focus:border-red-400 focus:ring-4 focus:ring-red-500/10"
           />
           <div className="flex gap-3">
             <button
@@ -358,7 +358,7 @@ export default function ReturnsManagementPage() {
             </button>
             <button
               onClick={() => { setShowRejectModal(null); setRejectNotes(''); }}
-              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-sm hover:bg-gray-200 transition"
+              className="app-surface flex-1 rounded-xl py-3 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300"
             >
               إلغاء
             </button>

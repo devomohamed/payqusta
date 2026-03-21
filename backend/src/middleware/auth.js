@@ -8,59 +8,12 @@ const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
-
-const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
-  .trim()
-  .toLowerCase();
-const RESERVED_PLATFORM_SUBDOMAINS = new Set(
-  (process.env.RESERVED_PLATFORM_SUBDOMAINS || 'www,api,admin,app,portal,mail')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean)
-);
-
-const getRequestHost = (req) => {
-  const forwardedHost = req.headers['x-forwarded-host'];
-  const rawHost = forwardedHost || req.headers.host || '';
-  return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
-};
-
-const getPlatformSubdomain = (host) => {
-  if (!host || !PLATFORM_ROOT_DOMAIN) return null;
-  if (host === PLATFORM_ROOT_DOMAIN) return null;
-
-  const suffix = `.${PLATFORM_ROOT_DOMAIN}`;
-  if (!host.endsWith(suffix)) return null;
-
-  const candidate = host.slice(0, -suffix.length);
-  if (!candidate || candidate.includes('.')) return null;
-  if (RESERVED_PLATFORM_SUBDOMAINS.has(candidate)) return null;
-
-  return candidate;
-};
-
-const isPlatformHost = (host) => {
-  if (!host) return true;
-  return host === 'localhost' ||
-    host === '127.0.0.1' ||
-    host === PLATFORM_ROOT_DOMAIN ||
-    !!getPlatformSubdomain(host) ||
-    host.endsWith('.run.app') ||
-    host.endsWith('.a.run.app');
-};
-
-const markCustomDomainConnected = (Tenant, tenantId) => {
-  if (!tenantId) return;
-  Tenant.updateOne(
-    { _id: tenantId },
-    {
-      $set: {
-        customDomainStatus: 'connected',
-        customDomainLastCheckedAt: new Date(),
-      },
-    }
-  ).catch(() => { });
-};
+const {
+  getPlatformSubdomain,
+  getRequestHost,
+  isPlatformHost,
+  markCustomDomainConnected,
+} = require('../utils/tenantDomainHelpers');
 
 const safeTokenEquals = (providedToken, expectedToken) => {
   if (!providedToken || !expectedToken) return false;
@@ -94,8 +47,10 @@ const protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await User.findById(decoded.id).select('+password');
+    // Find user and populate branch
+    const user = await User.findById(decoded.id)
+      .select('+password')
+      .populate('branch', 'name');
     if (!user) {
       return next(AppError.unauthorized('المستخدم غير موجود'));
     }
@@ -205,6 +160,16 @@ const tenantScope = (req, res, next) => {
   }
 
   next();
+};
+
+/**
+ * Check if user is an admin or vendor
+ */
+const isAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'vendor' || req.user.isSuperAdmin)) {
+    return next();
+  }
+  return next(AppError.forbidden('غير مصرح لك بالوصول - للمديرين فقط'));
 };
 
 /**
@@ -335,5 +300,4 @@ const auditLog = (action, resource) => {
   };
 };
 
-module.exports = { protect, protectOps, authorize, tenantScope, publicTenantScope, auditLog };
-
+module.exports = { protect, protectOps, authorize, isAdmin, tenantScope, publicTenantScope, auditLog };

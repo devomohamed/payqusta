@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight, PauseCircle, PlayCircle, Printer, Download, Hash, Sparkles, Barcode } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Check, Truck, MessageCircle, Send, AlertTriangle, Scan, X as XIcon, CheckSquare, Square, Tag, Clock, AlertCircle, ChevronDown, ChevronRight, PauseCircle, PlayCircle, Printer, Download, Hash, Sparkles, Barcode, FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -11,177 +11,27 @@ import BarcodeScanner from '../components/BarcodeScanner';
 import ProductDetailModal from '../components/ProductDetailModal';
 import ProductSearchModal from '../components/ProductSearchModal';
 import ProductComposer from '../components/products/ProductComposer';
+import ProductImportModal from '../components/ProductImportModal';
 import { confirm } from '../components/ConfirmDialog';
 import { formatFileSize, optimizeImageFilesForUpload } from '../utils/imageUpload';
 import { resolveMediaUrl } from '../utils/media';
 import { buildBarcodeSvg, downloadBarcodePng, printBarcodeLabel, resolveBarcodePayload } from '../utils/barcodeUtils';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
+import {
+  MAX_PRODUCT_IMAGES,
+  buildProductDraftStorageKey,
+  buildProductRecoveryStorageKey,
+  createDraftId,
+  createEmptyProductForm,
+  getPricingValidationErrors,
+  normalizeBranchAvailabilityPayload,
+  normalizeDraftEntries,
+  normalizeInventoryPayload,
+  sanitizeFormForDraft,
+  toServerMediaPath,
+} from './productsPageHelpers';
 
 const CategoriesPage = lazy(() => import('./CategoriesPage'));
-const MAX_PRODUCT_IMAGES = 10;
-
-const hasValue = (value) => value !== '' && value !== null && value !== undefined;
-
-const toFiniteNumber = (value) => {
-  if (!hasValue(value)) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const toServerMediaPath = (rawUrl) => {
-  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
-  const normalized = rawUrl.trim();
-  if (!normalized) return normalized;
-
-  if (normalized.startsWith('/uploads/')) return normalized;
-  if (normalized.startsWith('uploads/')) return `/${normalized}`;
-  if (normalized.startsWith('blob:') || normalized.startsWith('data:')) return normalized;
-
-  try {
-    const parsed = new URL(
-      normalized,
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
-    );
-    const pathWithQuery = `${parsed.pathname || ''}${parsed.search || ''}`;
-    if (!pathWithQuery) return normalized;
-
-    const uploadsIndex = pathWithQuery.indexOf('/uploads/');
-    if (uploadsIndex >= 0) {
-      return pathWithQuery.slice(uploadsIndex);
-    }
-
-    if (/^(https?:)?\/\//i.test(normalized)) {
-      return normalized;
-    }
-
-    return pathWithQuery;
-  } catch {
-    return normalized;
-  }
-};
-
-const getPricingValidationErrors = (pricingForm = {}, options = {}) => {
-  const { requireSalePrice = false } = options;
-  const errors = {};
-
-  const salePriceProvided = hasValue(pricingForm.price);
-  const salePrice = toFiniteNumber(pricingForm.price);
-  const compareAtPrice = toFiniteNumber(pricingForm.compareAtPrice);
-  const costPrice = toFiniteNumber(pricingForm.costPrice);
-  const wholesalePrice = toFiniteNumber(pricingForm.wholesalePrice);
-
-  if (requireSalePrice && !salePriceProvided) {
-    errors.price = 'price_required';
-  } else if (salePriceProvided && (salePrice === null || salePrice <= 0)) {
-    errors.price = 'price_positive';
-  }
-
-  if (compareAtPrice !== null && salePrice !== null && salePrice > 0 && compareAtPrice < salePrice) {
-    errors.compareAtPrice = 'compare_price_error';
-  }
-
-  if (costPrice !== null && salePrice !== null && salePrice > 0 && costPrice > salePrice) {
-    errors.costPrice = 'cost_price_error';
-  }
-
-  if (wholesalePrice !== null && salePrice !== null && salePrice > 0 && wholesalePrice > salePrice) {
-    errors.wholesalePrice = 'wholesale_price_error';
-  }
-
-  return errors;
-};
-
-const normalizeInventoryPayload = (rawInventory = []) => {
-  if (!Array.isArray(rawInventory)) return [];
-
-  return rawInventory
-    .map((item) => {
-      const branch = item?.branch?._id || item?.branch;
-      if (!branch) return null;
-
-      const quantity = Number(item?.quantity);
-      const minQuantity = Number(item?.minQuantity);
-
-      return {
-        branch: String(branch),
-        quantity: Number.isFinite(quantity) && quantity >= 0 ? quantity : 0,
-        minQuantity: Number.isFinite(minQuantity) && minQuantity >= 0 ? minQuantity : 5,
-      };
-    })
-    .filter(Boolean);
-};
-
-const createEmptyProductForm = () => ({
-  name: '',
-  sku: '',
-  barcode: '',
-  internationalBarcode: '',
-  internationalBarcodeType: 'UNKNOWN',
-  localBarcode: '',
-  localBarcodeType: 'CODE128',
-  generateBarcodeAfterCreate: true,
-  category: '',
-  subcategory: '',
-  price: '',
-  compareAtPrice: '',
-  costPrice: '',
-  wholesalePrice: '',
-  shippingCost: '',
-  isFreeShipping: false,
-  stock: '',
-  minStockAlert: '5',
-  description: '',
-  supplier: '',
-  expiryDate: '',
-  variants: [],
-  inventory: [],
-  primaryImagePreview: null,
-  seoTitle: '',
-  seoDescription: ''
-});
-
-const buildProductDraftStorageKey = (tenantId, userId) =>
-  `payqusta:product-drafts:${tenantId || 'default'}:${userId || 'default'}`;
-
-const buildProductRecoveryStorageKey = (tenantId, userId) =>
-  `payqusta:product-recovery:${tenantId || 'default'}:${userId || 'default'}`;
-
-const createDraftId = () => `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-const sanitizeFormForDraft = (rawForm = {}) => {
-  const normalized = { ...rawForm };
-  if (typeof normalized.primaryImagePreview === 'string' && normalized.primaryImagePreview.startsWith('blob:')) {
-    normalized.primaryImagePreview = null;
-  }
-  if (!Array.isArray(normalized.variants)) normalized.variants = [];
-  if (!Array.isArray(normalized.inventory)) normalized.inventory = [];
-  return normalized;
-};
-
-const normalizeDraftEntries = (parsed) => {
-  if (Array.isArray(parsed)) {
-    return parsed
-      .filter((entry) => entry && typeof entry === 'object' && entry.form)
-      .map((entry) => ({
-        id: entry.id || createDraftId(),
-        form: entry.form,
-        productImages: Array.isArray(entry.productImages) ? entry.productImages : [],
-        savedAt: entry.savedAt || new Date().toISOString(),
-      }));
-  }
-
-  // Backward compatibility: old single-draft format.
-  if (parsed && typeof parsed === 'object' && parsed.form) {
-    return [{
-      id: parsed.id || createDraftId(),
-      form: parsed.form,
-      productImages: Array.isArray(parsed.productImages) ? parsed.productImages : [],
-      savedAt: parsed.savedAt || new Date().toISOString(),
-    }];
-  }
-
-  return [];
-};
 
 export default function ProductsPage() {
   const { t } = useTranslation('admin');
@@ -216,6 +66,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [pendingImages, setPendingImages] = useState([]);
   const [stepErrors, setStepErrors] = useState({});
   const [recoveryDraftChecked, setRecoveryDraftChecked] = useState(false);
@@ -256,6 +107,21 @@ export default function ProductsPage() {
       (form.variants && form.variants.length > 0) ||
       pendingImages.length > 0;
   }, [showModal, form, pendingImages.length]);
+
+  const clearPendingImages = useCallback(() => {
+    setPendingImages((prev) => {
+      prev.forEach((file) => {
+        if (file?._previewUrl) {
+          URL.revokeObjectURL(file._previewUrl);
+        }
+      });
+      return [];
+    });
+  }, []);
+
+  useEffect(() => () => {
+    clearPendingImages();
+  }, [clearPendingImages]);
 
   const showBarcodeReadyToast = useCallback((product, { autoGenerated = false } = {}) => {
     const payload = resolveBarcodePayload(product, product?.localBarcode ? 'local' : 'international');
@@ -467,11 +333,11 @@ export default function ProductsPage() {
     setActiveDraftId(recoveryDraft.draftId || '');
     setForm({ ...createEmptyProductForm(), ...recoveryDraft.form });
     setProductImages(recoveryDraft.productImages);
-    setPendingImages([]);
+    clearPendingImages();
     setStepErrors({});
     setShowModal(true);
     toast.success('تم استعادة بيانات المنتج بعد إعادة تحميل الصفحة');
-  }, [editId, loadRecoveryDraftFromStorage, recoveryDraftChecked, showModal]);
+  }, [clearPendingImages, editId, loadRecoveryDraftFromStorage, recoveryDraftChecked, showModal]);
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
@@ -540,12 +406,13 @@ export default function ProductsPage() {
       expiryDate: prod.expiryDate ? prod.expiryDate.split('T')[0] : '',
       variants: prod.variants || [],
       inventory: normalizeInventoryPayload(prod.inventory || []),
+      branchAvailability: normalizeBranchAvailabilityPayload(prod.branchAvailability || []),
       primaryImagePreview: formatImageUrl(prod.thumbnail || prod.images?.[0] || null),
       seoTitle: prod.seoTitle || '',
       seoDescription: prod.seoDescription || ''
     });
     setProductImages((prod.images || []).map(formatImageUrl));
-    setPendingImages([]);
+    clearPendingImages();
     setStepErrors({});
     setShowModal(true);
   };
@@ -556,7 +423,7 @@ export default function ProductsPage() {
     setActiveDraftId('');
     setForm(createEmptyProductForm());
     setProductImages([]);
-    setPendingImages([]);
+    clearPendingImages();
     setStepErrors({});
     setShowModal(true);
   };
@@ -584,7 +451,7 @@ export default function ProductsPage() {
     setActiveDraftId(draft.id);
     setForm({ ...createEmptyProductForm(), ...draft.form });
     setProductImages(Array.isArray(draft.productImages) ? draft.productImages : []);
-    setPendingImages([]);
+    clearPendingImages();
     setStepErrors({});
     setShowModal(true);
     toast.success('تم فتح المنتج غير المستكمل');
@@ -669,11 +536,15 @@ export default function ProductsPage() {
       formData.append('stock[quantity]', form.stock || 0);
       formData.append('stock[minQuantity]', form.minStockAlert || 5);
       const normalizedInventory = normalizeInventoryPayload(form.inventory || []);
+      const normalizedBranchAvailability = normalizeBranchAvailabilityPayload(form.branchAvailability || []);
       if (normalizedInventory.length > 0) {
         formData.append('inventory', JSON.stringify(normalizedInventory));
       } else if ((user?.role === 'admin' || !!user?.isSuperAdmin) && tenant?._id) {
         // Admin users without explicit inventory fall back to main branch context.
         formData.append('branchId', String(tenant._id));
+      }
+      if (normalizedBranchAvailability.length > 0) {
+        formData.append('branchAvailability', JSON.stringify(normalizedBranchAvailability));
       }
       if (form.expiryDate) formData.append('expiryDate', form.expiryDate);
       if (form.seoTitle) formData.append('seoTitle', form.seoTitle);
@@ -829,7 +700,7 @@ export default function ProductsPage() {
       setEditId(null);
       setActiveDraftId('');
       setShowModal(false);
-      setPendingImages([]);
+      clearPendingImages();
       setProductImages([]);
       setStepErrors({});
       // Reset to page 1 after adding so the new product is visible immediately
@@ -890,19 +761,19 @@ export default function ProductsPage() {
     }
 
     setShowModal(false);
-    setPendingImages([]);
+    clearPendingImages();
     setStepErrors({});
     setActiveDraftId(draftId);
     setProductTab('incomplete');
     toast.success('تم حفظ المنتج كغير مستكمل');
-  }, [activeDraftId, editId, form, pendingImages.length, persistIncompleteDraft, productImages, t]);
+  }, [activeDraftId, clearPendingImages, editId, form, pendingImages.length, persistIncompleteDraft, productImages, t]);
 
   const handleComposerClose = () => {
     if (saving) return;
     clearRecoveryDraftFromStorage();
     setForm(createEmptyProductForm());
     setProductImages([]);
-    setPendingImages([]);
+    clearPendingImages();
     setStepErrors({});
     setEditId(null);
     setActiveDraftId('');
@@ -1032,6 +903,7 @@ export default function ProductsPage() {
       supplier: product.supplier?._id || product.supplier || ''
     });
     setShowProductSearch(false);
+    setShowModal(true); // Open the product composer after importing data
     toast.success(t('products.import_success'));
   };
 
@@ -1060,6 +932,39 @@ export default function ProductsPage() {
       return file;
     });
     setPendingImages(prev => [...prev, ...filesWithUrls]);
+    if (!form.primaryImagePreview && filesWithUrls[0]?._previewUrl) {
+      setForm(prev => ({
+        ...prev,
+        primaryImagePreview: prev.primaryImagePreview || filesWithUrls[0]._previewUrl,
+      }));
+    }
+  };
+
+  const handleComposerPendingImageReplace = (index, nextFile) => {
+    if (!nextFile) return;
+
+    setPendingImages(prev => {
+      if (!prev[index]) return prev;
+
+      const next = [...prev];
+      const previousFile = next[index];
+      const previousPreview = previousFile?._previewUrl || '';
+      const replacementFile = nextFile;
+      replacementFile._previewUrl = URL.createObjectURL(replacementFile);
+      next[index] = replacementFile;
+
+      if (previousPreview) {
+        URL.revokeObjectURL(previousPreview);
+        setForm(currentForm => ({
+          ...currentForm,
+          primaryImagePreview: currentForm.primaryImagePreview === previousPreview
+            ? replacementFile._previewUrl
+            : currentForm.primaryImagePreview,
+        }));
+      }
+
+      return next;
+    });
   };
 
   const handleComposerPrimarySelect = (imageUrl) => {
@@ -1072,22 +977,32 @@ export default function ProductsPage() {
       // urlOrIndex is the index of the pending file
       setPendingImages(prev => {
         const removed = prev[urlOrIndex];
+        const remainingPending = prev.filter((_, i) => i !== urlOrIndex);
         if (removed?._previewUrl) {
           // Clear primary preview if this image was selected as primary
           if (form.primaryImagePreview === removed._previewUrl) {
-            setForm(f => ({ ...f, primaryImagePreview: null }));
+            setForm(f => ({
+              ...f,
+              primaryImagePreview: remainingPending[0]?._previewUrl || productImages[0] || null,
+            }));
           }
           URL.revokeObjectURL(removed._previewUrl);
         }
-        return prev.filter((_, i) => i !== urlOrIndex);
+        return remainingPending;
       });
     } else {
       // type === 'existing', urlOrIndex is the image URL
       const imageUrl = urlOrIndex;
-      setProductImages(prev => prev.filter(img => img !== imageUrl));
-      if (form.primaryImagePreview === imageUrl) {
-        setForm(prev => ({ ...prev, primaryImagePreview: null }));
-      }
+      setProductImages(prev => {
+        const remainingExisting = prev.filter(img => img !== imageUrl);
+        if (form.primaryImagePreview === imageUrl) {
+          setForm(currentForm => ({
+            ...currentForm,
+            primaryImagePreview: remainingExisting[0] || pendingImages[0]?._previewUrl || null,
+          }));
+        }
+        return remainingExisting;
+      });
     }
   };
 
@@ -1141,7 +1056,7 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 app-text-soft">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -1166,6 +1081,10 @@ export default function ProductsPage() {
             <Search className="w-4 h-4" />
             {t('products.import_product')}
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowImportModal(true)}>
+            <FileSpreadsheet className="w-4 h-4" />
+            استيراد Excel
+          </Button>
           <Button onClick={openNew}>
             <Plus className="w-4 h-4" />
             {t('products.add_product')}
@@ -1174,7 +1093,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Tabs */}
-      <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar rounded-2xl border border-gray-200 dark:border-gray-700 p-1 bg-white dark:bg-gray-900">
+      <div className="app-surface flex w-full sm:w-auto overflow-x-auto no-scrollbar rounded-2xl p-1">
         <button
           onClick={() => setProductTab('active')}
           className={`flex-1 sm:flex-none whitespace-nowrap px-4 py-2 text-sm font-bold rounded-xl transition-colors ${productTab === 'active'
@@ -1206,7 +1125,7 @@ export default function ProductsPage() {
 
       {/* Filters */}
       {!isIncompleteTab && (
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="app-surface-muted flex flex-col gap-3 rounded-2xl p-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -1214,23 +1133,23 @@ export default function ProductsPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={t('products.search_placeholder')}
-              className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="app-surface w-full rounded-xl py-2.5 pr-10 pl-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <select
             value={stockFilter}
             onChange={e => setStockFilter(e.target.value)}
-            className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="app-surface w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
           >
             <option value="">{t('products.all_stock')}</option>
-            <option value="out">{t('products.out_of_stock')}</option>
-            <option value="low">{t('products.low_stock')}</option>
-            <option value="in">{t('products.available')}</option>
+            <option value="out_of_stock">{t('products.out_of_stock')}</option>
+            <option value="low_stock">{t('products.low_stock')}</option>
+            <option value="in_stock">{t('products.available')}</option>
           </select>
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
-            className="w-full sm:w-auto px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="app-surface w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
           >
             <option value="">{t('products.all_categories')}</option>
             {categories.map(cat => (
@@ -1242,7 +1161,7 @@ export default function ProductsPage() {
 
       {/* Bulk actions */}
       {!isIncompleteTab && selectedIds.length > 0 && (
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-200 dark:border-primary-800">
+        <div className="app-surface-muted flex flex-col items-start gap-3 rounded-xl border border-primary-200 p-3 dark:border-primary-800 sm:flex-row sm:items-center">
           <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
             {t('products.selected_count', { count: selectedIds.length })}
           </span>
@@ -1275,7 +1194,7 @@ export default function ProductsPage() {
 
               return (
                 <Card key={draft.id} className="overflow-hidden hover:shadow-lg transition-all duration-200">
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden p-[2px]">
+                  <div className="app-surface-muted aspect-square overflow-hidden p-[2px]">
                     {displayUrl ? (
                       <img
                         src={displayUrl}
@@ -1298,14 +1217,14 @@ export default function ProductsPage() {
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <button
                         onClick={() => openIncompleteDraft(draft.id)}
-                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 rounded-lg bg-primary-50 py-1.5 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/20"
                       >
                         <Edit className="w-3.5 h-3.5" />
                         استكمال
                       </button>
                       <button
                         onClick={() => handleDeleteIncompleteDraft(draft.id)}
-                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 rounded-lg bg-red-50 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         حذف
@@ -1363,7 +1282,7 @@ export default function ProductsPage() {
 
                   {/* Image */}
                   <div
-                    className="aspect-square bg-gray-100 dark:bg-gray-800 cursor-pointer overflow-hidden p-[2px]"
+                    className="app-surface-muted aspect-square cursor-pointer overflow-hidden p-[2px]"
                     onClick={() => { setSelectedProduct(prod); setShowDetailModal(true); }}
                   >
                     {displayUrl ? (
@@ -1413,7 +1332,7 @@ export default function ProductsPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                       <button
                         onClick={() => openEdit(prod)}
-                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 hover:bg-primary-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 rounded-lg bg-primary-50 py-1.5 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/20"
                       >
                         <Edit className="w-3.5 h-3.5" />
                         {t('products.edit')}
@@ -1429,15 +1348,15 @@ export default function ProductsPage() {
                             );
                             printBarcodeLabel({
                               svgMarkup,
-                              title: prod.name || 'Barcode Label',
-                              subtitle: payload.source === 'local' ? 'Local Barcode' : 'International Barcode',
+                              title: prod.name || 'ملصق باركود',
+                              subtitle: payload.source === 'local' ? 'باركود محلي' : 'باركود دولي',
                               caption: payload.value,
                             });
                           } else {
                             toast.error('لا يوجد باركود متاح لهذا المنتج');
                           }
                         }}
-                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-600 hover:bg-purple-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 rounded-lg bg-purple-50 py-1.5 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-100 dark:bg-purple-900/20"
                       >
                         <Barcode className="w-3.5 h-3.5" />
                         طباعة
@@ -1445,7 +1364,7 @@ export default function ProductsPage() {
                       <button
                         onClick={() => handleToggleSuspension(prod, !isSuspendedTab)}
                         disabled={togglingSuspendId === prod._id}
-                        className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${isSuspendedTab
+                        className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${isSuspendedTab
                           ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100'
                           : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 hover:bg-amber-100'
                           }`}
@@ -1459,7 +1378,7 @@ export default function ProductsPage() {
                       </button>
                       <button
                         onClick={() => handleDelete(prod._id)}
-                        className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100 transition-colors"
+                        className="flex items-center justify-center gap-1.5 rounded-lg bg-red-50 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         {t('products.delete')}
@@ -1500,6 +1419,7 @@ export default function ProductsPage() {
         pendingImages={pendingImages}
         maxImageCount={MAX_PRODUCT_IMAGES}
         onImagesChange={handleComposerImagesChange}
+        onPendingImageReplace={handleComposerPendingImageReplace}
         onPrimaryImageSelect={handleComposerPrimarySelect}
         onRemoveImage={handleComposerRemoveImage}
         onSubmit={handleSave}
@@ -1583,6 +1503,13 @@ export default function ProductsPage() {
         open={showProductSearch}
         onClose={() => setShowProductSearch(false)}
         onSelect={handleSelectFromSearch}
+      />
+
+      {/* Product Import Modal */}
+      <ProductImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={loadProducts}
       />
     </div>
   );

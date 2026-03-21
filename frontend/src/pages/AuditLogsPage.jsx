@@ -69,8 +69,8 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in p-6 app-text-soft">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <Shield className="w-6 h-6 text-white" />
@@ -82,8 +82,8 @@ export default function AuditLogsPage() {
         </div>
       </div>
 
-      <Card className="p-4 flex flex-wrap items-center gap-4">
-        <div className="flex-1 min-w-[200px] flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl p-2 border border-gray-200 dark:border-gray-700">
+      <Card className="app-surface-muted flex flex-wrap items-center gap-4 p-4">
+        <div className="app-surface flex min-w-[200px] flex-1 items-center gap-2 rounded-xl p-2">
           <Search className="w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -93,7 +93,7 @@ export default function AuditLogsPage() {
             onChange={(e) => setFilter(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 text-sm font-bold bg-gray-50 dark:bg-gray-800 p-2 rounded-xl border border-gray-100 dark:border-gray-700">
+        <div className="app-surface flex items-center gap-2 rounded-xl p-2 text-sm font-bold">
           <Calendar className="w-4 h-4 text-gray-400" />
           <input type="date" value={dateRange.from} onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })} className="bg-transparent border-none p-0 text-xs" />
           <span>-</span>
@@ -112,9 +112,9 @@ export default function AuditLogsPage() {
             </div>
           ) : (
             logs.map((log) => (
-              <Card key={log._id} className="p-0 hover:shadow-md transition-all border-none overflow-hidden">
+              <Card key={log._id} className="app-surface overflow-hidden border-none p-0 transition-all hover:shadow-md">
                 <div 
-                  className="p-4 flex items-start gap-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="flex cursor-pointer items-start gap-4 p-4 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   onClick={() => setExpandedLog(expandedLog === log._id ? null : log._id)}
                 >
                   <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${

@@ -4,17 +4,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { api } from '../store';
 import {
   Users,
   TrendingUp,
   DollarSign,
   MapPin,
-  Calendar,
-  Award,
-  AlertCircle
 } from 'lucide-react';
-import { api } from '../store';
-import { api } from '../store';
 import toast from 'react-hot-toast';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
 
@@ -67,9 +63,9 @@ const CollectorDashboard = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6 app-text-soft">
       {/* Header */}
-      <div>
+      <div className="app-surface-muted rounded-3xl p-5">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           لوحة المحصلين الميدانيين
         </h1>
@@ -85,15 +81,15 @@ const CollectorDashboard = () => {
             key={collector._id}
             onClick={() => setSelectedCollector(collector)}
             className={`
-              p-4 rounded-xl border-2 cursor-pointer transition
+              rounded-3xl border-2 p-4 cursor-pointer transition-all duration-200 motion-safe:hover:-translate-y-0.5
               ${selectedCollector?._id === collector._id
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                ? 'app-surface-muted border-primary-500/40 shadow-lg shadow-primary-500/10'
+                : 'app-surface border-transparent hover:border-primary-500/20'
               }
             `}
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+              <div className="app-surface-muted flex h-12 w-12 items-center justify-center rounded-full">
                 <Users className="text-blue-600" size={24} />
               </div>
               <div className="flex-1 min-w-0">
@@ -130,7 +126,7 @@ const CollectorDashboard = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Total Collected */}
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+            <div className="rounded-3xl bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <DollarSign size={32} className="opacity-80" />
                 <span className="text-green-100 text-sm">إجمالي التحصيل</span>
@@ -142,7 +138,7 @@ const CollectorDashboard = () => {
             </div>
 
             {/* Total Visits */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+            <div className="rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <MapPin size={32} className="opacity-80" />
                 <span className="text-blue-100 text-sm">إجمالي الزيارات</span>
@@ -154,7 +150,7 @@ const CollectorDashboard = () => {
             </div>
 
             {/* Success Rate */}
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+            <div className="rounded-3xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <TrendingUp size={32} className="opacity-80" />
                 <span className="text-purple-100 text-sm">معدل النجاح</span>
@@ -166,7 +162,7 @@ const CollectorDashboard = () => {
             </div>
 
             {/* Distance Traveled */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+            <div className="rounded-3xl bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <MapPin size={32} className="opacity-80" />
                 <span className="text-orange-100 text-sm">المسافة المقطوعة</span>
@@ -180,7 +176,7 @@ const CollectorDashboard = () => {
 
           {/* Today's Performance */}
           {stats.todayPerformance && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+            <div className="app-surface rounded-3xl p-6">
               <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
                 أداء اليوم
               </h3>
@@ -214,7 +210,7 @@ const CollectorDashboard = () => {
                       {stats.todayPerformance.targetProgress || 0}%
                     </p>
                     <div className="flex-1 mb-2">
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="h-2 w-full rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
                         <div
                           className="bg-purple-600 h-2 rounded-full transition-all"
                           style={{ width: `${Math.min(stats.todayPerformance.targetProgress || 0, 100)}%` }}
@@ -228,7 +224,7 @@ const CollectorDashboard = () => {
           )}
 
           {/* Collector Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+          <div className="app-surface rounded-3xl p-6">
             <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
               معلومات المحصل
             </h3>

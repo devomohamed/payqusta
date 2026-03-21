@@ -132,13 +132,13 @@ export default function PortalProducts() {
     const hasActiveFilters = stockFilter !== 'all' || priceFilter !== 'all' || sortBy !== 'latest';
 
     return (
-        <div className="pb-24 animate-fade-in space-y-6" dir={i18n.dir()}>
+        <div className="pb-24 animate-fade-in space-y-6 app-text-soft" dir={i18n.dir()}>
             {/* Header & Search */}
-            <div className="sticky top-0 z-20 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-md pt-4 pb-4 -mx-4 px-4 space-y-4">
+            <div className="app-surface-glass sticky top-0 z-20 -mx-4 space-y-4 px-4 pb-4 pt-4">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate(-1)}
-                        className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-800"
+                        className="app-surface flex h-10 w-10 items-center justify-center rounded-full shadow-sm"
                     >
                         <ArrowRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                     </button>
@@ -153,13 +153,13 @@ export default function PortalProducts() {
                             placeholder={t('products.search_placeholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-3.5 rtl:pr-12 rtl:pl-4 ltr:pl-12 ltr:pr-4 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all shadow-sm text-sm"
+                            className="app-surface w-full rounded-2xl border border-transparent py-3.5 text-sm shadow-sm outline-none transition-all focus:ring-2 focus:ring-primary-500/20 rtl:pr-12 rtl:pl-4 ltr:pl-12 ltr:pr-4"
                         />
                     </form>
                     <button
                         type="button"
                         onClick={() => setShowFilters((prev) => !prev)}
-                        className="w-12 h-12 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-700 relative"
+                        className="app-surface relative flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm"
                         aria-label={labels.filters}
                         title={labels.filters}
                     >
@@ -171,12 +171,12 @@ export default function PortalProducts() {
                 </div>
 
                 {showFilters && (
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-3 space-y-3">
+                    <div className="app-surface rounded-2xl border border-gray-100/80 p-3 space-y-3 dark:border-white/10">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <select
                                 value={stockFilter}
                                 onChange={(e) => setStockFilter(e.target.value)}
-                                className="h-10 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 text-sm"
+                                className="app-surface h-10 rounded-xl border border-transparent px-3 text-sm"
                             >
                                 <option value="all">{labels.stockAll}</option>
                                 <option value="in_stock">{labels.stockAvailable}</option>
@@ -185,7 +185,7 @@ export default function PortalProducts() {
                             <select
                                 value={priceFilter}
                                 onChange={(e) => setPriceFilter(e.target.value)}
-                                className="h-10 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 text-sm"
+                                className="app-surface h-10 rounded-xl border border-transparent px-3 text-sm"
                             >
                                 <option value="all">{labels.priceAll}</option>
                                 <option value="under_500">{labels.priceUnder500}</option>
@@ -195,7 +195,7 @@ export default function PortalProducts() {
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="h-10 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 text-sm"
+                                className="app-surface h-10 rounded-xl border border-transparent px-3 text-sm"
                             >
                                 <option value="latest">{labels.sortLatest}</option>
                                 <option value="price_asc">{labels.sortPriceLow}</option>
@@ -225,7 +225,7 @@ export default function PortalProducts() {
                         onClick={() => handleCategoryClick('')}
                         className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-colors ${!selectedCategory
                             ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
-                            : 'bg-white text-gray-600 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
+                            : 'app-surface text-gray-600 dark:text-gray-300 border border-gray-100/80 dark:border-white/10'
                             }`}
                     >
                         {labels.all}
@@ -236,7 +236,7 @@ export default function PortalProducts() {
                             onClick={() => handleCategoryClick(cat)}
                             className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-colors ${selectedCategory === cat
                                 ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
-                                : 'bg-white text-gray-600 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
+                                : 'app-surface text-gray-600 dark:text-gray-300 border border-gray-100/80 dark:border-white/10'
                                 }`}
                         >
                             {cat}
@@ -281,7 +281,7 @@ export default function PortalProducts() {
                                     loadProducts(page + 1, search, selectedCategory);
                                 }}
                                 disabled={loading}
-                                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                                className="app-surface border border-gray-100/80 px-6 py-3 rounded-xl text-sm font-bold text-gray-900 transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:text-white dark:hover:bg-white/[0.03] flex items-center gap-2"
                             >
                                 {loading ? <LoadingSpinner size="sm" /> : t('products.load_more')}
                                 {!loading && <ChevronDown className="w-4 h-4" />}

@@ -297,7 +297,7 @@ export default function InvoicesPage() {
   };
 
   const handlePrintDocument = async (invoiceSummary, type = 'receipt') => {
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=960,height=980');
+    const printWindow = window.open('', '_blank', 'width=960,height=980');
     if (!printWindow) {
       toast.error('المتصفح منع نافذة الطباعة');
       return;
@@ -356,9 +356,9 @@ export default function InvoicesPage() {
   const methodLabel = (m) => ({ cash: '💵 نقد', cash_on_delivery: '🚚 الدفع عند الاستلام', installment: '📅 أقساط', deferred: '⏳ آجل' }[m] || m);
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
           {/* Customer Search Box */}
           <div className="relative w-full sm:w-56">
@@ -368,7 +368,7 @@ export default function InvoicesPage() {
               placeholder="بحث باسم العميل أو رقمه..."
               value={customerSearch}
               onChange={(e) => setCustomerSearch(e.target.value)}
-              className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 transition-all outline-none"
+              className="app-surface w-full rounded-2xl border border-transparent py-2.5 pl-4 pr-10 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
             />
           </div>
 
@@ -377,7 +377,7 @@ export default function InvoicesPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 transition-all appearance-none cursor-pointer outline-none font-medium"
+              className="app-surface w-full cursor-pointer appearance-none rounded-2xl border border-transparent py-2.5 pl-4 pr-10 text-sm font-medium outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
             >
               <option value="">كل الفواتير</option>
               <option value="paid">✅ مدفوع بالكامل</option>
@@ -393,7 +393,7 @@ export default function InvoicesPage() {
           <select
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 transition-all appearance-none cursor-pointer outline-none font-medium"
+            className="app-surface w-full cursor-pointer appearance-none rounded-2xl border border-transparent px-4 py-2.5 text-sm font-medium outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
           >
             <option value="">🏢 كل الفروع</option>
             {(Array.isArray(branches) ? branches : []).map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
@@ -403,7 +403,7 @@ export default function InvoicesPage() {
         <button
           type="button"
           onClick={resetFilters}
-          className="w-full sm:w-auto px-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm hover:border-primary-500 transition-all"
+          className="app-surface-muted w-full rounded-2xl border border-transparent px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300 sm:w-auto"
         >
           إعادة الفلاتر
         </button>
@@ -425,42 +425,42 @@ export default function InvoicesPage() {
         />
       ) : (
         <>
-          <Card className="overflow-hidden border-0 shadow-lg shadow-gray-100/50 dark:shadow-none">
+          <Card className="overflow-hidden rounded-3xl">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] text-sm text-right">
                 <thead>
-                  <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">رقم الفاتورة</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">العميل</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">التاريخ</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">الفرع</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">الحالة</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">الإجمالي</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400">المتبقي</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-gray-400 text-center">الإجراءات</th>
+                  <tr className="border-b border-gray-100/80 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.03]">
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">رقم الفاتورة</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">العميل</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">التاريخ</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">الفرع</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">الحالة</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">الإجمالي</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90">المتبقي</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 dark:text-white/90 text-center">الإجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                <tbody className="divide-y divide-gray-100/70 dark:divide-white/5">
                   {invoices.map((inv) => (
-                    <tr key={inv._id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <tr key={inv._id} className="group transition-all duration-200 hover:bg-primary-500/[0.03] dark:hover:bg-white/[0.03]">
                       <td className="px-6 py-4 font-bold text-primary-600 dark:text-primary-400">
                         {inv.invoiceNumber}
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-medium">{inv.customer?.name || '—'}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">{inv.customer?.phone}</div>
+                        <div className="text-xs text-gray-400 dark:text-white/60 mt-0.5">{inv.customer?.phone}</div>
                       </td>
-                      <td className="px-6 py-4 text-gray-500">
+                      <td className="px-6 py-4 text-gray-500 dark:text-white/70">
                         {new Date(inv.createdAt).toLocaleDateString('ar-EG')}
-                        <div className="text-[10px] text-gray-400">{new Date(inv.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-[10px] text-gray-400 dark:text-white/50">{new Date(inv.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</div>
                       </td>
-                      <td className="px-6 py-4 text-xs font-semibold text-gray-500">{inv.branch?.name || '—'}</td>
+                      <td className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-white/70">{inv.branch?.name || '—'}</td>
                       <td className="px-6 py-4">
                         {statusBadge(inv.status)}
-                        <div className="text-[10px] text-gray-400 mt-1">{methodLabel(inv.paymentMethod)}</div>
+                        <div className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{methodLabel(inv.paymentMethod)}</div>
                       </td>
                       <td className="px-6 py-4 font-bold">
-                        {fmt(inv.totalAmount)} <span className="text-[10px] font-normal text-gray-400">ج.م</span>
+                        {fmt(inv.totalAmount)} <span className="text-[10px] font-normal text-gray-400 dark:text-white/40">ج.م</span>
                       </td>
                       <td className="px-6 py-4">
                         {inv.remainingAmount > 0 ? (
@@ -558,21 +558,21 @@ export default function InvoicesPage() {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">إضافة منتجات</label>
+          <label className="block text-sm font-semibold text-gray-600 dark:text-white/80 mb-2">إضافة منتجات</label>
 
           {/* Product Search */}
           <div className="relative mb-3">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/40" />
             <input
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
               placeholder="بحث باسم المنتج أو الباركود..."
-              className="w-full pr-10 pl-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 transition-all outline-none"
+              className="app-surface w-full rounded-2xl border border-transparent py-2 pl-4 pr-10 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
               autoFocus
             />
           </div>
 
-          <div className="border-2 border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-gray-50/30 dark:bg-gray-800/20">
+          <div className="app-surface-muted max-h-48 overflow-y-auto overflow-hidden rounded-2xl border border-black/5 dark:border-white/5">
             {products
               .filter((p) => {
                 const term = productSearch.toLowerCase();
@@ -584,11 +584,11 @@ export default function InvoicesPage() {
               .map((p) => {
                 const inCart = cart.find((c) => c.productId === p._id);
                 return (
-                  <div key={p._id} className="flex items-start justify-between gap-3 p-2 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                  <div key={p._id} className="flex items-start justify-between gap-3 border-b border-gray-100/80 p-2 transition-colors duration-200 last:border-0 hover:bg-white/70 dark:border-white/5 dark:hover:bg-white/[0.03]">
                     <div>
                       <p className="font-bold text-xs text-gray-800 dark:text-gray-200">{p.name}</p>
-                      <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                        {p.sku && <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-[10px]">{p.sku}</span>}
+                      <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-white/60">
+                        {p.sku && <span className="app-surface rounded-md px-1 py-0.5 font-mono text-[10px]">{p.sku}</span>}
                         <span>{fmt(p.price)} ج.م</span>
                         <span className={p.stock?.quantity < 5 ? 'text-red-500' : 'text-emerald-500'}>
                           ({p.stock?.quantity})
@@ -598,8 +598,8 @@ export default function InvoicesPage() {
                     <button
                       onClick={() => addToCart(p)}
                       className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${inCart
-                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-primary-500 hover:text-primary-500'
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
+                        : 'app-surface border border-transparent text-gray-600 hover:border-primary-500/30 hover:text-primary-500 dark:text-gray-300'
                         }`}
                     >
                       {inCart ? `مضاف (${inCart.quantity})` : 'إضافة'}
@@ -608,29 +608,29 @@ export default function InvoicesPage() {
                 );
               })}
             {products.filter(p => (p.stock?.quantity || 0) > 0 && (p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.sku?.toLowerCase().includes(productSearch.toLowerCase()))).length === 0 && (
-              <div className="p-4 text-center text-gray-400 text-xs">لا توجد منتجات مطابقة للبحث</div>
+              <div className="p-4 text-center text-gray-400 dark:text-white/50 text-xs">لا توجد منتجات مطابقة للبحث</div>
             )}
           </div>
         </div>
 
         {cart.length > 0 && (
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4">
-            <p className="text-xs font-bold text-gray-400 mb-3">سلة الفاتورة</p>
+          <div className="app-surface-muted mb-4 rounded-2xl p-4">
+            <p className="text-xs font-bold text-gray-400 dark:text-white/60 mb-3">سلة الفاتورة</p>
             {cart.map((item) => (
-              <div key={item.productId} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={item.productId} className="flex flex-col gap-3 border-b border-gray-100/80 py-2 last:border-0 dark:border-white/5 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm font-medium">{item.name}</span>
                 <div className="flex items-center justify-between sm:justify-end gap-3">
                   <div className="flex items-center gap-1">
-                    <button onClick={() => updateQty(item.productId, item.quantity - 1)} className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 text-sm font-bold flex items-center justify-center">−</button>
+                    <button onClick={() => updateQty(item.productId, item.quantity - 1)} className="app-surface flex h-7 w-7 items-center justify-center rounded-lg text-sm font-bold transition-colors duration-200 hover:text-primary-500">−</button>
                     <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                    <button onClick={() => updateQty(item.productId, item.quantity + 1)} className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-700 text-sm font-bold flex items-center justify-center">+</button>
+                    <button onClick={() => updateQty(item.productId, item.quantity + 1)} className="app-surface flex h-7 w-7 items-center justify-center rounded-lg text-sm font-bold transition-colors duration-200 hover:text-primary-500">+</button>
                   </div>
                   <span className="text-sm font-bold w-24 text-left">{fmt(item.price * item.quantity)} ج.م</span>
                   <button onClick={() => removeFromCart(item.productId)} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
                 </div>
               </div>
             ))}
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between mt-3 pt-3 border-t-2 border-gray-200 dark:border-gray-600">
+            <div className="mt-3 flex flex-col gap-2 border-t border-gray-200/80 pt-3 dark:border-white/10 sm:flex-row sm:justify-between">
               <span className="font-extrabold">الإجمالي</span>
               <span className="text-xl font-extrabold text-primary-500">{fmt(cartTotal)} ج.م</span>
             </div>
@@ -638,7 +638,7 @@ export default function InvoicesPage() {
         )}
 
         {paymentMethod === 'installment' && cartTotal > 0 && (
-          <div className="bg-primary-50 dark:bg-primary-500/10 rounded-xl p-4 mb-4 border border-primary-200 dark:border-primary-500/20">
+          <div className="mb-4 rounded-2xl border border-primary-200/80 bg-primary-50/80 p-4 dark:border-primary-500/20 dark:bg-primary-500/10">
             <div className="flex items-center gap-2 mb-3"><Calculator className="w-5 h-5 text-primary-500" /><span className="font-bold text-primary-600 dark:text-primary-400">حاسبة الأقساط</span></div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <Input label="المقدم (ج.م)" type="number" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} placeholder="0" />
@@ -648,11 +648,11 @@ export default function InvoicesPage() {
                 options={[{ value: 'weekly', label: 'أسبوعي' }, { value: 'biweekly', label: 'كل 15 يوم' }, { value: 'monthly', label: 'شهري' }, { value: 'bimonthly', label: 'كل شهرين' }]} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-3"><p className="text-[10px] text-gray-400">المقدم</p><p className="text-lg font-extrabold text-emerald-500">{fmt(Number(downPayment) || 0)}</p></div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-3"><p className="text-[10px] text-gray-400">المتبقي</p><p className="text-lg font-extrabold text-amber-500">{fmt(remaining)}</p></div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-3"><p className="text-[10px] text-gray-400">القسط</p><p className="text-lg font-extrabold text-primary-500">{fmt(monthlyAmount)}</p></div>
+              <div className="app-surface rounded-xl p-3"><p className="text-[10px] text-gray-400 dark:text-white/60">المقدم</p><p className="text-lg font-extrabold text-emerald-500">{fmt(Number(downPayment) || 0)}</p></div>
+              <div className="app-surface rounded-xl p-3"><p className="text-[10px] text-gray-400 dark:text-white/60">المتبقي</p><p className="text-lg font-extrabold text-amber-500">{fmt(remaining)}</p></div>
+              <div className="app-surface rounded-xl p-3"><p className="text-[10px] text-gray-400 dark:text-white/60">القسط</p><p className="text-lg font-extrabold text-primary-500">{fmt(monthlyAmount)}</p></div>
             </div>
-            <p className="text-center text-xs text-gray-400 mt-3">✨ بدون أي ضريبة أو رسوم إضافية</p>
+            <p className="text-center text-xs text-gray-400 dark:text-white/60 mt-3">✨ بدون أي ضريبة أو رسوم إضافية</p>
           </div>
         )}
 
@@ -666,8 +666,8 @@ export default function InvoicesPage() {
       <Modal open={showPayModal} onClose={() => setShowPayModal(false)} title="تسجيل دفعة" size="sm">
         {payInvoice && (
           <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 text-center">
-              <p className="text-sm text-gray-400">المتبقي</p>
+            <div className="app-surface-muted rounded-2xl p-4 text-center">
+              <p className="text-sm text-gray-400 dark:text-white/70">المتبقي</p>
               <p className="text-2xl font-extrabold text-red-500">{fmt(payInvoice.remainingAmount)} ج.م</p>
             </div>
             <Input label="مبلغ الدفع" type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="أدخل المبلغ" />
@@ -683,7 +683,7 @@ export default function InvoicesPage() {
       <Modal open={showLinkModal} onClose={() => setShowLinkModal(false)} title="رابط التحصيل السريع" size="sm">
         {linkInvoice && (
           <div className="space-y-4">
-            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center border border-indigo-100 dark:border-indigo-800">
+            <div className="rounded-2xl border border-indigo-200/80 bg-indigo-50/90 p-4 text-center dark:border-indigo-500/20 dark:bg-indigo-500/10">
               <p className="text-sm text-indigo-800 dark:text-indigo-200">المبلغ المستحق</p>
               <p className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">{fmt(linkInvoice.remainingAmount)} ج.م</p>
               <p className="text-xs text-indigo-500 dark:text-indigo-300 mt-1">سيتم تحميل رسوم بوابة الدفع على العميل</p>
@@ -713,7 +713,7 @@ export default function InvoicesPage() {
             ) : (
               <div className="space-y-4 mt-2">
                 <div className="flex justify-center mb-4">
-                  <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100">
+                  <div className="app-surface rounded-2xl p-2">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(generatedLink)}`}
                       alt="QR Code"
@@ -726,11 +726,11 @@ export default function InvoicesPage() {
                     type="text"
                     readOnly
                     value={generatedLink}
-                    className="w-full pr-12 pl-4 py-3 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 text-sm font-medium outline-none"
+                    className="w-full rounded-2xl border border-emerald-200/80 bg-emerald-50/90 py-3 pl-4 pr-12 text-sm font-medium text-emerald-800 outline-none dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200"
                   />
                   <button
                     onClick={copyToClipboard}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-300 dark:hover:bg-emerald-700 transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-emerald-200 p-2 text-emerald-700 transition-colors duration-200 hover:bg-emerald-300 dark:bg-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-700"
                     title="نسخ الرابط"
                   >
                     <Copy className="w-4 h-4" />

@@ -84,10 +84,10 @@ export default function PortalSupportChat() {
     const isClosed = ticket.status === 'closed';
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] -mx-4 md:mx-0 overflow-hidden" dir={i18n.dir()}>
+        <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] lg:h-[calc(100vh-80px)] -mx-4 md:mx-0 overflow-hidden app-text-soft" dir={i18n.dir()}>
             {/* Header */}
-            <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
-                <Link to="/portal/support-messages" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500">
+            <div className="app-surface border-b border-gray-100/80 dark:border-white/10 px-4 py-3 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
+                <Link to="/portal/support-messages" className="p-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] rounded-full transition-colors text-gray-500">
                     <ChevronRight className="w-6 h-6" />
                 </Link>
                 <div className="flex-1 min-w-0">
@@ -102,10 +102,10 @@ export default function PortalSupportChat() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50 dark:bg-gray-900 pb-20">
+            <div className="app-surface-muted flex-1 overflow-y-auto p-4 space-y-6 pb-20">
                 {/* Original Message */}
                 <div className="flex flex-col gap-1 items-start">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm max-w-[85%] md:max-w-[75%] rtl:rounded-tr-sm ltr:rounded-tl-sm">
+                    <div className="app-surface border border-gray-100/80 dark:border-white/10 rounded-2xl p-4 shadow-sm max-w-[85%] md:max-w-[75%] rtl:rounded-tr-sm ltr:rounded-tl-sm">
                         <p className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200">{ticket.message}</p>
                         <span className="text-[10px] text-gray-400 mt-2 block text-left">
                             {new Date(ticket.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
@@ -119,7 +119,7 @@ export default function PortalSupportChat() {
                     return (
                         <div key={idx} className={`flex flex-col gap-1 ${isCustomer ? 'items-start' : 'items-end'}`}>
                             <div className={`max-w-[85%] md:max-w-[75%] p-4 rounded-2xl shadow-sm ${isCustomer
-                                ? 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rtl:rounded-tr-sm ltr:rounded-tl-sm'
+                                ? 'app-surface border border-gray-100/80 dark:border-white/10 rtl:rounded-tr-sm ltr:rounded-tl-sm'
                                 : 'bg-primary-500 text-white rtl:rounded-tl-sm ltr:rounded-tr-sm'
                                 }`}>
                                 <p className={`whitespace-pre-wrap text-sm ${isCustomer ? 'text-gray-800 dark:text-gray-200' : 'text-white'}`}>
@@ -142,20 +142,20 @@ export default function PortalSupportChat() {
 
             {/* Input Area */}
             {isClosed ? (
-                <div className="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 text-center">
+                <div className="app-surface-muted border-t border-gray-200/80 dark:border-white/10 p-4 text-center">
                     <p className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-5 h-5" />
                         {t('supportChat.closed_message')}
                     </p>
                 </div>
             ) : (
-                <div className="bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 p-3 sm:p-4">
+                <div className="app-surface border-t border-gray-100/80 dark:border-white/10 p-3 sm:p-4">
                     <form onSubmit={handleSendReply} className="flex items-end gap-2">
                         <textarea
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder={t('supportChat.reply_placeholder')}
-                            className="flex-1 max-h-32 min-h-[44px] bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-primary-500 resize-none transition-colors"
+                            className="app-surface-muted flex-1 max-h-32 min-h-[44px] rounded-2xl border border-transparent px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none transition-colors"
                             rows={1}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {

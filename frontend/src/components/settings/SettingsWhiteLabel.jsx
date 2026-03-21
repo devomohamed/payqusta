@@ -118,20 +118,20 @@ export default function SettingsWhiteLabel() {
                     <Globe className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold">White-label والهوية البصرية</h2>
-                    <p className="text-sm text-gray-400">خصص شعارك وألوانك لتمييز متجرك</p>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">White-label والهوية البصرية</h2>
+                    <p className="text-sm text-subtle">خصص شعارك وألوانك لتمييز متجرك</p>
                 </div>
             </div>
 
             {/* Logo Upload */}
-            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-gray-500" /> شعار المتجر (Logo)
+            <div className="p-5 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950">
+                <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                    <Upload className="w-4 h-4 text-primary-500" /> شعار المتجر (Logo)
                 </h3>
                 <div className="flex items-center gap-6">
                     <div
                         onClick={() => !uploadingLogo && fileInputRef.current?.click()}
-                        className={`w-28 h-28 rounded-2xl border-2 border-dashed flex items-center justify-center transition-colors overflow-hidden relative group ${uploadingLogo ? 'border-primary-400 cursor-wait' : 'border-gray-300 dark:border-gray-600 cursor-pointer hover:border-primary-400'}`}
+                        className={`w-28 h-28 rounded-2xl border-2 border-dashed flex items-center justify-center transition-all overflow-hidden relative group ${uploadingLogo ? 'border-primary-400 cursor-wait' : 'border-gray-200 dark:border-white/10 cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/5'}`}
                     >
                         {uploadingLogo ? (
                             <div className="flex flex-col items-center text-primary-500">
@@ -146,7 +146,7 @@ export default function SettingsWhiteLabel() {
                                 </div>
                             </>
                         ) : (
-                            <div className="text-center text-gray-400">
+                            <div className="text-center text-muted">
                                 <Upload className="w-6 h-6 mx-auto mb-1" />
                                 <p className="text-xs">رفع شعار</p>
                             </div>
@@ -159,7 +159,7 @@ export default function SettingsWhiteLabel() {
                         onChange={handleLogoChange}
                         className="hidden"
                     />
-                    <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                    <div className="text-sm text-subtle space-y-1">
                         <p>• الحجم الأقصى: 20MB</p>
                         <p>• الصيغ: PNG, JPG, SVG, WebP</p>
                         <p>• يُفضل صورة شفافة (بدون خلفية)</p>
@@ -176,19 +176,19 @@ export default function SettingsWhiteLabel() {
             </div>
 
             {/* Color Customization */}
-            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-gray-500" /> ألوان الهوية
+            <div className="p-5 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950">
+                <h3 className="font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                    <Palette className="w-4 h-4 text-primary-500" /> ألوان الهوية
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium mb-2">اللون الأساسي (Primary)</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">اللون الأساسي (Primary)</label>
                         <div className="flex items-center gap-3">
                             <input
                                 type="color"
                                 value={form.primaryColor}
                                 onChange={(e) => setForm(prev => ({ ...prev, primaryColor: e.target.value }))}
-                                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-gray-200 dark:border-gray-600"
+                                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-slate-950"
                             />
                             <Input
                                 value={form.primaryColor}
@@ -199,13 +199,13 @@ export default function SettingsWhiteLabel() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-2">اللون الثانوي (Secondary)</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">اللون الثانوي (Secondary)</label>
                         <div className="flex items-center gap-3">
                             <input
                                 type="color"
                                 value={form.secondaryColor}
                                 onChange={(e) => setForm(prev => ({ ...prev, secondaryColor: e.target.value }))}
-                                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-gray-200 dark:border-gray-600"
+                                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-slate-950"
                             />
                             <Input
                                 value={form.secondaryColor}
@@ -218,8 +218,8 @@ export default function SettingsWhiteLabel() {
                 </div>
 
                 {/* Color preview */}
-                <div className="mt-6 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-400 mb-3">معاينة الألوان:</p>
+                <div className="mt-6 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                    <p className="text-xs text-muted mb-3">معاينة الألوان:</p>
                     <div className="flex items-center gap-3">
                         <div className="h-10 flex-1 rounded-lg" style={{ backgroundColor: form.primaryColor }}></div>
                         <div className="h-10 flex-1 rounded-lg" style={{ backgroundColor: form.secondaryColor }}></div>
@@ -229,22 +229,22 @@ export default function SettingsWhiteLabel() {
             </div>
 
             {/* Custom Domain */}
-            <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <h3 className="font-bold mb-2 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-gray-500" /> النطاق المخصص (Custom Domain)
+            <div className="p-5 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950">
+                <h3 className="font-bold mb-2 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                    <Globe className="w-4 h-4 text-primary-500" /> النطاق المخصص (Custom Domain)
                 </h3>
                 <div className="mb-3">
                     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${domainStatusClass}`}>
                         {domainStatusLabel}
                     </span>
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-4 space-y-2 bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 text-right">
-                    <p className="font-bold text-gray-800 dark:text-gray-200">الفرق بين رابط المتجر والنطاق المخصص:</p>
+                <div className="text-sm text-subtle mb-4 space-y-2 bg-white dark:bg-gray-950/50 p-4 rounded-lg border border-gray-100 dark:border-white/5 text-right">
+                    <p className="font-bold text-gray-900 dark:text-gray-100">الفرق بين رابط المتجر والنطاق المخصص:</p>
                     <ul className="list-disc list-inside pr-2 space-y-1 text-xs leading-relaxed">
                         <li><strong className="text-primary-600 dark:text-primary-400">رابط المتجر الأساسي (Subdomain):</strong> يتم ضبطه من شاشة <strong className="text-gray-700 dark:text-gray-300">"إعدادات المتجر الأساسية"</strong>، ويكون مجانياً (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">shop.payqusta.com</span>).</li>
                         <li><strong className="text-pink-600 dark:text-pink-400">النطاق المخصص (Custom Domain):</strong> مدفوع تشتريه من شركة خارجية (مثل GoDaddy) ليكون باسم شركتك (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">www.myshop.com</span>).</li>
                     </ul>
-                    <p className="text-xs pt-2 mt-2 border-t border-gray-100 dark:border-gray-700">لربط نطاقك المخصص بنجاح، يجب توجيه <b>CNAME Record</b> من لوحة تحكم النطاق الخاص بك إلى هذا الخادم ثم حفظ رابط النطاق هنا بدون <span dir="ltr" className="font-mono ml-1">http://</span>.</p>
+                    <p className="text-xs pt-2 mt-2 border-t border-gray-100 dark:border-white/10">لربط نطاقك المخصص بنجاح، يجب توجيه <b>CNAME Record</b> من لوحة تحكم النطاق الخاص بك إلى هذا الخادم ثم حفظ رابط النطاق هنا بدون <span dir="ltr" className="font-mono ml-1">http://</span>.</p>
                 </div>
                 <Input
                     label="النطاق المخصص"
@@ -261,7 +261,7 @@ export default function SettingsWhiteLabel() {
                     <p className="text-xs text-red-500 mt-2">{domainError}</p>
                 )}
                 {tenant?.customDomainLastCheckedAt && (
-                    <p className="text-xs text-gray-400 mt-2" dir="ltr">
+                    <p className="text-xs text-muted mt-2" dir="ltr">
                         Last checked: {new Date(tenant.customDomainLastCheckedAt).toLocaleString()}
                     </p>
                 )}
@@ -275,16 +275,16 @@ export default function SettingsWhiteLabel() {
                     <Palette className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold">المظهر</h2>
-                    <p className="text-xs text-gray-400">تخصيص واجهة التطبيق العامة</p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">المظهر</h2>
+                    <p className="text-xs text-subtle">تخصيص واجهة التطبيق العامة</p>
                 </div>
             </div>
 
             {/* Dark Mode Toggle */}
-            <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="p-4 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950 flex items-center justify-between">
                 <div>
-                    <h3 className="font-bold">الوضع الليلي</h3>
-                    <p className="text-sm text-gray-400">تبديل بين الفاتح والداكن</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">الوضع الليلي</h3>
+                    <p className="text-sm text-subtle">تبديل بين الفاتح والداكن</p>
                 </div>
                 <button
                     onClick={toggleTheme}
@@ -295,7 +295,7 @@ export default function SettingsWhiteLabel() {
             </div>
 
             {/* Save */}
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10">
                 <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>
                     حفظ إعدادات الهوية
                 </Button>

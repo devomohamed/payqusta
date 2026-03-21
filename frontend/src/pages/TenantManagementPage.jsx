@@ -482,7 +482,7 @@ export default function TenantManagementPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">الخطة</label>
-            <select name="plan" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <select name="plan" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
               <option value="free">مجاني</option>
               <option value="basic">أساسي</option>
               <option value="pro">احترافي</option>

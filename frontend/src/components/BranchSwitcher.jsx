@@ -72,7 +72,7 @@ export default function BranchSwitcher() {
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
         >
           <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center text-primary-600 dark:text-primary-400">
             <Store className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function BranchSwitcher() {
         {isOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 p-2`}>
+            <div className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-72 app-surface rounded-xl shadow-xl border border-gray-100/80 dark:border-white/10 z-50 p-2`}>
               <div className="p-2 text-xs font-bold text-gray-400 uppercase flex justify-between items-center">
                 <span>{t('branch.my_branches')}</span>
                 <span className="bg-primary-100 dark:bg-primary-900/30 text-primary-600 text-[10px] px-1.5 py-0.5 rounded-full">{branches.length} / 5</span>
@@ -105,7 +105,7 @@ export default function BranchSwitcher() {
                       onClick={() => handleSwitch(branch._id)}
                       className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${tenant?._id === branch._id
                         ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 border border-primary-100 dark:border-primary-500/20 shadow-sm'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                        : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.03] border border-transparent'
                         }`}
                     >
                       <div className="flex items-center gap-3">
@@ -127,10 +127,10 @@ export default function BranchSwitcher() {
 
               {/* Only Admin/Super Admin can add stores */}
               {(user?.role === 'admin' || user?.isSuperAdmin) && (
-                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                <div className="pt-2 border-t border-gray-100/80 dark:border-white/10">
                   <button
                     onClick={() => { setIsOpen(false); setShowCreateModal(true); }}
-                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group"
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-200/80 dark:border-white/10 hover:border-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all group"
                   >
                     <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/20 flex items-center justify-center transition-colors">
                       <Plus className="w-4 h-4" />

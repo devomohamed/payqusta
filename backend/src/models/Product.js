@@ -196,6 +196,21 @@ const productSchema = new mongoose.Schema(
         ],
       }
     ],
+    branchAvailability: [
+      {
+        branch: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Branch',
+          required: true,
+        },
+        isAvailableInBranch: { type: Boolean, default: true },
+        isSellableInPos: { type: Boolean, default: true },
+        isSellableOnline: { type: Boolean, default: false },
+        safetyStock: { type: Number, default: 0, min: 0 },
+        onlineReserveQty: { type: Number, default: 0, min: 0 },
+        priorityRank: { type: Number, default: 100, min: 1, max: 9999 },
+      }
+    ],
     stockStatus: {
       type: String,
       enum: Object.values(STOCK_STATUS),
@@ -356,6 +371,7 @@ productSchema.index({ tenant: 1, stockStatus: 1 });
 productSchema.index({ tenant: 1, supplier: 1 });
 productSchema.index({ tenant: 1, isSuspended: 1, isActive: 1 }); // Updated to include isActive
 productSchema.index({ tenant: 1, isActive: 1 }); // Added for speedy active lookups
+productSchema.index({ tenant: 1, 'branchAvailability.branch': 1, isActive: 1 });
 
 // Virtual: profit margin
 productSchema.virtual('profitMargin').get(function () {

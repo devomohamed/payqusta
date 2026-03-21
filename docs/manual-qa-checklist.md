@@ -35,10 +35,14 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 - login works
 - dashboard loads without console-breaking errors
 - products page supports create/edit/upload flows
+- products page can save branch availability, online reserve, and safety stock per branch
 - invoices page supports create/pay/refund actions
 - customers page and customer details modal render correctly
 - returns management page can review and complete return flows
 - ops status is reachable for admin/vendor
+- users page can assign `custom role`, `primary branch`, `assigned branches`, and `branchAccessMode`
+- roles page reflects grouped permissions and clarifies that branch scope is assigned from employee setup
+- branch management page saves online participation, fulfillment center, pickup, and priority settings
 
 ## Shipping / Payments
 
@@ -47,6 +51,9 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 - verify refund status surfaces correctly
 - verify shipment creation or refresh action works
 - verify webhook endpoints are reachable after deploy
+- storefront checkout shows that branch routing is automatic and does not require manual branch selection
+- portal checkout shows that branch routing follows store policy and customer branch preference when eligible
+- cancel one allocated order and verify stock returns to the original allocated branch
 
 ## Ops
 

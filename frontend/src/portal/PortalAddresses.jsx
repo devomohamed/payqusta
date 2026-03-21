@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
-import { useThemeStore } from '../store';
 import { MapPin, Plus, Edit2, Trash2, X, Check, Home, Briefcase } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 import { confirm } from '../components/ConfirmDialog';
 
 export default function PortalAddresses() {
     const { fetchAddresses, addAddress, updateAddress, deleteAddress } = usePortalStore();
-    const { dark } = useThemeStore();
     const { t, i18n } = useTranslation('portal');
 
     const [addresses, setAddresses] = useState([]);
@@ -24,6 +22,7 @@ export default function PortalAddresses() {
         isDefault: false
     });
     const [submitLoading, setSubmitLoading] = useState(false);
+    const inputClass = "w-full rounded-xl border border-transparent app-surface px-4 py-2.5 text-gray-900 transition focus:border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:text-white";
 
     useEffect(() => {
         loadAddresses();
@@ -96,7 +95,7 @@ export default function PortalAddresses() {
     };
 
     return (
-        <div className="space-y-6 pb-20" dir={i18n.dir()}>
+        <div className="space-y-6 pb-20 app-text-soft" dir={i18n.dir()}>
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
@@ -122,8 +121,8 @@ export default function PortalAddresses() {
                     <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
                 </div>
             ) : addresses.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
-                    <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="app-surface text-center py-16 rounded-2xl border border-gray-100/80 dark:border-white/10">
+                    <div className="app-surface-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <MapPin className="w-8 h-8 text-gray-400" />
                     </div>
                     <p className="text-gray-500 dark:text-gray-400 font-medium">{t('addresses.empty')}</p>
@@ -137,10 +136,10 @@ export default function PortalAddresses() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {addresses.map((addr) => (
-                        <div key={addr._id} className={`bg-white dark:bg-gray-800 rounded-2xl p-4 border transition ${addr.isDefault ? 'border-primary-500 ring-1 ring-primary-500' : 'border-gray-100 dark:border-gray-700'}`}>
+                        <div key={addr._id} className={`app-surface rounded-2xl p-4 border transition ${addr.isDefault ? 'border-primary-500 ring-1 ring-primary-500/40' : 'border-gray-100/80 dark:border-white/10'}`}>
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-10 h-10 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center">
+                                    <div className="app-surface-muted w-10 h-10 rounded-xl flex items-center justify-center">
                                         {addr.label === 'العمل' || addr.label === 'Work' ? <Briefcase className="w-5 h-5 text-gray-400" /> : <Home className="w-5 h-5 text-gray-400" />}
                                     </div>
                                     <div>
@@ -175,13 +174,13 @@ export default function PortalAddresses() {
             {/* Add/Edit Modal */}
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                    <div className="app-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-gray-100/80 dark:border-white/10">
+                        <div className="p-4 border-b border-gray-100/80 dark:border-white/10 flex justify-between items-center">
                             <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                                 <MapPin className="w-5 h-5 text-primary-500" />
                                 {editingId ? t('addresses.edit') : t('addresses.add_new')}
                             </h3>
-                            <button onClick={() => setModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            <button onClick={() => setModalOpen(false)} className="app-surface-muted p-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>
@@ -194,7 +193,7 @@ export default function PortalAddresses() {
                                     value={formData.label}
                                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                                     placeholder={t('addresses.label_placeholder')}
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                                    className={inputClass}
                                     required
                                 />
                             </div>
@@ -206,7 +205,7 @@ export default function PortalAddresses() {
                                     value={formData.street}
                                     onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                                     placeholder={t('addresses.street_placeholder')}
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                                    className={inputClass}
                                     required
                                 />
                             </div>
@@ -218,7 +217,7 @@ export default function PortalAddresses() {
                                         type="text"
                                         value={formData.city}
                                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                                        className={inputClass}
                                         required
                                     />
                                 </div>
@@ -228,9 +227,20 @@ export default function PortalAddresses() {
                                         type="text"
                                         value={formData.state}
                                         onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                                        className={inputClass}
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.zip_field', { defaultValue: 'الرمز البريدي' })}</label>
+                                <input
+                                    type="text"
+                                    value={formData.zipCode}
+                                    onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                                    placeholder={t('addresses.zip_placeholder', { defaultValue: 'أدخل الرمز البريدي إن وجد' })}
+                                    className={inputClass}
+                                />
                             </div>
 
                             <div>

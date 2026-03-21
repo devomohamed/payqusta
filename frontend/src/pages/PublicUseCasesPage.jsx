@@ -41,10 +41,10 @@ export default function PublicUseCasesPage() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">أين تظهر الفائدة؟</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950">كل حالة استخدام هنا مرتبطة بجزء تشغيل فعلي</h2>
-          <p className="mt-3 text-base leading-8 text-slate-600">
+        <div className="app-surface rounded-[2rem] p-6 text-right sm:p-8">
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أين تظهر الفائدة؟</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">كل حالة استخدام هنا مرتبطة بجزء تشغيل فعلي</h2>
+          <p className="app-text-soft mt-3 text-base leading-8">
             كل حالة استخدام هنا مرتبطة بموقف حقيقي يتكرر داخل المتجر أو النشاط التجاري، وليس مجرد تقسيم نظري للأدوار.
           </p>
         </div>
@@ -54,15 +54,15 @@ export default function PublicUseCasesPage() {
         {useCaseGroups.map((group, index) => {
           const Icon = useCaseIcons[index % useCaseIcons.length];
           return (
-            <article key={group.title} className="rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
+            <article key={group.title} className="app-surface rounded-[2rem] p-6 text-right">
               <div className="inline-flex rounded-2xl bg-emerald-50 p-3 text-emerald-700">
                 <Icon className="h-5 w-5" />
               </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">{group.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{group.description}</p>
+              <h2 className="mt-5 text-2xl font-black text-slate-950 dark:text-white">{group.title}</h2>
+              <p className="app-text-soft mt-3 text-sm leading-7">{group.description}</p>
               <div className="mt-5 grid gap-2">
                 {group.items.map((item) => (
-                  <div key={item} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                  <div key={item} className="app-surface-muted rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-100">
                     {item}
                   </div>
                 ))}
@@ -72,12 +72,12 @@ export default function PublicUseCasesPage() {
         })}
       </div>
 
-      <div className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-6 text-right shadow-sm sm:p-8">
+      <div className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-amber-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الهدف النهائي</p>
-            <h3 className="mt-3 text-3xl font-black text-slate-950">أن يفهم كل طرف أين سيستفيد فعليًا من المنصة</h3>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الهدف النهائي</p>
+            <h3 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">أن يفهم كل طرف أين سيستفيد فعليًا من المنصة</h3>
+            <p className="app-text-soft mt-3 text-base leading-8">
               عندما يفهم كل طرف أين سيوفر وقتًا أو يقلل أخطاء أو يتابع الحركة بشكل أفضل، يصبح قرار الاعتماد على المنصة أسهل وأكثر واقعية.
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function PublicUseCasesPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               to="/faq"
-              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+              className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
               الأسئلة الشائعة
             </Link>

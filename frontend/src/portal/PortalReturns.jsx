@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
-import { useThemeStore } from '../store';
 import { RefreshCcw, CheckCircle, Clock, XCircle, ChevronLeft, Package, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import PortalEmptyState from './components/PortalEmptyState';
@@ -10,7 +9,6 @@ import PortalSkeleton from './components/PortalSkeleton';
 export default function PortalReturns() {
     const { fetchReturnRequests, loading } = usePortalStore();
     const navigate = useNavigate();
-    const { dark } = useThemeStore();
     const { t, i18n } = useTranslation('portal');
     const [requests, setRequests] = useState([]);
 
@@ -35,7 +33,7 @@ export default function PortalReturns() {
     };
 
     return (
-        <div className="space-y-6 pb-20" dir={i18n.dir()}>
+        <div className="space-y-6 pb-20 app-text-soft" dir={i18n.dir()}>
             {/* Header */}
             <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -66,10 +64,10 @@ export default function PortalReturns() {
                         const StatusIcon = status.icon;
 
                         return (
-                            <div key={req._id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+                            <div key={req._id} className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-xl flex items-center justify-center">
+                                        <div className="app-surface-muted flex h-12 w-12 items-center justify-center rounded-xl">
                                             <Package className="w-6 h-6 text-gray-400" />
                                         </div>
                                         <div>
@@ -87,7 +85,7 @@ export default function PortalReturns() {
                                     </span>
                                 </div>
 
-                                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 text-xs space-y-2">
+                                    <div className="app-surface-muted rounded-xl p-3 text-xs space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-gray-500 dark:text-gray-400">{t('returns.request_date')}</span>
                                             <span className="font-bold text-gray-700 dark:text-gray-300">
@@ -124,7 +122,7 @@ export default function PortalReturns() {
                                             </div>
                                         )}
                                         {req.adminNotes && (
-                                            <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                                            <div className="pt-2 mt-2 border-t border-gray-200/80 dark:border-white/10">
                                                 <span className="block text-gray-500 dark:text-gray-400 mb-1">{t('returns.store_notes')}</span>
                                                 <p className="text-gray-700 dark:text-gray-300">{req.adminNotes}</p>
                                             </div>

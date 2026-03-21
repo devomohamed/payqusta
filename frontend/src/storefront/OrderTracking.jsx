@@ -103,7 +103,7 @@ export default function OrderTracking() {
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
               placeholder="مثال: INV-123456"
-              className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm text-gray-900 transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm text-gray-900 dark:text-gray-100 transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700"
             />
           </div>
         </div>

@@ -6,7 +6,11 @@ jest.mock('../../src/models/Role', () => ({
 const Role = require('../../src/models/Role');
 const AppError = require('../../src/utils/AppError');
 const { RESOURCES, ACTIONS } = require('../../src/config/permissions');
-const { checkPermission, getUserPermissions } = require('../../src/middleware/checkPermission');
+const {
+  checkPermission,
+  getUserPermissions,
+  isTenantAdminFullAccess,
+} = require('../../src/middleware/checkPermission');
 
 function createNext() {
   return jest.fn();
@@ -32,6 +36,11 @@ describe('checkPermission middleware', () => {
     expect(next).toHaveBeenCalledWith();
     expect(Role.findById).not.toHaveBeenCalled();
     expect(Role.findOne).not.toHaveBeenCalled();
+  });
+
+  it('documents tenant admin policy explicitly via helper', () => {
+    expect(isTenantAdminFullAccess({ role: 'admin', tenant: 'tenant-1' })).toBe(true);
+    expect(isTenantAdminFullAccess({ role: 'vendor', tenant: 'tenant-1' })).toBe(false);
   });
 
   it('allows actions granted by default role permissions', async () => {

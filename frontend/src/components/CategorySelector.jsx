@@ -1,12 +1,131 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Check, FolderTree, X } from 'lucide-react';
+import { Search, ChevronDown, Check, FolderTree, X, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DEFAULT_CATEGORY_ICON } from '../utils/aiHelper';
 
 /**
  * CategorySelector - A premium, searchable dropdown for category selection
- * Features: Searchable, Hierarchical display, Animations
+ * Features: Searchable, Recursive Hierarchical display, Animations
  */
+
+/** Recursive category item — renders itself and, when expanded, all its children */
+function CategoryItem({ category, depth = 0, value, onSelect, search }) {
+    const [expanded, setExpanded] = useState(false);
+    const hasChildren = category.children && category.children.length > 0;
+    const isSelected = value === category._id;
+
+    // Auto-expand when a descendant is selected
+    const isDescendantSelected = (node, id) => {
+        if (!node.children) return false;
+        for (const child of node.children) {
+            if (child._id === id || isDescendantSelected(child, id)) return true;
+        }
+        return false;
+    };
+
+    useEffect(() => {
+        if (isDescendantSelected(category, value)) setExpanded(true);
+    }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // When searching, expand to show matches
+    useEffect(() => {
+        if (search) setExpanded(true);
+        else if (!isDescendantSelected(category, value)) setExpanded(false);
+    }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const indent = depth * 16; // 16px per level
+
+    return (
+        <div className="space-y-0.5">
+            <div className="flex items-center gap-1" style={{ paddingRight: `${indent}px` }}>
+                {/* Expand/collapse toggle */}
+                {hasChildren ? (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                        className="p-1 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] flex-shrink-0"
+                    >
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
+                    </button>
+                ) : (
+                    <span className="w-5.5 flex-shrink-0" />
+                )}
+
+                {/* Category button */}
+                <button
+                    type="button"
+                    onClick={() => { onSelect(category._id); }}
+                    className={`
+                        group flex flex-1 items-center justify-between rounded-xl p-2.5 transition-all duration-200
+                        ${isSelected
+                            ? (depth === 0
+                                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                                : 'border border-primary-200 bg-primary-100 text-primary-700 dark:border-primary-500/30 dark:bg-primary-500/20 dark:text-primary-400')
+                            : 'app-text-soft hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'}
+                    `}
+                >
+                    <div className="flex items-center gap-3">
+                        <span className={`transition-transform group-hover:scale-110 ${depth === 0 ? 'text-2xl' : 'text-lg'}`}>
+                            {category.icon || DEFAULT_CATEGORY_ICON}
+                        </span>
+                        <div className="text-right">
+                            <span className={`block font-black ${isSelected && depth === 0 ? 'text-white' : 'text-gray-800 dark:text-white'} ${depth > 0 ? 'text-sm' : ''}`}>
+                                {category.name}
+                            </span>
+                            {hasChildren && !search && (
+                                <span className={`text-[9px] font-black uppercase tracking-widest ${isSelected && depth === 0 ? 'text-white/70' : 'text-primary-500'}`}>
+                                    {category.children.length} أقسام فرعية
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    {isSelected && <Check className={`flex-shrink-0 ${depth === 0 ? 'h-5 w-5' : 'h-4 w-4'}`} />}
+                </button>
+            </div>
+
+            {/* Children — recursive */}
+            <AnimatePresence initial={false}>
+                {hasChildren && expanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.18 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="mr-3 border-r-2 border-primary-500/10 pr-1">
+                            {category.children
+                                .filter((child) => (
+                                    !search
+                                    || child.name.toLowerCase().includes(search.toLowerCase())
+                                    || childMatchesSearch(child, search)
+                                ))
+                                .map((child) => (
+                                    <CategoryItem
+                                        key={child._id}
+                                        category={child}
+                                        depth={depth + 1}
+                                        value={value}
+                                        onSelect={onSelect}
+                                        search={search}
+                                    />
+                                ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+/** Check if any descendant matches the search term */
+function childMatchesSearch(node, term) {
+    if (!term) return true;
+    if (node.name.toLowerCase().includes(term.toLowerCase())) return true;
+    if (node.children) return node.children.some((c) => childMatchesSearch(c, term));
+    return false;
+}
+
 export default function CategorySelector({
     label,
     value,
@@ -43,26 +162,10 @@ export default function CategorySelector({
 
     const selected = findCategory(categories, value);
 
-    const filterBySearch = (items, term) => {
-        if (!Array.isArray(items)) return [];
-        if (!term) return items;
-
-        return items.reduce((acc, category) => {
-            const matchesParent = category.name.toLowerCase().includes(term.toLowerCase());
-            const filteredChildren = category.children ? filterBySearch(category.children, term) : [];
-            const hasMatchingChild = filteredChildren.length > 0;
-
-            if (matchesParent || hasMatchingChild) {
-                acc.push({
-                    ...category,
-                    children: matchesParent ? category.children : filteredChildren,
-                });
-            }
-            return acc;
-        }, []);
-    };
-
-    const filteredCategories = filterBySearch(categories, search);
+    // Filter top-level categories — children filtering is handled recursively in CategoryItem
+    const filteredTopLevel = categories.filter((cat) => (
+        !search || childMatchesSearch(cat, search)
+    ));
 
     return (
         <div className={`relative ${className}`} ref={containerRef}>
@@ -78,8 +181,8 @@ export default function CategorySelector({
                 className={`
                     w-full flex items-center justify-between rounded-2xl border-2 px-4 py-3 transition-all duration-300
                     ${isOpen
-                        ? 'border-primary-500 bg-white shadow-lg ring-4 ring-primary-500/10 dark:bg-gray-900'
-                        : 'border-gray-100 bg-gray-50/50 hover:border-primary-500/30 dark:border-gray-800 dark:bg-gray-800/30'}
+                        ? 'app-surface border-primary-500 shadow-lg ring-4 ring-primary-500/10'
+                        : 'app-surface-muted hover:border-primary-500/30'}
                     ${error ? 'border-red-500' : ''}
                 `}
             >
@@ -110,7 +213,7 @@ export default function CategorySelector({
                                 event.stopPropagation();
                                 onChange(null);
                             }}
-                            className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+                            className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-black/[0.04] hover:text-red-500 dark:hover:bg-white/[0.05]"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -127,9 +230,9 @@ export default function CategorySelector({
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute left-0 right-0 top-full z-[100] mt-3 flex max-h-[450px] flex-col overflow-hidden rounded-3xl border-2 border-gray-100 bg-white/80 shadow-2xl backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80"
+                        className="app-surface absolute left-0 right-0 top-full z-[100] mt-3 flex max-h-[450px] flex-col overflow-hidden rounded-3xl border-2 shadow-2xl"
                     >
-                        <div className="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30">
+                        <div className="app-surface-muted border-b p-4">
                             <div className="relative">
                                 <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -137,81 +240,31 @@ export default function CategorySelector({
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
                                     placeholder="ابحث عن قسم..."
-                                    className="w-full rounded-xl border-2 border-gray-100 bg-white py-3 pl-4 pr-11 text-sm font-bold outline-none transition-all focus:border-primary-500 dark:border-gray-800 dark:bg-gray-900"
+                                    className="app-surface w-full rounded-xl border-2 py-3 pl-4 pr-11 text-sm font-bold outline-none transition-all focus:border-primary-500"
                                 />
                             </div>
                         </div>
 
-                        <div className="custom-scrollbar flex-1 space-y-1.5 overflow-y-auto p-3">
-                            {filteredCategories.length === 0 ? (
+                        <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto p-3">
+                            {filteredTopLevel.length === 0 ? (
                                 <div className="py-12 text-center">
                                     <FolderTree className="mx-auto mb-3 h-12 w-12 text-gray-200 dark:text-gray-800" />
                                     <p className="text-sm font-bold text-gray-400">لم يتم العثور على أقسام</p>
                                 </div>
                             ) : (
-                                filteredCategories.map((category) => (
-                                    <div key={category._id} className="space-y-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                onChange(category._id);
-                                                setIsOpen(false);
-                                            }}
-                                            className={`
-                                                group flex w-full items-center justify-between rounded-2xl p-3 transition-all duration-200
-                                                ${value === category._id
-                                                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                                                    : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/50'}
-                                            `}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <span className={`text-2xl transition-transform group-hover:scale-110 ${value === category._id ? '' : 'grayscale-[0.5] group-hover:grayscale-0'}`}>
-                                                    {category.icon || DEFAULT_CATEGORY_ICON}
-                                                </span>
-                                                <div className="text-right">
-                                                    <span className={`block font-black ${value === category._id ? 'text-white' : 'text-gray-800 dark:text-white'}`}>{category.name}</span>
-                                                    {category.children && category.children.length > 0 && !search && (
-                                                        <span className={`text-[9px] font-black uppercase tracking-widest ${value === category._id ? 'text-white/70' : 'text-primary-500'}`}>
-                                                            {category.children.length} أقسام فرعية
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {value === category._id && <Check className="h-5 w-5" />}
-                                        </button>
-
-                                        {category.children && category.children.length > 0 && (
-                                            <div className="mr-6 mt-1 space-y-1 border-r-2 border-primary-500/10 pr-4">
-                                                {category.children
-                                                    .filter((child) => (
-                                                        child.name.toLowerCase().includes(search.toLowerCase())
-                                                        || category.name.toLowerCase().includes(search.toLowerCase())
-                                                    ))
-                                                    .map((child) => (
-                                                        <button
-                                                            key={child._id}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                onChange(child._id);
-                                                                setIsOpen(false);
-                                                            }}
-                                                            className={`
-                                                                group flex w-full items-center justify-between rounded-xl p-2.5 transition-all duration-200
-                                                                ${value === child._id
-                                                                    ? 'border border-primary-200 bg-primary-100 text-primary-600 dark:border-primary-500/30 dark:bg-primary-500/20 dark:text-primary-400'
-                                                                    : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'}
-                                                            `}
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-lg transition-transform group-hover:scale-110">{child.icon || DEFAULT_CATEGORY_ICON}</span>
-                                                                <span className="text-sm font-bold">{child.name}</span>
-                                                            </div>
-                                                            {value === child._id && <Check className="h-4 w-4" />}
-                                                        </button>
-                                                    ))}
-                                            </div>
-                                        )}
-                                    </div>
+                                filteredTopLevel.map((category) => (
+                                    <CategoryItem
+                                        key={category._id}
+                                        category={category}
+                                        depth={0}
+                                        value={value}
+                                        onSelect={(id) => {
+                                            onChange(id);
+                                            setIsOpen(false);
+                                            setSearch('');
+                                        }}
+                                        search={search}
+                                    />
                                 ))
                             )}
                         </div>

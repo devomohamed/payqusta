@@ -1,9 +1,4 @@
-/**
- * Payment Link Generator Component
- * Creates payment links for invoices with gateway selection
- */
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Copy, Send, CreditCard, Smartphone, Building2, Zap, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -17,8 +12,8 @@ const GATEWAY_ICONS = {
 };
 
 const GATEWAY_NAMES = {
-  paymob: 'Paymob (Visa/Mastercard)',
-  fawry: 'Fawry (الدفع في المحلات)',
+  paymob: 'Paymob',
+  fawry: 'Fawry',
   vodafone: 'Vodafone Cash',
   instapay: 'InstaPay'
 };
@@ -32,11 +27,9 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
   const [paymentLink, setPaymentLink] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  // Calculate remaining amount
   const remainingAmount = invoice.totalAmount - invoice.paidAmount;
 
   useEffect(() => {
-    // Fetch available gateways
     const fetchGateways = async () => {
       try {
         const { data } = await api.get('/payments/gateways');
@@ -48,15 +41,14 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
         toast.error('فشل تحميل بوابات الدفع');
       }
     };
-    
+
     fetchGateways();
     setAmount(remainingAmount);
   }, [remainingAmount]);
 
-  // Calculate fees and discount
-  const selectedGatewayData = gateways.find(g => g.id === selectedGateway);
+  const selectedGatewayData = gateways.find((gateway) => gateway.id === selectedGateway);
   const fees = selectedGatewayData ? (amount * selectedGatewayData.fees) / 100 : 0;
-  const discount = applyDiscount ? (amount * 3) / 100 : 0; // 3% early discount
+  const discount = applyDiscount ? (amount * 3) / 100 : 0;
   const finalAmount = amount - discount + fees;
 
   const handleGenerate = async () => {
@@ -70,12 +62,12 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
       const { data } = await api.post('/payments/create-link', {
         invoiceId: invoice._id,
         gateway: selectedGateway,
-        amount: amount,
+        amount,
         applyDiscount
       });
 
       setPaymentLink(data.data);
-      toast.success('✅ تم إنشاء رابط الدفع');
+      toast.success('تم إنشاء رابط الدفع');
     } catch (error) {
       toast.error(error.response?.data?.message || 'فشل إنشاء رابط الدفع');
     } finally {
@@ -84,32 +76,25 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
   };
 
   const handleCopy = () => {
-    if (paymentLink?.paymentLink) {
-      navigator.clipboard.writeText(paymentLink.paymentLink);
-      setCopied(true);
-      toast.success('تم النسخ!');
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!paymentLink?.paymentLink) return;
+    navigator.clipboard.writeText(paymentLink.paymentLink);
+    setCopied(true);
+    toast.success('تم النسخ');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSendWhatsApp = () => {
     if (!paymentLink?.paymentLink) return;
-    
-    const message = `
-مرحباً ${customer.name} 👋
 
-فاتورة رقم: *${invoice.invoiceNumber}*
-المبلغ المستحق: *${amount.toFixed(2)} جنيه*
-${applyDiscount ? `\n🎁 خصم خاص ${discount.toFixed(2)} جنيه عند الدفع الآن!\nالمبلغ بعد الخصم: *${(amount - discount).toFixed(2)} جنيه*\n` : ''}
-
-ادفع بسهولة عبر الرابط:
-${paymentLink.paymentLink}
-
-✅ طرق الدفع المتاحة
-💳 ${GATEWAY_NAMES[selectedGateway]}
-
-شكراً لثقتكم 💙
-`.trim();
+    const message = [
+      `مرحبًا ${customer.name}`,
+      '',
+      `فاتورة رقم: ${invoice.invoiceNumber}`,
+      `المبلغ المستحق: ${amount.toFixed(2)} جنيه`,
+      applyDiscount ? `خصم الدفع المبكر: ${discount.toFixed(2)} جنيه` : '',
+      `رابط الدفع: ${paymentLink.paymentLink}`,
+      `طريقة الدفع: ${GATEWAY_NAMES[selectedGateway]}`,
+    ].filter(Boolean).join('\n');
 
     const whatsappUrl = `https://wa.me/${customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
@@ -119,124 +104,95 @@ ${paymentLink.paymentLink}
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+          className="app-surface w-full max-w-md overflow-hidden rounded-2xl shadow-2xl"
         >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 relative">
-            <button
-              onClick={onClose}
-              className="absolute top-4 left-4 text-white/80 hover:text-white transition"
-            >
+          <div className="relative bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+            <button onClick={onClose} className="absolute left-4 top-4 text-white/80 transition hover:text-white">
               <X size={20} />
             </button>
-            
-            <h2 className="text-xl font-bold mb-2">إنشاء رابط دفع</h2>
-            <p className="text-blue-100 text-sm">
-              العميل: {customer.name}
-            </p>
-            <p className="text-blue-100 text-sm">
-              الفاتورة: #{invoice.invoiceNumber}
-            </p>
+
+            <h2 className="mb-2 text-xl font-bold">إنشاء رابط دفع</h2>
+            <p className="text-sm text-blue-100">العميل: {customer.name}</p>
+            <p className="text-sm text-blue-100">الفاتورة: #{invoice.invoiceNumber}</p>
           </div>
 
-          {/* Content */}
-          <div className="p-6 space-y-5">
+          <div className="space-y-5 p-6">
             {gateways.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="py-8 text-center">
                 <AlertCircle className="mx-auto mb-3 text-yellow-500" size={48} />
-                <p className="text-gray-600 dark:text-gray-400">
-                  لا توجد بوابات دفع مفعلة
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  قم بتفعيل بوابة دفع من الإعدادات
-                </p>
+                <p className="text-gray-600 dark:text-gray-400">لا توجد بوابات دفع مفعلة</p>
+                <p className="mt-2 text-sm text-gray-500">فعّل بوابة دفع من صفحة الإعدادات أولًا.</p>
               </div>
             ) : !paymentLink ? (
               <>
-                {/* Gateway Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    اختر بوابة الدفع
-                  </label>
+                  <label className="mb-3 block text-sm font-medium text-gray-700 dark:text-gray-300">اختر بوابة الدفع</label>
                   <div className="grid grid-cols-2 gap-3">
-                    {gateways.map(gateway => {
+                    {gateways.map((gateway) => {
                       const Icon = GATEWAY_ICONS[gateway.id];
                       const isSelected = selectedGateway === gateway.id;
-                      
+
                       return (
                         <button
                           key={gateway.id}
                           onClick={() => setSelectedGateway(gateway.id)}
-                          className={`
-                            p-4 rounded-lg border-2 transition-all
-                            ${isSelected 
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
-                            }
-                          `}
+                          className={`rounded-xl border-2 p-4 transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'app-surface-muted border-gray-200/80 hover:border-blue-300 dark:border-white/10'
+                          }`}
                         >
                           <Icon className={`mx-auto mb-2 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} size={24} />
                           <p className={`text-sm font-medium ${isSelected ? 'text-blue-600' : 'text-gray-600 dark:text-gray-400'}`}>
                             {gateway.name}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            رسوم: {gateway.fees}%
-                          </p>
+                          <p className="mt-1 text-xs text-gray-500">رسوم: {gateway.fees}%</p>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Amount */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    المبلغ المطلوب
-                  </label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">المبلغ المطلوب</label>
                   <input
                     type="number"
                     value={amount}
-                    onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                    onChange={(event) => setAmount(parseFloat(event.target.value) || 0)}
                     max={remainingAmount}
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="app-surface w-full rounded-xl border border-gray-300/80 px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:text-white"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    المتبقي: {remainingAmount.toFixed(2)} جنيه
-                  </p>
+                  <p className="mt-1 text-xs text-gray-500">المتبقي: {remainingAmount.toFixed(2)} جنيه</p>
                 </div>
 
-                {/* Early Discount */}
-                <label className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-green-50 p-3 dark:bg-green-900/20">
                   <input
                     type="checkbox"
                     checked={applyDiscount}
-                    onChange={(e) => setApplyDiscount(e.target.checked)}
-                    className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                    onChange={(event) => setApplyDiscount(event.target.checked)}
+                    className="h-5 w-5 rounded text-green-600 focus:ring-green-500"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      خصم الدفع المبكر (3%)
-                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">خصم الدفع المبكر (3%)</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {applyDiscount ? `خصم: ${discount.toFixed(2)} جنيه` : 'غير مفعل'}
+                      {applyDiscount ? `قيمة الخصم: ${discount.toFixed(2)} جنيه` : 'غير مفعل'}
                     </p>
                   </div>
                 </label>
 
-                {/* Summary */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-2">
+                <div className="app-surface-muted space-y-2 rounded-xl p-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">المبلغ الأصلي</span>
                     <span className="font-medium">{amount.toFixed(2)} ج.م</span>
                   </div>
                   {applyDiscount && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>الخصم (3%)</span>
+                      <span>الخصم</span>
                       <span>- {discount.toFixed(2)} ج.م</span>
                     </div>
                   )}
@@ -244,69 +200,60 @@ ${paymentLink.paymentLink}
                     <span className="text-gray-600 dark:text-gray-400">رسوم المعاملة</span>
                     <span className="font-medium">+ {fees.toFixed(2)} ج.م</span>
                   </div>
-                  <div className="border-t border-gray-200 dark:border-gray-600 pt-2 flex justify-between font-bold text-lg">
+                  <div className="flex justify-between border-t border-gray-200/80 pt-2 text-lg font-bold dark:border-white/10">
                     <span>المبلغ النهائي</span>
                     <span className="text-blue-600">{finalAmount.toFixed(2)} ج.م</span>
                   </div>
                 </div>
 
-                {/* Generate Button */}
                 <button
                   onClick={handleGenerate}
                   disabled={loading || !selectedGateway}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
                 >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      جاري الإنشاء...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard size={20} />
-                      إنشاء رابط الدفع
-                    </>
-                  )}
+                  {loading ? 'جارٍ الإنشاء...' : 'إنشاء رابط الدفع'}
                 </button>
               </>
             ) : (
-              /* Success - Show Link */
               <div className="space-y-4">
-                <div className="text-center py-4">
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Check className="text-green-600" size={32} />
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                  <div className="mb-2 flex items-center gap-2 text-green-700 dark:text-green-400">
+                    <Check size={20} />
+                    <span className="font-bold">تم إنشاء الرابط بنجاح</span>
                   </div>
-                  <h3 className="font-bold text-lg mb-1">تم إنشاء الرابط بنجاح!</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    صالح حتى: {new Date(paymentLink.expiresAt).toLocaleDateString('ar-EG')}
-                  </p>
+                  <p className="break-all text-sm text-gray-700 dark:text-gray-300">{paymentLink.paymentLink}</p>
                 </div>
 
-                {/* Payment Link */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 mb-2">رابط الدفع</p>
-                  <p className="text-sm font-mono break-all text-gray-800 dark:text-gray-200">
-                    {paymentLink.paymentLink}
-                  </p>
-                </div>
-
-                {/* Actions */}
                 <div className="flex gap-3">
                   <button
                     onClick={handleCopy}
-                    className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-3 rounded-lg transition flex items-center justify-center gap-2"
+                    className="app-surface-muted flex-1 rounded-xl px-4 py-3 font-medium transition hover:border-blue-300"
                   >
-                    {copied ? <Check size={18} /> : < Copy size={18} />}
-                    {copied ? 'تم النسخ' : 'نسخ'}
+                    <span className="flex items-center justify-center gap-2">
+                      <Copy size={18} />
+                      {copied ? 'تم النسخ' : 'نسخ الرابط'}
+                    </span>
                   </button>
                   <button
                     onClick={handleSendWhatsApp}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition flex items-center justify-center gap-2"
+                    className="flex-1 rounded-xl bg-green-600 px-4 py-3 font-medium text-white transition hover:bg-green-700"
                   >
-                    <Send size={18} />
-                    إرسال واتساب
+                    <span className="flex items-center justify-center gap-2">
+                      <Send size={18} />
+                      إرسال واتساب
+                    </span>
                   </button>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setPaymentLink(null);
+                    setCopied(false);
+                  }}
+                  className="w-full rounded-xl border border-gray-200/80 px-4 py-3 text-sm font-medium transition hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/5"
+                >
+                  إنشاء رابط جديد
+                </button>
               </div>
             )}
           </div>

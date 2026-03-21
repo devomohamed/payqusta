@@ -44,14 +44,14 @@ export default function PublicPrivacyPage() {
       <section className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
         <div className="text-right">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">الخصوصية</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">سياسة خصوصية واضحة تشرح كيف تتعامل PayQusta مع البيانات</h1>
-          <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">سياسة خصوصية واضحة تشرح كيف تتعامل PayQusta مع البيانات</h1>
+          <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">
             هذه الصفحة تشرح بشكل عملي نوع البيانات التي قد تدخل إلى المنصة، وكيف تُستخدم لحماية التشغيل، وإدارة الطلبات، وربط المتجر العام بالنظام الداخلي.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               to="/terms"
-              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+              className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
               الشروط والأحكام
             </Link>
@@ -85,14 +85,14 @@ export default function PublicPrivacyPage() {
         {privacyAreas.map((area) => {
           const Icon = area.icon;
           return (
-            <article key={area.title} className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
+            <article key={area.title} className="app-surface rounded-[1.75rem] p-6 text-right">
               <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                 <Icon className="h-5 w-5" />
               </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">{area.title}</h2>
+              <h2 className="mt-5 text-2xl font-black text-slate-950 dark:text-white">{area.title}</h2>
               <div className="mt-5 grid gap-3">
                 {area.points.map((point) => (
-                  <div key={point} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold leading-7 text-slate-700">
+                  <div key={point} className="app-surface-muted rounded-2xl px-4 py-4 text-sm font-bold leading-7 text-slate-700 dark:text-slate-100">
                     {point}
                   </div>
                 ))}
@@ -102,26 +102,26 @@ export default function PublicPrivacyPage() {
         })}
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">مهم قبل الاعتماد الكامل</p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950">المتجر مسؤول أيضًا عن إدارة بياناته الداخلية</h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">مهم قبل الاعتماد الكامل</p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">المتجر مسؤول أيضًا عن إدارة بياناته الداخلية</h2>
+            <p className="app-text-soft mt-3 text-base leading-8">
               PayQusta توفر بنية تشغيل وعزل وصلاحيات ومراقبة، لكن إدارة الموظفين، دقة البيانات، ومشاركة الوصول داخل النشاط تبقى مسؤولية مالك المتجر وفريقه الإداري.
             </p>
           </div>
 
-          <div className="rounded-[1.75rem] border border-white bg-white p-5 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">صفحات مرتبطة</p>
+          <div className="app-surface rounded-[1.75rem] p-5">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">صفحات مرتبطة</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link to="/terms" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-white hover:text-slate-950">
+              <Link to="/terms" className="app-surface-muted rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10">
                 راجع الشروط والأحكام
               </Link>
-              <Link to="/contact" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-white hover:text-slate-950">
+              <Link to="/contact" className="app-surface-muted rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10">
                 صفحة التواصل والخطوات التالية
               </Link>
-              <Link to="/pricing" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-white hover:text-slate-950">
+              <Link to="/pricing" className="app-surface-muted rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10">
                 الأسعار والباقات
               </Link>
             </div>
@@ -129,14 +129,14 @@ export default function PublicPrivacyPage() {
         </div>
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] p-6 text-right sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">هل تريد تقييمًا عمليًا؟</p>
-            <h2 className="mt-2 text-3xl font-black text-slate-950">راجع كيف تتحرك البيانات داخل التجربة الفعلية</h2>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">هل تريد تقييمًا عمليًا؟</p>
+            <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">راجع كيف تتحرك البيانات داخل التجربة الفعلية</h2>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-            <Link to="/demo" className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950">
+            <Link to="/demo" className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10">
               شاهد الديمو
             </Link>
             <Link to="/features" className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15">

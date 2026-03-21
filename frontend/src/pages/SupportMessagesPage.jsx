@@ -119,16 +119,16 @@ export default function SupportMessagesPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+      <div className="app-surface-muted flex flex-col items-start justify-between gap-4 rounded-3xl p-4 sm:flex-row sm:items-center sm:p-5">
         <div>
           <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             <MessageCircle className="w-6 h-6 text-primary-500" /> رسائل الدعم
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">إدارة رسائل الدعم والاستفسارات من العملاء</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+        <button onClick={load} className="app-surface flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300">
           <RefreshCw className="w-4 h-4" /> تحديث
         </button>
       </div>
@@ -143,7 +143,7 @@ export default function SupportMessagesPage() {
           <button
             key={s.filter}
             onClick={() => setStatusFilter(statusFilter === s.filter ? '' : s.filter)}
-            className={`p-4 rounded-2xl text-center transition-all border-2 ${statusFilter === s.filter ? 'border-primary-500 shadow-md' : 'border-transparent'} ${s.color}`}
+            className={`rounded-2xl border p-4 text-center transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${statusFilter === s.filter ? 'border-primary-500 shadow-lg shadow-primary-500/10' : 'border-transparent'} ${s.color}`}
           >
             <p className="text-2xl font-black">{s.count}</p>
             <p className="text-xs font-bold mt-1 opacity-70">{s.label}</p>
@@ -163,12 +163,12 @@ export default function SupportMessagesPage() {
           {messages.map((msg) => (
             <Card
               key={msg._id}
-              className="border-0 shadow-md hover:shadow-lg transition-all cursor-pointer group"
+              className="group cursor-pointer overflow-hidden rounded-3xl transition-all duration-200 motion-safe:hover:-translate-y-0.5"
               onClick={() => openMessage(msg)}
             >
               <div className="p-4 flex items-start gap-4">
                 {/* Avatar */}
-                <div className="w-11 h-11 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="app-surface-muted flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full">
                   {msg.customer?.profilePhoto ? (
                     <img src={msg.customer.profilePhoto} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -202,7 +202,7 @@ export default function SupportMessagesPage() {
                 </div>
 
                 <div className="flex flex-col items-end gap-2 mt-2">
-                  <span className="text-xs text-primary-600 bg-primary-50 dark:bg-primary-900/10 px-2 py-1 rounded-lg font-bold">
+                  <span className="rounded-xl bg-primary-50 px-2 py-1 text-xs font-bold text-primary-600 dark:bg-primary-900/10 dark:text-primary-300">
                     عرض التفاصيل
                   </span>
                   <ChevronLeft className="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
@@ -218,9 +218,9 @@ export default function SupportMessagesPage() {
         {selected && (
           <div className="flex flex-col h-[70vh]">
             {/* Customer Info */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+            <div className="app-surface-muted flex flex-shrink-0 items-center justify-between border-b border-gray-100/80 p-4 dark:border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="app-surface flex h-10 w-10 items-center justify-center overflow-hidden rounded-full">
                   {selected.customer?.profilePhoto ? (
                     <img src={selected.customer.profilePhoto} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -237,7 +237,7 @@ export default function SupportMessagesPage() {
                 {selected.status !== 'closed' && (
                   <button
                     onClick={() => closeTicket(selected._id)}
-                    className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 hover:bg-gray-200 transition flex items-center gap-1"
+                    className="app-surface flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-600 transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-300"
                   >
                     <Lock className="w-3 h-3" /> إغلاق
                   </button>
@@ -253,7 +253,7 @@ export default function SupportMessagesPage() {
                   <User className="w-4 h-4 text-primary-600" />
                 </div>
                 <div className="flex-1">
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tr-md p-4">
+                  <div className="app-surface-muted rounded-2xl rounded-tr-md p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-sm">{selected.customer?.name}</span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_COLORS[selected.type]}`}>{TYPE_LABELS[selected.type]}</span>
@@ -277,7 +277,7 @@ export default function SupportMessagesPage() {
                   <div className="flex-1">
                     <div className={`rounded-2xl p-4 ${reply.sender === 'vendor'
                       ? 'bg-green-50 dark:bg-green-900/20 rounded-tl-md'
-                      : 'bg-gray-100 dark:bg-gray-800 rounded-tr-md'
+                      : 'app-surface-muted rounded-tr-md'
                       }`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-xs">
@@ -296,13 +296,13 @@ export default function SupportMessagesPage() {
 
             {/* Reply Input */}
             {selected.status !== 'closed' && (
-              <div className="border-t border-gray-100 dark:border-gray-800 p-4 flex-shrink-0">
+              <div className="border-t border-gray-100/80 p-4 flex-shrink-0 dark:border-white/5">
                 <div className="flex gap-3">
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="اكتب ردك هنا..."
-                    className="flex-1 p-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm resize-none h-20 focus:border-primary-500 outline-none"
+                    className="app-surface h-20 flex-1 resize-none rounded-2xl border border-transparent p-3 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
                     onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey) sendReply(); }}
                   />
                   <button

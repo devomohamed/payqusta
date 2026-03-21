@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Copy, ExternalLink, Loader2, Receipt, ShieldAlert, Smartphone, Store } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Loader2,
+  Receipt,
+  ShieldAlert,
+  Smartphone,
+  Store,
+} from 'lucide-react';
 import { api } from '../store';
 
 const STATUS_STYLES = {
@@ -70,7 +80,10 @@ export default function PublicPaymentInstructionPage() {
     };
   }, [id, searchParams]);
 
-  const gatewayUi = useMemo(() => GATEWAY_META[gateway] || GATEWAY_META[session?.gateway] || GATEWAY_META.fawry, [gateway, session?.gateway]);
+  const gatewayUi = useMemo(
+    () => GATEWAY_META[gateway] || GATEWAY_META[session?.gateway] || GATEWAY_META.fawry,
+    [gateway, session?.gateway],
+  );
   const GatewayIcon = gatewayUi.icon;
   const paymentMeta = session?.paymentMeta || null;
   const statusKey = session?.status || 'pending';
@@ -115,7 +128,7 @@ export default function PublicPaymentInstructionPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_35%),linear-gradient(180deg,#020617,#0f172a)] text-slate-950">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6 text-white">
+        <div className="mb-6 flex items-center justify-between text-white">
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
             PayQusta
@@ -142,25 +155,27 @@ export default function PublicPaymentInstructionPage() {
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-slate-50 p-5 border border-slate-200">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">المبلغ</p>
                 <p className="mt-3 text-3xl font-black text-slate-950">{formatAmount(session.netAmount, session.currency)}</p>
                 {session.invoiceNumber ? <p className="mt-2 text-sm text-slate-500">فاتورة رقم {session.invoiceNumber}</p> : null}
               </div>
 
-              <div className="rounded-3xl bg-slate-50 p-5 border border-slate-200">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{paymentMeta.referenceLabel}</p>
                 <div className="mt-3 flex items-center gap-2">
                   <p className="text-lg font-black text-slate-950 break-all">{paymentMeta.referenceValue}</p>
                   <button
                     type="button"
                     onClick={() => handleCopy(paymentMeta.referenceValue)}
-                    className="inline-flex items-center justify-center rounded-full bg-slate-900 text-white p-2 hover:bg-slate-700"
+                    className="inline-flex items-center justify-center rounded-full bg-slate-900 p-2 text-white hover:bg-slate-700"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="mt-2 text-sm text-slate-500">{copiedValue === paymentMeta.referenceValue ? 'تم نسخ المرجع' : 'انسخ المرجع قبل إتمام السداد'}</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  {copiedValue === paymentMeta.referenceValue ? 'تم نسخ المرجع' : 'انسخ المرجع قبل إتمام السداد'}
+                </p>
               </div>
             </div>
 
@@ -172,7 +187,7 @@ export default function PublicPaymentInstructionPage() {
                   <button
                     type="button"
                     onClick={() => handleCopy(paymentMeta.destinationValue)}
-                    className="inline-flex items-center justify-center rounded-full bg-slate-900 text-white p-2 hover:bg-slate-700"
+                    className="inline-flex items-center justify-center rounded-full bg-slate-900 p-2 text-white hover:bg-slate-700"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -182,7 +197,7 @@ export default function PublicPaymentInstructionPage() {
             ) : null}
 
             <div className="mt-8">
-              <h3 className="text-lg font-black text-slate-950 mb-4">الخطوات</h3>
+              <h3 className="mb-4 text-lg font-black text-slate-950">الخطوات</h3>
               <div className="space-y-3">
                 {paymentMeta.steps?.map((step, index) => (
                   <div key={`${index}-${step}`} className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -212,7 +227,7 @@ export default function PublicPaymentInstructionPage() {
               <div className="mt-4 space-y-4">
                 <div>
                   <p className="text-sm text-slate-300">رقم العملية</p>
-                  <p className="mt-1 font-bold break-all">{session.transactionId}</p>
+                  <p className="mt-1 break-all font-bold">{session.transactionId}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-300">تم الإنشاء</p>
@@ -231,7 +246,7 @@ export default function PublicPaymentInstructionPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] bg-white p-6">
+            <div className="rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
               <h3 className="text-lg font-black text-slate-950">مهم قبل الإغلاق</h3>
               <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
                 <li>استخدم نفس المبلغ المعروض دون تعديل.</li>

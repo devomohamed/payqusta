@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Tag, Save, Plus, Trash2, Loader } from 'lucide-react'; // Removed Eye, EyeOff
+import React, { useEffect, useState } from 'react';
+import { Tag, Plus, Trash2, Loader } from 'lucide-react';
 import { api, productsApi } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
@@ -17,7 +17,6 @@ export default function SettingsCategories() {
   const loadCategories = async () => {
     setLoading(true);
     try {
-      // Merge configured categories with categories already used by products.
       const [settingsRes, productsRes] = await Promise.all([
         api.get('/settings'),
         productsApi.getCategories(),
@@ -25,13 +24,12 @@ export default function SettingsCategories() {
 
       const settingsCategories = settingsRes.data?.data?.tenant?.settings?.categories || [];
       const settingsNames = settingsCategories
-        .map((cat) => (typeof cat === 'string' ? cat : cat?.name))
+        .map((category) => (typeof category === 'string' ? category : category?.name))
         .filter(Boolean);
 
       const productCategories = productsRes.data?.data || [];
-      const merged = Array.from(new Set([...settingsNames, ...productCategories]));
-      setCategories(merged);
-    } catch (err) {
+      setCategories(Array.from(new Set([...settingsNames, ...productCategories])));
+    } catch (error) {
       notify.error('فشل في تحميل الأقسام');
     } finally {
       setLoading(false);
@@ -43,7 +41,7 @@ export default function SettingsCategories() {
     try {
       await api.put('/settings/categories', { categories: updatedCategories });
       notify.success('تم حفظ التغييرات');
-    } catch (err) {
+    } catch (error) {
       notify.error('فشل في حفظ التغييرات');
     } finally {
       setSaving(false);
@@ -51,32 +49,34 @@ export default function SettingsCategories() {
   };
 
   const addCategory = () => {
-    if (!newCategory.trim()) return;
-    if (categories.includes(newCategory.trim())) {
-      return notify.warning('القسم موجود بالفعل');
+    const trimmed = newCategory.trim();
+    if (!trimmed) return;
+
+    if (categories.includes(trimmed)) {
+      notify.warning('القسم موجود بالفعل');
+      return;
     }
-    
-    const updated = [...categories, newCategory.trim()];
+
+    const updated = [...categories, trimmed];
     setCategories(updated);
     setNewCategory('');
     saveCategories(updated);
   };
 
-  const removeCategory = (cat) => {
+  const removeCategory = (category) => {
     notify.custom({
       type: 'warning',
       title: 'حذف القسم',
-      message: `هل أنت متأكد من حذف قسم "${cat}"؟ سيتم نقل جميع المنتجات المرتبطة به إلى قسم "أخرى".`,
+      message: `هل أنت متأكد من حذف قسم "${category}"؟ سيتم نقل المنتجات المرتبطة به إلى قسم "أخرى".`,
       action: {
         label: 'حذف نهائي',
         onClick: async () => {
           setSaving(true);
           try {
-            await api.delete(`/settings/categories/${encodeURIComponent(cat)}`);
-            // Update local state by removing the deleted category
-            setCategories(categories.filter(c => c !== cat));
+            await api.delete(`/settings/categories/${encodeURIComponent(category)}`);
+            setCategories((prev) => prev.filter((item) => item !== category));
             notify.success('تم حذف القسم بنجاح');
-          } catch (err) {
+          } catch (error) {
             notify.error('فشل في حذف القسم');
           } finally {
             setSaving(false);
@@ -88,9 +88,9 @@ export default function SettingsCategories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg">
-          <Tag className="w-6 h-6 text-white" />
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 shadow-lg">
+          <Tag className="h-6 w-6 text-white" />
         </div>
         <div>
           <h2 className="text-xl font-bold">أقسام المنتجات</h2>
@@ -98,52 +98,50 @@ export default function SettingsCategories() {
         </div>
       </div>
 
-      {/* Add Category */}
       <div className="flex gap-3">
         <div className="flex-1">
-          <Input 
-            placeholder="اسم القسم الجديد..." 
-            value={newCategory} 
-            onChange={(e) => setNewCategory(e.target.value)} 
-            onKeyPress={(e) => e.key === 'Enter' && addCategory()} 
+          <Input
+            placeholder="اسم القسم الجديد..."
+            value={newCategory}
+            onChange={(event) => setNewCategory(event.target.value)}
+            onKeyPress={(event) => event.key === 'Enter' && addCategory()}
             disabled={loading || saving}
           />
         </div>
-        <Button 
-          onClick={addCategory} 
+        <Button
+          onClick={addCategory}
           disabled={loading || saving || !newCategory.trim()}
-          icon={saving ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          icon={saving ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         >
-          {saving ? 'جاري الحفظ...' : 'إضافة'}
+          {saving ? 'جارٍ الحفظ...' : 'إضافة'}
         </Button>
       </div>
 
-      {/* Categories List */}
       {loading ? (
         <div className="flex justify-center py-8">
-          <Loader className="w-8 h-8 text-purple-500 animate-spin" />
+          <Loader className="h-8 w-8 animate-spin text-purple-500" />
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {categories.map((cat, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow group">
-              <span className="font-medium text-gray-700 dark:text-gray-200">{cat}</span>
-              <button 
-                onClick={() => removeCategory(cat)} 
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          {categories.map((category, index) => (
+            <div key={index} className="app-surface flex items-center justify-between rounded-xl border border-gray-100/80 p-3 transition-shadow hover:shadow-md dark:border-white/10 group">
+              <span className="font-medium text-gray-700 dark:text-gray-200">{category}</span>
+              <button
+                onClick={() => removeCategory(category)}
                 disabled={saving}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-500 hover:text-red-600 transition-all"
+                className="rounded-lg p-1.5 text-red-500 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
                 title="حذف"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           ))}
-          
+
           {categories.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-              <Tag className="w-12 h-12 mb-3 opacity-20" />
+            <div className="app-surface-muted col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-gray-400 dark:border-white/10">
+              <Tag className="mb-3 h-12 w-12 opacity-20" />
               <p>لا توجد أقسام مضافة بعد</p>
-              <p className="text-xs opacity-70 mt-1">أضف أقسامًا لتنظيم منتجاتك</p>
+              <p className="mt-1 text-xs opacity-70">أضف أقسامًا لتنظيم منتجاتك</p>
             </div>
           )}
         </div>
@@ -151,4 +149,3 @@ export default function SettingsCategories() {
     </div>
   );
 }
-

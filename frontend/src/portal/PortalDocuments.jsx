@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { usePortalStore } from '../store/portalStore';
-import { useThemeStore } from '../store';
 import { FileText, Upload, Trash2, CheckCircle, Clock, AlertCircle, Eye, Shield, Camera, Image as ImageIcon } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 import { confirm } from '../components/ConfirmDialog';
@@ -15,7 +14,6 @@ const docTypes = [
 
 export default function PortalDocuments() {
     const { fetchDocuments, uploadDocument, deleteDocument, loading } = usePortalStore();
-    const { dark } = useThemeStore();
     const [documents, setDocuments] = useState([]);
     const [uploadingType, setUploadingType] = useState(null);
 
@@ -108,7 +106,7 @@ export default function PortalDocuments() {
 
         return (
             <div
-                className={`relative overflow-hidden group flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : 'cursor-pointer'} ${isDrag ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10 scale-[1.02]' : currentFile ? 'border-green-500/50 bg-green-50/30 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                className={`relative overflow-hidden group flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all duration-300 ${disabled ? 'opacity-50 pointer-events-none' : 'cursor-pointer'} ${isDrag ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10 scale-[1.02]' : currentFile ? 'border-green-500/50 bg-green-50/30 dark:bg-green-900/10' : 'app-surface border-gray-200/80 dark:border-white/10 hover:border-primary-400 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'}`}
                 onDragOver={(e) => { e.preventDefault(); setIsDrag(true); }}
                 onDragLeave={() => setIsDrag(false)}
                 onDrop={(e) => {
@@ -142,7 +140,7 @@ export default function PortalDocuments() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400 group-hover:text-primary-600 transition-colors">
-                        <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/40 transition-colors">
+                        <div className="app-surface-muted w-16 h-16 rounded-full flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/40 transition-colors">
                             {side === 'front' ? <Camera className="w-7 h-7" /> : side === 'back' ? <ImageIcon className="w-7 h-7" /> : <Upload className="w-7 h-7" />}
                         </div>
                         <span className="text-sm font-bold">اسحب صورة {label} أو اضغط للرفع</span>
@@ -154,7 +152,7 @@ export default function PortalDocuments() {
     };
 
     return (
-        <div className="space-y-8 pb-24" dir="rtl">
+        <div className="space-y-8 pb-24 app-text-soft" dir="rtl">
             {/* Header with Premium Glassmorphism */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary-600 to-primary-800 p-8 text-white shadow-xl shadow-primary-500/20">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
@@ -199,7 +197,7 @@ export default function PortalDocuments() {
                     const isUploadingThis = uploadingType === type.id;
 
                     return (
-                        <div key={type.id} className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group flex flex-col h-full">
+                        <div key={type.id} className="app-surface rounded-3xl p-6 border border-gray-100/80 dark:border-white/10 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group flex flex-col h-full">
 
                             <div className="flex items-start justify-between mb-2">
                                 <div className="flex items-center gap-4">
@@ -231,7 +229,7 @@ export default function PortalDocuments() {
                                 )}
                             </div>
 
-                            <hr className="my-5 border-gray-100 dark:border-gray-700" />
+                            <hr className="my-5 border-gray-100/80 dark:border-white/10" />
 
                             <div className="flex-1 flex flex-col justify-end">
                                 {isRejected && (
@@ -251,7 +249,7 @@ export default function PortalDocuments() {
                                                 href={currentDoc.url}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="flex-1 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                                                className="app-surface-muted flex-1 border border-gray-100/80 dark:border-white/10 text-gray-700 dark:text-gray-300 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                                             >
                                                 <Eye className="w-5 h-5" />
                                                 {type.id === 'national_id' ? 'الوجه الأمامي' : 'معاينة المستند'}
@@ -261,7 +259,7 @@ export default function PortalDocuments() {
                                                     href={currentDoc.backUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="flex-1 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                                                    className="app-surface-muted flex-1 border border-gray-100/80 dark:border-white/10 text-gray-700 dark:text-gray-300 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                                                 >
                                                     <Eye className="w-5 h-5" />
                                                     الوجه الخلفي

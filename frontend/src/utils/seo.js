@@ -38,6 +38,7 @@ export function applySeoMetadata({
   description,
   robots,
   canonical,
+  keywords,
   openGraph = {},
   twitter = {},
   structuredData = [],
@@ -50,6 +51,7 @@ export function applySeoMetadata({
 
   setMeta('name', 'description', description);
   setMeta('name', 'robots', robots);
+  setMeta('name', 'keywords', Array.isArray(keywords) ? keywords.join(', ') : keywords);
 
   if (canonical) {
     const canonicalNode = ensureLink('canonical');

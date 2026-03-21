@@ -11,3 +11,8 @@ client/node_modules/
 coverage/
 backend/artifacts/
 backend/backend/
+frontend/vite.config.js.timestamp-*.mjs
+frontend/src/pages/*.part*
+frontend/temp_*.jsx
+restored_*.jsx
+fix_*.ps1

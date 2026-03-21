@@ -1,6 +1,7 @@
 ﻿import React, { useRef, useState } from 'react';
-import { Badge, Input, Button } from '../UI';
-import { UploadCloud, Image as ImageIcon, Trash2, Star, Plus, Tag, ChevronDown, ChevronUp, AlertTriangle, Copy, Layers, TrendingUp, Package, Palette, Ruler, ChevronsUpDown } from 'lucide-react';
+import { Badge, Button } from '../UI';
+import ImageEditorModal from './ImageEditorModal';
+import { UploadCloud, Image as ImageIcon, Trash2, Star, Plus, Tag, ChevronDown, ChevronUp, AlertTriangle, Copy, Layers, TrendingUp, Package, Palette, Ruler, ChevronsUpDown, Pencil } from 'lucide-react';
 
 // Preset color swatches
 const COLOR_SWATCHES = [
@@ -40,7 +41,7 @@ function ColorSwatch({ value, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-400 transition-colors"
+                className="app-surface w-full flex items-center gap-2 rounded-xl border-2 border-gray-200/80 px-3 py-2.5 transition-colors hover:border-primary-400 dark:border-white/10"
             >
                 {active
                     ? <><span className="w-4 h-4 rounded-full border border-gray-300 shrink-0" style={{ background: active.hex }} /><span className="text-sm font-medium text-gray-700 dark:text-gray-200">{active.name}</span></>
@@ -49,7 +50,7 @@ function ColorSwatch({ value, onChange }) {
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400 mr-auto" />
             </button>
             {open && (
-                <div className="absolute z-50 top-full mt-1.5 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-3">
+                <div className="app-surface absolute left-0 right-0 top-full z-50 mt-1.5 rounded-2xl border border-gray-200/80 p-3 shadow-xl dark:border-white/10">
                     <div className="grid grid-cols-5 gap-2 mb-2">
                         {COLOR_SWATCHES.map(c => (
                             <button
@@ -66,7 +67,7 @@ function ColorSwatch({ value, onChange }) {
                         placeholder="لون مخصص..."
                         value={COLOR_SWATCHES.find(c => c.name === value) ? '' : value || ''}
                         onChange={e => onChange(e.target.value)}
-                        className="w-full text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:border-primary-400"
+                        className="app-surface-muted w-full rounded-lg border border-transparent px-3 py-1.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                     />
                 </div>
             )}
@@ -85,6 +86,7 @@ export default function ProductMediaStep({
     pendingImages = [],
     maxImageCount = 10,
     onImagesChange,
+    onPendingImageReplace,
     onPrimaryImageSelect,
     onRemoveImage,
     onAddVariant,
@@ -93,6 +95,8 @@ export default function ProductMediaStep({
 }) {
     const fileInputRef = useRef(null);
     const [allExpanded, setAllExpanded] = useState(true);
+    const [cropFiles, setCropFiles] = useState([]);
+    const [editingPendingIndex, setEditingPendingIndex] = useState(null);
 
     const handleVariantImageUpload = (idx, file) => {
         if (!file) return;
@@ -123,35 +127,84 @@ export default function ProductMediaStep({
         reader.readAsDataURL(file);
     };
 
+    const handleCropClose = () => {
+        setCropFiles([]);
+        setEditingPendingIndex(null);
+    };
+
+    const handleCropComplete = (processedFiles) => {
+        if (typeof editingPendingIndex === 'number') {
+            onPendingImageReplace?.(editingPendingIndex, processedFiles?.[0] || null);
+        } else {
+            onImagesChange(processedFiles);
+        }
+        handleCropClose();
+    };
+
+    const handleFileSelection = (event) => {
+        const nextFiles = Array.from(event?.target?.files || []);
+        if (nextFiles.length === 0) return;
+        onImagesChange(nextFiles);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
     const handleDrop = (e) => {
         e.preventDefault(); e.stopPropagation();
-        if (e.dataTransfer.files?.length > 0) onImagesChange({ target: { files: e.dataTransfer.files } });
+        const nextFiles = Array.from(e.dataTransfer.files || []);
+        if (nextFiles.length > 0) {
+            onImagesChange(nextFiles);
+        }
+    };
+
+    const handleEditPendingImage = (index) => {
+        const targetFile = safePending[index];
+        if (!targetFile) return;
+        setEditingPendingIndex(index);
+        setCropFiles([targetFile]);
     };
 
     const safePending = Array.isArray(pendingImages) ? pendingImages : [];
-    const allImages = [
-        ...productImages.map(url => ({ type: 'existing', url })),
-        ...safePending.map((file, idx) => ({ type: 'pending', file, url: file._previewUrl || URL.createObjectURL(file), index: idx }))
-    ];
+    const safeVariants = Array.isArray(form.variants) ? form.variants : [];
+    const primaryPendingIndex = safePending.findIndex((file) => file?._previewUrl === form.primaryImagePreview);
+    const allImages = React.useMemo(() => ([
+        ...productImages.map((url) => ({ type: 'existing', url })),
+        ...safePending
+            .filter((file) => file?._previewUrl)
+            .map((file, idx) => ({ type: 'pending', file, url: file._previewUrl, index: idx }))
+    ]), [productImages, safePending]);
 
     const toggleVariant = (index) => {
-        const newVariants = [...form.variants];
-        newVariants[index].expanded = !newVariants[index].expanded;
-        setForm({ ...form, variants: newVariants });
+        setForm((prev) => {
+            const nextVariants = [...(prev.variants || [])];
+            if (!nextVariants[index]) return prev;
+            nextVariants[index] = {
+                ...nextVariants[index],
+                expanded: !nextVariants[index].expanded,
+            };
+            return { ...prev, variants: nextVariants };
+        });
     };
 
     const toggleAllVariants = () => {
         const next = !allExpanded;
         setAllExpanded(next);
-        setForm({ ...form, variants: form.variants.map(v => ({ ...v, expanded: next })) });
+        setForm((prev) => ({
+            ...prev,
+            variants: (prev.variants || []).map((variant) => ({ ...variant, expanded: next })),
+        }));
     };
 
     const duplicateVariant = (idx) => {
-        const clone = { ...form.variants[idx], sku: '', expanded: true };
-        const updated = [...form.variants];
-        updated.splice(idx + 1, 0, clone);
-        setForm({ ...form, variants: updated });
+        setForm((prev) => {
+            const currentVariants = [...(prev.variants || [])];
+            if (!currentVariants[idx]) return prev;
+            const clone = { ...currentVariants[idx], sku: '', expanded: true };
+            currentVariants.splice(idx + 1, 0, clone);
+            return { ...prev, variants: currentVariants };
+        });
     };
 
     const addSizeSet = () => {
@@ -162,7 +215,7 @@ export default function ProductMediaStep({
             stock: form.stock || '', expanded: true,
             description: '', image: '',
         }));
-        setForm({ ...form, variants: [...(form.variants || []), ...newVars] });
+        setForm((prev) => ({ ...prev, variants: [...(prev.variants || []), ...newVars] }));
     };
 
     const addColorSet = () => {
@@ -174,7 +227,7 @@ export default function ProductMediaStep({
             stock: form.stock || '', expanded: true,
             description: '', image: '',
         }));
-        setForm({ ...form, variants: [...(form.variants || []), ...newVars] });
+        setForm((prev) => ({ ...prev, variants: [...(prev.variants || []), ...newVars] }));
     };
 
     const addBlankVariant = () => onAddVariant({
@@ -194,20 +247,27 @@ export default function ProductMediaStep({
         return null;
     };
 
-    const variantPrices = (form.variants || []).filter(v => v.price).map(v => Number(v.price));
+    const variantPrices = React.useMemo(
+        () => safeVariants.filter((variant) => variant.price).map((variant) => Number(variant.price)),
+        [safeVariants],
+    );
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
 
             {/* ── 1. Media Section ── */}
-            <section className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+            <section className="app-surface rounded-2xl border border-gray-100/80 p-6 shadow-sm dark:border-white/10">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                             <ImageIcon className="w-5 h-5 text-purple-500" />
                             صور المنتج
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">أول صورة تم اختيارها ستكون هي الصورة الرئيسية.</p>
+                        <p className="text-sm text-gray-500 mt-1">ارفع الصور مباشرة، وسيتم اختيار أول صورة كصورة رئيسية افتراضيًا.</p>
+                        <div className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-primary-200/70 bg-primary-50/80 px-3 py-2 text-xs font-semibold text-primary-700 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-300">
+                            <Star className="h-3.5 w-3.5 fill-current" />
+                            أول صورة ترفعها تصبح الغلاف الرئيسي تلقائيًا بدون أي تعديل، وبعدها يمكنك فتح التعديل من زر القلم.
+                        </div>
                     </div>
                 </div>
 
@@ -217,19 +277,19 @@ export default function ProductMediaStep({
                             onClick={() => fileInputRef.current?.click()}
                             onDragOver={handleDragOver}
                             onDrop={handleDrop}
-                            className="border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-primary-900/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all h-64 group"
+                            className="app-surface-muted group flex h-64 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300/80 p-8 text-center transition-all hover:border-primary-500 hover:bg-primary-50/50 dark:border-white/10 dark:hover:bg-primary-900/10"
                         >
                             <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 mb-4 group-hover:scale-110 transition-transform">
                                 <UploadCloud className="w-8 h-8" />
                             </div>
                             <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-1">اسحب الصور هنا أو اضغط للاختيار</h4>
-                            <p className="text-sm text-gray-500 mb-4">يدعم JPG, PNG, WEBP حتى {maxImageCount} صور مع ضغط تلقائي قبل الحفظ</p>
-                            <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={onImagesChange} />
+                            <p className="text-sm text-gray-500 mb-4">يدعم JPG, PNG, WEBP حتى {maxImageCount} صور. الرفع يتم مباشرة ثم التعديل اختياري من زر القلم.</p>
+                            <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileSelection} />
                             <Button type="button" variant="outline" size="sm">تصفح الملفات</Button>
                         </div>
                     </div>
                     <div className="lg:col-span-1">
-                        <div className="relative border-2 border-gray-100 dark:border-gray-800 rounded-2xl p-5 h-full flex flex-col bg-gradient-to-br from-gray-50/80 to-white dark:from-gray-800/40 dark:to-gray-900/40 shadow-[inset_0_2px_15px_rgba(0,0,0,0.02)] overflow-hidden transition-all duration-300">
+                        <div className="app-surface-muted relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-gray-100/80 p-5 shadow-[inset_0_2px_15px_rgba(0,0,0,0.02)] transition-all duration-300 dark:border-white/10">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-[50px] rounded-full -z-10" />
                             <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 blur-[50px] rounded-full -z-10" />
 
@@ -244,10 +304,25 @@ export default function ProductMediaStep({
                             </div>
 
                             {form.primaryImagePreview ? (
-                                <div className="flex-1 rounded-xl overflow-hidden border-2 border-primary-100 dark:border-primary-900/30 relative group shadow-sm bg-white dark:bg-gray-900/50">
+                                <div className="app-surface relative flex-1 overflow-hidden rounded-xl border-2 border-primary-100 shadow-sm dark:border-primary-900/30">
+                                    {primaryPendingIndex >= 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleEditPendingImage(primaryPendingIndex)}
+                                            className="absolute right-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-xl bg-slate-950/75 px-3 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:scale-[1.02] hover:bg-primary-600"
+                                        >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                            تعديل الصورة
+                                        </button>
+                                    )}
+                                    <div className="absolute left-3 top-3 z-20 rounded-full border border-amber-300/50 bg-amber-50/90 px-3 py-1 text-[11px] font-bold text-amber-700 shadow-sm dark:border-amber-400/20 dark:bg-amber-500/15 dark:text-amber-300">
+                                        الغلاف الرئيسي
+                                    </div>
                                     <img
                                         src={form.primaryImagePreview}
                                         alt="Primary"
+                                        loading="lazy"
+                                        decoding="async"
                                         className="w-full h-full object-contain absolute inset-0 transition-transform duration-500 group-hover:scale-105"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
@@ -255,7 +330,7 @@ export default function ProductMediaStep({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex-1 rounded-xl bg-white/50 dark:bg-gray-800/50 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400 group-hover:border-primary-300 transition-colors backdrop-blur-sm relative">
+                                <div className="app-surface-muted relative flex flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200/80 text-gray-400 backdrop-blur-sm transition-colors group-hover:border-primary-300 dark:border-white/10">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-100/50 to-transparent dark:from-gray-800/30 dark:to-transparent" />
                                     <ImageIcon className="w-10 h-10 opacity-40 mb-3 drop-shadow-sm" />
                                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 z-10 px-4 text-center">انقر على <Star className="w-3.5 h-3.5 inline text-amber-500 mx-1" /> على أي صورة لتعيينها كصورة رئيسية</span>
@@ -267,22 +342,53 @@ export default function ProductMediaStep({
 
                 {allImages.length > 0 && (
                     <div className="mt-6">
-                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">الصور المحملة ({allImages.length})</h4>
-                        <div className="flex flex-wrap gap-4">
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">الصور المحملة ({allImages.length})</h4>
+                            <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                                اضغط على الصورة لاختيارها كصورة رئيسية، أو على القلم لتعديلها.
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                             {allImages.map((img, idx) => {
                                 const isPrimary = img.url === form.primaryImagePreview;
                                 return (
                                     <div key={idx}
-                                        className={`relative group w-24 h-24 rounded-xl overflow-hidden cursor-pointer transition-all ${isPrimary ? 'ring-4 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900' : 'border border-gray-200 dark:border-gray-700 hover:border-primary-400'} ${img.type === 'pending' ? 'border-dashed' : ''}`}
+                                        className={`relative group aspect-square overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 ${isPrimary ? 'ring-4 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900 shadow-[0_18px_50px_rgba(59,130,246,0.18)]' : 'border border-gray-200/80 dark:border-white/10 hover:-translate-y-0.5 hover:border-primary-400 hover:shadow-[0_16px_35px_rgba(15,23,42,0.12)]'} ${img.type === 'pending' ? 'border-dashed' : ''}`}
                                         onClick={() => onPrimaryImageSelect(img.url)}
                                     >
-                                        <img src={img.url} alt={`img-${idx}`} className="w-full h-full object-cover bg-white" />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                            <button onClick={e => { e.stopPropagation(); onPrimaryImageSelect(img.url); }} className="p-1.5 bg-white text-gray-900 rounded-lg hover:text-primary-600" title="رئيسية"><Star className="w-4 h-4" /></button>
-                                            <button onClick={e => { e.stopPropagation(); onRemoveImage(img.type, img.type === 'existing' ? img.url : img.index); }} className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600" title="حذف"><Trash2 className="w-4 h-4" /></button>
+                                        <img src={img.url} alt={`img-${idx}`} loading="lazy" decoding="async" className="h-full w-full object-cover bg-white transition-transform duration-500 group-hover:scale-105" />
+                                        {img.type === 'pending' && (
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    handleEditPendingImage(img.index);
+                                                }}
+                                                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-950/75 text-white shadow-lg backdrop-blur-md transition-all hover:scale-105 hover:bg-primary-600"
+                                                title="تعديل الصورة"
+                                                aria-label="تعديل الصورة"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" />
+                                            </button>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+                                            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3">
+                                                <div>
+                                                    <div className="text-[11px] font-bold text-white">
+                                                        {isPrimary ? 'الصورة الحالية للغلاف' : 'اضغط لاختيارها كغلاف'}
+                                                    </div>
+                                                    <div className="mt-1 text-[10px] font-medium text-white/75">
+                                                        {img.type === 'pending' ? 'صورة جديدة قابلة للتعديل' : 'صورة محفوظة'}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={e => { e.stopPropagation(); onPrimaryImageSelect(img.url); }} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-gray-900 shadow-lg transition-colors hover:text-primary-600" title="رئيسية"><Star className="w-4 h-4" /></button>
+                                                    <button onClick={e => { e.stopPropagation(); onRemoveImage(img.type, img.type === 'existing' ? img.url : img.index); }} className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500 text-white shadow-lg transition-colors hover:bg-red-600" title="حذف"><Trash2 className="w-4 h-4" /></button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        {img.type === 'pending' && !isPrimary && <div className="absolute top-1 right-1"><Badge variant="warning" className="text-[9px] px-1.5">معلقة</Badge></div>}
-                                        {isPrimary && <div className="absolute top-1 right-1"><Badge variant="primary" className="text-[9px] px-1.5">رئيسية</Badge></div>}
+                                        {img.type === 'pending' && !isPrimary && <div className="absolute top-2 left-2"><Badge variant="warning" className="text-[9px] px-1.5">معلقة</Badge></div>}
+                                        {isPrimary && <div className="absolute top-2 left-2"><Badge variant="primary" className="text-[9px] px-1.5">رئيسية</Badge></div>}
                                     </div>
                                 );
                             })}
@@ -298,10 +404,10 @@ export default function ProductMediaStep({
             </section>
 
             {/* ── 2. Variants Section — Advanced ── */}
-            <section className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <section className="app-surface overflow-hidden rounded-2xl border border-gray-100/80 shadow-sm dark:border-white/10">
 
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-100/80 p-6 dark:border-white/10 sm:flex-row sm:items-center">
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                             <Layers className="w-5 h-5 text-rose-500" />
@@ -329,18 +435,18 @@ export default function ProductMediaStep({
                 </div>
 
                 {/* Quick Template Bar */}
-                <div className="px-6 py-3 bg-gray-50/70 dark:bg-gray-800/30 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3 flex-wrap">
+                <div className="app-surface-muted flex flex-wrap items-center gap-3 border-b border-gray-100/80 px-6 py-3 dark:border-white/10">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">إضافة سريعة:</span>
                     <button type="button" onClick={addSizeSet}
-                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 transition-all">
+                        className="app-surface flex items-center gap-1.5 rounded-lg border border-gray-200/80 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-blue-400 hover:text-blue-600 dark:border-white/10 dark:text-gray-300">
                         <Ruler className="w-3.5 h-3.5" /> مقاسات XS→3XL
                     </button>
                     <button type="button" onClick={addColorSet}
-                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-rose-400 hover:text-rose-600 transition-all">
+                        className="app-surface flex items-center gap-1.5 rounded-lg border border-gray-200/80 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-rose-400 hover:text-rose-600 dark:border-white/10 dark:text-gray-300">
                         <Palette className="w-3.5 h-3.5" /> ألوان أساسية (5)
                     </button>
                     <button type="button" onClick={addBlankVariant}
-                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-400 hover:text-emerald-600 transition-all">
+                        className="app-surface flex items-center gap-1.5 rounded-lg border border-gray-200/80 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-emerald-400 hover:text-emerald-600 dark:border-white/10 dark:text-gray-300">
                         <Tag className="w-3.5 h-3.5" /> موديل مخصص
                     </button>
                 </div>
@@ -355,7 +461,7 @@ export default function ProductMediaStep({
                             const colorSwatch = COLOR_SWATCHES.find(c => c.name === v.attributes?.['اللون']);
 
                             return (
-                                <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-visible bg-white dark:bg-gray-900 shadow-sm">
+                                <div key={idx} className="app-surface overflow-visible rounded-2xl border border-gray-200/80 shadow-sm dark:border-white/10">
 
                                     {/* Card Header */}
                                     <div className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors select-none rounded-2xl`}
@@ -398,7 +504,7 @@ export default function ProductMediaStep({
 
                                     {/* Card Body */}
                                     {expanded && (
-                                        <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-800/20">
+                                        <div className="app-surface-muted border-t border-gray-100/80 dark:border-white/10">
                                             {/* Size quick-pick */}
                                             <div className="px-4 pt-3 pb-0">
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">مقاس سريع</p>
@@ -406,7 +512,7 @@ export default function ProductMediaStep({
                                                     {SIZE_PRESETS.map(s => (
                                                         <button key={s} type="button"
                                                             onClick={() => onUpdateVariant(idx, 'attributes', { ...v.attributes, 'الحجم': s })}
-                                                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${v.attributes?.['الحجم'] === s ? 'bg-primary-500 text-white border-primary-500' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-400 hover:text-primary-600'}`}>
+                                                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${v.attributes?.['الحجم'] === s ? 'bg-primary-500 text-white border-primary-500' : 'app-surface border-gray-200/80 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-primary-400 hover:text-primary-600'}`}>
                                                             {s}
                                                         </button>
                                                     ))}
@@ -424,7 +530,7 @@ export default function ProductMediaStep({
                                                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">المقاس / الحجم</label>
                                                     <input type="text" placeholder="XL, 2Kg..." value={v.attributes?.['الحجم'] || ''}
                                                         onChange={e => onUpdateVariant(idx, 'attributes', { ...v.attributes, 'الحجم': e.target.value })}
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" />
+                                                        className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-white/10 dark:text-white" />
                                                 </div>
 
                                                 {/* Color swatch */}
@@ -440,7 +546,7 @@ export default function ProductMediaStep({
                                                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">كود SKU</label>
                                                     <input type="text" placeholder="SKU-001" value={v.sku || ''}
                                                         onChange={e => onUpdateVariant(idx, 'sku', e.target.value)}
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                        className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 text-sm font-mono text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-white/10 dark:text-white" dir="ltr" />
                                                 </div>
 
                                                 {/* International Barcode */}
@@ -448,7 +554,7 @@ export default function ProductMediaStep({
                                                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">الباركود الدولي</label>
                                                     <input type="text" placeholder="6001234..." value={v.internationalBarcode || v.barcode || ''}
                                                         onChange={e => onUpdateVariant(idx, 'internationalBarcode', e.target.value)}
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                        className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 text-sm font-mono text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-white/10 dark:text-white" dir="ltr" />
                                                 </div>
 
                                                 {/* Local Barcode */}
@@ -456,7 +562,7 @@ export default function ProductMediaStep({
                                                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">الباركود المحلي</label>
                                                     <input type="text" placeholder="000000000001" value={v.localBarcode || ''}
                                                         onChange={e => onUpdateVariant(idx, 'localBarcode', e.target.value)}
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                        className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 text-sm font-mono text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-white/10 dark:text-white" dir="ltr" />
                                                 </div>
 
                                                 {/* Sale Price */}
@@ -465,7 +571,7 @@ export default function ProductMediaStep({
                                                     <div className="relative">
                                                         <input type="number" placeholder="0.00" value={v.price || ''}
                                                             onChange={e => onUpdateVariant(idx, 'price', e.target.value)}
-                                                            className="w-full px-3 py-2.5 pl-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 transition-colors" dir="ltr" />
+                                                            className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 pl-10 text-sm text-gray-900 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:text-white" dir="ltr" />
                                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">ج.م</span>
                                                     </div>
                                                 </div>
@@ -478,7 +584,7 @@ export default function ProductMediaStep({
                                                     <div className="relative">
                                                         <input type="number" placeholder="0.00" value={v.cost || ''}
                                                             onChange={e => onUpdateVariant(idx, 'cost', e.target.value)}
-                                                            className="w-full px-3 py-2.5 pl-10 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-amber-500 transition-colors" dir="ltr" />
+                                                            className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 pl-10 text-sm text-gray-900 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:border-white/10 dark:text-white" dir="ltr" />
                                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">ج.م</span>
                                                     </div>
                                                 </div>
@@ -490,7 +596,7 @@ export default function ProductMediaStep({
                                                     </label>
                                                     <input type="number" placeholder="0" value={v.stock || ''}
                                                         onChange={e => onUpdateVariant(idx, 'stock', Number(e.target.value))}
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" dir="ltr" />
+                                                        className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-white/10 dark:text-white" dir="ltr" />
                                                 </div>
 
                                                 {/* Variant Description */}
@@ -500,7 +606,7 @@ export default function ProductMediaStep({
                                                     </label>
                                                     <textarea rows={3} placeholder="أضف وصفاً خاصاً بهذا الموديل للعملاء.." value={v.description || ''}
                                                         onChange={e => onUpdateVariant(idx, 'description', e.target.value)}
-                                                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-primary-500 transition-colors" />
+                                                        className="app-surface w-full rounded-xl border-2 border-gray-200/80 px-3 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-white/10 dark:text-white" />
                                                 </div>
 
                                                 {/* Variant Image */}
@@ -511,14 +617,14 @@ export default function ProductMediaStep({
                                                     <div className="flex items-start gap-4">
                                                         {v.image ? (
                                                             <div className="w-20 h-20 rounded-xl border-2 border-primary-100 dark:border-primary-900 overflow-hidden relative group">
-                                                                <img src={v.image} className="w-full h-full object-cover" alt="Variant" />
+                                                                <img src={v.image} className="w-full h-full object-cover" alt="Variant" loading="lazy" decoding="async" />
                                                                 <button type="button" onClick={() => onUpdateVariant(idx, 'image', '')} className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                                     <Trash2 className="w-5 h-5" />
                                                                 </button>
                                                             </div>
                                                         ) : (
                                                             <div className="flex-1 max-w-sm">
-                                                                <label className="flex items-center justify-center w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
+                                                                <label className="app-surface-muted flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300/80 px-4 py-3 transition-colors hover:border-primary-500 hover:bg-primary-50 dark:border-white/10 dark:hover:bg-primary-900/10">
                                                                     <div className="flex flex-col items-center gap-1">
                                                                         <UploadCloud className="w-5 h-5 text-gray-400" />
                                                                         <span className="text-xs text-gray-500 font-semibold">اضغط لرفع صورة الموديل</span>
@@ -566,7 +672,7 @@ export default function ProductMediaStep({
 
                 {/* Footer Summary */}
                 {(form.variants?.length || 0) > 0 && (
-                    <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center gap-6 text-xs text-gray-500 flex-wrap">
+                    <div className="app-surface-muted flex flex-wrap items-center gap-6 border-t border-gray-100/80 px-6 py-3 text-xs text-gray-500 dark:border-white/10">
                         <div className="flex items-center gap-1.5">
                             <Package className="w-3.5 h-3.5" />
                             إجمالي المخزون:
@@ -586,6 +692,12 @@ export default function ProductMediaStep({
                     </div>
                 )}
             </section>
+            <ImageEditorModal
+                isOpen={cropFiles.length > 0}
+                onClose={handleCropClose}
+                files={cropFiles}
+                onComplete={handleCropComplete}
+            />
         </div>
     );
 }

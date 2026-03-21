@@ -100,7 +100,7 @@ export default function PortalOrders() {
     const getStepIndex = (status) => trackingStepKeys.indexOf(status);
 
     return (
-        <div className="space-y-4 pb-20" dir={i18n.dir()}>
+        <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="w-6 h-6 text-primary-500" />
@@ -117,7 +117,7 @@ export default function PortalOrders() {
                         onClick={() => setStatusFilter(f.value)}
                         className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${statusFilter === f.value
                             ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                            : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-100/80 hover:bg-black/[0.02] dark:border-white/10 dark:hover:bg-white/[0.03]'
                             }`}
                     >
                         {f.label}
@@ -145,7 +145,7 @@ export default function PortalOrders() {
                         return (
                             <div
                                 key={order._id}
-                                className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 sm:p-5 border border-gray-100 dark:border-gray-700 shadow-sm"
+                                className="app-surface rounded-2xl p-4 sm:p-5 border border-gray-100/80 dark:border-white/10 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-500/5"
                             >
                                 {/* Header */}
                                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3">
@@ -198,7 +198,7 @@ export default function PortalOrders() {
                                 )}
 
                                 {/* Price */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl overflow-hidden text-center text-xs mb-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 dark:divide-gray-700">
+                                <div className="app-surface-muted mb-3 grid grid-cols-1 sm:grid-cols-3 gap-0 rounded-xl overflow-hidden text-center text-xs divide-y sm:divide-y-0 sm:divide-x divide-gray-200/80 dark:divide-white/10">
                                     <div className="p-3">
                                         <p className="text-gray-500 dark:text-gray-400 mb-0.5">{t('orders.total')}</p>
                                         <p className="font-bold text-gray-900 dark:text-white">{order.totalAmount?.toLocaleString()}</p>
@@ -214,7 +214,7 @@ export default function PortalOrders() {
                                 </div>
 
                                 {(order.refundStatus && order.refundStatus !== 'none') || (order.returnStatus && order.returnStatus !== 'none') ? (
-                                    <div className="mb-3 rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                                    <div className="app-surface-muted mb-3 rounded-xl border border-gray-100/80 dark:border-white/10 px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                                         {order.refundStatus && order.refundStatus !== 'none' ? (
                                             <p className="font-bold text-emerald-600 dark:text-emerald-400">
                                                 {refundStatusLabels[order.refundStatus] || order.refundStatus}
@@ -231,7 +231,7 @@ export default function PortalOrders() {
                                 <div className="flex flex-col sm:flex-row gap-2">
                                     <button
                                         onClick={() => openDetails(order._id)}
-                                        className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition flex items-center justify-center gap-1"
+                                        className="app-surface flex-1 py-2 rounded-xl border border-gray-100/80 dark:border-white/10 text-sm font-bold text-gray-600 dark:text-gray-400 hover:border-primary-500/40 hover:text-primary-600 dark:hover:text-primary-400 transition flex items-center justify-center gap-1"
                                     >
                                         {t('orders.details')} <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -272,28 +272,28 @@ export default function PortalOrders() {
             {(selectedOrder || detailsLoading) && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center" onClick={() => !detailsLoading && setSelectedOrder(null)}>
                     <div
-                        className="bg-white dark:bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
+                        className="app-surface w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[85vh] overflow-y-auto shadow-2xl border border-gray-100/80 dark:border-white/10"
                         onClick={e => e.stopPropagation()}
                     >
                         {detailsLoading ? (
                             <div className="px-4">
-                                <LoadingSpinner size="lg" text="جاري تحميل تفاصيل الطلب..." />
+                                <LoadingSpinner size="lg" text={t('orders.loading_details', { defaultValue: 'Loading order details...' })} />
                             </div>
                         ) : selectedOrder && (
                             <>
-                                <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 p-4 flex justify-between items-center z-10">
+                                <div className="app-surface sticky top-0 border-b border-gray-100/80 dark:border-white/10 p-4 flex justify-between items-center z-10">
                                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t('orders.order_num', { num: selectedOrder.invoiceNumber })}</h3>
-                                    <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
+                                    <button onClick={() => setSelectedOrder(null)} className="app-surface-muted p-2 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
                                         <X className="w-5 h-5 text-gray-500" />
                                     </button>
                                 </div>
                                 <div className="p-4 space-y-4">
                                     {/* Full Timeline */}
                                     {selectedOrder.orderStatus !== 'cancelled' && (
-                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                                        <div className="app-surface-muted rounded-2xl p-4">
                                             <h4 className="font-bold text-sm mb-3 text-gray-700 dark:text-gray-300">{t('orders.tracking.title')}</h4>
                                             <div className="space-y-0 relative">
-                                                <div className="absolute top-4 bottom-4 right-4 w-0.5 bg-gray-200 dark:bg-gray-700 z-0"></div>
+                                                <div className="absolute top-4 bottom-4 right-4 w-0.5 bg-gray-200/90 dark:bg-white/10 z-0"></div>
                                                 {trackingStepKeys.map((stepKey, idx) => {
                                                     const currentIdx = getStepIndex(selectedOrder.orderStatus);
                                                     const isDone = idx <= currentIdx;
@@ -319,7 +319,7 @@ export default function PortalOrders() {
                                         <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2">{t('orders.products')}</h4>
                                         <div className="space-y-2">
                                             {selectedOrder.items?.map((item, idx) => (
-                                                <div key={idx} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                                                <div key={idx} className="app-surface-muted flex items-center gap-3 rounded-xl p-3">
                                                     {item.product?.images?.[0] && (
                                                         <img src={item.product.images[0]} alt={item.product.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                                                     )}
@@ -334,7 +334,7 @@ export default function PortalOrders() {
                                     </div>
 
                                     {(selectedOrder.returnStatus && selectedOrder.returnStatus !== 'none') || (selectedOrder.refundStatus && selectedOrder.refundStatus !== 'none') || selectedOrder.cancelReason ? (
-                                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 space-y-2">
+                                        <div className="app-surface-muted rounded-2xl p-4 space-y-2">
                                             <h4 className="font-bold text-sm text-gray-900 dark:text-white">الاسترداد والمرتجعات</h4>
                                             {selectedOrder.returnStatus && selectedOrder.returnStatus !== 'none' ? (
                                                 <div className="flex justify-between gap-4 text-sm">

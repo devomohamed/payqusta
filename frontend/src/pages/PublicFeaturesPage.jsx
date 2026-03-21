@@ -53,17 +53,17 @@ export default function PublicFeaturesPage() {
       <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
         <div className="text-right">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">المزايا</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
             PayQusta ليس أداة واحدة، بل منظومة مترابطة
           </h1>
-          <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
+          <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">
             المنصة هنا ليست مجموعة شاشات منفصلة، بل أجزاء تخدم بعضها: البيع ينعكس على المخزون، والتحصيل يرتبط بالعميل، والواجهة العامة تدعم الطلب والثقة.
           </p>
 
-          <div className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الصورة الكبيرة</p>
-            <h2 className="mt-3 text-2xl font-black text-slate-950">الميزة الأقوى هي الترابط</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+          <div className="app-surface mt-6 rounded-[2rem] p-6">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الصورة الكبيرة</p>
+            <h2 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">الميزة الأقوى هي الترابط</h2>
+            <p className="app-text-soft mt-3 text-sm leading-7">
               قيمة المنصة ليست في كثرة المزايا فقط، بل في أن كل خطوة تكمل الأخرى: الفاتورة، العميل، المخزون، والتحصيل لا يعيش كل واحد منها في مكان منفصل.
             </p>
           </div>
@@ -100,15 +100,15 @@ export default function PublicFeaturesPage() {
           return (
             <article
               key={module.title}
-              className={`rounded-[2rem] border border-slate-200 bg-gradient-to-br ${module.tone} p-6 text-right shadow-sm transition-transform hover:-translate-y-1`}
+              className={`rounded-[2rem] border border-slate-200 bg-gradient-to-br ${module.tone} p-6 text-right shadow-sm transition-transform hover:-translate-y-1 dark:border-white/10 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 dark:shadow-none`}
             >
               <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                 <Icon className="h-5 w-5" />
               </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">{module.title}</h2>
+              <h2 className="mt-5 text-2xl font-black text-slate-950 dark:text-white">{module.title}</h2>
               <div className="mt-5 grid gap-3">
                 {module.points.map((point) => (
-                  <div key={point} className="rounded-2xl border border-white bg-white/90 px-4 py-3 text-sm font-bold text-slate-700">
+                  <div key={point} className="rounded-2xl border border-white bg-white/90 px-4 py-3 text-sm font-bold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
                     {point}
                   </div>
                 ))}
@@ -118,12 +118,12 @@ export default function PublicFeaturesPage() {
         })}
       </div>
 
-      <div className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right shadow-sm sm:p-8">
+      <div className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">ما الذي يتحسن فعليًا؟</p>
-            <h3 className="mt-3 text-3xl font-black text-slate-950">من عرض البراند إلى متابعة التحصيل، نفس المنظومة تخدمك</h3>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ما الذي يتحسن فعليًا؟</p>
+            <h3 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">من عرض البراند إلى متابعة التحصيل، نفس المنظومة تخدمك</h3>
+            <p className="app-text-soft mt-3 text-base leading-8">
               الهدف أن يرى العميل مشروعًا منظمًا، وأن يعمل الفريق على بيانات واضحة، وأن يتحول ذلك إلى مبيعات ومتابعة أدق مع الوقت.
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function PublicFeaturesPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               to="/use-cases"
-              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+              className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
               الحالات العملية
             </Link>

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
-import { useThemeStore } from '../store';
 import { Bell, CheckCircle, Clock, ShoppingBag, CreditCard, AlertTriangle, MessageCircle, Star, Check, CheckCheck } from 'lucide-react';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
@@ -31,7 +30,6 @@ export default function PortalNotifications() {
   const navigate = useNavigate();
   const location = useLocation();
   const { fetchNotifications, markNotificationRead, markAllNotificationsRead, unreadCount } = usePortalStore();
-  const { dark } = useThemeStore();
   const { t, i18n } = useTranslation('portal');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +89,7 @@ export default function PortalNotifications() {
   };
 
   return (
-    <div className="space-y-4 pb-20" dir={i18n.dir()}>
+    <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -104,7 +102,7 @@ export default function PortalNotifications() {
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllRead}
-            className="text-sm font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1 hover:underline"
+            className="app-surface inline-flex items-center gap-1 rounded-xl border border-gray-100/80 px-3 py-2 text-sm font-bold text-primary-600 transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:text-primary-400 dark:hover:bg-white/[0.03]"
           >
             <CheckCheck className="w-4 h-4" />
             {t('notifications.mark_all_read')}
@@ -132,9 +130,9 @@ export default function PortalNotifications() {
               <div
                 key={notif._id}
                 onClick={() => handleNotificationClick(notif)}
-                className={`bg-white dark:bg-gray-800/80 rounded-2xl p-4 border transition-all cursor-pointer ${notif.isRead
-                  ? 'border-gray-100 dark:border-gray-700 opacity-70'
-                  : 'border-primary-200 dark:border-primary-800 shadow-sm shadow-primary-500/5'
+                className={`app-surface rounded-2xl p-4 border transition-all cursor-pointer hover:-translate-y-0.5 ${notif.isRead
+                  ? 'border-gray-100/80 dark:border-white/10 opacity-75'
+                  : 'border-primary-200 dark:border-primary-800/60 shadow-sm shadow-primary-500/5'
                   }`}
               >
                 <div className="flex gap-3">
@@ -168,7 +166,7 @@ export default function PortalNotifications() {
               onClick={() => loadNotifications(i + 1)}
               className={`w-8 h-8 rounded-lg text-sm font-bold ${pagination.page === i + 1
                 ? 'bg-primary-500 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-100/80 dark:border-white/10'
                 }`}
             >
               {i + 1}

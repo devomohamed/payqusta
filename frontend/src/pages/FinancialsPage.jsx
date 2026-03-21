@@ -61,7 +61,7 @@ const FinancialsPage = () => {
     };
 
     const SummaryCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md">
+        <div className="app-surface-muted rounded-3xl p-6 transition-all duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg">
             <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-xl ${color}`}>
                     <Icon className="w-6 h-6" />
@@ -73,7 +73,7 @@ const FinancialsPage = () => {
                     </div>
                 )}
             </div>
-            <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">{title}</h3>
+            <h3 className="app-text-soft text-sm font-medium">{title}</h3>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {parseFloat(value).toLocaleString('ar-EG')} ج.م
             </div>
@@ -81,25 +81,25 @@ const FinancialsPage = () => {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-6 app-text-soft">
+            <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <DollarSign className="w-8 h-8 text-indigo-600" />
                         التقارير المالية والمحاسبية
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400">تتبع الأرباح، دفتر الأستاذ، وتوقعات السيولة</p>
+                    <p className="app-text-soft">تتبع الأرباح، دفتر الأستاذ، وتوقعات السيولة</p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700 flex">
+                    <div className="app-surface flex rounded-2xl p-1">
                         {['pnl', 'ledger', 'forecast'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab
+                                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${activeTab === tab
                                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                        : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                                     }`}
                             >
                                 {tab === 'pnl' ? 'الأرباح والخسائر' : tab === 'ledger' ? 'دفتر الأستاذ' : 'توقعات السيولة'}
@@ -110,7 +110,7 @@ const FinancialsPage = () => {
             </div>
 
             {activeTab !== 'forecast' && (
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-4">
+                <div className="app-surface-muted flex flex-wrap items-center gap-4 rounded-2xl p-4">
                     <div className="flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-gray-400" />
                         <span className="text-sm font-medium">الفترة من:</span>
@@ -118,7 +118,7 @@ const FinancialsPage = () => {
                             type="date"
                             value={dateRange.startDate}
                             onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm"
+                            className="app-surface rounded-xl border border-transparent p-2 text-sm"
                         />
                     </div>
                     <div className="flex items-center gap-2">
@@ -127,10 +127,10 @@ const FinancialsPage = () => {
                             type="date"
                             value={dateRange.endDate}
                             onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm"
+                            className="app-surface rounded-xl border border-transparent p-2 text-sm"
                         />
                     </div>
-                    <button className="mr-auto flex items-center gap-2 px-4 py-2 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl hover:bg-indigo-100 transition-colors">
+                    <button className="mr-auto flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/30">
                         <Download className="w-5 h-5" />
                         تصدير Excel
                     </button>
@@ -176,8 +176,8 @@ const FinancialsPage = () => {
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* P&L Statement */}
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-                                    <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                                <div className="app-surface overflow-hidden rounded-3xl">
+                                    <div className="app-surface-muted border-b border-gray-100/80 p-6 dark:border-white/10">
                                         <h3 className="font-bold flex items-center gap-2">
                                             <FileText className="w-5 h-5 text-indigo-600" />
                                             قائمة الأرباح والخسائر التفصيلية
@@ -202,7 +202,7 @@ const FinancialsPage = () => {
                                             <span className="text-red-600">({pnlData.cogs.total.toLocaleString()}) ج.م</span>
                                         </div>
 
-                                        <div className="flex justify-between items-center text-lg font-bold p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                                        <div className="app-surface-muted flex items-center justify-between rounded-2xl p-3 text-lg font-bold">
                                             <span>مجمل الربح (Gross Profit)</span>
                                             <span>{(pnlData.revenue.gross - pnlData.cogs.total).toLocaleString()} ج.م</span>
                                         </div>
@@ -233,7 +233,7 @@ const FinancialsPage = () => {
 
                                 {/* Performance Insights */}
                                 <div className="space-y-6">
-                                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                                    <div className="app-surface rounded-3xl p-6">
                                         <h3 className="font-bold mb-4 flex items-center gap-2">
                                             <PieChart className="w-5 h-5 text-indigo-600" />
                                             توزيع المصروفات
@@ -244,7 +244,7 @@ const FinancialsPage = () => {
                                         </div>
                                     </div>
 
-                                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                                    <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-6 dark:border-indigo-900/50 dark:bg-indigo-900/20">
                                         <h3 className="font-bold text-indigo-900 dark:text-indigo-100 mb-4 flex items-center gap-2">
                                             <AlertCircle className="w-5 h-5" />
                                             ملاحظات ذكية
@@ -275,22 +275,22 @@ const FinancialsPage = () => {
                     ) : null}
 
                     {activeTab === 'ledger' && (
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden animate-fade-in">
+                        <div className="app-surface overflow-hidden rounded-3xl animate-fade-in">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-right border-collapse">
                                     <thead>
-                                        <tr className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-sm uppercase">
-                                            <th className="p-4 font-bold border-b border-gray-100 dark:border-gray-700">التاريخ</th>
-                                            <th className="p-4 font-bold border-b border-gray-100 dark:border-gray-700">النوع</th>
-                                            <th className="p-4 font-bold border-b border-gray-100 dark:border-gray-700">البيان / الوصف</th>
-                                            <th className="p-4 font-bold border-b border-gray-100 dark:border-gray-700">مدين (+)</th>
-                                            <th className="p-4 font-bold border-b border-gray-100 dark:border-gray-700">دائن (-)</th>
-                                            <th className="p-4 font-bold border-b border-gray-100 dark:border-gray-700">الحالة</th>
+                                        <tr className="app-surface-muted text-sm uppercase text-gray-500 dark:text-gray-400">
+                                            <th className="border-b border-gray-100/80 p-4 font-bold dark:border-white/10">التاريخ</th>
+                                            <th className="border-b border-gray-100/80 p-4 font-bold dark:border-white/10">النوع</th>
+                                            <th className="border-b border-gray-100/80 p-4 font-bold dark:border-white/10">البيان / الوصف</th>
+                                            <th className="border-b border-gray-100/80 p-4 font-bold dark:border-white/10">مدين (+)</th>
+                                            <th className="border-b border-gray-100/80 p-4 font-bold dark:border-white/10">دائن (-)</th>
+                                            <th className="border-b border-gray-100/80 p-4 font-bold dark:border-white/10">الحالة</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                                    <tbody className="divide-y divide-gray-100/70 dark:divide-white/5">
                                         {ledgerData.map((entry, idx) => (
-                                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                            <tr key={idx} className="transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                                                 <td className="p-4 text-sm font-medium">
                                                     {format(new Date(entry.date), 'dd MMMM yyyy', { locale: ar })}
                                                 </td>
@@ -343,7 +343,7 @@ const FinancialsPage = () => {
                                 <div className="text-3xl font-black mb-4">-{forecastData.next30Days.outflow.toLocaleString()} ج.م</div>
                                 <div className="text-xs opacity-80">تشمل المصاريف الدورية والموردين</div>
                             </div>
-                            <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col justify-center">
+                            <div className="app-surface-muted flex flex-col justify-center rounded-3xl border-2 border-dashed border-gray-200 p-8 dark:border-white/10">
                                 <h4 className="text-gray-500 text-sm font-bold mb-2">صافي التدفق (Net Flow)</h4>
                                 <div className={`text-3xl font-black ${forecastData.next30Days.net >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
                                     {forecastData.next30Days.net.toLocaleString()} ج.m

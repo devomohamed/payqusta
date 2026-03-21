@@ -3,8 +3,7 @@
  * Defines available resources and actions for the permission system
  */
 
-module.exports = {
-  RESOURCES: {
+const RESOURCES = {
     PRODUCTS: 'products',
     CUSTOMERS: 'customers',
     SUPPLIERS: 'suppliers',
@@ -16,15 +15,24 @@ module.exports = {
     USERS: 'users',
     STOCK_ADJUSTMENTS: 'stock_adjustments',
     CASH_SHIFTS: 'cash_shifts',
-  },
+    PURCHASE_ORDERS: 'purchase_orders',
+};
 
-  ACTIONS: {
+const ACTIONS = {
     CREATE: 'create',
     READ: 'read',
     UPDATE: 'update',
     DELETE: 'delete',
-  },
+};
 
+const RESOURCE_VALUES = Object.values(RESOURCES);
+const ACTION_VALUES = Object.values(ACTIONS);
+
+module.exports = {
+  RESOURCES,
+  RESOURCE_VALUES,
+  ACTIONS,
+  ACTION_VALUES,
   // Default role permissions
   DEFAULT_ROLES: {
     VENDOR: {
@@ -41,6 +49,7 @@ module.exports = {
         { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
         { resource: 'stock_adjustments', actions: ['create', 'read', 'update', 'delete'] },
         { resource: 'cash_shifts', actions: ['create', 'read', 'update'] },
+        { resource: 'purchase_orders', actions: ['create', 'read', 'update', 'delete'] },
       ],
     },
     COORDINATOR: {
@@ -55,6 +64,7 @@ module.exports = {
         { resource: 'reports', actions: ['read'] },
         { resource: 'stock_adjustments', actions: ['create', 'read'] },
         { resource: 'cash_shifts', actions: ['create', 'read'] },
+        { resource: 'purchase_orders', actions: ['read'] },
       ],
     },
     CASHIER: {

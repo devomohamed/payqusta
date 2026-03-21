@@ -237,6 +237,9 @@ export default function Checkout() {
       detail: !isPortal ? shippingRegionLabel : 'يظهر الموعد المتوقع قبل تأكيد الطلب',
     },
   ];
+  const branchRoutingNote = isPortal
+    ? '?????? ?????? ??? ??????? ???????? ??? ????? ?????? ????? ???????? ??? ????? ??? ?????? ????? ??????.'
+    : '????? ????? ????? ???????? ??? ??? ??????? ??????? ??? ????? ?????? ????? ????????? ?? ????? ?? ????? ????? ??????? ??? ?? ???? ?????? ???.';
 
   useEffect(() => {
     if (isPortal || subtotal <= 0) return undefined;
@@ -705,7 +708,7 @@ export default function Checkout() {
                 <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">توصيل إلى</h4>
-                    <p className="font-bold text-gray-900">{form.customerName}</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-100">{form.customerName}</p>
                     <p className="text-sm text-gray-500">{form.address}</p>
                     <p className="text-sm text-gray-500">{form.phone}</p>
                     {!isPortal && (
@@ -719,7 +722,7 @@ export default function Checkout() {
                   </div>
                   <div>
                     <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">طريقة الدفع</h4>
-                    <p className="font-bold text-gray-900">
+                    <p className="font-bold text-gray-900 dark:text-gray-100">
                       {form.paymentMethod === 'cash' ? 'الدفع عند الاستلام' : form.paymentMethod === 'credit' ? 'رصيد المحفظة' : 'دفع إلكتروني'}
                     </p>
                   </div>
@@ -831,6 +834,18 @@ export default function Checkout() {
                 <span className="text-[10px] font-bold uppercase tracking-widest">ضمان حماية المشتري مفعّل</span>
               </div>
             </Card>
+
+            <div className="app-surface rounded-3xl border border-primary-100/80 p-5 shadow-sm dark:border-primary-500/20">
+              <div className="flex items-start gap-3">
+                <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-500" />
+                <div className="space-y-1">
+                  <p className="text-sm font-black text-gray-900 dark:text-white">????? ??????? ????????</p>
+                  <p className="text-xs leading-6 text-gray-600 dark:text-gray-300">
+                    {branchRoutingNote}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {false && (<div className="hidden">
             {/* Trust & Confidence Markers */}

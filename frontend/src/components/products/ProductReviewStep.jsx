@@ -1,6 +1,6 @@
 import React from 'react';
-import { Badge } from '../UI';
 import { CheckCircle2, AlertCircle, FileText, Tag, Image as ImageIcon, Box } from 'lucide-react';
+import { Badge } from '../UI';
 import { analyzeSeoContent } from './SeoAnalyzer';
 
 export default function ProductReviewStep({
@@ -11,8 +11,8 @@ export default function ProductReviewStep({
     stepErrors,
     onStepClick
 }) {
-    const hasErrors = Object.keys(stepErrors).some(k => stepErrors[k]);
-    const categoryName = categories.find(c => c._id === form.category)?.name || 'بدون قسم';
+    const hasErrors = Object.keys(stepErrors).some((key) => stepErrors[key]);
+    const categoryName = categories.find((category) => category._id === form.category)?.name || 'بدون قسم';
     const totalImages = productImages.length + pendingImages.length;
     const variantsCount = form.variants?.length || 0;
     const seoTitle = (form.seoTitle || form.name || '').trim();
@@ -21,48 +21,48 @@ export default function ProductReviewStep({
     const seoQualityVariant = seoScore >= 80 ? 'success' : seoScore >= 50 ? 'warning' : 'danger';
     const seoQualityLabel = seoScore >= 80 ? 'ممتازة' : seoScore >= 50 ? 'متوسطة' : 'ضعيفة';
 
+    const stepNames = {
+        basics: 'الأساسيات',
+        pricing: 'التسعير والمخزون',
+        media: 'الصور والموديلات'
+    };
+
     return (
         <div className="space-y-8 animate-fade-in pb-12">
-            <div className="text-center mb-8">
-                <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${hasErrors ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'}`}>
-                    {hasErrors ? <AlertCircle className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
+            <div className="mb-8 text-center">
+                <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${hasErrors ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'}`}>
+                    {hasErrors ? <AlertCircle className="h-8 w-8" /> : <CheckCircle2 className="h-8 w-8" />}
                 </div>
                 <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100">
-                    {hasErrors ? 'هناك أخطاء تمنع الحفظ' : 'المنتج جاهز للحفظ!'}
+                    {hasErrors ? 'هناك أخطاء تمنع حفظ المنتج' : 'المنتج جاهز للحفظ'}
                 </h2>
-                <p className="text-gray-500 mt-2">
+                <p className="mt-2 text-gray-500 dark:text-gray-400">
                     {hasErrors
-                        ? 'يرجى مراجعة الخطوات التي تحتوي على أخطاء وتصحيحها قبل المتابعة.'
-                        : 'قم بمراجعة الملخص الأخير للتأكد من صحة البيانات قبل الاعتماد.'}
+                        ? 'راجع الخطوات التي تحتوي على أخطاء ثم صححها قبل إكمال الحفظ.'
+                        : 'راجع الملخص النهائي للتأكد من صحة البيانات قبل اعتماد المنتج.'}
                 </p>
             </div>
 
             {hasErrors && (
-                <div className="bg-red-50 dark:bg-red-500/10 border-2 border-red-200 dark:border-red-500/30 rounded-2xl p-6">
-                    <h3 className="font-bold text-red-700 dark:text-red-400 mb-4 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5" /> المشاكل التي تحتاج إلى حل:
+                <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 dark:border-red-500/30 dark:bg-red-500/10">
+                    <h3 className="mb-4 flex items-center gap-2 font-bold text-red-700 dark:text-red-400">
+                        <AlertCircle className="h-5 w-5" />
+                        المشاكل التي تحتاج إلى حل
                     </h3>
                     <ul className="space-y-2">
-                        {Object.keys(stepErrors).map(stepId => {
+                        {Object.keys(stepErrors).map((stepId) => {
                             if (!stepErrors[stepId]) return null;
 
-                            // Map step ID to readable name
-                            const stepNames = {
-                                basics: 'الأساسيات',
-                                pricing: 'التسعير والمخزون',
-                                media: 'الصور والموديلات'
-                            };
-
                             return (
-                                <li key={stepId} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/50 dark:bg-gray-900/50 p-3 rounded-xl">
-                                    <span className="text-red-600 dark:text-red-400 text-sm font-semibold">
-                                        خطأ في خطوة "{stepNames[stepId] || stepId}"
+                                <li key={stepId} className="app-surface flex flex-col justify-between gap-3 rounded-xl border border-gray-100/80 p-3 dark:border-white/10 sm:flex-row sm:items-center">
+                                    <span className="text-sm font-semibold text-red-600 dark:text-red-400">
+                                        يوجد خطأ في خطوة &quot;{stepNames[stepId] || stepId}&quot;
                                     </span>
                                     <button
                                         onClick={() => onStepClick(stepId)}
-                                        className="text-xs px-3 py-1.5 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 font-bold rounded-lg hover:bg-red-200 transition-colors shrink-0"
+                                        className="shrink-0 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300"
                                     >
-                                        الذهاب للتصحيح &larr;
+                                        الانتقال للتصحيح
                                     </button>
                                 </li>
                             );
@@ -71,28 +71,26 @@ export default function ProductReviewStep({
                 </div>
             )}
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                {/* Basics Card */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
-                    <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-blue-500" /> ملخص البيانات
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="app-surface rounded-2xl border border-gray-100/80 p-5 shadow-sm dark:border-white/10">
+                    <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        ملخص البيانات
                     </h3>
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                        <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
                             <span className="text-gray-500">الاسم</span>
-                            <span className="font-bold">{form.name || '---'}</span>
+                            <span className="font-bold text-gray-900 dark:text-gray-100">{form.name || '---'}</span>
                         </div>
-                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                        <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
                             <span className="text-gray-500">القسم</span>
-                            <span className="font-bold">{categoryName}</span>
+                            <span className="font-bold text-gray-900 dark:text-gray-100">{categoryName}</span>
                         </div>
-                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                        <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
                             <span className="text-gray-500">SKU</span>
-                            <span className="font-mono">{form.sku || 'تلقائي'}</span>
+                            <span className="font-mono text-gray-900 dark:text-gray-100">{form.sku || 'تلقائي'}</span>
                         </div>
-                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                        <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
                             <span className="text-gray-500">جودة السيو</span>
                             <Badge variant={seoQualityVariant}>
                                 {seoQualityLabel} ({seoScore}%)
@@ -101,30 +99,30 @@ export default function ProductReviewStep({
                         <div className="flex justify-between pb-2">
                             <span className="text-gray-500">الوصف الطويل</span>
                             <Badge variant={form.description ? 'success' : 'gray'}>
-                                {form.description ? 'مضمن' : 'لا يوجد'}
+                                {form.description ? 'موجود' : 'غير موجود'}
                             </Badge>
                         </div>
                     </div>
                 </div>
 
-                {/* Pricing Card */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
-                    <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-emerald-500" /> التسعير والمخزون
+                <div className="app-surface rounded-2xl border border-gray-100/80 p-5 shadow-sm dark:border-white/10">
+                    <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+                        <Tag className="h-4 w-4 text-emerald-500" />
+                        التسعير والمخزون
                     </h3>
                     <div className="space-y-3 text-sm">
-                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                        <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
                             <span className="text-gray-500">سعر البيع الأساسي</span>
                             <span className="font-bold text-emerald-600">{Number(form.price || 0).toLocaleString('en-US')} ج.م</span>
                         </div>
-                        <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
-                            <span className="text-gray-500">التكلفة</span>
-                            <span className="font-bold">{Number(form.costPrice || 0).toLocaleString('en-US')} ج.م</span>
+                        <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
+                            <span className="text-gray-500">سعر التكلفة</span>
+                            <span className="font-bold text-gray-900 dark:text-gray-100">{Number(form.costPrice || 0).toLocaleString('en-US')} ج.م</span>
                         </div>
                         {!variantsCount && (
-                            <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-2">
+                            <div className="flex justify-between border-b border-gray-50/80 pb-2 dark:border-white/10">
                                 <span className="text-gray-500">المخزون الأساسي</span>
-                                <span className="font-bold">{form.stock || 0}</span>
+                                <span className="font-bold text-gray-900 dark:text-gray-100">{form.stock || 0}</span>
                             </div>
                         )}
                         <div className="flex justify-between pb-2">
@@ -136,49 +134,49 @@ export default function ProductReviewStep({
                     </div>
                 </div>
 
-                {/* Media & Variants Combo Card */}
-                <div className="md:col-span-2 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="app-surface rounded-2xl border border-gray-100/80 p-5 shadow-sm dark:border-white/10 md:col-span-2">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4 text-purple-500" /> الصور المرفقة
+                            <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+                                <ImageIcon className="h-4 w-4 text-purple-500" />
+                                الصور المرفقة
                             </h3>
                             <div className="flex items-center gap-4">
-                                <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0 flex items-center justify-center">
+                                <div className="app-surface-muted flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200/80 dark:border-white/10">
                                     {form.primaryImagePreview ? (
-                                        <img src={form.primaryImagePreview} className="w-full h-full object-cover" alt="Primary" />
+                                        <img src={form.primaryImagePreview} className="h-full w-full object-cover" alt="Primary" />
                                     ) : (
-                                        <ImageIcon className="w-8 h-8 text-gray-300" />
+                                        <ImageIcon className="h-8 w-8 text-gray-300" />
                                     )}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-lg">{totalImages} صورة</p>
-                                    <p className="text-sm text-gray-500">منها {pendingImages.length} سيتم رفعها الآن.</p>
+                                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{totalImages} صورة</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">منها {pendingImages.length} صورة سيتم رفعها عند الحفظ.</p>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                                <Box className="w-4 h-4 text-rose-500" /> המודيلات (Variants)
+                            <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+                                <Box className="h-4 w-4 text-rose-500" />
+                                الموديلات
                             </h3>
                             <div className="flex items-center gap-4">
-                                <div className="w-20 h-20 bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-100 dark:border-rose-900/30 shrink-0 flex flex-col items-center justify-center text-rose-500">
+                                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-500 dark:border-rose-900/30 dark:bg-rose-900/10">
                                     <span className="text-2xl font-black">{variantsCount}</span>
                                     <span className="text-xs font-bold">موديل</span>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">
                                         {variantsCount > 0
-                                            ? 'سيتم تتبع المخزون والأسعار لكل موديل بشكل منفصل متجاهلاً إعدادات المخزون الأساسية.'
-                                            : 'هذا المنتج ليس له موديلات، سيتم الاعتماد على التسعير الأساسي والمخزون.'}
+                                            ? 'سيتم تتبع السعر والمخزون لكل موديل بشكل مستقل، ولن يعتمد المنتج على الكمية الأساسية فقط.'
+                                            : 'هذا المنتج لا يحتوي على موديلات، وسيعتمد على السعر والمخزون الأساسيين.'}
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

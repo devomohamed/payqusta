@@ -20,7 +20,7 @@ export default function PortalStat({
     const iconColorClass = colorClasses[color] || colorClasses.primary;
 
     return (
-        <div className={`bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 ${className}`}>
+        <div className={`app-surface rounded-2xl border border-gray-100/80 p-4 shadow-sm dark:border-white/10 flex items-center gap-4 ${className}`}>
             {Icon && (
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconColorClass}`}>
                     <Icon className="w-6 h-6" />

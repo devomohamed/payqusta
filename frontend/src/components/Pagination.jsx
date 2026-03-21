@@ -23,7 +23,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-900 disabled:hover:border-gray-200 dark:disabled:hover:border-gray-700 disabled:hover:text-gray-500 transition-all shadow-sm"
+      className="app-surface w-9 h-9 flex items-center justify-center rounded-xl border border-gray-100/80 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-gray-100/80 dark:disabled:hover:border-white/10 disabled:hover:text-gray-500 transition-all shadow-sm"
     >
       {children}
     </button>
@@ -33,7 +33,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
     <div className="flex flex-wrap items-center justify-between gap-4 pt-5 pb-1">
       {/* Info pill */}
       <div className="flex items-center gap-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <div className="app-surface-muted inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-100/80 dark:border-white/10">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             صفحة{' '}
             <span className="font-bold text-gray-800 dark:text-gray-200">{currentPage}</span>
@@ -71,7 +71,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
           <>
             <button
               onClick={() => onPageChange(1)}
-              className="w-9 h-9 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 text-gray-500 dark:text-gray-400 hover:text-primary-600 transition-all shadow-sm"
+              className="app-surface w-9 h-9 rounded-xl text-sm font-semibold border border-gray-100/80 dark:border-white/10 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 text-gray-500 dark:text-gray-400 hover:text-primary-600 transition-all shadow-sm"
             >
               1
             </button>
@@ -90,7 +90,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
             onClick={() => onPageChange(page)}
             className={`w-9 h-9 rounded-xl text-sm font-bold transition-all shadow-sm ${page === currentPage
                 ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/40 scale-105'
-                : 'border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400'
+                : 'app-surface border border-gray-100/80 dark:border-white/10 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400'
               }`}
           >
             {page}
@@ -107,7 +107,7 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
             )}
             <button
               onClick={() => onPageChange(totalPages)}
-              className="w-9 h-9 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 text-gray-500 dark:text-gray-400 hover:text-primary-600 transition-all shadow-sm"
+              className="app-surface w-9 h-9 rounded-xl text-sm font-semibold border border-gray-100/80 dark:border-white/10 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:border-primary-300 dark:hover:border-primary-500/40 text-gray-500 dark:text-gray-400 hover:text-primary-600 transition-all shadow-sm"
             >
               {totalPages}
             </button>

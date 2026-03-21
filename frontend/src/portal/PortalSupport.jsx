@@ -57,7 +57,7 @@ export default function PortalSupport() {
 
     if (sent) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6" dir={i18n.dir()}>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6 app-text-soft" dir={i18n.dir()}>
                 <div className="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
                     <Send className="w-10 h-10 text-green-500" />
                 </div>
@@ -65,7 +65,7 @@ export default function PortalSupport() {
                 <p className="text-gray-500 dark:text-gray-400 mb-6">{t('support.sent_subtitle')}</p>
 
                 {storeContact && (storeContact.phone || storeContact.email) && (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 w-full max-w-sm mb-6 space-y-3">
+                    <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 w-full max-w-sm mb-6 space-y-3">
                         <p className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('support.contact_direct')}</p>
                         {storeContact.phone && (
                             <a href={`tel:${storeContact.phone}`} className="flex items-center gap-3 text-gray-700 dark:text-gray-300 hover:text-primary-600">
@@ -101,7 +101,7 @@ export default function PortalSupport() {
     };
 
     return (
-        <div className="space-y-5 pb-20" dir={i18n.dir()}>
+        <div className="space-y-5 pb-20 app-text-soft" dir={i18n.dir()}>
             <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <MessageCircle className="w-6 h-6 text-primary-500" />
@@ -111,11 +111,11 @@ export default function PortalSupport() {
             </div>
 
             {/* Tabs */}
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl mb-6">
+            <div className="app-surface-muted flex p-1 rounded-2xl mb-6">
                 <button
                     onClick={() => setActiveTab('new')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'new'
-                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                        ? 'app-surface text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                 >
@@ -124,7 +124,7 @@ export default function PortalSupport() {
                 <button
                     onClick={() => setActiveTab('tickets')}
                     className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'tickets'
-                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                        ? 'app-surface text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                 >
@@ -144,7 +144,7 @@ export default function PortalSupport() {
                                     onClick={() => setSelectedType(type.value)}
                                     className={`p-3 rounded-2xl border-2 text-right flex items-center gap-2 transition-all ${selectedType === type.value
                                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                                        : 'border-gray-100/80 dark:border-white/10 app-surface'
                                         }`}
                                 >
                                     <TypeIcon className={`w-5 h-5 flex-shrink-0 ${selectedType === type.value ? 'text-primary-500' : 'text-gray-400'}`} />
@@ -166,7 +166,7 @@ export default function PortalSupport() {
                                 onChange={e => setSubject(e.target.value)}
                                 placeholder={t('support.form.subject_placeholder')}
                                 required
-                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition"
+                                className="w-full px-4 py-3 rounded-xl border border-transparent app-surface text-gray-900 dark:text-white focus:border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition"
                             />
                         </div>
 
@@ -178,7 +178,7 @@ export default function PortalSupport() {
                                 placeholder={t('support.form.message_placeholder')}
                                 required
                                 rows={5}
-                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
+                                className="w-full px-4 py-3 rounded-xl border border-transparent app-surface text-gray-900 dark:text-white focus:border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition resize-none"
                             />
                             <p className="text-xs text-gray-400 mt-1 text-left">{message.length} / 1000</p>
                         </div>
@@ -216,7 +216,7 @@ export default function PortalSupport() {
                                 <Link
                                     to={`/portal/support/${ticket._id}`}
                                     key={ticket._id}
-                                    className="block p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-all shadow-sm"
+                                    className="block p-4 app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 hover:border-primary-500/40 dark:hover:border-primary-500/40 transition-all shadow-sm hover:-translate-y-0.5"
                                 >
                                     <div className="flex justify-between items-start mb-3">
                                         <div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ export default function PortalSupport() {
                                                 <MessageCircle className="w-5 h-5 text-primary-500" />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{ticket.subject}</h3>
+                                                <h3 className="font-bold text-gray-900 dark:text-gray-100 line-clamp-1">{ticket.subject}</h3>
                                                 <p className="text-xs text-gray-500 mt-1">{new Date(ticket.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US')}</p>
                                             </div>
                                         </div>
@@ -233,7 +233,7 @@ export default function PortalSupport() {
                                             {StatusInfo.label}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 px-2 border-r-2 border-gray-200 dark:border-gray-700">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 px-2 border-r-2 border-gray-200/80 dark:border-white/10">
                                         {ticket.message}
                                     </p>
                                     <div className="mt-4 text-left">

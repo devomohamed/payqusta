@@ -45,7 +45,7 @@ export default function PortalWishlist() {
     const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
 
     return (
-        <div className="space-y-4 pb-20" dir={i18n.dir()}>
+        <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Heart className="w-6 h-6 text-red-500 fill-red-500" />
@@ -72,11 +72,11 @@ export default function PortalWishlist() {
                         return (
                         <div
                             key={product._id}
-                            className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm group"
+                            className="app-surface rounded-2xl overflow-hidden border border-gray-100/80 dark:border-white/10 shadow-sm group transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-500/10"
                         >
                             {/* Image */}
                             <div
-                                className="aspect-[4/3] bg-gray-100 dark:bg-gray-700 relative cursor-pointer"
+                                className="aspect-[4/3] app-surface-muted relative cursor-pointer"
                                 onClick={() => navigate(`/portal/products/${product._id}`)}
                             >
                                 {imageUrl ? (
@@ -99,7 +99,7 @@ export default function PortalWishlist() {
                                 <button
                                     onClick={e => { e.stopPropagation(); handleRemove(product._id); }}
                                     disabled={removingId === product._id}
-                                    className="absolute top-2 right-2 w-8 h-8 bg-white dark:bg-gray-900 rounded-full shadow flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition"
+                                    className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full app-surface shadow text-red-500 transition hover:bg-red-500 hover:text-white"
                                 >
                                     {removingId === product._id
                                         ? <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
@@ -110,7 +110,7 @@ export default function PortalWishlist() {
                             {/* Details */}
                             <div className="p-3">
                                 <h4
-                                    className="font-bold text-sm text-gray-900 dark:text-white line-clamp-1 cursor-pointer hover:text-primary-600 mb-1"
+                                    className="font-bold text-sm text-gray-900 dark:text-gray-100 line-clamp-1 cursor-pointer hover:text-primary-600 mb-1"
                                     onClick={() => navigate(`/portal/products/${product._id}`)}
                                 >
                                     {product.name}

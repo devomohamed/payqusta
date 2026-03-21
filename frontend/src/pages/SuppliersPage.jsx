@@ -70,7 +70,24 @@ export default function SuppliersPage() {
   const openEdit = (s) => { setEditId(s._id); setForm({ name: s.name, contactPerson: s.contactPerson || '', phone: s.phone, email: s.email || '', address: s.address || '', paymentTerms: s.paymentTerms || 'cash', notes: s.notes || '' }); setShowModal(true); };
 
   const handleSave = async () => {
-    if (!form.name || !form.phone) return toast.error('الاسم والهاتف مطلوبين');
+    // Basic validations
+    if (!form.name || form.name.trim().length < 2) return toast.error('اسم المورد يجب أن يكون حرفين على الأقل');
+    if (!form.phone) return toast.error('رقم الهاتف مطلوب');
+
+    // Phone format validation (starting with 010, 011, 012, 015 and 11 digits)
+    const phoneRegex = /^(010|011|012|015)\d{8}$/;
+    if (!phoneRegex.test(form.phone)) {
+      return toast.error('رقم الهاتف غير صحيح (يجب أن يبدأ بـ 010/011/012/015 ويتكون من 11 رقم)');
+    }
+
+    // Email validation (if provided)
+    if (form.email && form.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email)) {
+        return toast.error('البريد الإلكتروني غير صحيح');
+      }
+    }
+
     setSaving(true);
     try {
       if (editId) { await suppliersApi.update(editId, form); toast.success('تم تحديث المورد ✅'); }

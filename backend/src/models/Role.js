@@ -3,6 +3,7 @@
  */
 
 const mongoose = require('mongoose');
+const { RESOURCE_VALUES, ACTION_VALUES } = require('../config/permissions');
 
 const roleSchema = new mongoose.Schema(
   {
@@ -25,22 +26,11 @@ const roleSchema = new mongoose.Schema(
         resource: {
           type: String,
           required: true,
-          enum: [
-            'products',
-            'customers',
-            'suppliers',
-            'invoices',
-            'expenses',
-            'reports',
-            'settings',
-            'users',
-            'stock_adjustments',
-            'cash_shifts',
-          ],
+          enum: RESOURCE_VALUES,
         },
         actions: {
           type: [String],
-          enum: ['create', 'read', 'update', 'delete'],
+          enum: ACTION_VALUES,
           default: [],
         },
       },

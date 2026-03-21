@@ -1,9 +1,17 @@
-/**
- * Branch Model — Multi-Branch Support
- * Each Tenant can have multiple branches (فروع)
- */
-
 const mongoose = require('mongoose');
+
+const BRANCH_TYPE_VALUES = ['store', 'warehouse', 'fulfillment_center', 'hybrid'];
+
+const shippingOriginSchema = new mongoose.Schema(
+  {
+    governorate: { type: String, trim: true, default: '' },
+    city: { type: String, trim: true, default: '' },
+    area: { type: String, trim: true, default: '' },
+    addressLine: { type: String, trim: true, default: '' },
+    postalCode: { type: String, trim: true, default: '' },
+  },
+  { _id: false },
+);
 
 const branchSchema = new mongoose.Schema(
   {
@@ -25,20 +33,46 @@ const branchSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
+      match: [/^01[0125][0-9]{8}$/, 'رقم هاتف غير صالح، يجب أن يبدأ بـ 01 ويتكون من 11 رقم'],
     },
     manager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    // CCTV Cameras for this branch
+    branchType: {
+      type: String,
+      enum: BRANCH_TYPE_VALUES,
+      default: 'store',
+    },
+    participatesInOnlineOrders: {
+      type: Boolean,
+      default: false,
+    },
+    isFulfillmentCenter: {
+      type: Boolean,
+      default: false,
+    },
+    onlinePriority: {
+      type: Number,
+      min: 1,
+      max: 9999,
+      default: 100,
+    },
+    pickupEnabled: {
+      type: Boolean,
+      default: true,
+    },
+    shippingOrigin: {
+      type: shippingOriginSchema,
+      default: () => ({}),
+    },
     cameras: [
       {
         name: { type: String, required: true },
         url: { type: String, required: true },
         type: { type: String, enum: ['stream', 'embed'], default: 'stream' },
-      }
+      },
     ],
-    // Current Shift (Gamification & Shift Management)
     currentShift: {
       startTime: { type: Date, default: null },
       endTime: { type: Date, default: null },
@@ -48,7 +82,6 @@ const branchSchema = new mongoose.Schema(
       endedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       notes: { type: String, default: '' },
     },
-    // Settlement History
     settlementHistory: [
       {
         date: { type: Date, required: true },
@@ -65,7 +98,7 @@ const branchSchema = new mongoose.Schema(
         settledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         notes: { type: String, default: '' },
         createdAt: { type: Date, default: Date.now },
-      }
+      },
     ],
     isActive: {
       type: Boolean,
@@ -74,11 +107,12 @@ const branchSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-// Indexes
 branchSchema.index({ tenant: 1, isActive: 1 });
 branchSchema.index({ tenant: 1, name: 1 }, { unique: true });
+branchSchema.index({ tenant: 1, participatesInOnlineOrders: 1, isActive: 1 });
+branchSchema.index({ tenant: 1, isFulfillmentCenter: 1, onlinePriority: 1 });
 
 module.exports = mongoose.model('Branch', branchSchema);

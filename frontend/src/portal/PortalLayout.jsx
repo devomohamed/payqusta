@@ -13,7 +13,7 @@ import PortalCartDrawer from './components/layout/PortalCartDrawer';
 
 export default function PortalLayout() {
   const { customer, tenant, logout, isAuthenticated, fetchDashboard, cart, isCartOpen, toggleCart, removeFromCart, unreadCount, fetchUnreadCount } = usePortalStore();
-  const { dark, toggleTheme } = useThemeStore();
+  const { dark, themeMode, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { t, i18n } = useTranslation('portal');
@@ -73,11 +73,12 @@ export default function PortalLayout() {
 
   return (
     <div className={`min-h-screen flex flex-col font-['Cairo'] pb-16 md:pb-0 ${dark ? 'dark' : ''}`} dir={i18n.dir()}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col">
+      <div className="app-shell-bg min-h-screen flex flex-col text-gray-900 dark:text-gray-100">
         <PortalHeader
           customer={customer}
           unreadCount={unreadCount}
           dark={dark}
+          themeMode={themeMode}
           toggleTheme={toggleTheme}
           cartItemCount={cart.length}
           toggleCart={toggleCart}

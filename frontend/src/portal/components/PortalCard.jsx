@@ -8,8 +8,10 @@ export default function PortalCard({
     padding = 'p-4',
     ...props
 }) {
-    const baseClasses = "bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all";
-    const hoverClasses = hover ? "hover:border-primary-500 dark:hover:border-primary-500 hover:shadow-md cursor-pointer" : "";
+    const baseClasses = "app-surface rounded-2xl border border-gray-100/80 shadow-sm transition-all dark:border-white/10";
+    const hoverClasses = hover
+        ? "cursor-pointer hover:-translate-y-0.5 hover:border-primary-500/40 hover:shadow-lg hover:shadow-primary-500/10 dark:hover:border-primary-500/30"
+        : "";
 
     return (
         <div

@@ -46,9 +46,9 @@ export default function SuperAdminDashboard() {
   const totalProducts = analytics?.overview?.products || 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
             <Crown className="w-6 h-6 text-white" />
@@ -128,7 +128,7 @@ export default function SuperAdminDashboard() {
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-primary-200 dark:hover:border-primary-700 transition-all">
+        <div className="app-surface-muted p-4 rounded-2xl border-2 border-gray-100/80 dark:border-white/10 hover:border-primary-200 dark:hover:border-primary-700 transition-all">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-pink-100 dark:bg-pink-500/10 flex items-center justify-center">
               <Users className="w-5 h-5 text-pink-500" />
@@ -140,7 +140,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-primary-200 dark:hover:border-primary-700 transition-all">
+        <div className="app-surface-muted p-4 rounded-2xl border-2 border-gray-100/80 dark:border-white/10 hover:border-primary-200 dark:hover:border-primary-700 transition-all">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center">
               <Package className="w-5 h-5 text-indigo-500" />
@@ -152,7 +152,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-primary-200 dark:hover:border-primary-700 transition-all">
+        <div className="app-surface-muted p-4 rounded-2xl border-2 border-gray-100/80 dark:border-white/10 hover:border-primary-200 dark:hover:border-primary-700 transition-all">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-500/10 flex items-center justify-center">
               <ShoppingCart className="w-5 h-5 text-cyan-500" />
@@ -164,7 +164,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-primary-200 dark:hover:border-primary-700 transition-all cursor-pointer group" onClick={() => navigate('/tenant-management')}>
+        <div className="app-surface-muted p-4 rounded-2xl border-2 border-gray-100/80 dark:border-white/10 hover:border-primary-200 dark:hover:border-primary-700 transition-all cursor-pointer group" onClick={() => navigate('/tenant-management')}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Eye className="w-5 h-5 text-white" />
@@ -199,14 +199,14 @@ export default function SuperAdminDashboard() {
             {analytics.topTenants.map((tenant, i) => (
               <div 
                 key={tenant._id} 
-                className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                className="app-surface-muted flex items-center gap-3 p-3 rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
                 onClick={() => navigate('/tenant-management')}
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-extrabold shrink-0 ${
                   i === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' : 
                   i === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' : 
                   i === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
-                  'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                  'app-surface text-gray-500'
                 }`}>
                   {i + 1}
                 </div>

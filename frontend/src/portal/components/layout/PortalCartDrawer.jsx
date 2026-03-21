@@ -27,8 +27,8 @@ export default function PortalCartDrawer({
                 />
             )}
 
-            <div className={`fixed inset-y-0 ${i18n.dir() === 'rtl' ? 'left-0' : 'right-0'} w-full md:w-96 bg-white dark:bg-gray-900 shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col ${isCartOpen ? 'translate-x-0' : (i18n.dir() === 'rtl' ? '-translate-x-full' : 'translate-x-full')}`}>
-                <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+            <div className={`fixed inset-y-0 ${i18n.dir() === 'rtl' ? 'left-0' : 'right-0'} w-full md:w-96 app-surface shadow-2xl z-50 transform transition-transform duration-300 ease-out flex flex-col border-l border-gray-100/80 dark:border-white/10 ${isCartOpen ? 'translate-x-0' : (i18n.dir() === 'rtl' ? '-translate-x-full' : 'translate-x-full')}`}>
+                <div className="app-surface-muted p-4 border-b border-gray-100/80 dark:border-white/10 flex justify-between items-center">
                     <h2 id="cart-drawer-title" className="text-lg font-bold flex items-center gap-2">
                         <ShoppingCart className="w-5 h-5 text-primary-600" />
                         {t('layout.cart_title')}
@@ -38,7 +38,7 @@ export default function PortalCartDrawer({
                     </h2>
                     <button
                         onClick={toggleCart}
-                        className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                        className="app-surface w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
                         aria-label={t('layout.close_cart')}
                         title={t('layout.close_cart')}
                     >
@@ -67,7 +67,7 @@ export default function PortalCartDrawer({
 
                     {cart.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
-                            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                            <div className="app-surface-muted w-20 h-20 rounded-full flex items-center justify-center mb-4">
                                 <ShoppingCart className="w-10 h-10 text-gray-400" />
                             </div>
                             <p className="font-bold text-lg">{t('layout.cart_empty')}</p>
@@ -78,8 +78,8 @@ export default function PortalCartDrawer({
                         </div>
                     ) : (
                         cart.map((item, idx) => (
-                            <div key={idx} className="flex gap-3 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-xl overflow-hidden shrink-0">
+                            <div key={idx} className="app-surface-muted flex gap-3 p-3 rounded-2xl border border-gray-100/80 dark:border-white/10">
+                                <div className="app-surface w-16 h-16 rounded-xl overflow-hidden shrink-0">
                                     {item.product.images?.[0] ? (
                                         <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" loading="lazy" />
                                     ) : (
@@ -101,7 +101,7 @@ export default function PortalCartDrawer({
                                     {item.variant && <p className="text-xs text-gray-500">{item.variant.sku}</p>}
                                     <div className="flex justify-between items-end">
                                         <p className="font-bold text-primary-600">{item.price.toLocaleString()} {currency}</p>
-                                        <div className="text-xs font-medium bg-white dark:bg-gray-700 px-2 py-0.5 rounded-md border border-gray-200 dark:border-gray-600">
+                                        <div className="text-xs font-medium app-surface px-2 py-0.5 rounded-md border border-gray-100/80 dark:border-white/10">
                                             {t('layout.quantity', { count: item.quantity })}
                                         </div>
                                     </div>
@@ -112,7 +112,7 @@ export default function PortalCartDrawer({
                 </div>
 
                 {cart.length > 0 && (
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+                    <div className="app-surface p-4 border-t border-gray-100/80 dark:border-white/10">
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-gray-500 text-sm">{t('layout.subtotal')}</span>
                             <span className="font-black text-xl text-gray-900 dark:text-white">{cartTotal.toLocaleString()} {currency}</span>

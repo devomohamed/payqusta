@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
@@ -10,7 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
     <meta name="theme-color" content="#0f172a" />
     <meta name="application-name" content="PayQusta" />
-    <meta name="description" content="PayQusta منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد." />
+    <meta name="description" content="PayQusta بيكوستا منصة لإدارة المبيعات والمخزون والعملاء والأقساط. إذا كنت تبحث عن PayQusta أو pay qusta أو بيكوستا فأنت تقصد نفس المنصة." />
+    <meta name="keywords" content="PayQusta, payqusta, pay qusta, pay qousta, بيكوستا, باي كوستا, منصة تجارة إلكترونية, منصة إنشاء متجر إلكتروني, برنامج إدارة متجر إلكتروني, نظام إدارة المبيعات والمخزون, برنامج الفواتير والمخزون, منصة إدارة الطلبات والعملاء, بوابة عملاء للمتجر, منصة متعددة المتاجر" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PayQusta" />
     <meta property="og:url" content="https://payqusta.store/" />
@@ -20,7 +21,7 @@
     <meta name="twitter:image" content="https://payqusta.store/hero-banner.png" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>PayQusta | إنشاء متجر إلكتروني وإدارة المبيعات والأقساط</title>
+    <title>PayQusta | بيكوستا - منصة إدارة المبيعات والمخزون والمتجر الإلكتروني</title>
   </head>
   <body>
     <div id="root">
@@ -46,7 +47,7 @@
             font-family: 'Cairo', sans-serif; font-size: 36px; font-weight: 900;
             color: white; margin: 0; letter-spacing: -0.5px;
           ">Pay<span style="background: linear-gradient(90deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Qusta</span></h1>
-          <p style="font-family: 'Cairo', sans-serif; color: #6b7280; font-size: 12px; margin-top: 4px;">Smart Sales & Inventory Management</p>
+          <p style="font-family: 'Cairo', sans-serif; color: #6b7280; font-size: 12px; margin-top: 4px;">Smart Sales &amp; Inventory Management</p>
         </div>
         <div style="width: 160px; height: 3px; border-radius: 4px; background: #1f2937; overflow: hidden;">
           <div style="
@@ -61,6 +62,40 @@
         </style>
       </div>
     </div>
+    <!-- Aggressive Cache Busting Script -->
+    <script>
+      (async function() {
+        try {
+          const currentBuildId = "1.0.4-" + Date.now().toString().slice(0, 7);
+          const storedBuildId = localStorage.getItem('__payqusta_core_build_id');
+
+          if (storedBuildId !== currentBuildId) {
+            console.warn('[Cache Buster] New build detected or first load. Clearing old caches before React loads.');
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const registration of registrations) {
+                await registration.unregister();
+                console.log('[Cache Buster] Unregistered old SW');
+              }
+            }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              for (const key of keys) {
+                await caches.delete(key);
+                console.log('[Cache Buster] Deleted cache:', key);
+              }
+            }
+            localStorage.setItem('__payqusta_core_build_id', currentBuildId);
+
+            if (storedBuildId) {
+              window.location.reload(true);
+            }
+          }
+        } catch (e) {
+          console.error('[Cache Buster] Failed to clear caches', e);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
     <script>
       // Remove pre-loader when React mounts (or after a short fallback timeout).

@@ -24,7 +24,9 @@ function createNext() {
 
 function createSelectResult(result) {
   return {
-    select: jest.fn().mockResolvedValue(result),
+    select: jest.fn().mockReturnValue({
+      populate: jest.fn().mockResolvedValue(result),
+    }),
   };
 }
 
@@ -217,5 +219,28 @@ describe('auth middleware', () => {
       expect(req.tenantFilter).toEqual({ tenant: 'tenant-subdomain' });
       expect(next).toHaveBeenCalledWith();
     });
+
+    it('resolves custom domains and marks them as connected', async () => {
+      Tenant.findOne.mockResolvedValue({ _id: 'tenant-custom' });
+      const req = {
+        headers: { host: 'shop.example.com' },
+        query: {},
+      };
+      const next = createNext();
+
+      await publicTenantScope(req, {}, next);
+
+      expect(Tenant.findOne).toHaveBeenCalledWith({ customDomain: 'shop.example.com', isActive: true });
+      expect(Tenant.updateOne).toHaveBeenCalledWith(
+        { _id: 'tenant-custom' },
+        expect.objectContaining({
+          $set: expect.objectContaining({ customDomainStatus: 'connected' }),
+        })
+      );
+      expect(req.tenantId).toBe('tenant-custom');
+      expect(req.tenantFilter).toEqual({ tenant: 'tenant-custom' });
+      expect(next).toHaveBeenCalledWith();
+    });
+
   });
 });

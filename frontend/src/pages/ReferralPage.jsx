@@ -107,7 +107,7 @@ export default function ReferralPage() {
 
     return (
         <>
-            <div className="space-y-6 max-w-5xl mx-auto p-4 lg:p-6">
+            <div className="space-y-6 max-w-5xl mx-auto p-4 lg:p-6 app-text-soft">
                 {/* Header Banner */}
                 <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -translate-x-10 -translate-y-10"></div>
@@ -124,7 +124,7 @@ export default function ReferralPage() {
                 </div>
 
                 {/* Referral Code Card */}
-                <div className={`rounded-2xl p-6 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="app-surface rounded-2xl p-6 border border-gray-100/80 dark:border-white/10 shadow-sm">
                     <h3 className="font-bold text-lg mb-4">كود الإحالة الخاص بك</h3>
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className={`flex-1 w-full text-center text-2xl font-mono font-bold py-4 px-6 rounded-xl border-2 border-dashed tracking-widest ${dark ? 'bg-gray-900 border-amber-500/50 text-amber-400' : 'bg-amber-50 border-amber-300 text-amber-700'}`}>
@@ -149,7 +149,7 @@ export default function ReferralPage() {
                 </div>
 
                 {/* Referrals List */}
-                <div className={`rounded-2xl p-6 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="app-surface rounded-2xl p-6 border border-gray-100/80 dark:border-white/10 shadow-sm">
                     <h3 className="font-bold text-lg mb-4">سجل الإحالات</h3>
                     {(!stats?.referrals || stats.referrals.length === 0) ? (
                         <div className="text-center py-12 text-gray-400">
@@ -159,7 +159,7 @@ export default function ReferralPage() {
                     ) : (
                         <div className="space-y-3">
                             {stats.referrals.map((ref, idx) => (
-                                <div key={idx} className={`flex items-center justify-between p-4 rounded-xl ${dark ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                <div key={idx} className="app-surface-muted flex items-center justify-between p-4 rounded-xl">
                                     <div>
                                         <p className={`font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>
                                             {ref.referred?.name || ref.referredEmail || 'مُحال جديد'}
@@ -186,7 +186,7 @@ export default function ReferralPage() {
 
             <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="مشاركة كود الإحالة" size="md">
                 <div className="space-y-5">
-                    <div className={`rounded-2xl border p-5 ${dark ? 'bg-gray-800/60 border-gray-700' : 'bg-amber-50/70 border-amber-100'}`}>
+                    <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-5">
                         <div className="flex items-start gap-3">
                             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 flex-shrink-0">
                                 <Share2 className="w-5 h-5" />
@@ -200,13 +200,13 @@ export default function ReferralPage() {
                         </div>
                     </div>
 
-                    <div className={`rounded-2xl border p-4 space-y-3 ${dark ? 'bg-gray-950/60 border-gray-800' : 'bg-white border-gray-100'}`}>
+                    <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 p-4 space-y-3">
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">كود الإحالة</span>
                             <span className="text-lg font-mono font-bold tracking-widest text-amber-500">{code}</span>
                         </div>
                         <p className="text-sm leading-7 text-gray-600 dark:text-gray-300">{shareText}</p>
-                        <div className="rounded-xl bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-900 dark:text-gray-400" dir="ltr">
+                        <div className="app-surface-muted rounded-xl px-3 py-2 text-xs text-gray-500 dark:text-gray-400" dir="ltr">
                             {shareUrl}
                         </div>
                     </div>
@@ -256,7 +256,7 @@ export default function ReferralPage() {
                         />
                     </div>
 
-                    <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${dark ? 'border-gray-800 bg-gray-900/70' : 'border-gray-100 bg-gray-50/80'}`}>
+                    <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">مشاركة عبر الجهاز</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -282,7 +282,7 @@ function StatCard({ icon: Icon, label, value, color, dark }) {
         amber: 'from-amber-500 to-orange-600',
     };
     return (
-        <div className={`rounded-2xl p-5 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="app-surface-muted rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center`}>
                     <Icon className="w-5 h-5 text-white" />
@@ -302,14 +302,14 @@ function ShareActionButton({ icon: Icon, label, description, variant, onClick })
             className={`w-full rounded-2xl border p-4 text-right transition-all duration-200 hover:-translate-y-0.5 ${
                 variant === 'whatsapp'
                     ? 'border-green-200 bg-green-500 text-white shadow-lg shadow-green-500/20 hover:bg-green-600'
-                    : 'border-gray-200 bg-white text-gray-900 hover:border-primary-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-primary-500 dark:hover:bg-gray-800'
+                    : 'border-gray-200 app-surface text-gray-900 hover:border-primary-300 hover:bg-black/[0.03] dark:border-white/10 dark:text-gray-100 dark:hover:border-primary-500 dark:hover:bg-white/[0.04]'
             }`}
         >
             <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
                     variant === 'whatsapp'
                         ? 'bg-white/20'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                        : 'app-surface-muted text-gray-600 dark:text-gray-300'
                 }`}>
                     <Icon className="w-5 h-5" />
                 </div>

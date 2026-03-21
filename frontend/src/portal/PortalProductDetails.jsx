@@ -58,8 +58,8 @@ export default function PortalProductDetails() {
 
     if (loading) {
         return (
-            <div className="pb-24 animate-fade-in space-y-6" dir={i18n.dir()}>
-                <div className="sticky top-0 z-20 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-md pt-4 pb-4 px-4 flex items-center justify-between">
+            <div className="pb-24 animate-fade-in space-y-6 app-text-soft" dir={i18n.dir()}>
+                <div className="app-surface-glass sticky top-0 z-20 pt-4 pb-4 px-4 flex items-center justify-between">
                     <PortalSkeleton className="w-10 h-10 rounded-full" />
                 </div>
                 <div className="px-4">
@@ -100,22 +100,22 @@ export default function PortalProductDetails() {
     const categoryName = catObj?.name || product?.category || '';
 
     return (
-        <div className="pb-32 animate-fade-in" dir={i18n.dir()}>
+        <div className="pb-32 animate-fade-in app-text-soft" dir={i18n.dir()}>
             {/* Header */}
             <div className="absolute top-0 left-0 w-full z-20 flex items-center justify-between p-4 px-6">
                 <button
                     onClick={() => navigate(-1)}
-                    className="w-10 h-10 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md flex items-center justify-center shadow-md text-gray-900 dark:text-white hover:bg-white transition-colors"
+                    className="app-surface-glass flex h-10 w-10 items-center justify-center rounded-full shadow-md text-gray-900 transition-colors hover:bg-white/90 dark:text-white dark:hover:bg-white/10"
                 >
                     <ArrowRight className="w-5 h-5" />
                 </button>
                 <div className="flex gap-2">
-                    <button className="w-10 h-10 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md flex items-center justify-center shadow-md text-gray-900 dark:text-white hover:bg-white transition-colors">
+                    <button className="app-surface-glass flex h-10 w-10 items-center justify-center rounded-full shadow-md text-gray-900 transition-colors hover:bg-white/90 dark:text-white dark:hover:bg-white/10">
                         <Share2 className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => toggleWishlist(product._id)}
-                        className="w-10 h-10 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md flex items-center justify-center shadow-md text-gray-900 dark:text-white hover:bg-white transition-colors"
+                        className="app-surface-glass flex h-10 w-10 items-center justify-center rounded-full shadow-md text-gray-900 transition-colors hover:bg-white/90 dark:text-white dark:hover:bg-white/10"
                     >
                         <Heart className={`w-5 h-5 transition-colors ${wishlistIds?.includes(product._id) ? 'text-red-500 fill-red-500' : ''}`} />
                     </button>
@@ -123,7 +123,7 @@ export default function PortalProductDetails() {
             </div>
 
             {/* Hero Image Gallery */}
-            <div className="relative w-full bg-gray-100 dark:bg-gray-800 rounded-b-[3rem] overflow-hidden shadow-sm">
+            <div className="app-surface-muted relative w-full rounded-b-[3rem] overflow-hidden shadow-sm">
                 <div className="aspect-square md:aspect-[4/3] w-full relative">
                     {allImages.length > 0 ? (
                         <img src={allImages[activeImage]} alt={product.name} className="w-full h-full object-cover" />
@@ -180,12 +180,12 @@ export default function PortalProductDetails() {
                 </div>
 
                 {/* Guarantee / Perks */}
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 flex justify-between border border-gray-100 dark:border-gray-700">
-                    <div className="flex flex-col items-center gap-2 flex-1 rtl:border-l ltr:border-r border-gray-200 dark:border-gray-700">
+                <div className="app-surface-muted rounded-2xl p-4 flex justify-between border border-gray-100/80 dark:border-white/10">
+                    <div className="flex flex-col items-center gap-2 flex-1 rtl:border-l ltr:border-r border-gray-200/80 dark:border-white/10">
                         <ShieldCheck className="w-5 h-5 text-green-500" />
                         <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">{t('productDetails.warranty')}</span>
                     </div>
-                    <div className="flex flex-col items-center gap-2 flex-1 rtl:border-l ltr:border-r border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col items-center gap-2 flex-1 rtl:border-l ltr:border-r border-gray-200/80 dark:border-white/10">
                         <Truck className="w-5 h-5 text-blue-500" />
                         <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center">{t('productDetails.fast_shipping')}</span>
                     </div>
@@ -214,8 +214,8 @@ export default function PortalProductDetails() {
                                         className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${selectedVariant?._id === variant._id
                                             ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400 ring-2 ring-primary-500/20'
                                             : variant.stock === 0
-                                                ? 'border-gray-200 bg-gray-50 text-gray-400 opacity-50 cursor-not-allowed dark:border-gray-700 dark:bg-gray-800/50'
-                                                : 'border-gray-200 text-gray-700 bg-white hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                                                ? 'border-gray-200 bg-gray-50 text-gray-400 opacity-50 cursor-not-allowed dark:border-white/10 dark:bg-white/[0.04]'
+                                                : 'border-gray-100/80 text-gray-700 app-surface hover:border-primary-500/30 dark:border-white/10 dark:text-gray-300'
                                             }`}
                                     >
                                         {label}
@@ -267,9 +267,9 @@ export default function PortalProductDetails() {
             </div>
 
             {/* Floating Action Bar */}
-            <div className="fixed bottom-0 left-0 w-full bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 px-6 pb-safe z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center gap-4">
+            <div className="fixed bottom-0 left-0 w-full app-surface border-t border-gray-100/80 dark:border-white/10 p-4 px-6 pb-safe z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex items-center gap-4">
                 {!isOutOfStock && (
-                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-1 w-28 h-12">
+                    <div className="app-surface-muted flex items-center justify-between border border-gray-100/80 dark:border-white/10 rounded-2xl p-1 w-28 h-12">
                         <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">-</button>
                         <span className="font-bold text-gray-900 dark:text-white">{quantity}</span>
                         <button onClick={() => setQuantity(Math.min(currentStock, quantity + 1))} className="w-8 h-full flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">+</button>

@@ -7,8 +7,10 @@ const cashShiftSchema = new mongoose.Schema(
       ref: 'Tenant',
       required: true,
     },
-    branch: { // Optional if tenant has multiple branches, useful for filtering
-      type: mongoose.Schema.Types.Mixed, 
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
     },
     user: { // The user who opened the shift
       type: mongoose.Schema.Types.ObjectId,
@@ -52,6 +54,13 @@ const cashShiftSchema = new mongoose.Schema(
     closedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+    },
+    autoCloseAt: { // Automatically calculate based on start time + tenant shift duration
+      type: Date,
+    },
+    closedBySystem: { // Flag if closed automatically by system
+      type: Boolean,
+      default: false,
     }
   },
   { timestamps: true }

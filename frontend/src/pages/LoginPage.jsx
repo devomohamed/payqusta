@@ -1,9 +1,10 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Zap, Eye, EyeOff, Sun, Moon, CheckCircle2 } from 'lucide-react';
+import { Zap, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, useAuthStore, useThemeStore } from '../store';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
+import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
 function formatPlanPrice(plan) {
   const price = Number(plan?.price || 0);
@@ -21,9 +22,10 @@ export default function LoginPage() {
   const [loadingSelectedPlan, setLoadingSelectedPlan] = useState(false);
 
   const { login, register, loading } = useAuthStore();
-  const { dark, toggleTheme } = useThemeStore();
+  const { dark } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const authInputClass = 'app-surface w-full rounded-2xl border border-transparent px-4 py-3 text-gray-900 transition-all focus:ring-2 focus:ring-primary-500/20 dark:text-white';
 
   const selectedPlanId = useMemo(() => {
     const params = new URLSearchParams(location.search || '');
@@ -118,7 +120,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-5 ${dark ? 'dark' : ''}`}>
+    <div className={`app-shell-bg min-h-screen flex items-center justify-center p-5 ${dark ? 'dark' : ''}`}>
       <div className="fixed inset-0 bg-gradient-to-br from-primary-100 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-primary-950" />
 
       <div className="fixed top-10 right-10 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl" />
@@ -134,7 +136,7 @@ export default function LoginPage() {
         </div>
 
         {(selectedPlanId || loadingSelectedPlan) && (
-          <div className="mb-4 rounded-3xl border border-primary-100 bg-white/95 p-4 shadow-lg shadow-primary-500/10 dark:border-primary-900/40 dark:bg-gray-900/95">
+          <div className="app-surface mb-4 rounded-3xl border border-primary-100/70 p-4 shadow-lg shadow-primary-500/10 dark:border-primary-500/10">
             <div className="flex items-start gap-3">
               <div className="rounded-2xl bg-primary-50 p-2 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
                 <Zap className="h-5 w-5" />
@@ -169,7 +171,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl dark:shadow-2xl border border-gray-100 dark:border-gray-800 p-8">
+        <div className="app-surface rounded-3xl border border-gray-100/80 p-8 shadow-xl dark:border-white/10 dark:shadow-2xl">
           <form onSubmit={isRegister ? handleRegister : handleLogin}>
             {isRegister && (
               <>
@@ -181,7 +183,7 @@ export default function LoginPage() {
                     type="text"
                     value={registerData.name}
                     onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 transition-all text-gray-900 dark:text-white"
+                    className={authInputClass}
                     placeholder="مثال: محمد أحمد"
                     required
                   />
@@ -194,7 +196,7 @@ export default function LoginPage() {
                     type="text"
                     value={registerData.storeName}
                     onChange={(e) => setRegisterData({ ...registerData, storeName: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 transition-all text-gray-900 dark:text-white"
+                    className={authInputClass}
                     placeholder="مثال: إلكترونيات المعادي"
                     required
                   />
@@ -207,7 +209,7 @@ export default function LoginPage() {
                     type="tel"
                     value={registerData.phone}
                     onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 transition-all text-gray-900 dark:text-white"
+                    className={authInputClass}
                     placeholder="01XXXXXXXXX"
                     required
                   />
@@ -224,7 +226,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 transition-all text-gray-900 dark:text-white"
+                className={authInputClass}
                 placeholder="example@email.com"
                 required
               />
@@ -240,7 +242,7 @@ export default function LoginPage() {
                   autoComplete={isRegister ? 'new-password' : 'current-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 transition-all text-gray-900 dark:text-white pl-12"
+                  className={`${authInputClass} pl-12`}
                   placeholder="••••••"
                   required
                   minLength={6}
@@ -248,7 +250,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -294,14 +296,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="text-center mt-5">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur text-gray-500 text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-all"
-          >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            {dark ? 'الوضع الفاتح' : 'الوضع الداكن'}
-          </button>
+        <div className="mt-5 flex justify-center">
+          <ThemeModeSwitcher compact />
         </div>
       </div>
     </div>

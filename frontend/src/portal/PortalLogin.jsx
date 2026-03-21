@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { getStorefrontTenantSlugFromHost as getPortalTenantSlugFromHost } from '../utils/storefrontHost';
 import { useThemeStore } from '../store';
-import { Phone, Lock, User, Store, Eye, EyeOff, Sun, Moon, ShieldCheck, UserPlus, LogIn } from 'lucide-react';
+import { Phone, Lock, User, Store, Eye, EyeOff, ShieldCheck, UserPlus, LogIn } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 import { transliterateArabicToEnglish } from '../utils/textUtils';
+import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
 export default function PortalLogin() {
   const [activeTab, setActiveTab] = useState('login'); // login | register | activate
@@ -32,7 +33,7 @@ export default function PortalLogin() {
   const [actStoreCode, setActStoreCode] = useState('');
 
   const { login, register, activate, loading } = usePortalStore();
-  const { dark, toggleTheme } = useThemeStore();
+  const { dark } = useThemeStore();
   const { t, i18n } = useTranslation('portal');
   const navigate = useNavigate();
   const location = useLocation();
@@ -109,10 +110,10 @@ export default function PortalLogin() {
     { id: 'activate', label: t('login.tabs.activate'), icon: ShieldCheck },
   ];
 
-  const inputClass = `w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 font-['Cairo']`;
+  const inputClass = `app-surface w-full rounded-xl border border-transparent px-4 py-3 pr-11 text-gray-900 transition-all focus:ring-2 focus:ring-primary-500/20 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 font-['Cairo']`;
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-5 font-['Cairo'] ${dark ? 'dark' : ''}`} dir={i18n.dir()}>
+    <div className={`app-shell-bg min-h-screen flex items-center justify-center p-5 font-['Cairo'] ${dark ? 'dark' : ''}`} dir={i18n.dir()}>
       {/* Background */}
       <div className="fixed inset-0 bg-gradient-to-br from-primary-100 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-primary-950" />
 
@@ -140,15 +141,15 @@ export default function PortalLogin() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl dark:shadow-2xl border border-gray-100 dark:border-gray-800 p-6 sm:p-8">
+        <div className="app-surface rounded-3xl border border-gray-100/80 p-6 shadow-xl dark:border-white/10 dark:shadow-2xl sm:p-8">
           {/* Tabs */}
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-6">
+          <div className="app-surface-muted mb-6 flex rounded-xl p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                  ? 'app-surface text-primary-600 dark:text-primary-400 shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
               >
@@ -174,7 +175,7 @@ export default function PortalLogin() {
                 <div className="relative">
                   <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input id="portal-login-password" name="password" autoComplete="current-password" type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.password_placeholder')} required minLength={6} />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
                     {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -225,7 +226,7 @@ export default function PortalLogin() {
                 <div className="relative">
                   <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input id="portal-register-password" name="password" autoComplete="new-password" type={showPass ? 'text' : 'password'} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.password_min')} required minLength={6} />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
                     {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -236,7 +237,7 @@ export default function PortalLogin() {
                 <div className="relative">
                   <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input id="portal-register-confirm-password" name="confirmPassword" autoComplete="new-password" type={showConfirmPass ? 'text' : 'password'} value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.confirm_password_placeholder')} required minLength={6} />
-                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
                     {showConfirmPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -266,7 +267,7 @@ export default function PortalLogin() {
           {/* Activate Form */}
           {activeTab === 'activate' && (
             <form onSubmit={handleActivate} className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 mb-2">
+              <div className="app-surface-muted mb-2 rounded-xl border border-blue-200/70 p-3 dark:border-blue-500/20">
                 <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
                   {t('login.messages.activate_hint')}
                 </p>
@@ -285,7 +286,7 @@ export default function PortalLogin() {
                 <div className="relative">
                   <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input id="portal-activate-password" name="newPassword" autoComplete="new-password" type={showPass ? 'text' : 'password'} value={actPassword} onChange={(e) => setActPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.password_min')} required minLength={6} />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
                     {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -296,7 +297,7 @@ export default function PortalLogin() {
                 <div className="relative">
                   <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input id="portal-activate-confirm-password" name="confirmPassword" autoComplete="new-password" type={showConfirmPass ? 'text' : 'password'} value={actConfirmPassword} onChange={(e) => setActConfirmPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.confirm_password_placeholder')} required minLength={6} />
-                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
                     {showConfirmPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -325,19 +326,12 @@ export default function PortalLogin() {
         </div>
 
         {/* Theme toggle */}
-        <div className="text-center mt-5">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur text-gray-500 text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 transition-all"
-          >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            {dark ? t('login.buttons.light_mode') : t('login.buttons.dark_mode')}
-          </button>
+        <div className="mt-5 flex justify-center">
+          <ThemeModeSwitcher compact />
         </div>
       </div>
     </div>
   );
 }
-
 
 

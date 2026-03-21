@@ -59,14 +59,14 @@ export default function PortalHome() {
   const secondaryColor = store?.secondaryColor || '#10b981';
 
   return (
-    <div className="pb-24 animate-fade-in space-y-6" dir="rtl">
+    <div className="pb-24 animate-fade-in space-y-6 app-text-soft" dir="rtl">
 
       {/* ═══════════════ SEARCH & HERO ═══════════════ */}
       <div className="space-y-4">
         {/* Search Bar */}
         <div className="relative cursor-text group" onClick={() => setIsSearchOpen(true)}>
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
-          <div className="w-full bg-white dark:bg-gray-800 border-none rounded-2xl py-4 pr-12 pl-4 shadow-sm group-hover:shadow-md transition-shadow text-sm text-gray-400 text-right">
+          <div className="app-surface w-full rounded-2xl py-4 pr-12 pl-4 shadow-sm transition-shadow group-hover:shadow-md text-sm text-gray-400 text-right">
             {t('home.search_placeholder')}
           </div>
         </div>
@@ -171,7 +171,7 @@ export default function PortalHome() {
 
           {/* Gamification / Loyalty Points (Premium) */}
           {customer?.points >= 0 && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-3xl p-5 sm:p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden flex flex-col justify-center group hover:border-yellow-500/30 transition-colors">
+            <div className="app-surface border border-gray-100/80 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/20 relative overflow-hidden flex flex-col justify-center group hover:border-yellow-500/30 transition-colors">
 
               {/* Subtle ambient background glow */}
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/10 dark:bg-yellow-500/5 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150" />
@@ -244,9 +244,9 @@ export default function PortalHome() {
             <Link
               key={i}
               to={`/portal/products?category=${cat.slug}`}
-              className="group flex items-center gap-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 px-4 py-3 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-200 transition-all snap-start whitespace-nowrap"
+              className="app-surface group flex items-center gap-3 border border-gray-100/80 dark:border-white/10 px-4 py-3 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-primary-500/10 hover:border-primary-200 transition-all snap-start whitespace-nowrap"
             >
-              <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-primary-500 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 group-hover:scale-110 transition-all">
+              <div className="app-surface-muted w-10 h-10 rounded-full flex items-center justify-center text-primary-500 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/20 group-hover:scale-110 transition-all">
                 <Tag className="w-5 h-5" />
               </div>
               <span className="text-sm font-bold text-gray-700 dark:text-gray-200 group-hover:text-primary-600 transition-colors">
@@ -260,33 +260,33 @@ export default function PortalHome() {
       </div>
 
       {/* ═══════════════ FEATURED PRODUCTS & QUICK ACTIONS ═══════════════ */}
-      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200/50 dark:border-gray-800 -mx-4 px-4 py-8 rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+      <div className="app-surface-muted border-t border-gray-200/50 dark:border-white/10 -mx-4 px-4 py-8 rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
 
         {/* Quick Actions Grid (Refined) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10 px-1">
           <button onClick={() => navigate('/portal/orders')} className="flex flex-col items-center gap-2 group">
-            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+            <div className="app-surface w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100/80 dark:border-white/10 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
               <Package className="w-6 h-6 text-blue-500" />
             </div>
             <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.my_orders')}</span>
           </button>
 
           <button onClick={() => navigate('/portal/wishlist')} className="flex flex-col items-center gap-2 group">
-            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+            <div className="app-surface w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100/80 dark:border-white/10 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
               <Heart className="w-6 h-6 text-red-500" />
             </div>
             <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.wishlist')}</span>
           </button>
 
           <button onClick={() => navigate('/portal/statement')} className="flex flex-col items-center gap-2 group">
-            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+            <div className="app-surface w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100/80 dark:border-white/10 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
               <FileText className="w-6 h-6 text-indigo-500" />
             </div>
             <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.statement')}</span>
           </button>
 
           <button onClick={() => navigate('/portal/support')} className="flex flex-col items-center gap-2 group">
-            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
+            <div className="app-surface w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100/80 dark:border-white/10 group-hover:shadow-md group-hover:-translate-y-1 transition-all">
               <MessageCircle className="w-6 h-6 text-green-500" />
             </div>
             <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{t('home.quick_actions.support')}</span>
@@ -395,12 +395,12 @@ export default function PortalHome() {
       {/* ═══════════════ SEARCH MODAL ═══════════════ */}
       {
         isSearchOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-950 animate-fade-in pb-safe">
+          <div className="app-shell-bg fixed inset-0 z-50 flex flex-col animate-fade-in pb-safe">
             {/* Header */}
-            <div className="bg-white dark:bg-gray-900 px-4 py-3 shadow-sm flex items-center gap-3">
+            <div className="app-surface px-4 py-3 shadow-sm flex items-center gap-3">
               <button
                 onClick={() => setIsSearchOpen(false)}
-                className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300"
+                className="app-surface-muted w-10 h-10 rounded-xl flex items-center justify-center text-gray-600 dark:text-gray-300"
               >
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -411,7 +411,7 @@ export default function PortalHome() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="ابحث عن منتجات، أقسام..."
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-xl py-2.5 pr-10 pl-4 text-sm focus:ring-2 focus:ring-primary-500/50"
+                  className="app-surface-muted w-full rounded-xl border border-transparent py-2.5 pr-10 pl-4 text-sm focus:ring-2 focus:ring-primary-500/20"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
                       navigate(`/portal/products?q=${encodeURIComponent(searchQuery)}`);
@@ -437,7 +437,7 @@ export default function PortalHome() {
                             navigate(`/portal/products?q=${encodeURIComponent(term)}`);
                             setIsSearchOpen(false);
                           }}
-                          className="px-4 py-2 bg-white dark:bg-gray-800 rounded-xl text-sm font-medium border border-gray-100 dark:border-gray-700 shadow-sm"
+                          className="app-surface px-4 py-2 rounded-xl text-sm font-medium border border-gray-100/80 dark:border-white/10 shadow-sm"
                         >
                           {term}
                         </button>
@@ -456,7 +456,7 @@ export default function PortalHome() {
                             navigate(`/portal/products?category=${cat.slug}`);
                             setIsSearchOpen(false);
                           }}
-                          className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700"
+                          className="app-surface flex items-center gap-3 p-3 rounded-xl border border-gray-100/80 dark:border-white/10"
                         >
                           <div className="w-10 h-10 bg-primary-50 dark:bg-primary-900/20 text-primary-500 rounded-lg flex items-center justify-center">
                             <Tag className="w-5 h-5" />

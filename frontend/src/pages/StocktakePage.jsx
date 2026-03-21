@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Camera,
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { productsApi, useAuthStore } from '../store';
-import { Button, Card, LoadingSpinner, EmptyState, Badge } from '../components/UI';
+import { Badge, Button, Card, EmptyState, LoadingSpinner } from '../components/UI';
 import BarcodeScanner, { useBarcodeScanner } from '../components/BarcodeScanner';
 import { confirm } from '../components/ConfirmDialog';
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
@@ -38,8 +38,9 @@ function getDisplayCode(product) {
 export default function StocktakePage() {
   const user = useAuthStore((state) => state.user);
   const getBranches = useAuthStore((state) => state.getBranches);
+  const userBranchId = user?.branch?._id || user?.branch || '';
 
-  const [selectedBranchId, setSelectedBranchId] = useState(user?.branch || '');
+  const [selectedBranchId, setSelectedBranchId] = useState(userBranchId);
   const [products, setProducts] = useState([]);
   const [branches, setBranches] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -55,8 +56,8 @@ export default function StocktakePage() {
   const [lastScannedCode, setLastScannedCode] = useState('');
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 350);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 350);
+    return () => window.clearTimeout(timer);
   }, [search]);
 
   useEffect(() => {
@@ -72,16 +73,17 @@ export default function StocktakePage() {
       const [productsRes, categoriesRes, branchesRes] = await Promise.all([
         productsApi.getAll(params),
         productsApi.getCategories(),
-        user?.branch ? Promise.resolve([]) : getBranches?.(),
+        userBranchId ? Promise.resolve([]) : getBranches?.(),
       ]);
 
-      const loadedProducts = productsRes.data.data || [];
-      const loadedCategories = categoriesRes.data.data || [];
+      const loadedProducts = productsRes?.data?.data || [];
+      const loadedCategories = categoriesRes?.data?.data || [];
       const loadedBranches = Array.isArray(branchesRes) ? branchesRes : [];
 
       setProducts(loadedProducts);
       setCategories(loadedCategories);
-      if (!user?.branch) {
+
+      if (!userBranchId) {
         setBranches(loadedBranches);
         if (!selectedBranchId && loadedBranches.length > 0) {
           setSelectedBranchId(loadedBranches[0]._id);
@@ -92,26 +94,26 @@ export default function StocktakePage() {
         const next = { ...prev };
         loadedProducts.forEach((product) => {
           if (next[product._id] === undefined) {
-            next[product._id] = getBranchQuantity(product, selectedBranchId || user?.branch || '');
+            next[product._id] = getBranchQuantity(product, selectedBranchId || userBranchId);
           }
         });
         return next;
       });
     } catch (error) {
       console.error('Stocktake load error:', error);
-      toast.error('خطأ في تحميل بيانات الجرد');
+      toast.error('حدث خطأ أثناء تحميل بيانات الجرد');
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter, debouncedSearch, getBranches, selectedBranchId, user?.branch]);
+  }, [categoryFilter, debouncedSearch, getBranches, selectedBranchId, userBranchId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const visibleProducts = useMemo(() => {
-    return products.map((product) => {
-      const systemQty = getBranchQuantity(product, selectedBranchId || user?.branch || '');
+  const visibleProducts = useMemo(() => (
+    products.map((product) => {
+      const systemQty = getBranchQuantity(product, selectedBranchId || userBranchId);
       const actualQty = stockCounts[product._id] !== undefined ? stockCounts[product._id] : systemQty;
       return {
         ...product,
@@ -119,8 +121,8 @@ export default function StocktakePage() {
         actualQty,
         diff: actualQty - systemQty,
       };
-    });
-  }, [products, selectedBranchId, stockCounts, user?.branch]);
+    })
+  ), [products, selectedBranchId, stockCounts, userBranchId]);
 
   const hasChanges = visibleProducts.some((product) => product.actualQty !== product.systemQty);
 
@@ -151,7 +153,7 @@ export default function StocktakePage() {
     const code = payload?.value || payload;
     if (!code) return;
 
-    if (!selectedBranchId && !user?.branch) {
+    if (!selectedBranchId && !userBranchId) {
       toast.error('اختر الفرع أولاً قبل بدء الجرد بالمسح');
       setShowScanner(false);
       return;
@@ -165,7 +167,7 @@ export default function StocktakePage() {
       }
 
       mergeScannedProduct(product);
-      const targetBranchId = selectedBranchId || user?.branch || '';
+      const targetBranchId = selectedBranchId || userBranchId;
       const baselineQuantity = stockCounts[product._id] !== undefined
         ? Number(stockCounts[product._id]) || 0
         : getBranchQuantity(product, targetBranchId);
@@ -189,7 +191,7 @@ export default function StocktakePage() {
         window.setTimeout(() => setShowScanner(true), 900);
       }
     }
-  }, [scanMode, selectedBranchId, stockCounts, user?.branch]);
+  }, [scanMode, selectedBranchId, stockCounts, userBranchId]);
 
   useBarcodeScanner((payload) => {
     if (scanMode && !showScanner) {
@@ -199,12 +201,12 @@ export default function StocktakePage() {
 
   const toggleScanMode = () => {
     if (!scanMode) {
-      if (!selectedBranchId && !user?.branch) {
+      if (!selectedBranchId && !userBranchId) {
         toast.error('اختر الفرع أولاً قبل بدء الجرد بالمسح');
         return;
       }
       setScanMode(true);
-      setScanStatus('وضع المسح المتتابع فعال');
+      setScanStatus('وضع المسح المتتابع مفعل');
       setShowScanner(true);
       return;
     }
@@ -214,8 +216,26 @@ export default function StocktakePage() {
     setScanStatus('تم إيقاف وضع المسح');
   };
 
+  const handleBranchChange = async (nextBranchId) => {
+    if (nextBranchId === selectedBranchId) return;
+
+    if (hasChanges) {
+      const approved = await confirm.warn(
+        'سيتم فقد أي فروقات غير محفوظة عند تغيير الفرع. هل تريد المتابعة؟',
+        'تغيير الفرع'
+      );
+      if (!approved) return;
+    }
+
+    setScanMode(false);
+    setShowScanner(false);
+    setScanStatus('');
+    setLastScannedCode('');
+    setSelectedBranchId(nextBranchId);
+  };
+
   const handleSaveStocktake = async () => {
-    const targetBranchId = selectedBranchId || user?.branch || '';
+    const targetBranchId = selectedBranchId || userBranchId;
     if (!targetBranchId) {
       toast.error('يرجى تحديد الفرع أولاً قبل حفظ الجرد');
       return;
@@ -262,6 +282,14 @@ export default function StocktakePage() {
   };
 
   const resetCounts = async () => {
+    if (hasChanges) {
+      const approved = await confirm.warn(
+        'سيتم فقد جميع التعديلات غير المحفوظة. هل تريد إعادة التعيين؟',
+        'إعادة تعيين الجرد'
+      );
+      if (!approved) return;
+    }
+
     setScanMode(false);
     setShowScanner(false);
     setScanStatus('');
@@ -280,10 +308,10 @@ export default function StocktakePage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white">
             <CheckSquare className="w-6 h-6 text-primary-500" />
-            الجرد الشامل للمخزن
+            الجرد الشامل للمخزون
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            عدّ فعلي يدوي أو بالمسح، ثم حفظ الفروقات عبر endpoint الجرد الحالي.
+            عدّ فعلي يدوي أو بالمسح، ثم حفظ الفروقات على الفرع المحدد مباشرة.
           </p>
         </div>
 
@@ -300,10 +328,10 @@ export default function StocktakePage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        {!user?.branch && branches.length > 0 ? (
+        {!userBranchId && branches.length > 0 ? (
           <select
             value={selectedBranchId}
-            onChange={(event) => setSelectedBranchId(event.target.value)}
+            onChange={(event) => { void handleBranchChange(event.target.value); }}
             className="min-w-[180px] rounded-xl border-2 border-primary-200 bg-primary-50 px-4 py-2.5 text-sm font-bold text-primary-700 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
           >
             <option value="" disabled>اختر الفرع</option>
@@ -313,8 +341,8 @@ export default function StocktakePage() {
           </select>
         ) : null}
 
-        <div className="relative min-w-[220px] flex-1 max-w-sm">
-          <Search className="absolute right-3 top-1/2 w-4 h-4 -translate-y-1/2 text-gray-400" />
+        <div className="relative min-w-[220px] max-w-sm flex-1">
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -343,7 +371,7 @@ export default function StocktakePage() {
 
       <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 w-5 h-5 text-amber-500" />
+          <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-500" />
           <div>
             <h4 className="font-bold text-amber-800">تنبيه الجرد</h4>
             <p className="mt-1 text-sm text-amber-700">
@@ -354,10 +382,10 @@ export default function StocktakePage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={scanMode ? 'success' : 'gray'}>
-            {scanMode ? 'المسح المتتابع فعال' : 'المسح غير فعال'}
+            {scanMode ? 'المسح المتتابع مفعل' : 'المسح غير مفعل'}
           </Badge>
           {lastScannedCode ? (
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-mono text-gray-600">
+            <span className="rounded-full bg-white px-3 py-1 font-mono text-xs text-gray-600">
               {lastScannedCode}
             </span>
           ) : null}
@@ -372,14 +400,14 @@ export default function StocktakePage() {
 
       {visibleProducts.length === 0 ? (
         <EmptyState
-          icon={<Package className="w-8 h-8" />}
+          icon={<Package className="h-8 w-8" />}
           title="لا توجد منتجات"
           description="لم يتم العثور على منتجات مطابقة للفلاتر الحالية."
         />
       ) : (
         <Card className="overflow-hidden border-2 border-gray-200 dark:border-gray-800">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-right">
+            <table className="w-full text-right text-sm">
               <thead className="bg-gray-50/50 text-xs text-gray-500 dark:bg-gray-800/50">
                 <tr>
                   <th className="rounded-tr-xl px-4 py-4 font-bold">المنتج والكود</th>
@@ -396,7 +424,7 @@ export default function StocktakePage() {
                       <p className="max-w-[240px] truncate font-bold text-gray-800 dark:text-gray-200" title={product.name}>
                         {product.name}
                       </p>
-                      <p className="mt-0.5 text-[10px] font-mono text-gray-400">{getDisplayCode(product)}</p>
+                      <p className="mt-0.5 font-mono text-[10px] text-gray-400">{getDisplayCode(product)}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-500">
                       {product.category?.name || product.category || 'بدون فئة'}
@@ -413,7 +441,7 @@ export default function StocktakePage() {
                           onClick={() => adjustQuantity(product._id, -1)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors hover:bg-red-100 hover:text-red-600 dark:bg-gray-800"
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="h-4 w-4" />
                         </button>
                         <input
                           type="number"
@@ -428,7 +456,7 @@ export default function StocktakePage() {
                           onClick={() => adjustQuantity(product._id, 1)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors hover:bg-emerald-100 hover:text-emerald-600 dark:bg-gray-800"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
@@ -457,7 +485,7 @@ export default function StocktakePage() {
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={resetCounts}>إعادة تعيين</Button>
-            <Button icon={<Save className="w-4 h-4" />} onClick={handleSaveStocktake} loading={saving}>
+            <Button icon={<Save className="h-4 w-4" />} onClick={handleSaveStocktake} loading={saving}>
               اعتماد الجرد
             </Button>
           </div>

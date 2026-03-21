@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     Calendar, Truck, TrendingUp, AlertTriangle, Clock, DollarSign,
     Download, Filter, ChevronDown, ChevronUp, Printer, FileSpreadsheet,
-    Phone, Eye, RefreshCw, PieChart,
+    Phone, Eye, RefreshCw, PieChart, Search,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dashboardApi } from '../store';
@@ -17,6 +17,14 @@ const AGING_BUCKETS = [
     { key: 'days90', label: '91-120 يوم', color: 'red' },
     { key: 'over90', label: '+120 يوم', color: 'rose' },
 ];
+
+const BUCKET_STYLES = {
+    current: { text: 'text-emerald-600 dark:text-emerald-400' },
+    days30: { text: 'text-amber-600 dark:text-amber-400' },
+    days61: { text: 'text-orange-600 dark:text-orange-400' },
+    days90: { text: 'text-red-600 dark:text-red-400' },
+    over90: { text: 'text-rose-600 dark:text-rose-400' },
+};
 
 export default function SupplierAgingReportPage() {
     const [data, setData] = useState(null);
@@ -116,11 +124,11 @@ export default function SupplierAgingReportPage() {
     const summary = data?.summary || {};
 
     return (
-        <div className="space-y-6 animate-fade-in pb-10">
+        <div className="space-y-6 animate-fade-in pb-10 app-text-soft">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
+                    <div className="app-surface flex h-12 w-12 items-center justify-center rounded-2xl text-primary-600 dark:text-primary-300">
                         <Clock className="w-6 h-6" />
                     </div>
                     <div>
@@ -137,7 +145,7 @@ export default function SupplierAgingReportPage() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                <Card className="p-4 bg-primary-50 dark:bg-primary-900/10 border-primary-100 dark:border-primary-900/20">
+                <Card className="app-surface-muted p-4 border-primary-100 dark:border-primary-900/20">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-primary-600 mb-1">إجمالي المستحقات</p>
                     <p className="text-xl font-black text-gray-900 dark:text-white">{fmt(summary.total)} <span className="text-[10px]">ج.م</span></p>
                     <p className="text-[10px] text-gray-400 mt-1">{summary.supplierCount} مورد</p>
@@ -146,23 +154,23 @@ export default function SupplierAgingReportPage() {
                 {AGING_BUCKETS.map(b => (
                     <Card
                         key={b.key}
-                        className={`p-4 cursor-pointer hover:border-primary-300 transition-all ${filterBucket === b.key ? 'ring-2 ring-primary-500' : ''}`}
+                        className={`app-surface-muted cursor-pointer p-4 transition-all duration-200 hover:border-primary-300 motion-safe:hover:-translate-y-0.5 ${filterBucket === b.key ? 'ring-2 ring-primary-500' : ''}`}
                         onClick={() => setFilterBucket(filterBucket === b.key ? 'all' : b.key)}
                     >
                         <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">{b.label}</p>
-                        <p className={`text-xl font-black text-${b.color}-600`}>{fmt(summary[b.key] || 0)}</p>
+                        <p className={`text-xl font-black ${BUCKET_STYLES[b.key]?.text}`}>{fmt(summary[b.key] || 0)}</p>
                         <p className="text-[10px] text-gray-400 mt-1">{((summary[b.key] / Math.max(summary.total, 1)) * 100).toFixed(1)}%</p>
                     </Card>
                 ))}
             </div>
 
             {/* Main Content */}
-            <Card className="overflow-hidden border-gray-100 dark:border-gray-800 shadow-sm">
-                <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <Card className="app-surface overflow-hidden rounded-3xl">
+                <div className="app-surface-muted flex flex-col items-center justify-between gap-4 border-b border-gray-100/80 p-4 dark:border-white/10 sm:flex-row">
                     <div className="relative w-full sm:w-64">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
-                            className="w-full pr-10 pl-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 transition-all outline-none"
+                            className="app-surface w-full rounded-xl border border-transparent py-2 pl-4 pr-10 text-sm transition-all outline-none"
                             placeholder="بحث بالمورد..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -177,7 +185,7 @@ export default function SupplierAgingReportPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-right">
                         <thead>
-                            <tr className="bg-gray-50 dark:bg-gray-800/50 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                            <tr className="app-surface-muted text-[11px] font-bold uppercase tracking-wider text-gray-400">
                                 <th className="px-6 py-4 cursor-pointer hover:text-primary-500" onClick={() => toggleSort('name')}>
                                     <div className="flex items-center gap-2">المورد <SortIcon field="name" /></div>
                                 </th>
@@ -194,7 +202,7 @@ export default function SupplierAgingReportPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                             {paginated.map(s => (
-                                <tr key={s._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group">
+                                <tr key={s._id} className="group transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm font-bold group-hover:bg-primary-500 group-hover:text-white transition-colors">
@@ -225,7 +233,7 @@ export default function SupplierAgingReportPage() {
                 </div>
 
                 {filteredSuppliers.length > limit && (
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="border-t border-gray-100/80 p-4 dark:border-white/10">
                         <Pagination currentPage={page} totalPages={totalPages} totalItems={filteredSuppliers.length} onPageChange={setPage} />
                     </div>
                 )}

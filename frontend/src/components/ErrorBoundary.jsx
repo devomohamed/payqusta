@@ -18,28 +18,28 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[400px] flex items-center justify-center p-8">
-          <div className="text-center max-w-md">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
+        <div className="app-shell-bg min-h-[400px] flex items-center justify-center p-8">
+          <div className="app-surface app-eye-candy-ring max-w-md rounded-[2rem] p-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/30">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">حدث خطأ غير متوقع</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
-              {this.state.error?.message || 'حدث خطأ أثناء عرض هذا المكون. يرجى المحاولة مرة أخرى.'}
+            <h2 className="app-text-strong mb-2 text-xl font-black">حدث خطأ غير متوقع</h2>
+            <p className="app-text-soft mb-6 text-sm leading-7">
+              {this.state.error?.message || 'حدث خطأ أثناء عرض هذا الجزء من النظام. أعد المحاولة مرة أخرى أو ارجع للصفحة الرئيسية.'}
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex justify-center gap-3">
               <button
                 onClick={() => this.setState({ hasError: false, error: null })}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary-500/25 transition-transform hover:-translate-y-0.5"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="h-4 w-4" />
                 إعادة المحاولة
               </button>
               <button
-                onClick={() => window.location.href = '/'}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                onClick={() => { window.location.href = '/'; }}
+                className="app-surface-muted app-text-body inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
               >
-                <Home className="w-4 h-4" />
+                <Home className="h-4 w-4" />
                 الرئيسية
               </button>
             </div>

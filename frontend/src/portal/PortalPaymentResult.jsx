@@ -36,8 +36,8 @@ export default function PortalPaymentResult() {
     }
 
     return (
-        <div className="min-h-[70vh] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 text-center p-8">
+        <div className="min-h-[70vh] flex items-center justify-center p-4 app-text-soft">
+            <div className="app-surface w-full max-w-md overflow-hidden rounded-2xl border border-gray-100/80 p-8 text-center shadow-xl dark:border-white/10">
 
                 {isSuccess ? (
                     <div className="mb-6">
@@ -75,7 +75,7 @@ export default function PortalPaymentResult() {
                     </Link>
                     <Link
                         to="/portal/dashboard"
-                        className="w-full py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition flex items-center justify-center gap-2"
+                        className="app-surface w-full rounded-xl border border-gray-100/80 py-3 font-bold text-gray-700 transition hover:bg-black/[0.02] dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/[0.03] flex items-center justify-center gap-2"
                     >
                         <ArrowRight className="w-5 h-5" />
                         الرئيسية

@@ -22,6 +22,12 @@ class ImportController {
       const updateExisting = req.body.updateExisting === 'true';
 
       const parsed = await ImportService.parseFile(filePath);
+
+      if (parsed.totalRows === 0) {
+        fs.unlink(filePath, () => {});
+        return next(AppError.badRequest('الملف لا يحتوي على بيانات'));
+      }
+
       const results = await ImportService.importProducts(parsed.rows, req.tenantId, { skipDuplicates, updateExisting });
 
       // Cleanup uploaded file
@@ -29,7 +35,14 @@ class ImportController {
 
       ApiResponse.success(res, {
         totalRows: parsed.totalRows,
-        ...results,
+        created: results.created,
+        updated: results.updated,
+        skipped: results.skipped,
+        errorsCount: results.errors.length,
+        warningsCount: results.warnings.length,
+        errors: results.errors,
+        warnings: results.warnings,
+        details: results.details,
       }, `تم استيراد ${results.created} منتج بنجاح`);
     } catch (error) {
       if (req.file?.path) fs.unlink(req.file.path, () => {});
@@ -78,7 +91,7 @@ class ImportController {
 
       ApiResponse.success(res, {
         headers: parsed.headers,
-        sampleRows: parsed.rows.slice(0, 5),
+        sampleRows: parsed.rows.slice(0, 10),
         totalRows: parsed.totalRows,
       });
     } catch (error) {

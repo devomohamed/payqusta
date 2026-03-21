@@ -27,11 +27,11 @@ export default function PublicFaqPage() {
         </div>
 
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">الوضوح قبل القرار</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.2em]">الوضوح قبل القرار</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
             كل إجابة هنا تمهد لخطوة أوضح في رحلة الزائر
           </h2>
-          <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">
+          <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">
             عندما تكون الإجابات واضحة، يصبح تقييم المنصة أسهل ويقل التردد قبل الانتقال إلى التجربة أو التسجيل.
           </p>
         </div>
@@ -41,17 +41,17 @@ export default function PublicFaqPage() {
         {faqItems.map((item, index) => {
           const isOpen = index === openIndex;
           return (
-            <article key={item.question} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm">
+            <article key={item.question} className="app-surface overflow-hidden rounded-[1.75rem]">
               <button
                 type="button"
                 onClick={() => setOpenIndex(isOpen ? -1 : index)}
                 className="flex w-full items-center justify-between gap-4 px-5 py-5 text-right sm:px-6"
               >
-                <ChevronDown className={`h-5 w-5 flex-shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                <span className="flex-1 text-base font-black text-slate-950 sm:text-lg">{item.question}</span>
+                <ChevronDown className={`app-text-muted h-5 w-5 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <span className="flex-1 text-base font-black text-slate-950 dark:text-white sm:text-lg">{item.question}</span>
               </button>
               {isOpen && (
-                <div className="border-t border-slate-100 px-5 py-5 text-right text-sm leading-7 text-slate-600 sm:px-6">
+                <div className="border-t border-[color:var(--surface-border)] px-5 py-5 text-right text-sm leading-7 text-slate-600 dark:text-slate-300 sm:px-6">
                   {item.answer}
                 </div>
               )}
@@ -60,11 +60,11 @@ export default function PublicFaqPage() {
         })}
       </div>
 
-      <div className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-amber-50 p-6 text-right shadow-sm sm:p-8">
+      <div className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-amber-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-amber-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <h2 className="text-3xl font-black text-slate-950">ما زال لديك سؤال قبل البدء؟</h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white">ما زال لديك سؤال قبل البدء؟</h2>
+            <p className="app-text-soft mt-3 text-base leading-8">
               إذا بقيت نقطة غير واضحة بعد المزايا وطريقة العمل، فهذه الإجابات تساعدك على تكوين صورة أدق قبل البدء.
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function PublicFaqPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               to="/features"
-              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+              className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
               ارجع إلى المزايا
             </Link>

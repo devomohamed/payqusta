@@ -1,4 +1,4 @@
-# Deployment
+﻿# Deployment
 
 ## Supported runtime model
 
@@ -142,6 +142,7 @@ Recommended use:
 - post-deploy smoke check -> `/api/health`
 - scripted preflight -> `npm --prefix backend run release:preflight`
 - scripted rollout smoke -> `npm --prefix backend run release:smoke -- --app-url=https://service-url`
+- scripted tenant onboarding check -> `npm --prefix backend run release:onboarding -- --app-url=https://service-url --auth-token=...`
 
 ## Deployment checklist
 
@@ -164,13 +165,18 @@ After deploy:
 
 ## Rollback reality
 
-The repo does not yet ship a formal rollback tool. Practical rollback today is:
+The repo now ships a basic Cloud Run rollback helper:
 
-1. redeploy the previous known-good revision
-2. confirm health endpoints
-3. restore tenant data only if the incident was data-destructive
+- `rollback-cloudrun.ps1`
 
-Because backups are tenant-scoped and not full-platform snapshots yet, deployment discipline matters.
+Recommended rollback flow:
+
+1. run `./rollback-cloudrun.ps1 -DryRun` to inspect the current and target revisions
+2. run `./rollback-cloudrun.ps1` to shift 100% traffic to the previous ready revision
+3. let the script execute post-rollback smoke automatically unless `-SkipSmoke` is used
+4. restore tenant data only if the incident was data-destructive
+
+This is still revision rollback, not a full infrastructure rebuild, but it removes the previous fully-manual rollback gap.
 
 ## CI status
 
@@ -189,3 +195,4 @@ Current automation:
 - Monitoring and alerting still need actual production scraper / dashboard wiring.
 - DB-backed E2E is opt-in until a CI database secret is provisioned.
 - Runbooks are documented, but release execution still depends on operator discipline rather than a fully automated rollout controller.
+

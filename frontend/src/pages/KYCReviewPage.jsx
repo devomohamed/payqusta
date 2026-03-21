@@ -81,16 +81,16 @@ export default function KYCReviewPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+      <div className="app-surface-muted flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl">
         <div>
           <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             <Shield className="w-6 h-6 text-indigo-500" /> مراجعة مستندات العملاء
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">مراجعة والموافقة على مستندات التحقق من الهوية (KYC)</p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+        <button onClick={load} className="app-surface flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
           <RefreshCw className="w-4 h-4" /> تحديث
         </button>
       </div>
@@ -126,10 +126,10 @@ export default function KYCReviewPage() {
             const typeInfo = TYPE_LABELS[doc.type] || TYPE_LABELS.other;
             const TypeIcon = typeInfo.icon;
             return (
-              <Card key={doc._id} className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+              <Card key={doc._id} className="app-surface overflow-hidden border-0 rounded-3xl shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
                 {/* Document Preview */}
                 <div
-                  className="h-40 bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer relative group"
+                  className="app-surface-muted h-40 flex items-center justify-center cursor-pointer relative group"
                   onClick={() => setViewDoc(doc)}
                 >
                   {doc.url?.startsWith('data:image') ? (
@@ -219,7 +219,7 @@ export default function KYCReviewPage() {
             </div>
 
             {/* Document Image */}
-            <div className={`bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden flex ${viewDoc.backUrl ? 'flex-col lg:flex-row' : 'items-center'} justify-center min-h-[300px] gap-4 p-4`}>
+            <div className={`app-surface-muted rounded-2xl overflow-hidden flex ${viewDoc.backUrl ? 'flex-col lg:flex-row' : 'items-center'} justify-center min-h-[300px] gap-4 p-4`}>
               {viewDoc.url?.startsWith('data:image') || viewDoc.url?.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                 <div className="flex-1 flex flex-col items-center">
                   {viewDoc.backUrl && <span className="text-xs font-bold text-gray-500 mb-2">الوجه الأمامي</span>}
@@ -293,7 +293,7 @@ export default function KYCReviewPage() {
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="مثال: الصورة غير واضحة، يرجى إعادة الرفع..."
-            className="w-full p-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm resize-none h-24 focus:border-red-400 outline-none"
+            className="app-surface w-full p-3 rounded-xl border border-transparent text-sm resize-none h-24 outline-none transition focus:border-red-300 focus:ring-2 focus:ring-red-400/20 dark:focus:border-red-500/40"
           />
           <div className="flex gap-3">
             <button
@@ -305,7 +305,7 @@ export default function KYCReviewPage() {
             </button>
             <button
               onClick={() => { setShowRejectModal(null); setRejectReason(''); }}
-              className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-sm hover:bg-gray-200 transition"
+              className="app-surface flex-1 py-3 rounded-xl font-bold text-sm transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
             >
               إلغاء
             </button>

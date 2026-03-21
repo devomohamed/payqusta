@@ -88,9 +88,9 @@ const PaymentAnalytics = () => {
   })) || [];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6 app-text-soft">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             تحليلات الدفع الإلكتروني
@@ -104,7 +104,7 @@ const PaymentAnalytics = () => {
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          className="app-surface rounded-xl border border-transparent px-4 py-2 text-gray-900 dark:text-white"
         >
           <option value="7">آخر 7 أيام</option>
           <option value="30">آخر 30 يوم</option>
@@ -183,7 +183,7 @@ const PaymentAnalytics = () => {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gateway Comparison */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+        <div className="app-surface rounded-3xl p-6">
           <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
             مقارنة البوابات
           </h3>
@@ -201,7 +201,7 @@ const PaymentAnalytics = () => {
         </div>
 
         {/* Success Rate by Gateway */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+        <div className="app-surface rounded-3xl p-6">
           <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
             معدل النجاح لكل بوابة
           </h3>
@@ -228,7 +228,7 @@ const PaymentAnalytics = () => {
       </div>
 
       {/* Daily Trend */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+      <div className="app-surface rounded-3xl p-6">
         <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
           الاتجاه اليومي
         </h3>
@@ -261,7 +261,7 @@ const PaymentAnalytics = () => {
       </div>
 
       {/* Gateway Details Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+      <div className="app-surface rounded-3xl p-6">
         <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
           تفاصيل البوابات
         </h3>
@@ -290,7 +290,7 @@ const PaymentAnalytics = () => {
               {gatewayData.map((gateway, index) => (
                 <tr
                   key={index}
-                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  className="border-b border-gray-100/80 transition-colors hover:bg-black/[0.02] dark:border-white/10 dark:hover:bg-white/[0.03]"
                 >
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">

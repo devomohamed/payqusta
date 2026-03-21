@@ -23,7 +23,7 @@ export default function PortalButton({
     const variantClasses = {
         primary: "bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500 shadow-lg shadow-primary-500/20",
         secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 focus:ring-gray-500",
-        ghost: "bg-transparent text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 focus:ring-gray-500",
+        ghost: "bg-transparent text-gray-600 hover:bg-black/[0.02] dark:text-gray-400 dark:hover:bg-white/[0.03] focus:ring-gray-500",
         danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-500 shadow-lg shadow-red-500/20",
         success: "bg-green-500 text-white hover:bg-green-600 focus:ring-green-500 shadow-lg shadow-green-500/20"
     };

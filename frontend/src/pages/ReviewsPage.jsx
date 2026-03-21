@@ -104,9 +104,9 @@ export default function ReviewsPage() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Star className="w-6 h-6 text-yellow-500" />
@@ -122,20 +122,20 @@ export default function ReviewsPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-yellow-500">{stats.avgRating || '—'}</p>
             <StarDisplay value={Math.round(stats.avgRating || 0)} />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">متوسط التقييم</p>
           </Card>
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-blue-500">{stats.pending || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">قيد المراجعة</p>
           </Card>
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-green-500">{stats.approved || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">منشور</p>
           </Card>
-          <Card className="p-4 text-center">
+          <Card className="app-surface-muted p-4 text-center">
             <p className="text-3xl font-black text-gray-500">{stats.total || 0}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">الإجمالي</p>
           </Card>
@@ -144,7 +144,7 @@ export default function ReviewsPage() {
 
       {/* Rating Distribution */}
       {stats?.ratingDistribution && (
-        <Card className="p-4">
+        <Card className="app-surface p-4 rounded-3xl">
           <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 text-sm">توزيع التقييمات</h3>
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map((star) => {
@@ -154,7 +154,7 @@ export default function ReviewsPage() {
                 <div key={star} className="flex items-center gap-3">
                   <span className="text-xs font-bold text-gray-500 w-4">{star}</span>
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                  <div className="flex-1 bg-black/[0.06] dark:bg-white/[0.08] rounded-full h-2 overflow-hidden">
                     <div
                       className="bg-yellow-400 h-full rounded-full transition-all duration-500"
                       style={{ width: `${pct}%` }}
@@ -176,7 +176,7 @@ export default function ReviewsPage() {
             onClick={() => setStatusFilter(f.value)}
             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition ${statusFilter === f.value
                 ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
-                : `bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700`
+                : `app-surface text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-white/10`
               }`}
           >
             {f.label}
@@ -188,14 +188,14 @@ export default function ReviewsPage() {
       {loading ? (
         <div className="py-10 flex justify-center"><LoadingSpinner /></div>
       ) : reviews.length === 0 ? (
-        <Card className="p-10 text-center">
+        <Card className="app-surface-muted p-10 text-center rounded-3xl">
           <Star className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
           <p className="text-gray-500 dark:text-gray-400">لا توجد تقييمات</p>
         </Card>
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <Card key={review._id} className="p-4">
+            <Card key={review._id} className="app-surface p-4 rounded-3xl">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -268,7 +268,7 @@ export default function ReviewsPage() {
                 )}
                 <button
                   onClick={() => handleDelete(review._id)}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                  className="app-surface flex items-center gap-1 px-3 py-1.5 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-bold transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> حذف
                 </button>
@@ -281,13 +281,13 @@ export default function ReviewsPage() {
       {/* Reply Modal */}
       {replyModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-4">
+          <div className="app-surface w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-4">
             <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary-500" />
               الرد على التقييم
             </h3>
 
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+            <div className="app-surface-muted rounded-xl p-3">
               <StarDisplay value={replyModal.rating} />
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{replyModal.body}</p>
             </div>
@@ -297,7 +297,7 @@ export default function ReviewsPage() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="اكتب ردك هنا..."
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition resize-none"
+              className="app-surface w-full px-4 py-2.5 rounded-xl border border-transparent text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition resize-none"
             />
 
             <div className="flex gap-3">
@@ -310,7 +310,7 @@ export default function ReviewsPage() {
               </button>
               <button
                 onClick={() => setReplyModal(null)}
-                className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl font-bold hover:bg-gray-200 transition"
+                className="app-surface px-4 py-2.5 text-gray-600 dark:text-gray-400 rounded-xl font-bold transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               >
                 إلغاء
               </button>

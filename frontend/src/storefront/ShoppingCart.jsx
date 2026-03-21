@@ -293,7 +293,7 @@ export default function ShoppingCart() {
                     <Truck className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-gray-900">
+                    <p className="text-sm font-black text-gray-900 dark:text-gray-100">
                       {amountUntilFreeShipping > 0
                         ? `أضف ${amountUntilFreeShipping.toFixed(2)} ج.م لتحصل على شحن مجاني`
                         : 'أنت مؤهل الآن للشحن المجاني'}
@@ -368,14 +368,14 @@ export default function ShoppingCart() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleQuantity(index, item.quantity - 1)}
-                          className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 flex items-center justify-center"
+                          className="app-surface w-8 h-8 rounded-lg border-2 border-gray-200/80 dark:border-white/10 hover:border-primary-500 flex items-center justify-center"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="text-lg font-bold w-8 text-center">{item.quantity}</span>
                         <button
                           onClick={() => handleQuantity(index, item.quantity + 1)}
-                          className="w-8 h-8 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 flex items-center justify-center"
+                          className="app-surface w-8 h-8 rounded-lg border-2 border-gray-200/80 dark:border-white/10 hover:border-primary-500 flex items-center justify-center"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -424,7 +424,7 @@ export default function ShoppingCart() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black text-gray-900">{suggestedProduct.name}</p>
+                        <p className="truncate text-sm font-black text-gray-900 dark:text-gray-100">{suggestedProduct.name}</p>
                         <p className="mt-1 text-xs font-medium text-gray-500">إضافة خفيفة ومناسبة مع طلبك الحالي.</p>
                         <p className="mt-2 text-sm font-black text-primary-600">
                           {(suggestedProduct.price || 0).toFixed(2)} ج.م
@@ -530,7 +530,7 @@ export default function ShoppingCart() {
                   <span className="font-bold">-{discount.toFixed(2)} ج.م</span>
                 </div>
               )}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between text-lg">
+              <div className="border-t border-gray-200/80 dark:border-white/10 pt-3 flex justify-between text-lg">
                 <span className="font-bold">الإجمالي:</span>
                 <span className="font-black text-primary-600 text-2xl">{total.toFixed(2)} ج.م</span>
               </div>

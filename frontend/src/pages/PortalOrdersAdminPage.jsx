@@ -166,16 +166,16 @@ export default function PortalOrdersAdminPage() {
     };
 
     return (
-        <div className="space-y-5 animate-fade-in">
+        <div className="space-y-6 animate-fade-in app-text-soft">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="app-surface-muted flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl">
                 <div>
                     <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                         <ShoppingBag className="w-6 h-6 text-primary-500" /> طلبات البوابة الإلكترونية
                     </h1>
                     <p className="text-sm text-gray-500 mt-0.5">الطلبات التي أرسلها العملاء من بوابتهم</p>
                 </div>
-                <button onClick={load} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                <button onClick={load} className="app-surface flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
                     <RefreshCw className="w-4 h-4" /> تحديث
                 </button>
             </div>
@@ -188,7 +188,7 @@ export default function PortalOrdersAdminPage() {
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         placeholder="بحث باسم العميل أو رقم الطلب..."
-                        className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 outline-none transition"
+                        className="app-surface w-full pr-10 pl-4 py-2.5 rounded-xl border border-transparent text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                     />
                 </div>
                 <div className="relative sm:w-52">
@@ -196,7 +196,7 @@ export default function PortalOrdersAdminPage() {
                     <select
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
-                        className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-sm focus:border-primary-500 outline-none transition appearance-none"
+                        className="app-surface w-full pr-10 pl-4 py-2.5 rounded-xl border border-transparent text-sm outline-none transition appearance-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                     >
                         {ORDER_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
@@ -212,7 +212,7 @@ export default function PortalOrdersAdminPage() {
                         <button
                             key={key}
                             onClick={() => setStatusFilter(statusFilter === key ? '' : key)}
-                            className={`px-3 py-1 rounded-full text-xs font-bold border transition ${statusFilter === key ? cfg.color + ' border-transparent' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-300'}`}
+                            className={`px-3 py-1 rounded-full text-xs font-bold border transition ${statusFilter === key ? cfg.color + ' border-transparent' : 'app-surface border-gray-200/80 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-primary-300 dark:hover:border-primary-500/30'}`}
                         >
                             {cfg.label} ({count})
                         </button>
@@ -229,11 +229,11 @@ export default function PortalOrdersAdminPage() {
                 />
             ) : (
                 <>
-                    <Card className="overflow-hidden border-0 shadow-lg shadow-gray-100/50 dark:shadow-none">
+                    <Card className="app-surface overflow-hidden border-0 rounded-3xl shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-right">
                                 <thead>
-                                    <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                                    <tr className="app-surface-muted border-b border-gray-100/80 dark:border-white/10">
                                         <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">رقم الطلب</th>
                                         <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">العميل</th>
                                         <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">التوصيل</th>
@@ -243,9 +243,9 @@ export default function PortalOrdersAdminPage() {
                                         <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400 text-center">إجراءات</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                <tbody className="divide-y divide-gray-100/70 dark:divide-white/10">
                                     {orders.map(order => (
-                                        <tr key={order._id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                        <tr key={order._id} className="group transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                                             <td className="px-5 py-4 font-bold text-primary-600 dark:text-primary-400">
                                                 #{order.invoiceNumber}
                                             </td>
@@ -387,14 +387,14 @@ export default function PortalOrdersAdminPage() {
 
                         {/* Customer & Shipping */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                            <div className="app-surface-muted rounded-2xl p-4">
                                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-3 flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> بيانات العميل</h4>
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between"><span className="text-gray-400">الاسم</span><span className="font-bold">{selected.customer?.name}</span></div>
                                     <div className="flex justify-between"><span className="text-gray-400">التليفون</span><span className="font-bold" dir="ltr">{selected.customer?.phone}</span></div>
                                 </div>
                             </div>
-                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                                <div className="app-surface-muted rounded-2xl p-4">
                                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-3 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> بيانات التوصيل</h4>
                                 {selected.shippingAddress ? (
                                     <div className="space-y-2 text-sm">
@@ -413,7 +413,7 @@ export default function PortalOrdersAdminPage() {
                                     />
                                 )}
                             </div>
-                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                            <div className="app-surface-muted rounded-2xl p-4">
                                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-3 flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> حالة الشحن</h4>
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between"><span className="text-gray-400">وسيلة الشحن</span><span className="font-bold">{selected.shippingMethod || '—'}</span></div>
@@ -432,7 +432,7 @@ export default function PortalOrdersAdminPage() {
                                 ) : null}
                             </div>
                             {(selected.refundStatus && selected.refundStatus !== 'none') || selected.cancelReason ? (
-                                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+                            <div className="app-surface-muted rounded-2xl p-4">
                                     <h4 className="font-bold text-xs text-gray-400 uppercase mb-3">الاسترداد والإلغاء</h4>
                                     <div className="space-y-2 text-sm">
                                         {selected.refundStatus && selected.refundStatus !== 'none' ? (
@@ -473,7 +473,7 @@ export default function PortalOrdersAdminPage() {
                             <h4 className="font-bold text-xs text-gray-400 uppercase mb-3 flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> المنتجات</h4>
                             <div className="space-y-2">
                                 {selected.items?.map((item, i) => (
-                                    <div key={i} className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-3">
+                                    <div key={i} className="app-surface-muted flex justify-between items-center rounded-xl px-4 py-3">
                                         <div>
                                             <p className="font-bold text-sm text-gray-800 dark:text-gray-200">{item.productName || item.product?.name || '—'}</p>
                                             <p className="text-xs text-gray-400">الكمية: {item.quantity} × {fmt(item.unitPrice)} ج.م</p>
@@ -482,7 +482,7 @@ export default function PortalOrdersAdminPage() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="flex justify-between items-center mt-3 pt-3 border-t-2 border-gray-100 dark:border-gray-700 px-4">
+                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100/80 dark:border-white/10 px-4">
                                 <span className="font-bold text-gray-700 dark:text-gray-300">الإجمالي</span>
                                 <span className="font-black text-xl text-primary-600">{fmt(selected.totalAmount)} ج.م</span>
                             </div>

@@ -4,23 +4,23 @@ import {
   Camera, Loader2, Trash2, Shield, Calendar, CheckCircle, LogOut
 } from 'lucide-react';
 import { useAuthStore, useThemeStore, api } from '../../store';
-import { Button } from '../UI';
+import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
 
-const InfoCard = ({ icon: Icon, label, value, color, dark }) => (
-  <div className={`p-4 rounded-xl border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} shadow-sm flex items-center gap-4`}>
-    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color === 'blue' ? 'bg-blue-100 text-blue-600' :
-      color === 'purple' ? 'bg-purple-100 text-purple-600' :
-        color === 'amber' ? 'bg-amber-100 text-amber-600' :
-          color === 'emerald' ? 'bg-emerald-100 text-emerald-600' :
-            color === 'red' ? 'bg-red-100 text-red-600' :
-              'bg-gray-100 text-gray-600'
+const InfoCard = ({ icon: Icon, label, value, color }) => (
+  <div className="p-4 rounded-xl border border-gray-100 dark:border-white/5 bg-white dark:bg-slate-950 shadow-sm flex items-center gap-4">
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color === 'blue' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' :
+      color === 'purple' ? 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400' :
+        color === 'amber' ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400' :
+          color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' :
+            color === 'red' ? 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' :
+              'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
       }`}>
       <Icon className="w-5 h-5" />
     </div>
     <div>
-      <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-      <p className="font-bold text-sm">{value}</p>
+      <p className="text-xs text-muted mb-0.5">{label}</p>
+      <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{value}</p>
     </div>
   </div>
 );
@@ -154,7 +154,7 @@ export default function SettingsProfile() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
-              className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               {uploadingAvatar ? (
                 <Loader2 className="w-4 h-4 animate-spin text-primary-500" />
@@ -184,23 +184,23 @@ export default function SettingsProfile() {
         {/* Quick Info */}
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-xl font-bold">{user?.name}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{user?.name}</h2>
             {getRoleBadge(user?.role)}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-subtle">
               <Mail className="w-4 h-4" />
               <span>{user?.email}</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-subtle">
               <Phone className="w-4 h-4" />
               <span>{user?.phone || 'غير محدد'}</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-subtle">
               <Building2 className="w-4 h-4" />
               <span>{tenant?.name || 'غير محدد'}</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-subtle">
               <Clock className="w-4 h-4" />
               <span>آخر دخول: {formatDate(user?.lastLogin)}</span>
             </div>
@@ -209,52 +209,34 @@ export default function SettingsProfile() {
       </div>
 
       {/* Edit Profile Form */}
-      <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div className="pt-6 border-t border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-2 mb-5">
           <Edit3 className="w-5 h-5 text-primary-500" />
-          <h3 className="font-bold text-lg">تعديل البيانات الشخصية</h3>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">تعديل البيانات الشخصية</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="الاسم *"
+            value={userForm.name}
+            onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+            icon={<User className="w-4 h-4" />}
+          />
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">الاسم *</label>
-            <div className="relative">
-              <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={userForm.name}
-                onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
-              />
-            </div>
+            <Input
+              label="البريد الإلكتروني"
+              type="email"
+              value={userForm.email}
+              disabled
+              icon={<Mail className="w-4 h-4" />}
+            />
+            <p className="text-xs text-muted mt-1">لا يمكن تغيير البريد الإلكتروني</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">البريد الإلكتروني</label>
-            <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="email"
-                value={userForm.email}
-                disabled
-                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm opacity-60 cursor-not-allowed ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  }`}
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-1">لا يمكن تغيير البريد الإلكتروني</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">رقم الهاتف</label>
-            <div className="relative">
-              <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={userForm.phone}
-                onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
-                className={`w-full pr-10 pl-4 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
-              />
-            </div>
-          </div>
+          <Input
+            label="رقم الهاتف"
+            value={userForm.phone}
+            onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+            icon={<Phone className="w-4 h-4" />}
+          />
         </div>
         <div className="flex justify-end mt-4">
           <Button onClick={handleSaveUser} loading={saving.user} icon={<Save className="w-4 h-4" />}>حفظ التغييرات</Button>
@@ -262,14 +244,14 @@ export default function SettingsProfile() {
       </div>
 
       {/* Password Change with Eye/EyeOff */}
-      <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div className="pt-6 border-t border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
             <Lock className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <h3 className="font-bold">تغيير كلمة المرور</h3>
-            <p className="text-sm text-gray-400">تأمين حسابك</p>
+            <h3 className="font-bold text-gray-900 dark:text-white">تغيير كلمة المرور</h3>
+            <p className="text-sm text-subtle">تأمين حسابك</p>
           </div>
         </div>
 
@@ -288,8 +270,9 @@ export default function SettingsProfile() {
                     type={showPasswords[show] ? 'text' : 'password'}
                     value={passwordForm[key]}
                     onChange={(e) => setPasswordForm({ ...passwordForm, [key]: e.target.value })}
-                    className={`w-full pr-10 pl-10 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                      } focus:ring-2 focus:ring-primary-500 focus:border-transparent transition`}
+                    placeholder={t('profile.new_password')}
+                    className={`w-full pr-10 pl-10 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900 dark:text-gray-100'} focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none`}
+                    dir="ltr"
                   />
                   <button
                     type="button"
@@ -310,29 +293,29 @@ export default function SettingsProfile() {
       </div>
 
       {/* Account Info Cards */}
-      <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div className="pt-6 border-t border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="w-5 h-5 text-emerald-500" />
-          <h3 className="font-bold text-lg">معلومات الحساب</h3>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">معلومات الحساب</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <InfoCard icon={Shield} label="الصلاحية" value={user?.role === 'admin' ? 'مدير النظام' : user?.role === 'vendor' ? 'بائع' : 'منسق'} color="blue" dark={dark} />
-          <InfoCard icon={Building2} label="المتجر" value={tenant?.name || 'غير محدد'} color="purple" dark={dark} />
-          <InfoCard icon={Calendar} label="الخطة" value={tenant?.subscription?.plan?.name || (tenant?.subscription?.plan === 'trial' ? 'تجريبية' : typeof tenant?.subscription?.plan === 'string' ? 'مفعلة' : 'غير محدد')} color="amber" dark={dark} />
-          <InfoCard icon={CheckCircle} label="حالة الحساب" value={user?.isActive ? 'نشط' : 'معطل'} color={user?.isActive ? 'emerald' : 'red'} dark={dark} />
-          <InfoCard icon={Clock} label="آخر تسجيل دخول" value={formatDate(user?.lastLogin)} color="gray" dark={dark} />
-          <InfoCard icon={Calendar} label="تاريخ الانضمام" value={formatDate(user?.createdAt)} color="gray" dark={dark} />
+          <InfoCard icon={Shield} label="الصلاحية" value={user?.role === 'admin' ? 'مدير النظام' : user?.role === 'vendor' ? 'بائع' : 'منسق'} color="blue" />
+          <InfoCard icon={Building2} label="المتجر" value={tenant?.name || 'غير محدد'} color="purple" />
+          <InfoCard icon={Calendar} label="الخطة" value={tenant?.subscription?.plan?.name || (tenant?.subscription?.plan === 'trial' ? 'تجريبية' : typeof tenant?.subscription?.plan === 'string' ? 'مفعلة' : 'غير محدد')} color="amber" />
+          <InfoCard icon={CheckCircle} label="حالة الحساب" value={user?.isActive ? 'نشط' : 'معطل'} color={user?.isActive ? 'emerald' : 'red'} />
+          <InfoCard icon={Clock} label="آخر تسجيل دخول" value={formatDate(user?.lastLogin)} color="gray" />
+          <InfoCard icon={Calendar} label="تاريخ الانضمام" value={formatDate(user?.createdAt)} color="gray" />
         </div>
       </div>
 
       {/* Session Security */}
-      <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div className="pt-6 border-t border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-2 mb-4">
           <LogOut className="w-5 h-5 text-red-500" />
-          <h3 className="font-bold text-lg">أمان الجلسات</h3>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">أمان الجلسات</h3>
         </div>
-        <div className={`p-4 rounded-xl border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-red-50 border-red-100'}`}>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <div className="p-4 rounded-xl border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10">
+          <p className="text-sm text-subtle mb-4">
             تسجيل الخروج من جميع الأجهزة المتصلة بحسابك. سيتم إلغاء جميع الجلسات النشطة وستحتاج إلى تسجيل الدخول مرة أخرى.
           </p>
           <Button

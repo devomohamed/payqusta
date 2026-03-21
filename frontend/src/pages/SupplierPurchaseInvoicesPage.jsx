@@ -204,8 +204,8 @@ export default function SupplierPurchaseInvoicesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 animate-fade-in app-text-soft">
+      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold flex items-center gap-2">
             <Receipt className="w-6 h-6 text-primary-500" />
@@ -227,22 +227,22 @@ export default function SupplierPurchaseInvoicesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="p-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="app-surface-muted p-4 transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
           <p className="text-xs text-gray-400 mb-1">إجمالي الفواتير المعروضة</p>
           <p className="text-lg font-extrabold">{formatMoney(summary.total)} ج.م</p>
         </Card>
-        <Card className="p-4">
+        <Card className="app-surface-muted p-4 transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
           <p className="text-xs text-gray-400 mb-1">إجمالي المسدد</p>
           <p className="text-lg font-extrabold text-emerald-600">{formatMoney(summary.paid)} ج.م</p>
         </Card>
-        <Card className="p-4">
+        <Card className="app-surface-muted p-4 transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
           <p className="text-xs text-gray-400 mb-1">إجمالي المتبقي</p>
           <p className="text-lg font-extrabold text-amber-600">{formatMoney(summary.outstanding)} ج.م</p>
         </Card>
       </div>
 
-      <Card className="p-4">
+      <Card className="app-surface-muted rounded-3xl p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Input
             label="بحث"
@@ -292,10 +292,10 @@ export default function SupplierPurchaseInvoicesPage() {
           )}
         </div>
       ) : (
-        <Card>
+        <Card className="overflow-hidden rounded-3xl">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+              <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                 <tr>
                   <th className="p-3 text-right">رقم الفاتورة</th>
                   <th className="p-3 text-right">المورد</th>
@@ -307,12 +307,12 @@ export default function SupplierPurchaseInvoicesPage() {
                   <th className="p-3 text-right">إجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-gray-100/80 dark:divide-white/5">
                 {invoices.map((invoice) => {
                   const nextInstallment = invoice?.analytics?.nextInstallment;
                   const nextAmount = Number(nextInstallment?.remainingAmount ?? nextInstallment?.amount ?? 0);
                   return (
-                    <tr key={invoice._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <tr key={invoice._id} className="transition-colors duration-200 hover:bg-primary-500/[0.03] dark:hover:bg-white/[0.03]">
                       <td className="p-3">
                         <p className="font-bold">{invoice.invoiceNumber}</p>
                         <p className="text-xs text-gray-500">PO: {invoice.purchaseOrder?.orderNumber || '-'}</p>
@@ -351,7 +351,7 @@ export default function SupplierPurchaseInvoicesPage() {
             </table>
           </div>
           {pagination.totalPages > 1 && (
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="border-t border-gray-100/80 p-4 dark:border-white/5">
               <Pagination currentPage={page} totalPages={pagination.totalPages} onPageChange={setPage} />
             </div>
           )}
@@ -373,27 +373,27 @@ export default function SupplierPurchaseInvoicesPage() {
           <EmptyState icon={Receipt} title="لا توجد بيانات" description="تعذر تحميل تفاصيل الفاتورة" />
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="app-surface-muted rounded-2xl p-3">
                 <p className="text-xs text-gray-400">المورد</p>
                 <p className="font-bold mt-1">{selectedInvoice.supplier?.name || '-'}</p>
                 <p className="text-xs text-gray-500 mt-1">{selectedInvoice.invoiceNumber}</p>
               </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+              <div className="app-surface-muted rounded-2xl p-3">
                 <p className="text-xs text-gray-400">الفرع</p>
                 <p className="font-bold mt-1">{selectedInvoice.branch?.name || '-'}</p>
                 <p className="text-xs text-gray-500 mt-1">PO: {selectedInvoice.purchaseOrder?.orderNumber || '-'}</p>
               </div>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+              <div className="app-surface-muted rounded-2xl p-3">
                 <p className="text-xs text-gray-400">المتبقي</p>
                 <p className="font-bold mt-1 text-amber-600">{formatMoney(selectedInvoice.outstandingAmount)} ج.م</p>
                 <p className="text-xs text-gray-500 mt-1">المسدد: {formatMoney(selectedInvoice.paidAmount)} ج.م</p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
+            <div className="app-surface overflow-x-auto rounded-2xl">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+                <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                   <tr>
                     <th className="p-2 text-right">#</th>
                     <th className="p-2 text-right">موعد الاستحقاق</th>
@@ -403,7 +403,7 @@ export default function SupplierPurchaseInvoicesPage() {
                     <th className="p-2 text-right">الحالة</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-gray-100/80 dark:divide-white/5">
                   {(selectedInvoice.installmentsSchedule || []).map((item) => (
                     <tr key={item._id}>
                       <td className="p-2 font-semibold">{item.installmentNumber}</td>
@@ -426,7 +426,7 @@ export default function SupplierPurchaseInvoicesPage() {
             </div>
 
             {canEdit && (
-              <Card className="p-4">
+              <Card className="app-surface-muted rounded-3xl p-4">
                 <h3 className="font-bold mb-3 flex items-center gap-2">
                   <CalendarClock className="w-4 h-4 text-primary-500" />
                   تسجيل دفعة جديدة
@@ -482,13 +482,13 @@ export default function SupplierPurchaseInvoicesPage() {
             )}
 
             {!!selectedInvoice.paymentRecords?.length && (
-              <Card className="p-4">
+              <Card className="app-surface-muted rounded-3xl p-4">
                 <h3 className="font-bold mb-3">سجل الدفعات</h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto">
                   {selectedInvoice.paymentRecords.map((record) => (
                     <div
                       key={record._id}
-                      className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm flex items-center justify-between gap-2"
+                      className="app-surface flex items-center justify-between gap-2 rounded-2xl p-3 text-sm"
                     >
                       <div>
                         <p className="font-semibold">{formatMoney(record.amount)} ج.م</p>

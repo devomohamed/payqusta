@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Plus, Search, Users, MessageCircle, Star, Check, X, Eye, Printer,
   FileText, Send, Phone, Calendar, CreditCard, TrendingUp, TrendingDown,
@@ -369,7 +369,7 @@ export default function CustomersPage() {
   };
 
   const tierBadge = (tier) => {
-    if (tier === 'vip') return <Badge variant="warning">â­ VIP</Badge>;
+    if (tier === 'vip') return <Badge variant="warning">? VIP</Badge>;
     if (tier === 'premium') return <Badge variant="success">مميز</Badge>;
     return <Badge variant="gray">عادي</Badge>;
   };
@@ -434,26 +434,26 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
 
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+      <div className="app-surface-muted flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1 min-w-[200px] max-w-none sm:max-w-sm">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف..."
-            className="w-full pr-10 pl-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:border-primary-500 transition-all" />
+            className="app-surface w-full rounded-xl border-2 py-2.5 pr-10 pl-4 text-sm text-gray-800 placeholder-gray-400 transition-all focus:border-primary-500 dark:text-gray-100" />
         </div>
 
         {/* Branch Filter */}
         <select value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)}
-          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
+          className="app-surface w-full cursor-pointer rounded-xl border-2 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 sm:w-auto">
           <option value="">🏢 كل الفروع</option>
           {(Array.isArray(branches) ? branches : []).map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
         </select>
 
         <select value={tierFilter} onChange={(e) => setTierFilter(e.target.value)}
-          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer">
+          className="app-surface w-full cursor-pointer rounded-xl border-2 px-3 py-2.5 text-sm text-gray-800 dark:text-gray-100 sm:w-auto">
           <option value="">كل العملاء</option>
           <option value="vip">⭐ VIP</option>
           <option value="premium">مميز</option>
@@ -462,7 +462,7 @@ export default function CustomersPage() {
         <button
           type="button"
           onClick={resetFilters}
-          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+          className="app-surface w-full rounded-xl border-2 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 sm:w-auto"
         >
           إعادة الفلاتر
         </button>
@@ -478,7 +478,7 @@ export default function CustomersPage() {
 
       {/* Bulk Actions Bar */}
       {selectedIds.length > 0 && (
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30 animate-fade-in">
+        <div className="app-surface-muted flex flex-col items-start gap-3 rounded-xl border-2 border-primary-200 p-3 animate-fade-in dark:border-primary-500/30 sm:flex-row sm:items-center">
           <button onClick={toggleSelectAll} className="p-1">
             {selectedIds.length === customers.length ? <CheckSquare className="w-5 h-5 text-primary-500" /> : <Square className="w-5 h-5 text-primary-500" />}
           </button>
@@ -510,13 +510,13 @@ export default function CustomersPage() {
                       </button>
                     </th>
                     {['العميل', 'الهاتف', 'الفرع', 'المشتريات', 'المستحق', 'النقاط', 'الحالة', 'الإجراءات'].map((h) => (
-                      <th key={h} className="px-4 py-3 text-right text-xs font-bold text-gray-400 uppercase">{h}</th>
+                      <th key={h} className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {customers.map((c) => (
-                    <tr key={c._id} className={`border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors ${c.salesBlocked ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${selectedIds.includes(c._id) ? 'bg-primary-50/50 dark:bg-primary-500/5' : ''}`}>
+                    <tr key={c._id} className={`border-b border-gray-50 transition-colors dark:border-gray-800/50 ${c.salesBlocked ? 'bg-red-50/50 dark:bg-red-900/10' : 'hover:bg-slate-50 dark:hover:bg-gray-800/30'} ${selectedIds.includes(c._id) ? 'bg-primary-50/50 dark:bg-primary-500/5' : ''}`}>
                       <td className="px-3 py-3">
                         <button onClick={() => toggleSelect(c._id)}>
                           {selectedIds.includes(c._id)
@@ -531,17 +531,17 @@ export default function CustomersPage() {
                             {c.salesBlocked ? <Ban className="w-4 h-4" /> : c.name?.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-semibold flex items-center gap-2">
+                            <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                               {c.name}
-                              {c.salesBlocked && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-600">ممنوع</span>}
+                              {c.salesBlocked && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">ممنوع</span>}
                             </p>
-                            <p className="text-xs text-gray-400">{c.address || '—'}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{c.address || '—'}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 font-mono text-xs" dir="ltr">{c.phone}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{c.branch?.name || '—'}</td>
-                      <td className="px-4 py-3 font-bold">{fmt(c.financials?.totalPurchases)} ج.م</td>
+                      <td className="px-4 py-3 text-gray-700 dark:text-gray-200 font-mono text-xs" dir="ltr">{c.phone}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-300 font-medium">{c.branch?.name || '—'}</td>
+                      <td className="px-4 py-3 font-bold text-gray-900 dark:text-white">{fmt(c.financials?.totalPurchases)} ج.م</td>
                       <td className="px-4 py-3">
                         <span className={`font-bold ${(c.financials?.outstandingBalance || 0) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                           {(c.financials?.outstandingBalance || 0) > 0 ? `${fmt(c.financials.outstandingBalance)} ج.م` : '✓ مسدد'}
@@ -556,7 +556,7 @@ export default function CustomersPage() {
                           <button onClick={() => openDetails(c)} className="p-2 rounded-lg bg-primary-50 dark:bg-primary-500/10 text-primary-500 hover:bg-primary-100 transition-colors" title="عرض التفاصيل">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button onClick={(e) => openEdit(c, e)} className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100 transition-colors" title="تعديل">
+                          <button onClick={(e) => openEdit(c, e)} className="app-surface-muted p-2 rounded-lg text-gray-500 transition-colors hover:bg-gray-100" title="تعديل">
                             <FileText className="w-4 h-4" />
                           </button>
                           <button onClick={() => window.open(`https://wa.me/${c.phone}`, '_blank')} className="p-2 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-500 hover:bg-green-100 transition-colors" title="WhatsApp">
@@ -612,22 +612,22 @@ export default function CustomersPage() {
       {showDetails && selectedCustomer && (
         <div className="fixed inset-0 z-50 flex" onClick={() => setShowDetails(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
-          <div className="relative w-full max-w-5xl mx-auto my-0 sm:my-4 bg-white dark:bg-gray-900 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col max-h-svh sm:max-h-[95vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="app-surface relative mx-auto my-0 flex max-h-svh w-full max-w-5xl flex-col overflow-hidden rounded-none shadow-2xl animate-slide-up sm:my-4 sm:max-h-[95vh] sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-l from-primary-500/5 to-transparent">
+            <div className="flex flex-col gap-4 border-b border-gray-100 bg-gradient-to-l from-primary-500/5 to-transparent px-4 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div className="flex items-start gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold ${selectedCustomer.salesBlocked ? 'bg-red-100 text-red-600' : 'bg-primary-100 dark:bg-primary-500/20 text-primary-600'}`}>
                   {selectedCustomer.salesBlocked ? <Ban className="w-7 h-7" /> : selectedCustomer.name?.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold flex items-center gap-2">
+                  <h2 className="text-xl font-bold flex items-center gap-2 dark:text-white">
                     {selectedCustomer.name}
                     {tierBadge(selectedCustomer.tier)}
                     {selectedCustomer.salesBlocked && <Badge variant="danger"><Ban className="w-3 h-3 ml-1" />ممنوع البيع</Badge>}
                   </h2>
                   <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
                     <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{selectedCustomer.phone}</span>
-                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-[10px] font-mono"><Users className="w-3 h-3" />{selectedCustomer.barcode || '---'}</span>
+                    <span className="app-surface-muted flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-mono"><Users className="w-3 h-3" />{selectedCustomer.barcode || '---'}</span>
                   </div>
                 </div>
               </div>
@@ -657,7 +657,7 @@ export default function CustomersPage() {
                       <p className="text-2xl font-black">{fmt(selectedCustomer.financials?.totalPurchases)}</p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div className="app-surface-muted rounded-2xl p-4 shadow-sm">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
                           <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -667,7 +667,7 @@ export default function CustomersPage() {
                       <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(selectedCustomer.financials?.totalPaid)}</p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div className="app-surface-muted rounded-2xl p-4 shadow-sm">
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${(selectedCustomer.financials?.outstandingBalance || 0) > 0 ? 'bg-red-50 dark:bg-red-500/10' : 'bg-emerald-50 dark:bg-emerald-500/10'}`}>
                           <TrendingDown className={`w-4 h-4 ${(selectedCustomer.financials?.outstandingBalance || 0) > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
@@ -679,7 +679,7 @@ export default function CustomersPage() {
                       </p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div className="app-surface-muted rounded-2xl p-4 shadow-sm">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
                           <CreditCard className="w-4 h-4 text-blue-500" />
@@ -689,7 +689,7 @@ export default function CustomersPage() {
                       <p className="text-2xl font-black text-gray-900 dark:text-white">{fmt(selectedCustomer.financials?.creditLimit || 10000)}</p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div className="app-surface-muted rounded-2xl p-4 shadow-sm">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
                           <DollarSign className="w-4 h-4 text-purple-500" />
@@ -727,7 +727,7 @@ export default function CustomersPage() {
                   {creditAssessment && (
                     <Card className="p-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-                        <h3 className="font-bold flex items-center gap-2"><CreditCard className="w-5 h-5 text-primary-500" />التقييم الائتماني</h3>
+                        <h3 className="font-bold flex items-center gap-2 dark:text-white"><CreditCard className="w-5 h-5 text-primary-500" />التقييم الائتماني</h3>
                         <div className="flex flex-wrap items-center gap-2">
                           {riskBadge(creditAssessment.creditEngine?.riskLevel)}
                           {!creditAssessment.salesBlocked ? (
@@ -738,27 +738,27 @@ export default function CustomersPage() {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                          <p className="text-3xl font-black" style={{ color: creditAssessment.creditEngine?.score >= 70 ? '#10b981' : creditAssessment.creditEngine?.score >= 50 ? '#f59e0b' : '#ef4444' }}>
+                        <div className="app-surface-muted rounded-xl p-3 text-center">
+                          <p className="text-3xl font-black" style={{ color: (creditAssessment.creditEngine?.score || 0) >= 70 ? '#10b981' : (creditAssessment.creditEngine?.score || 0) >= 50 ? '#f59e0b' : '#ef4444' }}>
                             {creditAssessment.creditEngine?.score || 0}
                           </p>
-                          <p className="text-xs text-gray-400">درجة الائتمان</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-300">درجة الائتمان</p>
                         </div>
-                        <div className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                          <p className="text-xl font-bold">{creditAssessment.creditEngine?.maxInstallments || 0}</p>
-                          <p className="text-xs text-gray-400">أقصى أقساط</p>
+                        <div className="app-surface-muted rounded-xl p-3 text-center">
+                          <p className="text-xl font-bold dark:text-white">{creditAssessment.creditEngine?.maxInstallments || 0}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-300">أقصى أقساط</p>
                         </div>
-                        <div className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                          <p className="text-xl font-bold">{creditAssessment.paymentBehavior?.onTimePayments || 0}</p>
-                          <p className="text-xs text-gray-400">دفعات في الميعاد</p>
+                        <div className="app-surface-muted rounded-xl p-3 text-center">
+                          <p className="text-xl font-bold dark:text-white">{creditAssessment.paymentBehavior?.onTimePayments || 0}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-300">دفعات في الميعاد</p>
                         </div>
-                        <div className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                          <p className="text-xl font-bold text-red-500">{creditAssessment.paymentBehavior?.latePayments || 0}</p>
-                          <p className="text-xs text-gray-400">دفعات متأخرة</p>
+                        <div className="app-surface-muted rounded-xl p-3 text-center">
+                          <p className="text-xl font-bold text-red-500 dark:text-red-400">{creditAssessment.paymentBehavior?.latePayments || 0}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-300">دفعات متأخرة</p>
                         </div>
                       </div>
                       {creditAssessment.recommendation && (
-                        <div className="mt-4 p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 text-sm">
+                        <div className="mt-4 p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 text-sm dark:text-gray-200">
                           {creditAssessment.recommendation}
                         </div>
                       )}
@@ -768,7 +768,7 @@ export default function CustomersPage() {
                   {/* WhatsApp Notification Preferences */}
                   <Card className="p-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-                      <h3 className="font-bold flex items-center gap-2">
+                      <h3 className="font-bold flex items-center gap-2 dark:text-white">
                         <MessageCircle className="w-5 h-5 text-green-500" />
                         إعدادات WhatsApp
                       </h3>
@@ -782,8 +782,9 @@ export default function CustomersPage() {
                           } catch { notify.error('خطأ في تحديث الإعدادات'); }
                         }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${selectedCustomer.whatsapp?.enabled !== false ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        dir="ltr"
                       >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${selectedCustomer.whatsapp?.enabled !== false ? 'translate-x-1' : 'translate-x-6'}`} />
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${selectedCustomer.whatsapp?.enabled !== false ? 'translate-x-6' : 'translate-x-1'}`} />
                       </button>
                     </div>
                     {selectedCustomer.whatsapp?.enabled !== false && (
@@ -813,7 +814,7 @@ export default function CustomersPage() {
                               }}
                               className={`p-3 rounded-xl border-2 transition-all text-center ${isOn
                                 ? 'border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10'
-                                : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60'}`}
+                                : 'app-surface-muted border-gray-200 dark:border-gray-700 opacity-60'}`}
                             >
                               <Icon className={`w-5 h-5 mx-auto mb-1 ${isOn ? color : 'text-gray-400'}`} />
                               <p className="text-xs font-medium">{label}</p>
@@ -827,20 +828,20 @@ export default function CustomersPage() {
 
                   {/* Transaction History with Invoice Details */}
                   <Card className="p-5">
-                    <h3 className="font-bold flex flex-wrap items-center gap-2 mb-4">
+                    <h3 className="font-bold flex flex-wrap items-center gap-2 mb-4 dark:text-white">
                       <History className="w-5 h-5 text-primary-500" />
                       سجل المعاملات ({customerTransactions.length})
-                      <span className="text-xs text-gray-400 font-normal mr-2">اضغط على الفاتورة لعرض التفاصيل</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-normal mr-2">اضغط على الفاتورة لعرض التفاصيل</span>
                     </h3>
                     {customerTransactions.length === 0 ? (
-                      <p className="text-center text-gray-400 py-6">لا توجد معاملات بعد</p>
+                      <p className="text-center text-gray-400 py-6 dark:text-gray-500">لا توجد معاملات بعد</p>
                     ) : (
                       <div className="space-y-3">
                         {customerTransactions.map((inv) => (
-                          <div key={inv._id} className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                          <div key={inv._id} className="app-surface rounded-xl overflow-hidden">
                             {/* Invoice Header - Clickable */}
                             <div
-                              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                              className="flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-gray-800/30 sm:flex-row sm:items-center sm:justify-between"
                               onClick={() => toggleInvoiceExpand(inv._id)}
                             >
                               <div className="flex items-center gap-4">
@@ -848,23 +849,23 @@ export default function CustomersPage() {
                                   <FileText className="w-5 h-5" />
                                 </div>
                                 <div>
-                                  <p className="font-bold text-primary-600">{inv.invoiceNumber}</p>
-                                  <p className="text-xs text-gray-400">{new Date(inv.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                  <p className="font-bold text-primary-600 dark:text-primary-400">{inv.invoiceNumber}</p>
+                                  <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(inv.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                                 </div>
                               </div>
                               <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                                 <div className="text-left">
-                                  <p className="font-bold">{fmt(inv.totalAmount)} ج.م</p>
-                                  <p className="text-xs text-gray-400">{inv.items?.length || 0} منتج</p>
+                                  <p className="font-bold dark:text-white">{fmt(inv.totalAmount)} ج.م</p>
+                                  <p className="text-xs text-gray-400 dark:text-gray-500">{inv.items?.length || 0} منتج</p>
                                 </div>
                                 <div className="text-left">
                                   {statusBadge(inv.status)}
                                 </div>
                                 <div className="text-left min-w-[80px]">
                                   {inv.remainingAmount > 0 ? (
-                                    <p className="text-red-500 font-semibold text-sm">متبقي: {fmt(inv.remainingAmount)}</p>
+                                    <p className="text-red-500 dark:text-red-400 font-semibold text-sm">متبقي: {fmt(inv.remainingAmount)}</p>
                                   ) : (
-                                    <p className="text-emerald-500 font-semibold text-sm">✓ مسدد</p>
+                                    <p className="text-emerald-500 dark:text-emerald-400 font-semibold text-sm">✓ مسدد</p>
                                   )}
                                 </div>
                                 {expandedInvoice === inv._id ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -873,31 +874,31 @@ export default function CustomersPage() {
 
                             {/* Invoice Details - Expandable */}
                             {expandedInvoice === inv._id && (
-                              <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-4">
+                              <div className="app-surface-muted border-t p-4 dark:border-gray-800">
                                 {/* Items Table */}
                                 <div className="mb-4">
-                                  <h4 className="text-sm font-bold mb-2 flex items-center gap-2"><Package className="w-4 h-4" />المنتجات:</h4>
-                                  <div className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden">
+                                  <h4 className="text-sm font-bold mb-2 flex items-center gap-2 dark:text-white"><Package className="w-4 h-4" />المنتجات:</h4>
+                                  <div className="app-surface rounded-lg overflow-hidden">
                                     <div className="overflow-x-auto">
                                     <table className="w-full min-w-[520px] text-sm">
                                       <thead>
-                                        <tr className="bg-gray-100 dark:bg-gray-800">
-                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500">المنتج</th>
-                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500">الكمية</th>
-                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500">السعر</th>
-                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500">الإجمالي</th>
+                                        <tr className="app-surface-muted border-b dark:border-gray-800">
+                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500 dark:text-gray-400">المنتج</th>
+                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500 dark:text-gray-400">الكمية</th>
+                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500 dark:text-gray-400">السعر</th>
+                                          <th className="px-3 py-2 text-right text-xs font-bold text-gray-500 dark:text-gray-400">الإجمالي</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {(inv.items || []).map((item, idx) => (
                                           <tr key={idx} className="border-b border-gray-50 dark:border-gray-800">
                                             <td className="px-3 py-2">
-                                              <span className="font-semibold">{item.productName || item.product?.name || 'منتج'}</span>
-                                              {item.sku && <span className="text-xs text-gray-400 mr-2">({item.sku})</span>}
+                                              <span className="font-semibold dark:text-white">{item.productName || item.product?.name || 'منتج'}</span>
+                                              {item.sku && <span className="text-xs text-gray-400 dark:text-gray-500 mr-2">({item.sku})</span>}
                                             </td>
-                                            <td className="px-3 py-2">{item.quantity}</td>
-                                            <td className="px-3 py-2">{fmt(item.unitPrice)} ج.م</td>
-                                            <td className="px-3 py-2 font-bold">{fmt(item.totalPrice)} ج.م</td>
+                                            <td className="px-3 py-2 dark:text-gray-200">{item.quantity}</td>
+                                            <td className="px-3 py-2 dark:text-gray-200">{fmt(item.unitPrice)} ج.م</td>
+                                            <td className="px-3 py-2 font-bold dark:text-white">{fmt(item.totalPrice)} ج.م</td>
                                           </tr>
                                         ))}
                                       </tbody>
@@ -908,31 +909,31 @@ export default function CustomersPage() {
 
                                 {/* Payment Info */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm">
-                                  <div className="p-2 rounded-lg bg-white dark:bg-gray-900">
-                                    <p className="text-xs text-gray-400">الإجمالي</p>
-                                    <p className="font-bold">{fmt(inv.totalAmount)} ج.م</p>
+                                  <div className="app-surface rounded-lg p-2 dark:bg-gray-800/40">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">الإجمالي</p>
+                                    <p className="font-bold dark:text-white">{fmt(inv.totalAmount)} ج.م</p>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-white dark:bg-gray-900">
-                                    <p className="text-xs text-gray-400">المدفوع</p>
-                                    <p className="font-bold text-emerald-600">{fmt(inv.paidAmount)} ج.م</p>
+                                  <div className="app-surface rounded-lg p-2 dark:bg-gray-800/40">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">المدفوع</p>
+                                    <p className="font-bold text-emerald-600 dark:text-emerald-400">{fmt(inv.paidAmount)} ج.م</p>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-white dark:bg-gray-900">
-                                    <p className="text-xs text-gray-400">المتبقي</p>
-                                    <p className="font-bold text-red-500">{fmt(inv.remainingAmount)} ج.م</p>
+                                  <div className="app-surface rounded-lg p-2 dark:bg-gray-800/40">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">المتبقي</p>
+                                    <p className="font-bold text-red-500 dark:text-red-400">{fmt(inv.remainingAmount)} ج.م</p>
                                   </div>
-                                  <div className="p-2 rounded-lg bg-white dark:bg-gray-900">
-                                    <p className="text-xs text-gray-400">طريقة الدفع</p>
-                                    <p className="font-bold">{inv.paymentMethod === 'cash' ? 'نقد' : inv.paymentMethod === 'cash_on_delivery' ? 'عند الاستلام' : inv.paymentMethod === 'installment' ? 'أقساط' : 'آجل'}</p>
+                                  <div className="app-surface rounded-lg p-2 dark:bg-gray-800/40">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">طريقة الدفع</p>
+                                    <p className="font-bold dark:text-white">{inv.paymentMethod === 'cash' ? 'نقد' : inv.paymentMethod === 'cash_on_delivery' ? 'عند الاستلام' : inv.paymentMethod === 'installment' ? 'أقساط' : 'آجل'}</p>
                                   </div>
                                 </div>
 
                                 {/* Installments if any */}
                                 {inv.paymentMethod === 'installment' && inv.installments?.length > 0 && (
                                   <div className="mt-4">
-                                    <h4 className="text-sm font-bold mb-2">جدول الأقساط:</h4>
+                                    <h4 className="text-sm font-bold mb-2 dark:text-white">جدول الأقساط:</h4>
                                     <div className="flex flex-wrap gap-2">
                                       {inv.installments.map((inst, idx) => (
-                                        <div key={idx} className={`px-3 py-2 rounded-lg text-xs ${inst.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : inst.status === 'overdue' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+                                        <div key={idx} className={`px-3 py-2 rounded-lg text-xs ${inst.status === 'paid' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : inst.status === 'overdue' ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
                                           <span className="font-bold">قسط {inst.installmentNumber}</span>
                                           <span className="mx-2">•</span>
                                           <span>{fmt(inst.amount)} ج.م</span>

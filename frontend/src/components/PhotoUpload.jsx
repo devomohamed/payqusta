@@ -72,7 +72,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6"
+        className="app-surface rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 border border-gray-100/80 dark:border-white/10"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -81,7 +81,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            className="rounded-xl p-1.5 text-gray-500 transition-colors hover:bg-black/[0.04] hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.05]"
           >
             <X size={24} />
           </button>
@@ -108,11 +108,11 @@ const PhotoUpload = ({ onUpload, onClose }) => {
         {preview ? (
           <div className="space-y-4">
             {/* Image Preview */}
-            <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+            <div className="relative rounded-lg overflow-hidden border-2 border-gray-100/80 dark:border-white/10">
               <img
                 src={preview}
                 alt="Receipt preview"
-                className="w-full h-64 object-contain bg-gray-50 dark:bg-gray-900"
+                className="app-surface-muted w-full h-64 object-contain"
               />
               <button
                 onClick={handleClear}
@@ -126,7 +126,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
             <div className="flex gap-3">
               <button
                 onClick={handleClear}
-                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium"
+                className="app-surface-muted flex-1 px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
               >
                 اختر صورة أخرى
               </button>

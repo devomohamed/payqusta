@@ -11,55 +11,226 @@ function getInventoryRows(product, variant = null) {
   return [];
 }
 
+function getBranchAvailabilityRows(product) {
+  return Array.isArray(product?.branchAvailability) ? product.branchAvailability : [];
+}
+
+function getOnlineFulfillmentSettings(tenant = null) {
+  const raw = tenant?.settings?.onlineFulfillment || tenant?.onlineFulfillment || {};
+
+  return {
+    mode: raw.mode || 'branch_priority',
+    defaultOnlineBranchId: toIdString(raw.defaultOnlineBranchId),
+    branchPriorityOrder: [...new Set(
+      (Array.isArray(raw.branchPriorityOrder) ? raw.branchPriorityOrder : [])
+        .map((branchId) => toIdString(branchId))
+        .filter(Boolean)
+    )],
+    allowCrossBranchOnlineAllocation: Boolean(raw.allowCrossBranchOnlineAllocation),
+    allowMixedBranchOrders: Boolean(raw.allowMixedBranchOrders),
+  };
+}
+
+function sortEligibleBranches(branches = [], branchPriorityOrder = []) {
+  const priorityIndex = new Map(
+    branchPriorityOrder.map((branchId, index) => [toIdString(branchId), index])
+  );
+
+  return [...branches]
+    .filter((branch) => branch && branch.isActive !== false && branch.participatesInOnlineOrders)
+    .sort((left, right) => {
+      const leftId = toIdString(left._id || left);
+      const rightId = toIdString(right._id || right);
+      const leftExplicitRank = priorityIndex.has(leftId) ? priorityIndex.get(leftId) : Number.MAX_SAFE_INTEGER;
+      const rightExplicitRank = priorityIndex.has(rightId) ? priorityIndex.get(rightId) : Number.MAX_SAFE_INTEGER;
+
+      if (leftExplicitRank !== rightExplicitRank) {
+        return leftExplicitRank - rightExplicitRank;
+      }
+
+      const leftPriority = Number(left.onlinePriority) || 100;
+      const rightPriority = Number(right.onlinePriority) || 100;
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
+
+      if (Boolean(left.isFulfillmentCenter) !== Boolean(right.isFulfillmentCenter)) {
+        return left.isFulfillmentCenter ? -1 : 1;
+      }
+
+      return leftId.localeCompare(rightId);
+    });
+}
+
+function buildOnlineBranchCandidateIds({
+  tenant = null,
+  branches = [],
+  source = 'online_store',
+  customerBranchId = null,
+}) {
+  const settings = getOnlineFulfillmentSettings(tenant);
+  const eligibleBranches = sortEligibleBranches(branches, settings.branchPriorityOrder);
+  const eligibleBranchIds = eligibleBranches.map((branch) => toIdString(branch._id || branch));
+  const eligibleSet = new Set(eligibleBranchIds);
+
+  const orderedBranchIds = [];
+  const pushBranchId = (branchId) => {
+    const normalizedBranchId = toIdString(branchId);
+    if (!normalizedBranchId || !eligibleSet.has(normalizedBranchId) || orderedBranchIds.includes(normalizedBranchId)) {
+      return;
+    }
+    orderedBranchIds.push(normalizedBranchId);
+  };
+
+  if (settings.mode === 'default_branch') {
+    pushBranchId(settings.defaultOnlineBranchId);
+  } else if (settings.mode === 'customer_branch' && source === 'portal') {
+    pushBranchId(customerBranchId);
+    pushBranchId(settings.defaultOnlineBranchId);
+  }
+
+  for (const branchId of settings.branchPriorityOrder) {
+    pushBranchId(branchId);
+  }
+
+  for (const branchId of eligibleBranchIds) {
+    pushBranchId(branchId);
+  }
+
+  return orderedBranchIds;
+}
+
+function getBranchAvailableQuantity({
+  product,
+  variant = null,
+  branchId = null,
+  channel = 'pos',
+}) {
+  const normalizedBranchId = toIdString(branchId);
+  const inventoryRows = getInventoryRows(product, variant).filter((row) => row?.branch);
+  const availabilityRows = getBranchAvailabilityRows(product);
+  const branchAvailability = availabilityRows.find(
+    (row) => toIdString(row.branch) === normalizedBranchId
+  );
+
+  if (!normalizedBranchId) {
+    return variant
+      ? (Number(variant.stock) || 0)
+      : (Number(product?.stock?.quantity) || 0);
+  }
+
+  const inventoryRow = inventoryRows.find(
+    (row) => toIdString(row.branch) === normalizedBranchId
+  );
+
+  if (!inventoryRow && inventoryRows.length > 0) {
+    return 0;
+  }
+
+  if (branchAvailability && branchAvailability.isAvailableInBranch === false) {
+    return 0;
+  }
+
+  if (channel === 'online' && branchAvailability && branchAvailability.isSellableOnline === false) {
+    return 0;
+  }
+
+  if (channel === 'pos' && branchAvailability && branchAvailability.isSellableInPos === false) {
+    return 0;
+  }
+
+  if (inventoryRow) {
+    const rawQuantity = Number(inventoryRow.quantity) || 0;
+    if (channel === 'online') {
+      const safetyStock = Number(branchAvailability?.safetyStock) || 0;
+      const onlineReserveQty = Number(branchAvailability?.onlineReserveQty) || 0;
+      return Math.max(0, rawQuantity - safetyStock - onlineReserveQty);
+    }
+    return rawQuantity;
+  }
+
+  return variant
+    ? (Number(variant.stock) || 0)
+    : (Number(product?.stock?.quantity) || 0);
+}
+
 function resolveInventoryAllocation({
   product,
   variant = null,
   quantity = 0,
   preferredBranchId = null,
   strictPreferredBranch = false,
+  candidateBranchIds = [],
+  channel = 'pos',
 }) {
   const requestedQuantity = Math.max(0, Number(quantity) || 0);
   const normalizedPreferredBranchId = toIdString(preferredBranchId);
   const inventoryRows = getInventoryRows(product, variant).filter((row) => row?.branch);
 
-  if (normalizedPreferredBranchId) {
-    const preferredRow = inventoryRows.find(
-      (row) => toIdString(row.branch) === normalizedPreferredBranchId
-    );
+  const orderedBranchIds = [];
+  const pushCandidate = (branchId) => {
+    const normalizedBranchId = toIdString(branchId);
+    if (!normalizedBranchId || orderedBranchIds.includes(normalizedBranchId)) return;
+    orderedBranchIds.push(normalizedBranchId);
+  };
 
-    if (preferredRow) {
-      return {
+  if (normalizedPreferredBranchId) {
+    pushCandidate(normalizedPreferredBranchId);
+  }
+
+  for (const branchId of candidateBranchIds) {
+    pushCandidate(branchId);
+  }
+
+  if (orderedBranchIds.length === 0) {
+    for (const row of inventoryRows) {
+      pushCandidate(row.branch);
+    }
+  }
+
+  if (normalizedPreferredBranchId && strictPreferredBranch) {
+    return {
+      branchId: normalizedPreferredBranchId,
+      availableQuantity: getBranchAvailableQuantity({
+        product,
+        variant,
         branchId: normalizedPreferredBranchId,
-        availableQuantity: Number(preferredRow.quantity) || 0,
-        usesInventory: true,
+        channel,
+      }),
+      usesInventory: inventoryRows.length > 0,
+    };
+  }
+
+  let bestMatch = null;
+
+  for (const branchId of orderedBranchIds) {
+    const availableQuantity = getBranchAvailableQuantity({
+      product,
+      variant,
+      branchId,
+      channel,
+    });
+
+    if (availableQuantity >= requestedQuantity) {
+      return {
+        branchId,
+        availableQuantity,
+        usesInventory: inventoryRows.length > 0,
       };
     }
 
-    if (strictPreferredBranch) {
-      return {
-        branchId: normalizedPreferredBranchId,
-        availableQuantity: 0,
+    if (!bestMatch || availableQuantity > bestMatch.availableQuantity) {
+      bestMatch = {
+        branchId,
+        availableQuantity,
         usesInventory: inventoryRows.length > 0,
       };
     }
   }
 
-  if (inventoryRows.length > 0) {
-    const matchedRow =
-      inventoryRows.find((row) => (Number(row.quantity) || 0) >= requestedQuantity) ||
-      inventoryRows.reduce((bestRow, currentRow) => {
-        const bestQuantity = Number(bestRow?.quantity) || 0;
-        const currentQuantity = Number(currentRow?.quantity) || 0;
-        return currentQuantity > bestQuantity ? currentRow : bestRow;
-      }, inventoryRows[0]);
-
-    return {
-      branchId: toIdString(matchedRow.branch),
-      availableQuantity: Number(matchedRow.quantity) || 0,
-      usesInventory: true,
-    };
+  if (bestMatch) {
+    return bestMatch;
   }
-
 
   return {
     branchId: null,
@@ -162,8 +333,11 @@ function collectUniqueBranchIds(updates = []) {
 }
 
 module.exports = {
+  buildOnlineBranchCandidateIds,
   collectUniqueBranchIds,
   deductInventoryAllocation,
+  getBranchAvailableQuantity,
+  getOnlineFulfillmentSettings,
   restockInventoryAllocation,
   resolveInventoryAllocation,
   toIdString,

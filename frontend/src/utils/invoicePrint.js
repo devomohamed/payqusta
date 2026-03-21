@@ -84,7 +84,7 @@ function renderBarcodeBlock(item, source) {
 }
 
 function openPrintDocument({ title, bodyClass, styles, content, printWindow }) {
-  const targetWindow = printWindow || window.open('', '_blank', 'noopener,noreferrer,width=860,height=960');
+  const targetWindow = printWindow || window.open('', '_blank', 'width=860,height=960');
   if (!targetWindow) {
     throw new Error('PRINT_WINDOW_BLOCKED');
   }

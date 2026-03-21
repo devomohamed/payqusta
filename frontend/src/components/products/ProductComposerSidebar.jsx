@@ -16,13 +16,13 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
     const variantsCount = form.variants?.length || 0;
 
     return (
-        <div className="w-full lg:w-80 shrink-0 bg-gray-50 dark:bg-gray-800/50 border-l border-gray-100 dark:border-gray-800 p-6 flex flex-col gap-6 overflow-y-auto">
+        <div className="app-surface-muted w-full lg:w-80 shrink-0 border-l border-gray-100/80 dark:border-white/10 p-6 flex flex-col gap-6 overflow-y-auto">
             <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">ملخص المنتج</h3>
 
                 {/* Main Preview Card */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
-                    <div className="aspect-square rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400 mb-4 overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div className="app-surface rounded-2xl p-4 shadow-sm border border-gray-100/80 dark:border-white/10 mb-6">
+                    <div className="app-surface-muted aspect-square rounded-xl flex items-center justify-center text-gray-400 mb-4 overflow-hidden border border-gray-100/80 dark:border-white/10">
                         {form.primaryImagePreview ? (
                             <img src={form.primaryImagePreview} alt="Preview" className="w-full h-full object-cover" />
                         ) : (
@@ -40,7 +40,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
 
                 {/* Quick Stats */}
                 <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <div className="app-surface flex items-center justify-between p-3 rounded-xl border border-gray-100/80 dark:border-white/10">
                         <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-gray-400" />
                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">القسم</span>
@@ -48,7 +48,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                         <span className="text-sm font-bold truncate max-w-[120px]">{categoryName}</span>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <div className="app-surface flex items-center justify-between p-3 rounded-xl border border-gray-100/80 dark:border-white/10">
                         <div className="flex items-center gap-2">
                             <Layers className="w-4 h-4 text-gray-400" />
                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">الموديلات</span>
@@ -58,7 +58,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                         </Badge>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <div className="app-surface flex items-center justify-between p-3 rounded-xl border border-gray-100/80 dark:border-white/10">
                         <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4 text-gray-400" />
                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">الربح المتوقع</span>

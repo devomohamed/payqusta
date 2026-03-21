@@ -20,9 +20,10 @@ class CustomerController {
     const filter = { ...req.tenantFilter, isActive: true };
 
     if (req.query.search) {
+      const escapedSearch = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { name: { $regex: req.query.search, $options: 'i' } },
-        { phone: { $regex: req.query.search, $options: 'i' } },
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { phone: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
     if (req.query.tier) filter.tier = req.query.tier;

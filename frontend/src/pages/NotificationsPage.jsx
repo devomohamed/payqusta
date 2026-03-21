@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../store';
 import { notify } from '../components/AnimatedNotification';
-import { EmptyState, LoadingSpinner } from '../components/UI';
+import { Card, EmptyState, LoadingSpinner } from '../components/UI';
 
 const iconMap = {
   clock: Clock,
@@ -119,10 +119,10 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 animate-fade-in app-text-soft">
+      <div className="app-surface-muted flex flex-col gap-3 rounded-3xl p-4 md:flex-row md:items-center md:justify-between md:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+          <div className="app-surface flex h-10 w-10 items-center justify-center rounded-2xl text-primary-600 dark:text-primary-400">
             <Bell className="w-5 h-5" />
           </div>
           <div>
@@ -130,21 +130,21 @@ export default function NotificationsPage() {
             <p className="text-sm text-gray-500">كل تنبيهات النظام في مكان واحد</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="app-surface flex items-center gap-2 rounded-2xl p-1">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filter === 'all'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${filter === 'all'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-black/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.04]'
               }`}
           >
             الكل
           </button>
           <button
             onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filter === 'unread'
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${filter === 'unread'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-black/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.04]'
               }`}
           >
             غير مقروء
@@ -152,7 +152,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              className="rounded-xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600 transition-all duration-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
             >
               تحديد الكل كمقروء
             </button>
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+      <Card className="overflow-hidden rounded-3xl">
         {loading ? (
           <div className="p-6 sm:p-8">
             <LoadingSpinner size="lg" text="جاري تحميل الإشعارات..." />
@@ -174,16 +174,16 @@ export default function NotificationsPage() {
             className="px-4"
           />
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="divide-y divide-gray-100/80 dark:divide-white/5">
             {notifications.map((notification) => {
               const IconComponent = iconMap[notification.icon] || Bell;
               const color = colorMap[notification.color] || colorMap.primary;
               return (
                 <div
                   key={notification._id}
-                  className={`flex items-start gap-4 p-4 cursor-pointer transition ${notification.isRead
-                      ? 'bg-white dark:bg-gray-900'
-                      : 'bg-primary-50/60 dark:bg-primary-500/10'
+                  className={`flex cursor-pointer items-start gap-4 p-4 transition-all duration-200 ${notification.isRead
+                      ? 'bg-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
+                      : 'bg-primary-50/60 hover:bg-primary-50 dark:bg-primary-500/10 dark:hover:bg-primary-500/15'
                     }`}
                   onClick={() => handleClick(notification)}
                 >
@@ -208,7 +208,7 @@ export default function NotificationsPage() {
                           e.stopPropagation();
                           markAsRead(notification._id);
                         }}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="rounded-xl p-2 transition-colors duration-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                         title="تحديد كمقروء"
                       >
                         <Check className="w-4 h-4 text-primary-600" />
@@ -219,7 +219,7 @@ export default function NotificationsPage() {
                         e.stopPropagation();
                         deleteNotification(notification._id);
                       }}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="rounded-xl p-2 transition-colors duration-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                       title="حذف"
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
@@ -230,7 +230,7 @@ export default function NotificationsPage() {
             })}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

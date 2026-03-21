@@ -5,7 +5,7 @@ import {
     Filter, Building2, Package, Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { purchaseReturnsApi, suppliersApi, productsApi, supplierPurchaseInvoicesApi, useAuthStore } from '../store';
+import { purchaseReturnsApi, suppliersApi, productsApi, useAuthStore } from '../store';
 import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
 import Pagination from '../components/Pagination';
 
@@ -34,7 +34,7 @@ export default function PurchaseReturnsPage() {
     const [foundProducts, setFoundProducts] = useState([]);
     const [searchingProduct, setSearchingProduct] = useState(false);
 
-    const { user } = useAuthStore();
+    const { getBranches } = useAuthStore();
     const LIMIT = 10;
 
     const loadReturns = useCallback(async () => {
@@ -60,15 +60,13 @@ export default function PurchaseReturnsPage() {
     useEffect(() => {
         if (showModal) {
             suppliersApi.getAll({ limit: 100 }).then(res => setSuppliers(res.data.data || []));
-            // In a real app, we'd fetch branches from a branchApi
-            // For now, if user has branches in their object:
-            if (user?.branch) setBranches([user.branch]);
+            getBranches?.().then(data => setBranches(Array.isArray(data) ? data : [])).catch(() => setBranches([]));
         }
-    }, [showModal, user]);
+    }, [showModal, getBranches]);
 
     const handleProductSearch = async (val) => {
         setSearchProduct(val);
-        if (val.length < 2) {
+        if (val.length < 1) {
             setFoundProducts([]);
             return;
         }

@@ -109,8 +109,16 @@ const tenantSchema = new mongoose.Schema(
           enum: ['none', 'international', 'local'],
           default: 'none',
         },
+        generateForLocal: { type: Boolean, default: true },
+        prefix: { type: String, default: '200' },
         storefrontBarcodeSearchEnabled: { type: Boolean, default: false },
         localBarcodeCounter: { type: Number, default: 0, min: 0 },
+      },
+      shiftDurationHours: {
+        type: Number,
+        default: 8,
+        min: 1,
+        max: 24,
       },
       shipping: {
         enabled: { type: Boolean, default: false },
@@ -139,6 +147,30 @@ const tenantSchema = new mongoose.Schema(
           estimatedDaysMax: { type: Number, default: 0, min: 0 },
           isActive: { type: Boolean, default: true },
         }],
+      },
+      onlineFulfillment: {
+        mode: {
+          type: String,
+          enum: ['default_branch', 'branch_priority', 'customer_branch'],
+          default: 'branch_priority',
+        },
+        defaultOnlineBranchId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Branch',
+          default: null,
+        },
+        branchPriorityOrder: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Branch',
+        }],
+        allowCrossBranchOnlineAllocation: {
+          type: Boolean,
+          default: false,
+        },
+        allowMixedBranchOrders: {
+          type: Boolean,
+          default: false,
+        },
       },
       installments: {
         enabled: { type: Boolean, default: true },

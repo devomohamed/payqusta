@@ -73,7 +73,7 @@ export default function PortalPointsHistory() {
 
   return (
     <div className={`min-h-screen ${dark ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-6 space-y-6" dir={i18n.dir()}>
+      <div className="app-shell-bg min-h-screen p-4 md:p-6 space-y-6 app-text-soft" dir={i18n.dir()}>
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
@@ -115,7 +115,7 @@ export default function PortalPointsHistory() {
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === 'all'
               ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'app-surface text-gray-600 dark:text-gray-400 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
               }`}
           >
             {t('pointsHistory.filter_all')}
@@ -124,7 +124,7 @@ export default function PortalPointsHistory() {
             onClick={() => setFilter('earned')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === 'earned'
               ? 'bg-green-600 text-white shadow-lg shadow-green-500/30'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'app-surface text-gray-600 dark:text-gray-400 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
               }`}
           >
             {t('pointsHistory.filter_earned')}
@@ -133,7 +133,7 @@ export default function PortalPointsHistory() {
             onClick={() => setFilter('redeemed')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === 'redeemed'
               ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'app-surface text-gray-600 dark:text-gray-400 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
               }`}
           >
             {t('pointsHistory.filter_redeemed')}
@@ -141,7 +141,7 @@ export default function PortalPointsHistory() {
         </div>
 
         {/* History List */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div className="app-surface rounded-2xl shadow-sm border border-gray-100/80 dark:border-white/10 overflow-hidden">
           {loading ? (
             <div className="p-4">
               <PortalSkeleton count={4} type="list" />
@@ -151,7 +151,7 @@ export default function PortalPointsHistory() {
               {filteredHistory.map((item, index) => (
                 <div
                   key={item._id || index}
-                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="p-4 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${item.type === 'earn'
@@ -216,7 +216,7 @@ export default function PortalPointsHistory() {
         </div>
 
         {/* Info Box */}
-        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+        <div className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10 p-6">
           <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
             <Award className="w-5 h-5" />
             {t('pointsHistory.how_to_earn')}

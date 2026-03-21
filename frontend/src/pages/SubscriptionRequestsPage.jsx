@@ -75,7 +75,7 @@ export default function SubscriptionRequestsPage() {
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in app-text-soft">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -92,24 +92,24 @@ export default function SubscriptionRequestsPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 w-fit">
+            <div className="app-surface-muted flex p-1 rounded-xl shadow-sm border border-gray-100/80 dark:border-white/10 w-fit">
                 <button
                     onClick={() => setFilter('pending')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'text-gray-500 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                         }`}
                 >
                     الطلبات المعلقة
                 </button>
                 <button
                     onClick={() => setFilter('approved')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'text-gray-500 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                         }`}
                 >
                     الطلبات المقبولة
                 </button>
                 <button
                     onClick={() => setFilter('all')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'app-surface text-gray-800 dark:text-white' : 'text-gray-500 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                         }`}
                 >
                     كل الطلبات
@@ -126,10 +126,10 @@ export default function SubscriptionRequestsPage() {
                     description={filter === 'pending' ? 'لا توجد طلبات معلقة حالياً تنتظر المراجعة.' : 'لم يتم العثور على طلبات مطابقة.'}
                 />
             ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="app-surface rounded-xl shadow-sm border border-gray-100/80 dark:border-white/10 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-right text-sm">
-                            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700">
+                            <thead className="app-surface-muted border-b border-gray-100/80 dark:border-white/10">
                                 <tr>
                                     <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">المتجر (العميل)</th>
                                     <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">الباقة المطلوبة</th>
@@ -141,7 +141,7 @@ export default function SubscriptionRequestsPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                 {requests.map((request) => (
-                                    <tr key={request._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                    <tr key={request._id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900 dark:text-white">{request.tenant?.name || 'متجر محذوف'}</div>
                                             <div className="text-xs text-gray-500">{request.tenant?.phone} | {request.tenant?.email}</div>
@@ -240,7 +240,7 @@ export default function SubscriptionRequestsPage() {
                     <div>
                         <label className="block text-sm font-bold mb-2">سبب الرفض (يظهر للعميل)</label>
                         <textarea
-                            className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[100px]"
+                            className="app-surface w-full p-3 rounded-xl border border-transparent min-h-[100px] focus:ring-2 focus:ring-primary-500/20"
                             placeholder="مثال: الصورة غير واضحة، أو لم يصل المبلغ كاملاً..."
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}

@@ -94,19 +94,19 @@ function PricingSection({ plans, loading, error }) {
   );
 
   return (
-    <section className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <section className="app-surface mt-10 rounded-[2rem] p-6 sm:p-8">
       <div className="flex flex-col gap-4 text-right lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الباقات الفعلية</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950">اختر الباقة بناءً على حجم التشغيل لا على اسمها فقط</h2>
-          <p className="mt-3 max-w-3xl text-base leading-8 text-slate-600">
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الباقات الفعلية</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">اختر الباقة بناءً على حجم التشغيل لا على اسمها فقط</h2>
+          <p className="app-text-soft mt-3 max-w-3xl text-base leading-8">
             هذه الباقات تُسحب من النظام نفسه حتى تكون الصفحة العامة مرتبطة بما سيجده العميل فعليًا بعد التسجيل.
           </p>
         </div>
         <div className="flex flex-wrap justify-end gap-3">
           <Link
             to="/demo"
-            className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+            className="app-surface-muted rounded-full px-5 py-3 text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
           >
             راجع الديمو أولًا
           </Link>
@@ -125,11 +125,11 @@ function PricingSection({ plans, loading, error }) {
           <LoadingSpinner text="جاري تحميل الباقات الفعلية..." />
         </div>
       ) : error ? (
-        <div className="mt-8 rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-right text-sm font-bold leading-7 text-amber-900">
+        <div className="mt-8 rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 text-right text-sm font-bold leading-7 text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
           {error}
         </div>
       ) : activePlans.length === 0 ? (
-        <div className="mt-8 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-right text-sm font-bold leading-7 text-slate-700">
+        <div className="app-surface-muted mt-8 rounded-[1.75rem] p-5 text-right text-sm font-bold leading-7 text-slate-700 dark:text-slate-100">
           لا توجد باقات منشورة حاليًا. يمكنك متابعة الديمو ثم إنشاء الحساب للتجربة الأولية.
         </div>
       ) : (
@@ -142,8 +142,8 @@ function PricingSection({ plans, loading, error }) {
               <article
                 key={plan?._id || plan?.name || index}
                 className={`flex h-full flex-col rounded-[1.75rem] border p-6 text-right shadow-sm transition-transform hover:-translate-y-1 ${isPopular
-                  ? 'border-emerald-300 bg-emerald-50/60 shadow-emerald-100'
-                  : 'border-slate-200 bg-white'
+                  ? 'border-emerald-300 bg-emerald-50/60 shadow-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:shadow-none'
+                  : 'border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950'
                   }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -151,8 +151,8 @@ function PricingSection({ plans, loading, error }) {
                     {isPopular && <Badge variant="success">الأكثر شيوعًا</Badge>}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-950">{plan?.name || 'باقة'}</h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{plan?.description || 'باقة تشغيل جاهزة للنشاط التجاري.'}</p>
+                    <h3 className="text-2xl font-black text-slate-950 dark:text-white">{plan?.name || 'باقة'}</h3>
+                    <p className="app-text-soft mt-2 text-sm leading-7">{plan?.description || 'باقة تشغيل جاهزة للنشاط التجاري.'}</p>
                   </div>
                 </div>
 
@@ -168,23 +168,23 @@ function PricingSection({ plans, loading, error }) {
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
                   {PLAN_LIMIT_LABELS.map((limit) => (
-                    <div key={limit.key} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{limit.label}</p>
-                      <p className="mt-2 text-sm font-black text-slate-800">{getPlanLimitValue(plan?.limits?.[limit.key])}</p>
+                    <div key={limit.key} className="app-surface-muted rounded-2xl px-4 py-3">
+                      <p className="app-text-muted text-xs font-black uppercase tracking-[0.14em]">{limit.label}</p>
+                      <p className="mt-2 text-sm font-black text-slate-800 dark:text-white">{getPlanLimitValue(plan?.limits?.[limit.key])}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-5 flex-1">
-                  <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">أبرز ما داخل الباقة</p>
+                  <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أبرز ما داخل الباقة</p>
                   <div className="mt-3 grid gap-3">
                     {features.length > 0 ? features.map((feature) => (
-                      <div key={feature} className="flex items-start justify-end gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-slate-700">
+                      <div key={feature} className="flex items-start justify-end gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
                         <span>{getFeatureLabel(feature)}</span>
                         <CheckCircle2 className="mt-1 h-5 w-5 flex-shrink-0 text-emerald-600" />
                       </div>
                     )) : (
-                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-slate-700">
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
                         الباقة تشمل التجهيز الأساسي للتشغيل ويمكن توسيعها بحسب الخطة المعتمدة داخل المنصة.
                       </div>
                     )}
@@ -201,7 +201,7 @@ function PricingSection({ plans, loading, error }) {
                   </Link>
                   <Link
                     to="/demo"
-                    className="rounded-full border border-slate-300 bg-white px-5 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+                    className="app-surface-muted rounded-full px-5 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
                   >
                     شاهد الديمو
                   </Link>
@@ -218,11 +218,11 @@ function PricingSection({ plans, loading, error }) {
 function DemoSection() {
   return (
     <>
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] p-6 sm:p-8">
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">مسار تجربة واضح</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950">جرّب المنصة كقرار تجاري لا كعرض واجهات فقط</h2>
-          <p className="mt-3 max-w-3xl text-base leading-8 text-slate-600">
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">مسار تجربة واضح</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">جرّب المنصة كقرار تجاري لا كعرض واجهات فقط</h2>
+          <p className="app-text-soft mt-3 max-w-3xl text-base leading-8">
             إذا أردت تقييم PayQusta بسرعة، امشِ في هذا التسلسل. بهذه الطريقة ستعرف هل المنصة تناسب طريقتك في العمل فعلًا أم لا.
           </p>
         </div>
@@ -234,16 +234,16 @@ function DemoSection() {
               <Link
                 key={step.title}
                 to={step.to}
-                className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-right transition-transform hover:-translate-y-1 hover:border-emerald-200 hover:bg-white"
+                className="app-surface-muted rounded-[1.75rem] p-5 text-right transition-transform hover:-translate-y-1 hover:bg-white dark:hover:bg-white/10"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">0{index + 1}</span>
+                  <span className="app-text-muted text-xs font-black uppercase tracking-[0.18em]">0{index + 1}</span>
                   <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
-                <p className="mt-4 text-lg font-black text-slate-950">{step.title}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{step.description}</p>
+                <p className="mt-4 text-lg font-black text-slate-950 dark:text-white">{step.title}</p>
+                <p className="app-text-soft mt-3 text-sm leading-7">{step.description}</p>
               </Link>
             );
           })}
@@ -251,11 +251,11 @@ function DemoSection() {
       </section>
 
       <section className="mt-10 grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
-        <div className="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-6 text-right shadow-sm sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">ما الذي يجب أن تراه أثناء التقييم؟</p>
+        <div className="app-surface rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ما الذي يجب أن تراه أثناء التقييم؟</p>
           <div className="mt-5 grid gap-3">
             {DEMO_CHECKLIST.map((item) => (
-              <div key={item} className="flex items-start justify-end gap-3 rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm">
+              <div key={item} className="flex items-start justify-end gap-3 rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
                 <span>{item}</span>
                 <CheckCircle2 className="mt-1 h-5 w-5 flex-shrink-0 text-emerald-600" />
               </div>
@@ -343,9 +343,9 @@ export default function PublicSeoTopicPage() {
       <section className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
         <div className="text-right">
           <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">{page.eyebrow}</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">{page.heroTitle}</h1>
-          <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">{page.heroLead}</p>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500 sm:text-base">{page.heroDescription}</p>
+          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">{page.heroTitle}</h1>
+          <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">{page.heroLead}</p>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-500 dark:text-slate-400 sm:text-base">{page.heroDescription}</p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
@@ -357,7 +357,7 @@ export default function PublicSeoTopicPage() {
             </Link>
             <Link
               to={secondaryCtaLink}
-              className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+              className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
               {secondaryCtaLabel}
             </Link>
@@ -382,31 +382,31 @@ export default function PublicSeoTopicPage() {
 
       <section className="mt-10">
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">أمثلة من الاستخدام اليومي</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950">مشاهد عملية يفهم منها العميل كيف تخدمه المنصة</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أمثلة من الاستخدام اليومي</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">مشاهد عملية يفهم منها العميل كيف تخدمه المنصة</h2>
         </div>
 
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           {page.realCases.map((item) => (
-            <article key={item.title} className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
-              <p className="text-lg font-black text-slate-950">{item.title}</p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{item.description}</p>
+            <article key={item.title} className="app-surface rounded-[1.75rem] p-6 text-right">
+              <p className="text-lg font-black text-slate-950 dark:text-white">{item.title}</p>
+              <p className="app-text-soft mt-4 text-sm leading-7">{item.description}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">ما الذي ستجده داخل المنصة؟</p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950">قدرات واضحة مرتبطة بنتيجة عملية</h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ما الذي ستجده داخل المنصة؟</p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">قدرات واضحة مرتبطة بنتيجة عملية</h2>
+            <p className="app-text-soft mt-3 text-base leading-8">
               هذه القدرات مرتبطة بما يحتاجه النشاط فعليًا أثناء العمل: سرعة، وضوح، ومتابعة يمكن الاعتماد عليها يومًا بعد يوم.
             </p>
             <div className="mt-6 grid gap-3">
               {page.capabilities.map((item) => (
-                <div key={item} className="rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm">
+                <div key={item} className="rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
                   {item}
                 </div>
               ))}
@@ -414,10 +414,10 @@ export default function PublicSeoTopicPage() {
           </div>
 
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">لماذا يختارها أصحاب الأنشطة؟</p>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">لماذا يختارها أصحاب الأنشطة؟</p>
             <div className="mt-4 grid gap-3">
               {page.outcomes.map((item) => (
-                <div key={item} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm">
+                <div key={item} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
                   {item}
                 </div>
               ))}
@@ -431,27 +431,27 @@ export default function PublicSeoTopicPage() {
 
       <section className="mt-10">
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">أسئلة قبل القرار</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950">إجابات مباشرة تساعد الزائر على فهم المنصة بسرعة</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أسئلة قبل القرار</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">إجابات مباشرة تساعد الزائر على فهم المنصة بسرعة</h2>
         </div>
 
         <div className="mt-6 grid gap-4">
           {page.faqs.map((faq) => (
-            <article key={faq.question} className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
-              <h3 className="text-xl font-black text-slate-950">{faq.question}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{faq.answer}</p>
+            <article key={faq.question} className="app-surface rounded-[1.75rem] p-6 text-right">
+              <h3 className="text-xl font-black text-slate-950 dark:text-white">{faq.question}</h3>
+              <p className="app-text-soft mt-3 text-sm leading-7">{faq.answer}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 text-right shadow-sm sm:p-8">
+      <section className="app-surface mt-10 rounded-[2rem] p-6 text-right sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="order-2 sm:order-1">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
               <Link
                 to="/pricing"
-                className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:border-slate-950 hover:text-slate-950"
+                className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
               >
                 الأسعار والباقات
               </Link>
@@ -465,8 +465,8 @@ export default function PublicSeoTopicPage() {
             </div>
           </div>
           <div className="order-1 sm:order-2">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">صفحات مرتبطة</p>
-            <h2 className="mt-2 text-3xl font-black text-slate-950">إذا كان هذا الجزء هو الأقرب لاحتياجك، فهذه المسارات تكمل الصورة</h2>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">صفحات مرتبطة</p>
+            <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">إذا كان هذا الجزء هو الأقرب لاحتياجك، فهذه المسارات تكمل الصورة</h2>
           </div>
         </div>
 
@@ -477,31 +477,31 @@ export default function PublicSeoTopicPage() {
               <Link
                 key={related.path}
                 to={related.path}
-                className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-right transition-transform hover:-translate-y-1 hover:border-emerald-200 hover:bg-white"
+                className="app-surface-muted rounded-[1.5rem] p-5 text-right transition-transform hover:-translate-y-1 hover:bg-white dark:hover:bg-white/10"
               >
                 <div className="inline-flex rounded-2xl bg-slate-950 p-3 text-white">
                   <RelatedIcon className="h-5 w-5" />
                 </div>
-                <p className="mt-4 text-lg font-black text-slate-950">{related.heroTitle}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">{related.heroLead}</p>
+                <p className="mt-4 text-lg font-black text-slate-950 dark:text-white">{related.heroTitle}</p>
+                <p className="app-text-soft mt-2 text-sm leading-7">{related.heroLead}</p>
               </Link>
             );
           })}
         </div>
       </section>
 
-      <section className="mt-10 rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6 text-right sm:p-8">
+      <section className="mt-10 rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6 text-right dark:border-emerald-400/20 dark:bg-emerald-400/10 sm:p-8">
         <div className="grid gap-4 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.18em] text-emerald-700">الخلاصة</p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950">خلاصة واضحة قبل مشاهدة الديمو أو بدء الحساب</h2>
-            <p className="mt-3 text-base leading-8 text-slate-600">
+            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">خلاصة واضحة قبل مشاهدة الديمو أو بدء الحساب</h2>
+            <p className="app-text-soft mt-3 text-base leading-8">
               إذا كانت طريقة العمل هنا قريبة من احتياجك، فالخطوة التالية هي مشاهدة الديمو أو بدء الحساب لتقييم المنصة على بياناتك أنت.
             </p>
           </div>
           <div className="grid gap-3">
             {page.proofPoints.slice(0, 2).map((point) => (
-              <div key={point} className="flex items-start justify-end gap-3 rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm">
+              <div key={point} className="flex items-start justify-end gap-3 rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
                 <span>{point}</span>
                 <CheckCircle2 className="mt-1 h-5 w-5 flex-shrink-0 text-emerald-600" />
               </div>

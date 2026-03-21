@@ -259,9 +259,9 @@ export default function BusinessReportsPage() {
   const Icon = reportType?.icon || BarChart3;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 app-text-soft">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div className="flex items-center gap-3">
           <div className={`p-3 ${reportType?.color} rounded-xl text-white`}>
             <Icon className="w-6 h-6" />
@@ -274,8 +274,7 @@ export default function BusinessReportsPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition ${dark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
+            className="app-surface flex items-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
           >
             <Filter className="w-4 h-4" />
             الفلاتر
@@ -283,8 +282,7 @@ export default function BusinessReportsPage() {
           <button
             onClick={handlePrint}
             disabled={!reportData || loading}
-            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${dark ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
+            className="app-surface flex items-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/[0.03]"
           >
             <Printer className="w-4 h-4" />
             طباعة / PDF
@@ -310,11 +308,11 @@ export default function BusinessReportsPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedReport(report.id)}
-              className={`p-4 rounded-xl border-2 transition-all ${selectedReport === report.id
+              className={`rounded-2xl border-2 p-4 transition-all duration-200 ${selectedReport === report.id
                 ? `${report.color} border-transparent text-white shadow-lg`
                 : dark
-                  ? 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
-                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+                  ? 'app-surface-muted text-gray-300 hover:border-gray-600'
+                  : 'app-surface-muted text-gray-700 hover:border-gray-300'
                 }`}
             >
               <ReportIcon className="w-6 h-6 mx-auto mb-2" />
@@ -325,7 +323,7 @@ export default function BusinessReportsPage() {
       </div>
 
       {/* Date Range Selection */}
-      <div className={`rounded-xl p-4 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface-muted rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calendar className={`w-4 h-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
           <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفترة الزمنية</span>
@@ -335,12 +333,12 @@ export default function BusinessReportsPage() {
             <button
               key={range.id}
               onClick={() => setSelectedRange(range.id)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedRange === range.id
-                ? 'bg-blue-600 text-white shadow'
-                : dark
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+               className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${selectedRange === range.id
+                 ? 'bg-blue-600 text-white shadow'
+                 : dark
+                  ? 'app-surface text-gray-300 hover:bg-white/[0.04]'
+                  : 'app-surface text-gray-700 hover:bg-black/[0.02]'
+                 }`}
             >
               {range.name}
             </button>
@@ -353,15 +351,13 @@ export default function BusinessReportsPage() {
               type="date"
               value={customStart}
               onChange={e => setCustomStart(e.target.value)}
-              className={`px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-                }`}
+              className="app-surface rounded-xl border border-transparent px-3 py-2"
             />
             <input
               type="date"
               value={customEnd}
               onChange={e => setCustomEnd(e.target.value)}
-              className={`px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-                }`}
+              className="app-surface rounded-xl border border-transparent px-3 py-2"
             />
             <button
               onClick={loadReport}
@@ -378,7 +374,7 @@ export default function BusinessReportsPage() {
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className={`rounded-xl p-4 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+          className="app-surface-muted rounded-2xl p-4"
         >
           <h3 className={`text-sm font-medium mb-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>فلاتر متقدمة</h3>
           <div className="grid grid-cols-3 gap-4">
@@ -391,8 +387,7 @@ export default function BusinessReportsPage() {
                     setGroupBy(e.target.value);
                     setTimeout(loadReport, 100);
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-                    }`}
+                  className="app-surface w-full rounded-xl border border-transparent px-3 py-2"
                 >
                   <option value="day">يوم</option>
                   <option value="week">أسبوع</option>
@@ -426,8 +421,7 @@ export default function BusinessReportsPage() {
                   value={minPurchases}
                   onChange={e => setMinPurchases(parseInt(e.target.value) || 0)}
                   onBlur={loadReport}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${dark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-200'
-                    }`}
+                  className="app-surface w-full rounded-xl border border-transparent px-3 py-2"
                 />
               </div>
             )}
@@ -437,7 +431,7 @@ export default function BusinessReportsPage() {
 
       {/* Report Content */}
       {showPaywall ? (
-        <div className={`rounded-2xl p-8 md:p-12 border text-center relative overflow-hidden ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <div className="app-surface relative overflow-hidden rounded-[2rem] p-8 text-center md:p-12">
           <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500 rounded-bl-full opacity-10"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500 rounded-tr-full opacity-10"></div>
 
@@ -461,7 +455,7 @@ export default function BusinessReportsPage() {
           </div>
         </div>
       ) : loading ? (
-        <div className={`rounded-xl p-12 py-24 border text-center flex flex-col items-center justify-center ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="app-surface rounded-[2rem] p-12 py-24 text-center flex flex-col items-center justify-center">
           <AnimatedBrandLogo size="lg" className="mx-auto mb-4" />
           <p className={dark ? 'text-gray-400' : 'text-gray-500'}>جاري تحميل التقرير...</p>
         </div>
@@ -474,7 +468,7 @@ export default function BusinessReportsPage() {
           {selectedReport === 'products' && <ProductPerformanceView data={reportData} />}
         </div>
       ) : (
-        <div className={`rounded-xl p-12 border text-center ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="app-surface rounded-[2rem] p-12 text-center">
           <PieChart className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-gray-600' : 'text-gray-300'}`} />
           <p className={dark ? 'text-gray-400' : 'text-gray-500'}>اختر فترة زمنية لعرض التقرير</p>
         </div>
@@ -501,7 +495,7 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className={`p-2 rounded-lg transition disabled:opacity-30 ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+        className={`p-2 rounded-lg transition disabled:opacity-30 ${dark ? 'hover:bg-white/[0.04] text-gray-400' : 'hover:bg-black/[0.03] text-gray-600'
           }`}
       >
         <ChevronRight className="w-4 h-4" />
@@ -509,7 +503,7 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
 
       {start > 1 && (
         <>
-          <button onClick={() => onPageChange(1)} className={`w-8 h-8 rounded-lg text-sm transition ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}>1</button>
+          <button onClick={() => onPageChange(1)} className={`w-8 h-8 rounded-lg text-sm transition ${dark ? 'hover:bg-white/[0.04] text-gray-400' : 'hover:bg-black/[0.03] text-gray-600'}`}>1</button>
           {start > 2 && <span className={dark ? 'text-gray-600' : 'text-gray-400'}>...</span>}
         </>
       )}
@@ -520,7 +514,7 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
           onClick={() => onPageChange(p)}
           className={`w-8 h-8 rounded-lg text-sm font-medium transition ${p === currentPage
             ? 'bg-blue-600 text-white shadow'
-            : dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+            : dark ? 'hover:bg-white/[0.04] text-gray-400' : 'hover:bg-black/[0.03] text-gray-600'
             }`}
         >
           {p}
@@ -530,14 +524,14 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
       {end < totalPages && (
         <>
           {end < totalPages - 1 && <span className={dark ? 'text-gray-600' : 'text-gray-400'}>...</span>}
-          <button onClick={() => onPageChange(totalPages)} className={`w-8 h-8 rounded-lg text-sm transition ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}>{totalPages}</button>
+          <button onClick={() => onPageChange(totalPages)} className={`w-8 h-8 rounded-lg text-sm transition ${dark ? 'hover:bg-white/[0.04] text-gray-400' : 'hover:bg-black/[0.03] text-gray-600'}`}>{totalPages}</button>
         </>
       )}
 
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className={`p-2 rounded-lg transition disabled:opacity-30 ${dark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+        className={`p-2 rounded-lg transition disabled:opacity-30 ${dark ? 'hover:bg-white/[0.04] text-gray-400' : 'hover:bg-black/[0.03] text-gray-600'
           }`}
       >
         <ChevronLeft className="w-4 h-4" />
@@ -568,7 +562,7 @@ function SalesReportView({ data }) {
         <SummaryCard title="معدل التحصيل" value={`${safeNum(data?.summary?.collectionRate)}%`} icon={PieChart} color="bg-orange-500" dark={dark} />
       </div>
 
-      <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>المبيعات حسب الفترة</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{items.length} سجل</span>
@@ -586,7 +580,7 @@ function SalesReportView({ data }) {
             </thead>
             <tbody>
               {paginatedItems.map((period, idx) => (
-                <tr key={idx} className={`border-b ${dark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'}`}>
+                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{period?.period}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{period?.count || 0}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{safeNum(period?.revenue)} جنيه</td>
@@ -601,7 +595,7 @@ function SalesReportView({ data }) {
       </div>
 
       {(data?.topCustomers || []).length > 0 && (
-        <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="app-surface rounded-3xl p-6">
           <h3 className={`section-title text-lg font-semibold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>أفضل العملاء</h3>
           <div className="space-y-2">
             {(data?.topCustomers || []).slice(0, 10).map((customer, idx) => (
@@ -644,7 +638,7 @@ function ProfitReportView({ data }) {
         <SummaryCard title="هامش الربح" value={`${safeNum(data?.summary?.profitMargin)}%`} icon={PieChart} color="bg-purple-500" dark={dark} />
       </div>
 
-      <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>الأرباح حسب الفئة</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{categories.length} فئة</span>
@@ -663,7 +657,7 @@ function ProfitReportView({ data }) {
             </thead>
             <tbody>
               {paginatedCats.map((cat, idx) => (
-                <tr key={idx} className={`border-b ${dark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'}`}>
+                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}>
                   <td className={`py-3 px-4 font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>{cat?.category || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{safeNum(cat?.revenue)} جنيه</td>
                   <td className={`py-3 px-4 ${dark ? 'text-red-400' : 'text-red-600'}`}>{safeNum(cat?.cost)} جنيه</td>
@@ -678,7 +672,7 @@ function ProfitReportView({ data }) {
         <Pagination currentPage={catPage} totalPages={catTotalPages} onPageChange={setCatPage} dark={dark} />
       </div>
 
-      <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>أفضل المنتجات ربحاً</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{products.length} منتج</span>
@@ -696,7 +690,7 @@ function ProfitReportView({ data }) {
             </thead>
             <tbody>
               {paginatedProds.map((prod, idx) => (
-                <tr key={idx} className={`border-b ${dark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'}`}>
+                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}>
                   <td className={`py-3 px-4 font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>{prod?.name || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{prod?.sku || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{prod?.category || '-'}</td>
@@ -729,7 +723,7 @@ function InventoryReportView({ data }) {
         <SummaryCard title="نفذ من المخزون" value={data?.summary?.stockLevels?.outOfStock || 0} icon={Package} color="bg-red-500" dark={dark} />
       </div>
 
-      <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>تفاصيل المخزون</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{items.length} منتج</span>
@@ -793,7 +787,7 @@ function CustomerReportView({ data }) {
         <SummaryCard title="متوسط قيمة العميل" value={`${safeNum(data?.summary?.averageCustomerValue)} جنيه`} icon={BarChart3} color="bg-purple-500" dark={dark} />
       </div>
 
-      <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>تفاصيل العملاء</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{customers.length} عميل</span>
@@ -813,7 +807,7 @@ function CustomerReportView({ data }) {
             </thead>
             <tbody>
               {paginatedCustomers.map((customer, idx) => (
-                <tr key={idx} className={`border-b ${dark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'}`}>
+                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}>
                   <td className={`py-3 px-4 font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>{customer?.name || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{customer?.phone || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-900'}`}>{customer?.totalInvoices || 0}</td>
@@ -848,7 +842,7 @@ function ProductPerformanceView({ data }) {
         <SummaryCard title="الكمية المباعة" value={data?.summary?.totalQuantitySold || 0} icon={BarChart3} color="bg-orange-500" dark={dark} />
       </div>
 
-      <div className={`rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>الأفضل من حيث الإيرادات</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{products.length} منتج</span>
@@ -867,7 +861,7 @@ function ProductPerformanceView({ data }) {
             </thead>
             <tbody>
               {paginatedProducts.map((product, idx) => (
-                <tr key={idx} className={`border-b ${dark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'}`}>
+                <tr key={idx} className={`border-b ${dark ? 'border-gray-700' : 'border-gray-100'} transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}>
                   <td className={`py-3 px-4 font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>{product?.name || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{product?.sku || '-'}</td>
                   <td className={`py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-900'}`}>{product?.category || '-'}</td>
@@ -887,7 +881,7 @@ function ProductPerformanceView({ data }) {
 
 function SummaryCard({ title, value, icon: Icon, color, dark }) {
   return (
-    <div className={`summary-card rounded-xl p-6 border ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+    <div className="app-surface-muted summary-card rounded-3xl p-6 transition-all duration-200 motion-safe:hover:-translate-y-0.5">
       <div className="flex items-center justify-between mb-2">
         <p className={`label text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
         <div className={`p-2 ${color} rounded-lg text-white`}>

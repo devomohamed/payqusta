@@ -17,6 +17,23 @@ export const publicUtilityLinks = [
 export const brandName = 'PayQusta';
 export const brandArabicName = 'بيكوستا';
 export const brandDisplayName = 'PayQusta | بيكوستا';
+export const brandSearchAliases = [
+  'PayQusta',
+  'payqusta',
+  'pay qusta',
+  'pay qousta',
+  'payqousta',
+  'pay kousta',
+  'paykousta',
+  'pai qousta',
+  'pay2usta',
+  'بيكوستا',
+  'بايكوستا',
+  'باي كوستا',
+  'باي قوستا',
+  'بايقوستا',
+  'بي كوستا',
+];
 
 export const platformHighlights = [
   'بيع وفواتير مرتبطة بالمخزون',
@@ -124,6 +141,10 @@ export const faqItems = [
     answer: 'نعم. بيكوستا هي الكتابة العربية الشائعة لاسم PayQusta، وكلا الاسمين يشيران إلى نفس البراند والمنصة.',
   },
   {
+    question: 'هل PayQusta و pay qusta و بيكوستا أسماء لنفس المنصة؟',
+    answer: 'نعم. اختلاف الكتابة بين الإنجليزية أو الفرانكو أو العربية لا يغير المنصة نفسها. PayQusta و pay qusta و pay qousta و بيكوستا كلها تشير إلى نفس البراند.',
+  },
+  {
     question: 'هل المنصة تقتصر على الإدارة الداخلية فقط؟',
     answer: 'لا. المنصة تخدم الإدارة الداخلية، وتوفر أيضًا واجهة عامة ومتجرًا إلكترونيًا لعرض المنتجات واستقبال الطلبات.',
   },
@@ -140,7 +161,23 @@ export const faqItems = [
 export const publicPageMeta = {
   '/': {
     title: 'PayQusta | بيكوستا - منصة احترافية لإدارة المبيعات والأقساط والمتجر الإلكتروني',
-    description: 'PayQusta بيكوستا منصة لإدارة المبيعات والمخزون والعملاء والأقساط، مع موقع عام احترافي ومتجر إلكتروني يساعدك على النمو.',
+    description: 'PayQusta بيكوستا منصة لإدارة المبيعات والمخزون والعملاء والأقساط. إذا كنت تبحث عن PayQusta أو pay qusta أو بيكوستا فأنت تقصد نفس المنصة.',
+    keywords: [
+      'PayQusta',
+      'payqusta',
+      'pay qusta',
+      'pay qousta',
+      'بيكوستا',
+      'باي كوستا',
+      'منصة تجارة إلكترونية',
+      'منصة إنشاء متجر إلكتروني',
+      'برنامج إدارة متجر إلكتروني',
+      'نظام إدارة المبيعات والمخزون',
+      'برنامج الفواتير والمخزون',
+      'منصة إدارة الطلبات والعملاء',
+      'بوابة عملاء للمتجر',
+      'منصة متعددة المتاجر',
+    ],
   },
   '/features': {
     title: 'مزايا PayQusta | بيكوستا للمبيعات والمخزون والأقساط في نظام واحد',

@@ -1,42 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../store';
-import { toast } from 'react-hot-toast';
-import { Plus, Archive, AlertTriangle, Check, Search, X } from 'lucide-react';
-import { Button, Card, Input, Modal, LoadingSpinner, EmptyState, Select, Badge } from '../components/UI';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Archive, Plus, RefreshCw, Search } from 'lucide-react';
+import { api, productsApi, useAuthStore } from '../store';
+import { Badge, Button, Card, EmptyState, Input, LoadingSpinner, Modal, Select } from '../components/UI';
 import Pagination from '../components/Pagination';
-import { useAuthStore } from '../store';
 
 const TYPES = {
-  damage: { label: 'تالف (Damage)', color: 'danger' },
-  theft: { label: 'سرقة / عجز (Theft)', color: 'danger' },
-  loss: { label: 'فقد (Loss)', color: 'warning' },
+  damage: { label: 'تالف', color: 'danger' },
+  theft: { label: 'سرقة أو عجز', color: 'danger' },
+  loss: { label: 'فقد', color: 'warning' },
   internal_use: { label: 'استخدام داخلي', color: 'info' },
-  correction_increase: { label: 'تسوية (زيادة)', color: 'success' },
-  correction_decrease: { label: 'تسوية (نقص)', color: 'danger' },
+  correction_increase: { label: 'تسوية بزيادة', color: 'success' },
+  correction_decrease: { label: 'تسوية بنقص', color: 'danger' },
 };
 
+function getProductCode(product) {
+  return product?.localBarcode || product?.internationalBarcode || product?.barcode || product?.sku || 'بدون كود';
+}
+
 export default function StockAdjustmentsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const getBranches = useAuthStore((state) => state.getBranches);
+  const userBranchId = user?.branch?._id || user?.branch || '';
+
   const [adjustments, setAdjustments] = useState([]);
   const [products, setProducts] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Form State
-  const [form, setForm] = useState({ productId: '', type: 'damage', quantity: 1, reason: '', branchId: user?.branch || '' });
+  const [form, setForm] = useState({
+    productId: '',
+    type: 'damage',
+    quantity: 1,
+    reason: '',
+    branchId: userBranchId,
+  });
   const [productSearch, setProductSearch] = useState('');
+
+  const resetForm = () => {
+    setForm({
+      productId: '',
+      type: 'damage',
+      quantity: 1,
+      reason: '',
+      branchId: userBranchId || (branches[0]?._id || ''),
+    });
+    setProductSearch('');
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    resetForm();
+  };
 
   const fetchAdjustments = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/stock-adjustments?page=${page}&limit=8`);
-      setAdjustments(res.data.data);
-      setTotalPages(res.data.pagination.totalPages);
-    } catch (err) {
-      toast.error('فشل تحميل البيانات');
+      const res = await api.get('/stock-adjustments', { params: { page, limit: 8 } });
+      setAdjustments(res.data?.data || []);
+      setTotalPages(res.data?.pagination?.totalPages || 1);
+    } catch (error) {
+      toast.error('فشل تحميل تسويات المخزون');
+      setAdjustments([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -44,119 +73,173 @@ export default function StockAdjustmentsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await api.get('/products?limit=1000'); // Get enough for search
-      setProducts(res.data.data);
-    } catch (err) { }
+      const res = await productsApi.getAll({ limit: 1000 });
+      setProducts(res?.data?.data || []);
+    } catch (error) {
+      setProducts([]);
+    }
   };
 
   const fetchBranches = async () => {
-    try {
-      const res = await api.get('/settings/branches');
-      setBranches(res.data.data);
-      if (!form.branchId && res.data.data.length > 0) {
-        setForm(prev => ({ ...prev, branchId: res.data.data[0]._id }));
-      }
-    } catch (err) { }
-  }
+    if (userBranchId) return;
+    const branchData = await getBranches?.();
+    const normalizedBranches = Array.isArray(branchData) ? branchData : [];
+    setBranches(normalizedBranches);
+    setForm((prev) => ({
+      ...prev,
+      branchId: prev.branchId || normalizedBranches[0]?._id || '',
+    }));
+  };
 
   useEffect(() => {
-    fetchAdjustments();
-    fetchProducts();
-    if (!user?.branch) {
-      fetchBranches();
-    }
+    void fetchAdjustments();
   }, [page]);
 
-  const handleSubmit = async () => {
-    if (!form.productId || !form.quantity || !form.branchId) return toast.error('اختر المنتج، الكمية والفرع');
+  useEffect(() => {
+    void fetchProducts();
+    void fetchBranches();
+  }, [userBranchId]);
 
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = productSearch.trim().toLowerCase();
+    if (!normalizedSearch) return products.slice(0, 20);
+
+    return products.filter((product) => {
+      const haystack = [
+        product?.name,
+        product?.sku,
+        product?.barcode,
+        product?.localBarcode,
+        product?.internationalBarcode,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    }).slice(0, 20);
+  }, [productSearch, products]);
+
+  const selectedProduct = useMemo(
+    () => products.find((product) => String(product._id) === String(form.productId)) || null,
+    [form.productId, products],
+  );
+
+  const summary = useMemo(() => ({
+    total: adjustments.length,
+    increases: adjustments.filter((adj) => adj.type === 'correction_increase').length,
+    decreases: adjustments.filter((adj) => adj.type !== 'correction_increase').length,
+  }), [adjustments]);
+
+  const handleSubmit = async () => {
+    if (!form.productId || !form.branchId) {
+      toast.error('اختر المنتج والفرع أولاً');
+      return;
+    }
+
+    if (!Number.isFinite(Number(form.quantity)) || Number(form.quantity) <= 0) {
+      toast.error('أدخل كمية صحيحة أكبر من صفر');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      await api.post('/stock-adjustments', form);
+      await api.post('/stock-adjustments', {
+        ...form,
+        quantity: Number(form.quantity),
+        reason: form.reason.trim(),
+      });
       toast.success('تم تسجيل التسوية بنجاح');
-      setShowModal(false);
-      fetchAdjustments();
-      setForm({ productId: '', type: 'damage', quantity: 1, reason: '', branchId: user?.branch || (branches.length > 0 ? branches[0]._id : '') });
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'حدث خطأ');
+      closeModal();
+      await fetchAdjustments();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'حدث خطأ أثناء حفظ التسوية');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    p.sku?.toLowerCase().includes(productSearch.toLowerCase())
-  );
-
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-6 animate-fade-in">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">تسوية المخزون</h1>
-          <p className="text-gray-500 mt-1">تعديل الأرصدة (تالف، عجز، تسوية)</p>
+          <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-2xl font-black text-transparent dark:from-white dark:to-gray-300">
+            تسويات المخزون
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">سجل التالف والعجز والفقد والتسويات اليدوية لكل فرع.</p>
         </div>
-        <Button icon={<Plus className="w-5 h-5" />} onClick={() => setShowModal(true)}>تسوية جديدة</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => void fetchAdjustments()} icon={<RefreshCw className="h-4 w-4" />}>
+            تحديث
+          </Button>
+          <Button icon={<Plus className="h-5 w-5" />} onClick={() => setShowModal(true)}>
+            تسوية جديدة
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards (Placeholder for now) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 border-l-4 border-red-500">
-          <p className="text-gray-500 text-xs font-bold">إجمالي التالف (شهر)</p>
-          <p className="text-2xl font-black text-red-600">0 ج.م</p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card className="border-l-4 border-blue-500 p-4">
+          <p className="text-xs font-bold text-gray-500">إجمالي العمليات المعروضة</p>
+          <p className="text-2xl font-black text-blue-600">{summary.total}</p>
         </Card>
-        <Card className="p-4 border-l-4 border-amber-500">
-          <p className="text-gray-500 text-xs font-bold">إجمالي العجز (شهر)</p>
-          <p className="text-2xl font-black text-amber-600">0 ج.م</p>
+        <Card className="border-l-4 border-emerald-500 p-4">
+          <p className="text-xs font-bold text-gray-500">تسويات بزيادة</p>
+          <p className="text-2xl font-black text-emerald-600">{summary.increases}</p>
         </Card>
-        <Card className="p-4 border-l-4 border-blue-500">
-          <p className="text-gray-500 text-xs font-bold">عمليات التسوية</p>
-          <p className="text-2xl font-black text-blue-600">{adjustments.length}</p>
+        <Card className="border-l-4 border-red-500 p-4">
+          <p className="text-xs font-bold text-gray-500">تسويات بنقص أو فاقد</p>
+          <p className="text-2xl font-black text-red-600">{summary.decreases}</p>
         </Card>
       </div>
 
-      {/* Table */}
       {loading ? <LoadingSpinner /> : adjustments.length === 0 ? (
-        <EmptyState icon={<Archive className="w-12 h-12 text-gray-300" />} title="لا توجد تسويات" description="سجل أول عملية تسوية مخزون" />
+        <EmptyState
+          icon={<Archive className="h-12 w-12 text-gray-300" />}
+          title="لا توجد تسويات مسجلة"
+          description="ابدأ بإضافة أول عملية تسوية للمخزون."
+        />
       ) : (
         <Card className="overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 border-b border-gray-100 dark:border-gray-800">
+              <thead className="border-b border-gray-100 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-800/50">
                 <tr>
                   <th className="px-6 py-4 font-bold">التاريخ</th>
                   <th className="px-6 py-4 font-bold">الفرع</th>
                   <th className="px-6 py-4 font-bold">المنتج</th>
                   <th className="px-6 py-4 font-bold">النوع</th>
                   <th className="px-6 py-4 font-bold">الكمية</th>
-                  <th className="px-6 py-4 font-bold">ملاحظات</th>
+                  <th className="px-6 py-4 font-bold">الملاحظات</th>
                   <th className="px-6 py-4 font-bold">بواسطة</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                {adjustments.map((adj) => (
-                  <tr key={adj._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                {adjustments.map((adjustment) => (
+                  <tr key={adjustment._id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                     <td className="px-6 py-4 text-gray-500">
-                      {new Date(adj.createdAt).toLocaleDateString('ar-EG')}
+                      {new Date(adjustment.createdAt).toLocaleDateString('ar-EG')}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200">
-                      {adj.branch?.name || '---'}
+                      {adjustment.branch?.name || 'الفرع الرئيسي'}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200">
-                      {adj.product?.name}
-                      <div className="text-xs text-gray-400 font-normal">{adj.product?.sku}</div>
+                      {adjustment.product?.name || 'منتج غير معروف'}
+                      <div className="text-xs font-normal text-gray-400">{getProductCode(adjustment.product)}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={TYPES[adj.type]?.color || 'gray'}>
-                        {TYPES[adj.type]?.label || adj.type}
+                      <Badge variant={TYPES[adjustment.type]?.color || 'gray'}>
+                        {TYPES[adjustment.type]?.label || adjustment.type}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 font-bold">
-                      <span dir="ltr">{adj.quantity}</span>
+                      <span dir="ltr">{adjustment.quantity}</span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 max-w-xs truncate" title={adj.reason}>
-                      {adj.reason || '—'}
+                    <td className="max-w-xs truncate px-6 py-4 text-gray-500" title={adjustment.reason || ''}>
+                      {adjustment.reason || '—'}
                     </td>
                     <td className="px-6 py-4 text-xs text-gray-400">
-                      {adj.user?.name}
+                      {adjustment.user?.name || 'غير محدد'}
                     </td>
                   </tr>
                 ))}
@@ -166,50 +249,68 @@ export default function StockAdjustmentsPage() {
         </Card>
       )}
 
-      {/* Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="تسوية مخزون جديدة">
+      {totalPages > 1 ? (
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+      ) : null}
+
+      <Modal open={showModal} onClose={closeModal} title="تسوية مخزون جديدة">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">بحث عن منتج</label>
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">بحث عن منتج</label>
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                className="w-full pr-10 pl-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:border-primary-500 outline-none"
-                placeholder="بحث بالاسم أو الباركود..."
+                className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-2 pl-4 pr-10 outline-none focus:border-primary-500 dark:border-gray-700 dark:bg-gray-800"
+                placeholder="بحث بالاسم أو SKU أو الباركود..."
                 value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
+                onChange={(event) => setProductSearch(event.target.value)}
               />
             </div>
-            {productSearch && (
-              <div className="mt-2 max-h-40 overflow-y-auto border-2 rounded-xl border-gray-100 dark:border-gray-800">
-                {filteredProducts.map(p => (
-                  <div
-                    key={p._id}
-                    onClick={() => { setForm({ ...form, productId: p._id }); setProductSearch(p.name); }}
-                    className={`p-2 cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-500/10 flex justify-between items-center ${form.productId === p._id ? 'bg-primary-50 dark:bg-primary-500/10' : ''}`}
+            {filteredProducts.length > 0 ? (
+              <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border-2 border-gray-100 dark:border-gray-800">
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product._id}
+                    type="button"
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, productId: product._id }));
+                      setProductSearch(product.name);
+                    }}
+                    className={`flex w-full items-center justify-between p-3 text-right transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10 ${form.productId === product._id ? 'bg-primary-50 dark:bg-primary-500/10' : ''}`}
                   >
-                    <span className="font-bold text-sm">{p.name}</span>
-                    <span className="text-xs text-gray-400">متاح كليًا: {p.stock?.quantity}</span>
-                  </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-800 dark:text-gray-200">{product.name}</p>
+                      <p className="text-xs text-gray-400">{getProductCode(product)}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">متاح إجمالًا: {Number(product.stock?.quantity) || 0}</span>
+                  </button>
                 ))}
               </div>
-            )}
+            ) : productSearch ? (
+              <p className="mt-2 text-xs text-gray-400">لا توجد منتجات مطابقة لهذا البحث.</p>
+            ) : null}
           </div>
 
-          {!user?.branch && branches.length > 0 && (
+          {selectedProduct ? (
+            <div className="rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700 dark:border-primary-900/40 dark:bg-primary-900/20 dark:text-primary-300">
+              المنتج المحدد: <span className="font-bold">{selectedProduct.name}</span>
+            </div>
+          ) : null}
+
+          {!userBranchId && branches.length > 0 ? (
             <Select
               label="الفرع"
               value={form.branchId}
-              onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-              options={branches.map(b => ({ value: b._id, label: b.name }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, branchId: event.target.value }))}
+              options={branches.map((branch) => ({ value: branch._id, label: branch.name }))}
             />
-          )}
+          ) : null}
 
           <Select
             label="نوع التسوية"
             value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-            options={Object.entries(TYPES).map(([key, val]) => ({ value: key, label: val.label }))}
+            onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}
+            options={Object.entries(TYPES).map(([key, value]) => ({ value: key, label: value.label }))}
           />
 
           <Input
@@ -217,18 +318,18 @@ export default function StockAdjustmentsPage() {
             type="number"
             min="1"
             value={form.quantity}
-            onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })}
+            onChange={(event) => setForm((prev) => ({ ...prev, quantity: Number(event.target.value) }))}
           />
 
           <Input
-            label="ملاحظات / سبب التسوية"
+            label="ملاحظات أو سبب التسوية"
             value={form.reason}
-            onChange={(e) => setForm({ ...form, reason: e.target.value })}
+            onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
           />
 
-          <div className="pt-4 flex gap-3">
-            <Button onClick={handleSubmit} className="flex-1">حفظ التسوية</Button>
-            <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
+          <div className="flex gap-3 pt-4">
+            <Button onClick={handleSubmit} loading={submitting} className="flex-1">حفظ التسوية</Button>
+            <Button variant="ghost" onClick={closeModal}>إلغاء</Button>
           </div>
         </div>
       </Modal>

@@ -14,6 +14,20 @@ const TABS = [
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 const RISK_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
 const RISK_LABELS = { high: 'مرتفع 🔴', medium: 'متوسط 🟡', low: 'منخفض 🟢' };
+const COLLECTION_STYLES = {
+  red: {
+    badge: 'bg-red-50 text-red-500 dark:bg-red-500/10',
+    amount: 'text-red-500',
+  },
+  primary: {
+    badge: 'bg-primary-50 text-primary-500 dark:bg-primary-500/10',
+    amount: 'text-primary-500',
+  },
+  amber: {
+    badge: 'bg-amber-50 text-amber-500 dark:bg-amber-500/10',
+    amount: 'text-amber-500',
+  },
+};
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('profit');
@@ -55,26 +69,26 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-500/25">
-          <BarChart3 className="w-5 h-5 text-white" />
+      <div className="app-surface-muted flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
+        <div className="app-surface flex h-11 w-11 items-center justify-center rounded-2xl text-violet-600 dark:text-violet-300">
+          <BarChart3 className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <h2 className="text-lg font-extrabold">التقارير والتحليلات</h2>
-          <p className="text-xs text-gray-400">ذكاء الأعمال وتحليل الأرباح والمخاطر</p>
+          <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">التقارير والتحليلات</h2>
+          <p className="text-xs text-gray-400 dark:text-white/60">ذكاء الأعمال وتحليل الأرباح والمخاطر</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/50 p-1.5 rounded-2xl">
+      <div className="app-surface-muted flex gap-2 rounded-2xl p-1">
         {TABS.map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
               activeTab === tab.key
-                ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300'
+                : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
             }`}>
             <tab.icon className="w-4 h-4" /> {tab.label}
           </button>
@@ -89,10 +103,10 @@ export default function ReportsPage() {
               {/* Revenue by Payment Method */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {(profitData.revenueByMethod || []).map((m) => (
-                  <Card key={m._id} className="p-5 text-center">
-                    <p className="text-xs text-gray-400 mb-1">{m._id === 'cash' ? '💵 نقد' : m._id === 'installment' ? '📅 أقساط' : '⏳ آجل'}</p>
+                  <Card key={m._id} className="app-surface-muted p-5 text-center transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
+                    <p className="text-xs text-gray-400 dark:text-white/60 mb-1">{m._id === 'cash' ? '💵 نقد' : m._id === 'installment' ? '📅 أقساط' : '⏳ آجل'}</p>
                     <p className="text-2xl font-black text-primary-500">{fmt(m.total)} <span className="text-sm">ج.م</span></p>
-                    <p className="text-[10px] text-gray-400 mt-1">{m.count} فاتورة · محصّل: {fmt(m.collected)}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{m.count} فاتورة · محصّل: {fmt(m.collected)}</p>
                   </Card>
                 ))}
               </div>
@@ -109,15 +123,15 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     {(profitData.profitableProducts || []).slice(0, 8).map((p, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/30">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${i < 3 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}>{i + 1}</div>
+                      <div key={i} className="app-surface-muted flex items-center gap-3 rounded-2xl p-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${i < 3 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-white/60'}`}>{i + 1}</div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate">{p.name}</p>
-                          <p className="text-[10px] text-gray-400">{p.category} · {p.totalSold} قطعة</p>
+                          <p className="text-sm font-bold truncate text-gray-900 dark:text-white">{p.name}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-white/50">{p.category} · {p.totalSold} قطعة</p>
                         </div>
                         <div className="text-left">
                           <p className="text-sm font-extrabold text-emerald-500">{fmt(p.profit)} ج.م</p>
-                          <p className="text-[10px] text-gray-400">هامش: {Math.round(p.margin)}%</p>
+                          <p className="text-[10px] text-gray-400 dark:text-white/50">هامش: {Math.round(p.margin)}%</p>
                         </div>
                       </div>
                     ))}
@@ -148,18 +162,18 @@ export default function ReportsPage() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead><tr className="border-b-2 border-gray-100 dark:border-gray-800">
+                    <thead><tr className="border-b border-gray-100/80 dark:border-white/10">
                       {['', 'العميل', 'الحالة', 'المشتريات', 'المدفوع', 'الفواتير'].map((h) => <th key={h} className="px-3 py-2 text-right text-xs font-bold text-gray-400">{h}</th>)}
                     </tr></thead>
                     <tbody>
                       {(profitData.profitableCustomers || []).map((c, i) => (
-                        <tr key={i} className="border-b border-gray-50 dark:border-gray-800/50">
-                          <td className="px-3 py-2.5"><span className={`w-6 h-6 inline-flex items-center justify-center rounded-md text-[10px] font-black ${i < 3 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span></td>
-                          <td className="px-3 py-2.5"><p className="font-bold">{c.name}</p><p className="text-[10px] text-gray-400">{c.phone}</p></td>
+                        <tr key={i} className="border-b border-gray-100/70 transition-colors hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]">
+                          <td className="px-3 py-2.5"><span className={`w-6 h-6 inline-flex items-center justify-center rounded-md text-[10px] font-black ${i < 3 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-white/60'}`}>{i + 1}</span></td>
+                          <td className="px-3 py-2.5"><p className="font-bold text-gray-900 dark:text-white">{c.name}</p><p className="text-[10px] text-gray-400 dark:text-white/50">{c.phone}</p></td>
                           <td className="px-3 py-2.5">{c.tier === 'vip' ? <Badge variant="warning">⭐ VIP</Badge> : c.tier === 'premium' ? <Badge variant="success">Premium</Badge> : <Badge variant="gray">عادي</Badge>}</td>
-                          <td className="px-3 py-2.5 font-bold">{fmt(c.totalSpent)} ج.م</td>
+                          <td className="px-3 py-2.5 font-bold text-gray-900 dark:text-white">{fmt(c.totalSpent)} ج.م</td>
                           <td className="px-3 py-2.5 font-bold text-emerald-500">{fmt(c.totalPaid)} ج.م</td>
-                          <td className="px-3 py-2.5 text-center">{c.invoiceCount}</td>
+                          <td className="px-3 py-2.5 text-center text-gray-900 dark:text-white">{c.invoiceCount}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -174,27 +188,27 @@ export default function ReportsPage() {
             <div className="space-y-5">
               {/* Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <Card className="p-4 text-center border-2 border-red-100 dark:border-red-500/20">
-                  <p className="text-[10px] text-gray-400 mb-1">مخاطر مرتفعة</p>
+                <Card className="app-surface-muted p-4 text-center border-2 border-red-100 dark:border-red-500/20">
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">مخاطر مرتفعة</p>
                   <p className="text-3xl font-black text-red-500">{riskData.summary?.high || 0}</p>
                 </Card>
-                <Card className="p-4 text-center border-2 border-amber-100 dark:border-amber-500/20">
-                  <p className="text-[10px] text-gray-400 mb-1">مخاطر متوسطة</p>
+                <Card className="app-surface-muted p-4 text-center border-2 border-amber-100 dark:border-amber-500/20">
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">مخاطر متوسطة</p>
                   <p className="text-3xl font-black text-amber-500">{riskData.summary?.medium || 0}</p>
                 </Card>
-                <Card className="p-4 text-center border-2 border-emerald-100 dark:border-emerald-500/20">
-                  <p className="text-[10px] text-gray-400 mb-1">مخاطر منخفضة</p>
+                <Card className="app-surface-muted p-4 text-center border-2 border-emerald-100 dark:border-emerald-500/20">
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">مخاطر منخفضة</p>
                   <p className="text-3xl font-black text-emerald-500">{riskData.summary?.low || 0}</p>
                 </Card>
-                <Card className="p-4 text-center">
-                  <p className="text-[10px] text-gray-400 mb-1">إجمالي المستحقات</p>
-                  <p className="text-xl font-black text-primary-500">{fmt(riskData.summary?.totalOutstanding)}<span className="text-xs mr-1">ج.م</span></p>
+                <Card className="app-surface-muted p-4 text-center">
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">إجمالي المستحقات</p>
+                  <p className="text-xl font-black text-primary-500">{fmt(riskData.summary?.totalOutstanding)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p>
                 </Card>
               </div>
 
               {/* Risk Chart */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                <Card className="p-5 col-span-1">
+                <Card className="app-surface-muted p-5 col-span-1">
                   <h4 className="font-bold text-sm mb-3">توزيع المخاطر</h4>
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
@@ -221,7 +235,7 @@ export default function ReportsPage() {
                   </div>
                   <div className="space-y-2 max-h-[350px] overflow-y-auto">
                     {(riskData.customers || []).map((c) => (
-                      <div key={c._id} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-colors ${
+                      <div key={c._id} className={`app-surface-muted flex items-center gap-3 rounded-2xl p-3 border-2 transition-colors ${
                         c.riskLevel === 'high' ? 'border-red-100 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5'
                           : c.riskLevel === 'medium' ? 'border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5'
                           : 'border-gray-100 dark:border-gray-800'
@@ -230,8 +244,8 @@ export default function ReportsPage() {
                           {c.riskScore}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm">{c.name}</p>
-                          <p className="text-[10px] text-gray-400">{c.phone} · سداد: {c.paymentRatio}% · {c.overdueInvoices} متأخر</p>
+                          <p className="font-bold text-sm text-gray-900 dark:text-white">{c.name}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-white/50">{c.phone} · سداد: {c.paymentRatio}% · {c.overdueInvoices} متأخر</p>
                         </div>
                         <div className="text-left">
                           <p className="text-sm font-bold" style={{ color: RISK_COLORS[c.riskLevel] }}>{fmt(c.outstandingBalance)} ج.م</p>
@@ -252,26 +266,26 @@ export default function ReportsPage() {
             <div className="space-y-5">
               {/* Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="p-4 border-2 border-red-100 dark:border-red-500/20">
+                <Card className="app-surface-muted p-4 border-2 border-red-100 dark:border-red-500/20">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-xs text-gray-400">متأخرة</p><p className="text-2xl font-black text-red-500">{fmt(collectionsData.overdue?.total)}<span className="text-xs mr-1">ج.م</span></p></div>
+                    <div><p className="text-xs text-gray-400 dark:text-white/60">متأخرة</p><p className="text-2xl font-black text-red-500">{fmt(collectionsData.overdue?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p></div>
                     <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-red-500" /></div>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">{collectionsData.overdue?.items?.length || 0} قسط</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{collectionsData.overdue?.items?.length || 0} قسط</p>
                 </Card>
-                <Card className="p-4 border-2 border-primary-100 dark:border-primary-500/20">
+                <Card className="app-surface-muted p-4 border-2 border-primary-100 dark:border-primary-500/20">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-xs text-gray-400">مستحقة اليوم</p><p className="text-2xl font-black text-primary-500">{fmt(collectionsData.today?.total)}<span className="text-xs mr-1">ج.م</span></p></div>
+                    <div><p className="text-xs text-gray-400 dark:text-white/60">مستحقة اليوم</p><p className="text-2xl font-black text-primary-500">{fmt(collectionsData.today?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p></div>
                     <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center"><Calendar className="w-5 h-5 text-primary-500" /></div>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">{collectionsData.today?.items?.length || 0} قسط</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{collectionsData.today?.items?.length || 0} قسط</p>
                 </Card>
-                <Card className="p-4 border-2 border-amber-100 dark:border-amber-500/20">
+                <Card className="app-surface-muted p-4 border-2 border-amber-100 dark:border-amber-500/20">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-xs text-gray-400">هذا الأسبوع</p><p className="text-2xl font-black text-amber-500">{fmt(collectionsData.week?.total)}<span className="text-xs mr-1">ج.م</span></p></div>
+                    <div><p className="text-xs text-gray-400 dark:text-white/60">هذا الأسبوع</p><p className="text-2xl font-black text-amber-500">{fmt(collectionsData.week?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p></div>
                     <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-amber-500" /></div>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">{collectionsData.week?.items?.length || 0} قسط</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{collectionsData.week?.items?.length || 0} قسط</p>
                 </Card>
               </div>
 
@@ -294,14 +308,14 @@ export default function ReportsPage() {
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {section.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/30">
-                          <div className={`w-9 h-9 rounded-lg bg-${section.color}-50 dark:bg-${section.color}-500/10 flex items-center justify-center text-${section.color}-500 font-bold text-xs`}>{item.installmentNumber || '#'}</div>
+                        <div key={idx} className="app-surface-muted flex items-center gap-3 rounded-2xl p-3">
+                          <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${COLLECTION_STYLES[section.color]?.badge || COLLECTION_STYLES.primary.badge}`}>{item.installmentNumber || '#'}</div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm">{item.customer?.name || '—'}</p>
-                            <p className="text-[10px] text-gray-400">{item.invoiceNumber} · {new Date(item.dueDate).toLocaleDateString('ar-EG')}</p>
+                            <p className="font-bold text-sm text-gray-900 dark:text-white">{item.customer?.name || '—'}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-white/50">{item.invoiceNumber} · {new Date(item.dueDate).toLocaleDateString('ar-EG')}</p>
                           </div>
                           <div className="text-left">
-                            <p className={`text-sm font-extrabold text-${section.color}-500`}>{fmt(item.remaining)} ج.م</p>
+                            <p className={`text-sm font-extrabold ${COLLECTION_STYLES[section.color]?.amount || COLLECTION_STYLES.primary.amount}`}>{fmt(item.remaining)} ج.م</p>
                             {item.paidAmount > 0 && <p className="text-[10px] text-emerald-500">دفع: {fmt(item.paidAmount)}</p>}
                           </div>
                         </div>

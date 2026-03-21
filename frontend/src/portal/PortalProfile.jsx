@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
-import { useThemeStore } from '../store';
 import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Save, Award, Star, ShoppingBag, Crown, Shield, FileText, ChevronLeft, Bell } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 
@@ -15,7 +14,6 @@ const tierConfig = {
 
 export default function PortalProfile() {
   const { customer, updateProfile, changePassword, fetchPoints, loading } = usePortalStore();
-  const { dark } = useThemeStore();
   const { t, i18n } = useTranslation('portal');
 
   const [activeSection, setActiveSection] = useState('info'); // info | password | points
@@ -99,7 +97,7 @@ export default function PortalProfile() {
   const tier = tierConfig[customer?.tier] || tierConfig.bronze;
   const TierIcon = tier.icon;
 
-  const inputClass = `w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none transition-all text-gray-900 dark:text-white`;
+  const inputClass = `w-full px-4 py-3 pr-11 rounded-xl border border-transparent app-surface focus:border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all text-gray-900 dark:text-white`;
 
   const sections = [
     { id: 'info', label: t('profile.sections.info'), icon: User },
@@ -110,7 +108,7 @@ export default function PortalProfile() {
   ];
 
   return (
-    <div className="space-y-4 pb-20" dir={i18n.dir()}>
+    <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
       {/* Profile Card */}
       <div className={`bg-gradient-to-br ${tier.color} rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
@@ -172,7 +170,7 @@ export default function PortalProfile() {
             onClick={() => setActiveSection(s.id)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeSection === s.id
               ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+              : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-100/80 dark:border-white/10 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
               }`}
           >
             <s.icon className="w-4 h-4" />
@@ -183,7 +181,7 @@ export default function PortalProfile() {
 
       {/* Info Section */}
       {activeSection === 'info' && (
-        <form onSubmit={handleUpdateProfile} className="bg-white dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+        <form onSubmit={handleUpdateProfile} className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.form.name')}</label>
             <div className="relative">
@@ -267,7 +265,7 @@ export default function PortalProfile() {
       {/* Password Section */}
       {
         activeSection === 'password' && (
-          <form onSubmit={handleChangePassword} className="bg-white dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+          <form onSubmit={handleChangePassword} className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.current')}</label>
               <div className="relative">
@@ -374,7 +372,7 @@ export default function PortalProfile() {
                 </div>
 
                 {/* Tier Info */}
-                <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+                <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
                   <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('profile.points.tier_level')}</h3>
                   <div className="flex items-start gap-3 sm:items-center">
                     <div className={`w-12 h-12 bg-gradient-to-br ${tier.color} rounded-xl flex items-center justify-center text-white`}>
@@ -410,12 +408,12 @@ export default function PortalProfile() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 text-center">
+                  <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 text-center">
                     <ShoppingBag className="w-6 h-6 text-primary-500 mx-auto mb-2" />
                     <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.invoices_count')}</p>
                     <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalInvoices || 0}</p>
                   </div>
-                  <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 text-center">
+                  <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 text-center">
                     <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
                     <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.earned_points')}</p>
                     <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalPointsEarned || 0}</p>
@@ -424,7 +422,7 @@ export default function PortalProfile() {
 
                 {/* Badges */}
                 {pointsData.badges && pointsData.badges.length > 0 && (
-                  <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
                     <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                       <Award className="w-4 h-4 text-primary-500" />
                       {t('profile.points.badges')}
@@ -450,7 +448,7 @@ export default function PortalProfile() {
       {/* Settings Sections Placeholders for explicit flow navigation */}
       {
         activeSection === 'addresses' && (
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl p-5 sm:p-8 border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+          <div className="app-surface rounded-2xl p-5 sm:p-8 border border-gray-100/80 dark:border-white/10 shadow-sm text-center">
             <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('profile.addresses_page.title')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{t('profile.addresses_page.desc')}</p>
@@ -463,7 +461,7 @@ export default function PortalProfile() {
 
       {
         activeSection === 'settings' && (
-          <div className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm overflow-hidden divide-y divide-gray-100/80 dark:divide-white/10">
             <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.offers_title')}</h4>

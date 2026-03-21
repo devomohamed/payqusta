@@ -30,6 +30,14 @@ npm run test:e2e
 npm run test:smoke
 ```
 
+Run from `frontend/`:
+
+```bash
+npm run sanity:check
+npm run smoke:routes
+npm run build
+```
+
 Command intent:
 
 - `test:unit`
@@ -42,6 +50,10 @@ Command intent:
   Runs DB-backed end-to-end suites. Requires `TEST_MONGODB_URI`.
 - `test`
   Full Jest run with coverage for local deeper inspection.
+- `sanity:check`
+  Detects broken encoding markers and forbidden temporary files in the frontend tree.
+- `smoke:routes`
+  Verifies that critical surface routes remain wired in `frontend/src/App.jsx` and still match `docs/feature-boundaries.md`.
 
 ## CI Workflow
 
@@ -56,6 +68,8 @@ What it does:
 - runs on `push` to `main`/`master`
 - runs on `pull_request`
 - executes `npm run test:ci`
+- executes `npm run sanity:check`
+- executes `npm run smoke:routes`
 - executes the frontend production build
 
 CI environment variables are kept minimal on purpose:
@@ -93,7 +107,14 @@ If `TEST_MONGODB_URI` is not set, the DB-backed suite is skipped safely.
 - public tenant resolution via header or store subdomain
 - default role permission enforcement
 - custom role permission lookup
-- admin full-access behavior
+- tenant-admin full-access behavior as a frozen policy
+- user branch-assignment validation and custom-role assignment helpers
+- admin user CRUD regression for custom roles and explicit branch scope payloads
+- branch commerce settings regression for fulfillment-center creation and manager auto-scoping
+- tenant online fulfillment settings normalization against active branch participation
+- branch-aware inventory allocation ordering and online stock eligibility
+- line-level branch restoration during cancel and return lifecycle
+- admin audit-log route filtering by `resource` and `resourceId`
 - lightweight health + malformed login API regression
 - guest order confirmation and guest order tracking regression
 - Bosta shipping webhook sync for `in_transit` and `returned` updates
@@ -108,6 +129,10 @@ If `TEST_MONGODB_URI` is not set, the DB-backed suite is skipped safely.
 - portal support-ticket creation regression with admin notification fan-out
 - DB-backed sales flow from vendor login to full invoice settlement
 - DB-backed tenant isolation verification on real customer reads
+- DB-backed storefront allocation to the configured online fulfillment branch
+- DB-backed portal allocation to the customer branch with inventory restoration on cancel
+- DB-backed owner flow for branch creation, custom roles, scoped employees, and audit visibility
+- DB-backed owner flow for online fulfillment settings plus branch-level product availability persistence
 - protected ops status and ops metrics route coverage
 - security-header presence and auth rate-limit regression coverage
 
@@ -116,7 +141,7 @@ If `TEST_MONGODB_URI` is not set, the DB-backed suite is skipped safely.
 These are the next Phase 2 targets after the current baseline:
 
 - real tenant-isolation tests against DB-backed reads and writes
-- storefront / portal / admin regression flows
+- storefront / portal / admin regression flows beyond unit-level allocation coverage
 - deeper portal support flows
 - subscription enforcement and quota coverage
 - broader E2E business flows with seeded fixtures beyond the current sales path

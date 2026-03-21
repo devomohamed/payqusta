@@ -21,6 +21,7 @@ import BarcodeScanner from '../BarcodeScanner';
 import BarcodeLabel from '../BarcodeLabel';
 import CategorySelector from '../CategorySelector';
 import SeoAnalyzer from './SeoAnalyzer';
+import TagInput from '../TagInput';
 import { categoriesApi, productsApi, useAuthStore } from '../../store';
 import { buildBarcodeSvg, downloadBarcodePng, printBarcodeLabel, resolveBarcodePayload } from '../../utils/barcodeUtils';
 import { getIconForCategory, getCategoryIconSuggestions, DEFAULT_CATEGORY_ICON } from '../../utils/aiHelper';
@@ -67,6 +68,22 @@ export default function ProductBasicsStep({
   const selectedCategory = categories.find((category) => category?._id === form.category);
   const subcategories = selectedCategory?.children || [];
   const rootCategories = categories.filter((category) => category?._id && category._id !== 'uncategorized');
+
+  // Multi-level subcategory: find which level-2 item owns the current form.subcategory
+  const findSelectedLevel2 = () => {
+    // Direct level-2 match
+    const direct = subcategories.find((s) => s._id === form.subcategory);
+    if (direct) return direct;
+    // form.subcategory might be a level-3 child of a level-2
+    for (const sub of subcategories) {
+      if (sub.children?.find((c) => c._id === form.subcategory)) return sub;
+    }
+    return null;
+  };
+  const selectedLevel2 = findSelectedLevel2();
+  const level3Subcats = selectedLevel2?.children || [];
+  const level2Value = selectedLevel2?._id || '';
+  const level3Value = level3Subcats.some((c) => c._id === form.subcategory) ? form.subcategory : '';
   const iconSuggestions = getCategoryIconSuggestions(categoryForm.name, 10);
 
   const handleBarcodeScan = (payload) => {
@@ -92,7 +109,7 @@ export default function ProductBasicsStep({
 
   const handleGenerateLocalBarcode = async () => {
     if (!productId) {
-      toast.error('احفظ المنتج أولاً ثم أعد توليد الباركود المحلي');
+      toast.error('احفظ المنتج أولًا ثم أعد توليد الباركود المحلي.');
       return;
     }
 
@@ -108,9 +125,9 @@ export default function ProductBasicsStep({
         localBarcodeType,
       }));
 
-      toast.success('تم توليد الباركود المحلي');
+      toast.success('تم توليد الباركود المحلي.');
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'تعذر توليد الباركود المحلي');
+      toast.error(error?.response?.data?.message || 'تعذر توليد الباركود المحلي.');
     } finally {
       setGeneratingLocalBarcode(false);
     }
@@ -129,7 +146,7 @@ export default function ProductBasicsStep({
         `${activeBarcodePayload.source || 'barcode'}-${activeBarcodePayload.value}.png`
       );
     } catch {
-      toast.error('تعذر تنزيل صورة الباركود');
+      toast.error('تعذر تنزيل صورة الباركود.');
     }
   };
 
@@ -143,8 +160,8 @@ export default function ProductBasicsStep({
 
     printBarcodeLabel({
       svgMarkup,
-      title: form.name || 'Barcode Label',
-      subtitle: activeBarcodePayload.source === 'local' ? 'Local Barcode' : 'International Barcode',
+      title: form.name || 'ملصق باركود',
+      subtitle: activeBarcodePayload.source === 'local' ? 'باركود محلي' : 'باركود دولي',
       caption: activeBarcodePayload.value,
     });
   };
@@ -171,12 +188,12 @@ export default function ProductBasicsStep({
 
   const handleCreateCategory = async () => {
     if (!categoryForm.name.trim()) {
-      toast.error('يرجى إدخال اسم القسم');
+      toast.error('يرجى إدخال اسم القسم.');
       return;
     }
 
     if (categoryMode === 'child' && !categoryForm.parent) {
-      toast.error('اختر القسم الرئيسي أولاً');
+      toast.error('اختر القسم الرئيسي أولًا.');
       return;
     }
 
@@ -204,10 +221,10 @@ export default function ProductBasicsStep({
         }));
       }
 
-      toast.success('تمت إضافة القسم');
+      toast.success('تمت إضافة القسم بنجاح.');
       setShowCategoryModal(false);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'تعذر إنشاء القسم');
+      toast.error(error?.response?.data?.message || 'تعذر إنشاء القسم.');
     } finally {
       setSavingCategory(false);
     }
@@ -256,10 +273,11 @@ export default function ProductBasicsStep({
             />
 
             {form.category && subcategories.length > 0 ? (
-              <div className="space-y-1.5 animate-fade-in">
+              <div className="space-y-2 animate-fade-in">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">القسم الفرعي</label>
+                {/* Level 2 dropdown */}
                 <select
-                  value={form.subcategory || ''}
+                  value={level2Value}
                   onChange={(event) => setForm((prev) => ({ ...prev, subcategory: event.target.value }))}
                   className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   dir="rtl"
@@ -271,6 +289,22 @@ export default function ProductBasicsStep({
                     </option>
                   ))}
                 </select>
+                {/* Level 3 dropdown — only shown when selected level-2 has children */}
+                {level3Subcats.length > 0 && (
+                  <select
+                    value={level3Value}
+                    onChange={(event) => setForm((prev) => ({ ...prev, subcategory: event.target.value || level2Value }))}
+                    className="w-full rounded-xl border-2 border-primary-100 bg-primary-50/30 px-4 py-3 text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-primary-900/40 dark:bg-primary-950/20 dark:text-white"
+                    dir="rtl"
+                  >
+                    <option value="">بدون قسم أكثر تحديداً</option>
+                    {level3Subcats.map((sub) => (
+                      <option key={sub._id} value={sub._id}>
+                        {sub.icon ? `${sub.icon} ` : ''}{sub.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             ) : null}
           </div>
@@ -358,7 +392,7 @@ export default function ProductBasicsStep({
                       className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-50 px-4 py-3 font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400"
                     >
                       <Camera className="w-4 h-4" />
-                      Scan
+                      مسح
                     </button>
                   </div>
                 </div>
@@ -401,7 +435,7 @@ export default function ProductBasicsStep({
                       className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200"
                     >
                       <Camera className="w-4 h-4" />
-                      Scan
+                      مسح
                     </button>
                   </div>
                 </div>
@@ -441,9 +475,9 @@ export default function ProductBasicsStep({
                         <p className="mt-2 text-sm font-black text-gray-900 dark:text-white">
                           {shouldAutoGenerateAfterSave
                             ? (storeAutoGeneratesLocalBarcode
-                              ? 'إعدادات المتجر الحالية ستولّد الباركود المحلي تلقائيًا عند الحفظ.'
+                              ? 'إعدادات المتجر الحالية ستولد الباركود المحلي تلقائيًا عند الحفظ.'
                               : 'سيتم توليد الباركود المحلي تلقائيًا بمجرد حفظ المنتج.')
-                            : 'التوليد اليدوي سيتاح لك من نفس الشاشة بعد أول حفظ.'}
+                            : 'سيصبح التوليد اليدوي متاحًا لك من نفس الشاشة بعد أول حفظ.'}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
                           {shouldAutoGenerateAfterSave
@@ -525,8 +559,8 @@ export default function ProductBasicsStep({
                 <BarcodeLabel
                   value={activeBarcodePayload.value}
                   format={activeBarcodePayload.type === 'QR_CODE' ? 'QR_CODE' : 'CODE128'}
-                  title={activeBarcodePayload.source === 'local' ? 'LOCAL BARCODE' : 'INTERNATIONAL BARCODE'}
-                  subtitle={form.name || 'Barcode Label'}
+                      title={activeBarcodePayload.source === 'local' ? 'باركود محلي' : 'باركود دولي'}
+                      subtitle={form.name || 'ملصق باركود'}
                   caption={activeBarcodePayload.value}
                   className="flex-1"
                 />
@@ -540,7 +574,7 @@ export default function ProductBasicsStep({
                     طباعة الملصق
                   </Button>
                   <p className="text-xs text-gray-500">
-                    الطباعة هنا تعتمد على Browser Print وقالب طباعة للملصقات، بدون silent printing.
+                    الطباعة هنا تعتمد على متصفح الجهاز وقالب طباعة للملصقات، بدون طباعة صامتة.
                   </p>
                 </div>
               </div>
@@ -553,22 +587,13 @@ export default function ProductBasicsStep({
         <SectionHeader icon={Search} title="تحسين محركات البحث (SEO)" subtitle="الكلمات المفتاحية والوصف الظاهرين في نتائج البحث" />
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">الكلمات المفتاحية (Keywords)</label>
-            <input
-              type="text"
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">الكلمات المفتاحية</label>
+            <TagInput
               value={form.seoTitle || ''}
-              onChange={(event) => setForm((prev) => ({ ...prev, seoTitle: event.target.value }))}
-              placeholder="مثال: موبايل, ايفون, هاتف ذكي"
-              maxLength={70}
-              className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              dir="rtl"
+              onChange={(newValue) => setForm((prev) => ({ ...prev, seoTitle: newValue }))}
+              placeholder="مثال: موبايل، آيفون، هاتف ذكي"
+              maxTags={10}
             />
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>افصل بين الكلمات بفاصلة (,)</span>
-              <span className={(form.seoTitle?.length || 0) > 60 ? 'text-orange-500' : ''}>
-                {form.seoTitle?.length || 0}/70
-              </span>
-            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -592,24 +617,24 @@ export default function ProductBasicsStep({
 
           {(form.seoTitle || form.name || form.seoDescription || form.description) ? (
             <div className="flex flex-col gap-2.5 mt-4">
-              <p className="text-xs font-black text-gray-500 flex items-center gap-1.5 px-1"><Search className="w-3.5 h-3.5" /> معاينة في محرك البحث Google</p>
+              <p className="text-xs font-black text-gray-500 flex items-center gap-1.5 px-1"><Search className="w-3.5 h-3.5" /> معاينة في نتائج بحث جوجل</p>
               <div className="rounded-2xl border border-gray-200 bg-[#202124] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] text-right font-sans" dir="rtl">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-7 h-7 bg-[#303134] border border-[#3c4043] rounded-full flex items-center justify-center shrink-0 overflow-hidden">
                     {tenant?.logo ? (
-                      <img src={tenant.logo} alt="Store Logo" className="w-full h-full object-cover" />
+                      <img src={tenant.logo} alt="شعار المتجر" className="w-full h-full object-cover" />
                     ) : (
                       <Globe className="w-4 h-4 text-gray-400" />
                     )}
                   </div>
                   <div className="flex flex-col leading-tight pt-0.5 overflow-hidden w-full">
                     <span className="text-[14px] font-normal text-[#dadce0] truncate">
-                      {tenant?.storeName || tenant?.name || 'الاطنلطي للخدمات التقنيه'}
+                      {tenant?.storeName || tenant?.name || 'متجرك الإلكتروني'}
                     </span>
                     <div className="flex items-center justify-start gap-1.5 text-[12px] text-[#bdc1c6] font-normal mt-0.5 max-w-full overflow-hidden truncate">
                       <span dir="ltr" className="truncate">{typeof window !== 'undefined' ? window.location.hostname : 'payqusta.store'}</span>
                       <span className="text-[10px] opacity-70 mt-0.5 shrink-0">›</span>
-                      <span dir="ltr" className="shrink-0 truncate">products</span>
+                      <span className="shrink-0 truncate">المنتجات</span>
                     </div>
                   </div>
                 </div>
@@ -617,7 +642,7 @@ export default function ProductBasicsStep({
                 <div className="flex items-start gap-3">
                   <div className="w-[104px] h-[104px] rounded-xl bg-[#303134] shrink-0 border border-[#3c4043] overflow-hidden flex items-center justify-center mt-1">
                     {form.primaryImagePreview ? (
-                      <img src={form.primaryImagePreview} alt="Product" className="w-full h-full object-cover" />
+                      <img src={form.primaryImagePreview} alt="صورة المنتج" className="w-full h-full object-cover" />
                     ) : (
                       <div className="text-gray-500 flex flex-col items-center justify-center gap-1 opacity-60">
                         <ImageIcon className="w-6 h-6" strokeWidth={1.5} />
@@ -630,7 +655,7 @@ export default function ProductBasicsStep({
                       {form.seoTitle ? form.seoTitle.replace(/,/g, ' | ') : form.name}
                     </h3>
                     <p className="text-[14px] text-[#bdc1c6] line-clamp-2 leading-relaxed">
-                      {form.seoDescription || (form.description ? form.description.replace(/<[^>]*>/g, '').slice(0, 155) : 'لا يوجد وصف بعد')}
+                      {form.seoDescription || (form.description ? form.description.replace(/<[^>]*>/g, '').slice(0, 155) : 'لا يوجد وصف بعد.')}
                     </p>
                     {form.price && (
                       <p className="text-[14px] text-[#bdc1c6] mt-1 line-clamp-1">

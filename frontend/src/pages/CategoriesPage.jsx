@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Search, FolderTree, Edit, Trash2, ChevronRight, ChevronDown, Package, Check, X, FolderPlus, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { categoriesApi, productsApi, useAuthStore } from '../store';
@@ -30,6 +30,7 @@ export default function CategoriesPage() {
     const [treeSearch, setTreeSearch] = useState('');
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const treeRef = useRef(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -90,6 +91,16 @@ export default function CategoriesPage() {
     }, [selectedCategoryId, fetchProductsForCategory]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (treeRef.current && !treeRef.current.contains(event.target)) {
+                setIsTreeOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleToggleExpand = (id) => {
         const next = new Set(expandedIds);
@@ -264,12 +275,12 @@ export default function CategoriesPage() {
                         </Button>
                     )}
 
-                    <div className="relative w-full lg:w-80">
+                    <div className="relative w-full lg:w-80" ref={treeRef}>
                         <button
                             onClick={() => setIsTreeOpen(!isTreeOpen)}
                             className={`
                                 w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border-2 transition-all duration-300
-                                ${isTreeOpen ? 'border-primary-500 ring-4 ring-primary-500/10' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:border-primary-500/30'}
+                                ${isTreeOpen ? 'border-primary-500 ring-4 ring-primary-500/10' : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 hover:border-primary-500/30'}
                             `}
                         >
                             <div className="flex items-center gap-3">
@@ -297,7 +308,7 @@ export default function CategoriesPage() {
                                             value={treeSearch}
                                             onChange={e => setTreeSearch(e.target.value)}
                                             placeholder="بحث سريـع..."
-                                            className="w-full pr-10 pl-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 text-sm focus:border-primary-500 transition-all outline-none"
+                                            className="w-full pr-10 pl-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 text-sm focus:border-primary-500 transition-all outline-none"
                                         />
                                     </div>
                                     <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
@@ -325,11 +336,11 @@ export default function CategoriesPage() {
                             <p className="text-sm text-gray-500 mb-6">{selectedCategory?.description || 'لا يوجد وصف لهذا القسم.'}</p>
 
                             <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">المنتجات</p>
                                     <p className="text-xl font-black text-primary-500">{categoryProducts.length}</p>
                                 </div>
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">الفرعية</p>
                                     <p className="text-xl font-black text-blue-500">{selectedCategory?.children?.length || 0}</p>
                                 </div>
@@ -377,7 +388,7 @@ export default function CategoriesPage() {
                         <Badge variant="info">مجموع: {categoryProducts.length}</Badge>
                     </div>
 
-                    <Card className="min-h-[400px] border-2 border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/10 backdrop-blur-xl p-6">
+                    <Card className="min-h-[400px] border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-6">
                         {loadingProducts ? (
                             <LoadingSpinner text="جاري جلب قائمة المنتجات..." />
                         ) : categoryProducts.length === 0 ? (

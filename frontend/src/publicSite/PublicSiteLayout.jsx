@@ -1,7 +1,8 @@
 ﻿import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, X, ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Menu, Sparkles, X } from 'lucide-react';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
+import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 import {
   brandArabicName,
   brandDisplayName,
@@ -14,8 +15,8 @@ function navLinkClass({ isActive }) {
   return [
     'rounded-full px-4 py-2 text-sm font-bold transition-all duration-200',
     isActive
-      ? 'bg-slate-950 text-white shadow-lg shadow-slate-950/10'
-      : 'text-slate-600 hover:bg-white hover:text-slate-950',
+      ? 'app-surface bg-[color:var(--surface-elevated)] app-text-body shadow-lg shadow-black/5 dark:shadow-black/20'
+      : 'app-text-soft hover:bg-black/[0.04] hover:text-[color:var(--text-strong)] dark:hover:bg-white/[0.06] dark:hover:text-white',
   ].join(' ');
 }
 
@@ -23,23 +24,24 @@ export default function PublicSiteLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[radial-gradient(circle_at_top_right,_rgba(245,158,11,0.14),_transparent_24%),radial-gradient(circle_at_top_left,_rgba(16,185,129,0.11),_transparent_26%),linear-gradient(180deg,#f8fafc_0%,#f8fafc_42%,#ffffff_100%)] text-slate-950">
+    <div className="app-shell-bg min-h-screen overflow-x-clip text-slate-950 transition-colors dark:text-slate-50">
       <div
-        className="pointer-events-none fixed inset-0 opacity-[0.05]"
+        className="pointer-events-none fixed inset-0 opacity-[0.05] dark:opacity-[0.08]"
         style={{
-          backgroundImage: 'linear-gradient(rgba(15,23,42,0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.55) 1px, transparent 1px)',
+          backgroundImage:
+            'linear-gradient(rgba(15,23,42,0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.55) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
         }}
       />
 
-      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl">
+      <header className="app-surface-glass sticky top-0 z-40 border-b">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-3 py-3.5 sm:py-4">
-            <Link to="/" className="relative flex min-w-0 items-center gap-3">
+            <Link to="/" className="relative flex min-w-0 items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
               <AnimatedBrandLogo src="/logo-square.png" alt="PayQusta" size="sm" containerClassName="shrink-0" />
               <div className="min-w-0 text-right">
                 <p className="truncate text-base font-black tracking-tight sm:text-lg">{brandDisplayName}</p>
-                <p className="truncate text-[11px] font-medium text-slate-500 sm:text-xs">منصة تشغيل ونمو للمتاجر</p>
+                <p className="app-text-muted truncate text-[11px] font-medium sm:text-xs">منصة تشغيل ونمو للمتاجر</p>
               </div>
             </Link>
 
@@ -52,15 +54,16 @@ export default function PublicSiteLayout({ children }) {
             </nav>
 
             <div className="hidden items-center gap-3 lg:flex">
+              <ThemeModeSwitcher compact className="hidden xl:block" />
               <Link
                 to="/login"
-                className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-black text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
+                className="app-surface-muted app-text-body rounded-full px-5 py-2.5 text-sm font-black transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
               >
                 تسجيل الدخول
               </Link>
               <Link
                 to="/login?mode=register"
-                className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition-transform hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-full bg-primary-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-primary-500/20 transition-transform hover:-translate-y-0.5 hover:bg-primary-700"
               >
                 ابدأ الآن
                 <ArrowLeft className="h-4 w-4" />
@@ -70,8 +73,9 @@ export default function PublicSiteLayout({ children }) {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((open) => !open)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
+              className="app-surface inline-flex h-11 w-11 items-center justify-center rounded-2xl text-slate-700 dark:text-slate-100 lg:hidden"
               aria-label="فتح القائمة"
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -79,10 +83,10 @@ export default function PublicSiteLayout({ children }) {
         </div>
 
         {mobileMenuOpen && (
-          <div className="border-t border-slate-200 bg-white/95 lg:hidden">
+          <div className="border-t border-[color:var(--surface-border)] lg:hidden">
             <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-right text-xs font-black uppercase tracking-[0.18em] text-slate-400">التصفح</p>
+              <div className="app-surface rounded-[1.75rem] p-4">
+                <p className="app-text-muted text-right text-xs font-black uppercase tracking-[0.18em]">التصفح</p>
                 <div className="mt-4 grid gap-2">
                   {publicNavLinks.map((item) => (
                     <NavLink
@@ -97,25 +101,29 @@ export default function PublicSiteLayout({ children }) {
                   ))}
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-right">
-                  <p className="text-sm font-black text-slate-900">واجهة عامة + تشغيل داخلي</p>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
-                    {brandArabicName} يجمع بين موقع عام واضح للزائر وتجربة تشغيل فعلية للمتجر من الداخل.
+                <div className="app-surface-muted mt-4 rounded-2xl p-4 text-right">
+                  <p className="text-sm font-black text-slate-900 dark:text-white">واجهة عامة + تشغيل داخلي</p>
+                  <p className="app-text-soft mt-2 text-xs leading-6">
+                    {brandArabicName} يجمع بين موقع واضح للزائر وتجربة تشغيل فعلية للمتجر من الداخل.
                   </p>
+                </div>
+
+                <div className="mt-4">
+                  <ThemeModeSwitcher compact />
                 </div>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   <Link
                     to="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-black text-slate-700"
+                    className="app-surface-muted app-text-body rounded-full px-4 py-3 text-center text-sm font-black"
                   >
                     تسجيل الدخول
                   </Link>
                   <Link
                     to="/login?mode=register"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-center text-sm font-black text-white"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3 text-center text-sm font-black text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700"
                   >
                     ابدأ الآن
                     <ArrowLeft className="h-4 w-4" />
@@ -127,7 +135,7 @@ export default function PublicSiteLayout({ children }) {
                     <NavLink
                       key={item.to}
                       to={item.to}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-bold text-slate-700"
+                      className="app-surface-muted app-text-body rounded-2xl px-4 py-3 text-center text-sm font-bold transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.label}
@@ -142,10 +150,10 @@ export default function PublicSiteLayout({ children }) {
 
       <main className="relative z-10 overflow-x-clip">{children}</main>
 
-      <footer className="relative z-10 border-t border-slate-200 bg-white/90">
+      <footer className="relative z-10 border-t border-[color:var(--surface-border)] bg-transparent">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
           <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
-            <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:p-8">
+            <div className="overflow-hidden rounded-[2rem] border border-[color:var(--surface-border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.97),rgba(30,41,59,0.94))] p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:border-white/10 sm:p-8">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-black text-amber-200">
                 <Sparkles className="h-3.5 w-3.5" />
                 جاهز لتجربة PayQusta
@@ -174,40 +182,52 @@ export default function PublicSiteLayout({ children }) {
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">التصفح</p>
+              <div className="app-surface rounded-[1.75rem] p-6 text-right">
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">التصفح</p>
                 <div className="mt-4 flex flex-col gap-3">
                   {publicNavLinks.map((item) => (
-                    <NavLink key={item.to} to={item.to} className="text-base font-bold text-slate-700 transition-colors hover:text-slate-950" end={item.to === '/'}>
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className="app-text-body text-base font-bold transition-colors hover:text-[color:var(--text-strong)] dark:hover:text-white"
+                      end={item.to === '/'}
+                    >
                       {item.label}
                     </NavLink>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 text-right shadow-sm">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">الثقة والسياسات</p>
+              <div className="app-surface rounded-[1.75rem] p-6 text-right">
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الثقة والسياسات</p>
                 <div className="mt-4 flex flex-col gap-3">
                   {publicUtilityLinks.map((item) => (
-                    <NavLink key={item.to} to={item.to} className="text-base font-bold text-slate-700 transition-colors hover:text-slate-950">
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className="text-base font-bold text-slate-700 transition-colors hover:text-slate-950 dark:text-slate-100 dark:hover:text-white"
+                    >
                       {item.label}
                     </NavLink>
                   ))}
                 </div>
-                <p className="mt-5 text-sm leading-7 text-slate-500">
-                  هذه الصفحات تساعد الزائر على فهم الشروط، الخصوصية، ومسار التواصل قبل التسجيل أو الإطلاق.
+                <p className="app-text-soft mt-5 text-sm leading-7">
+                  هذه الصفحات تساعد الزائر على فهم الشروط والخصوصية ومسار التواصل قبل التسجيل أو الإطلاق.
                 </p>
               </div>
 
-              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 text-right shadow-sm sm:col-span-2 xl:col-span-1">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">عن البراند</p>
-                <p className="mt-4 text-base font-black text-slate-950">{brandDisplayName}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
+              <div className="app-surface-muted rounded-[1.75rem] p-6 text-right sm:col-span-2 xl:col-span-1">
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">عن البراند</p>
+                <p className="mt-4 text-base font-black app-text-body">{brandDisplayName}</p>
+                <p className="app-text-soft mt-2 text-sm leading-7">
                   {brandArabicName} هو الاسم العربي المتداول لنفس البراند. الواجهة العامة هنا موجودة لتشرح القيمة التجارية بوضوح وتدعم الظهور والبحث.
                 </p>
                 <div className="mt-5 grid gap-2">
                   {platformHighlights.map((item) => (
-                    <div key={item} className="rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">
+                    <div
+                      key={item}
+                      className="app-surface rounded-2xl border border-[color:var(--surface-border)] px-4 py-3 text-sm font-bold app-text-body shadow-sm dark:shadow-none"
+                    >
                       {item}
                     </div>
                   ))}
@@ -216,7 +236,7 @@ export default function PublicSiteLayout({ children }) {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col gap-2 border-t border-slate-200 pt-6 text-right text-sm font-medium text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-8 flex flex-col gap-2 border-t border-[color:var(--surface-border)] pt-6 text-right text-sm font-medium text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
             <p>PayQusta © 2026</p>
             <p>واجهة عامة قابلة للفهرسة وتجربة مناسبة للموبايل والسطح المكتبي.</p>
           </div>

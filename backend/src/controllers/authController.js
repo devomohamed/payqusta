@@ -17,6 +17,7 @@ const catchAsync = require('../utils/catchAsync');
 const { getUserPermissions } = require('../middleware/checkPermission');
 const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 const { processImage, deleteFile } = require('../middleware/upload');
+const { resolveUserRoleAssignment, resolveUserBranchAssignment } = require('../utils/userAccessHelpers');
 
 class AuthController {
   /**
@@ -152,6 +153,8 @@ class AuthController {
     const user = await User.findById(req.user._id)
       .populate('tenant', 'name slug branding settings subscription customDomain customDomainStatus customDomainLastCheckedAt')
       .populate('branch', 'name')
+      .populate('primaryBranch', 'name')
+      .populate('assignedBranches', 'name')
       .populate('customRole');
 
     // Get user permissions
@@ -347,7 +350,7 @@ class AuthController {
    * Add a user to the tenant (supplier, coordinator, etc.)
    */
   addUser = catchAsync(async (req, res, next) => {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, customRole, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
 
     // Basic role string validation
     if (!role || typeof role !== 'string') {
@@ -364,13 +367,26 @@ class AuthController {
       return next(AppError.badRequest('البريد الإلكتروني موجود بالفعل في هذا المتجر'));
     }
 
+    const [roleAssignment, branchAssignment] = await Promise.all([
+      resolveUserRoleAssignment({ tenantId: req.tenantId, role, customRole }),
+      resolveUserBranchAssignment({
+        tenantId: req.tenantId,
+        branch,
+        primaryBranch,
+        assignedBranches,
+        branchAccessMode,
+      }),
+    ]);
+
     const user = await User.create({
       name,
       email,
       phone,
       password,
-      role,
+      role: roleAssignment.role,
+      customRole: roleAssignment.customRole,
       tenant: req.tenantId,
+      ...(branchAssignment || {}),
     });
 
     ApiResponse.created(res, {
@@ -399,6 +415,10 @@ class AuthController {
 
     const [users, total] = await Promise.all([
       User.find(filter)
+        .populate('branch', 'name')
+        .populate('primaryBranch', 'name')
+        .populate('assignedBranches', 'name')
+        .populate('customRole', 'name')
         .sort('-createdAt')
         .skip(skip)
         .limit(limit)
@@ -415,16 +435,42 @@ class AuthController {
    */
   updateTenantUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const { name, phone, role, password, isActive } = req.body;
+    const { name, phone, role, customRole, password, isActive, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
 
     const user = await User.findOne({ _id: id, tenant: req.tenantId });
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (role) user.role = role;
     if (typeof isActive === 'boolean') user.isActive = isActive;
     if (password) user.password = password;
+
+    if (role !== undefined || customRole !== undefined) {
+      const roleAssignment = await resolveUserRoleAssignment({
+        tenantId: req.tenantId,
+        role: role !== undefined ? role : user.role,
+        customRole,
+        fallbackRole: user.role || 'vendor',
+      });
+      user.role = roleAssignment.role;
+      user.customRole = roleAssignment.customRole;
+    }
+
+    const branchAssignment = await resolveUserBranchAssignment({
+      tenantId: req.tenantId,
+      branch,
+      primaryBranch,
+      assignedBranches,
+      branchAccessMode,
+      existingUser: user,
+    });
+
+    if (branchAssignment) {
+      user.branch = branchAssignment.branch;
+      user.primaryBranch = branchAssignment.primaryBranch;
+      user.assignedBranches = branchAssignment.assignedBranches;
+      user.branchAccessMode = branchAssignment.branchAccessMode;
+    }
 
     await user.save();
 

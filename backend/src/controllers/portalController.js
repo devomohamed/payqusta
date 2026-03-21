@@ -7,14 +7,18 @@ const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const Invoice = require('../models/Invoice');
 const Tenant = require('../models/Tenant');
+const Branch = require('../models/Branch');
 const ReturnRequest = require('../models/ReturnRequest');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const Helpers = require('../utils/helpers');
 const {
+  buildOnlineBranchCandidateIds,
   collectUniqueBranchIds,
   deductInventoryAllocation,
+  getBranchAvailableQuantity,
+  getOnlineFulfillmentSettings,
   resolveInventoryAllocation,
 } = require('../utils/inventoryAllocation');
 const { calculateTenantShippingSummary } = require('../utils/shippingHelpers');
@@ -27,65 +31,18 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
-
-const PLATFORM_ROOT_DOMAIN = (process.env.PLATFORM_ROOT_DOMAIN || 'payqusta.store')
-  .trim()
-  .toLowerCase();
-const RESERVED_PLATFORM_SUBDOMAINS = new Set(
-  (process.env.RESERVED_PLATFORM_SUBDOMAINS || 'www,api,admin,app,portal,mail')
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean)
-);
+const {
+  getPlatformSubdomain,
+  getRequestHost,
+  isPlatformHost,
+  markCustomDomainConnected,
+} = require('../utils/tenantDomainHelpers');
 
 // Helper to generate token for customer
 const generateToken = (id) => {
   return jwt.sign({ id, role: 'customer' }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
-};
-
-const getRequestHost = (req) => {
-  const forwardedHost = req.headers['x-forwarded-host'];
-  const rawHost = forwardedHost || req.headers.host || '';
-  return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
-};
-
-const getPlatformSubdomain = (host) => {
-  if (!host || !PLATFORM_ROOT_DOMAIN) return null;
-  if (host === PLATFORM_ROOT_DOMAIN) return null;
-
-  const suffix = `.${PLATFORM_ROOT_DOMAIN}`;
-  if (!host.endsWith(suffix)) return null;
-
-  const candidate = host.slice(0, -suffix.length);
-  if (!candidate || candidate.includes('.')) return null;
-  if (RESERVED_PLATFORM_SUBDOMAINS.has(candidate)) return null;
-
-  return candidate;
-};
-
-const isPlatformHost = (host) => {
-  if (!host) return true;
-  return host === 'localhost' ||
-    host === '127.0.0.1' ||
-    host === PLATFORM_ROOT_DOMAIN ||
-    !!getPlatformSubdomain(host) ||
-    host.endsWith('.run.app') ||
-    host.endsWith('.a.run.app');
-};
-
-const markCustomDomainConnected = (tenantId) => {
-  if (!tenantId) return;
-  Tenant.updateOne(
-    { _id: tenantId },
-    {
-      $set: {
-        customDomainStatus: 'connected',
-        customDomainLastCheckedAt: new Date(),
-      },
-    }
-  ).catch(() => { });
 };
 
 // Helper to resolve tenant from slug, header, subdomain, or custom domain
@@ -115,7 +72,7 @@ const resolveTenantContext = async (req) => {
     attemptedScopedLookup = true;
     tenant = await Tenant.findOne({ customDomain: requestHost, isActive: true });
     if (tenant) {
-      markCustomDomainConnected(tenant._id);
+      markCustomDomainConnected(Tenant, tenant._id);
     }
   }
 
@@ -1174,52 +1131,103 @@ class PortalController {
     const { items, shippingAddress, shippingSummary, notes, signature, couponCode } = req.body;
     const customer = await Customer.findById(req.user.id).populate('tenant', 'settings');
     const installmentSettings = customer?.tenant?.settings?.installments || {};
-    const preferredBranchId = customer?.branch || null;
-    const strictPreferredBranch = Boolean(preferredBranchId);
+    const onlineFulfillmentSettings = getOnlineFulfillmentSettings(customer?.tenant);
 
     if (customer.salesBlocked) {
-      return next(AppError.forbidden(`عذراً، الشراء موقوف حالياً: ${customer.salesBlockedReason || 'يرجى مراجعة الإدارة'}`));
+      return next(AppError.forbidden('Purchasing is currently blocked: ' + (customer.salesBlockedReason || 'Please contact support.')));
     }
 
     if (!items || items.length === 0) {
-      return next(AppError.badRequest('السلة فارغة'));
+      return next(AppError.badRequest('The cart is empty'));
     }
 
-    // Validate shipping address
     if (!shippingAddress?.phone) {
-      return next(AppError.badRequest('رقم التليفون للتوصيل مطلوب'));
+      return next(AppError.badRequest('Shipping phone is required'));
     }
+
     if (!shippingAddress?.address) {
-      return next(AppError.badRequest('عنوان التوصيل مطلوب'));
+      return next(AppError.badRequest('Shipping address is required'));
     }
 
     let totalAmount = 0;
     const invoiceItems = [];
     const productUpdates = [];
+    const preparedItems = [];
 
     for (const item of items) {
       const product = await Product.findOne({
         _id: item.productId,
         tenant: customer.tenant._id || customer.tenant,
         isActive: true,
-        isSuspended: { $ne: true }
+        isSuspended: { $ne: true },
       });
-      if (!product) return next(AppError.badRequest(`المنتج غير متوفر`));
 
-      const qty = Number(item.quantity) || 1;
+      if (!product) {
+        return next(AppError.badRequest('The selected product is not available'));
+      }
+
+      preparedItems.push({
+        item,
+        product,
+        qty: Math.max(1, Number(item.quantity) || 1),
+      });
+    }
+
+    const onlineBranches = await Branch.find({
+      tenant: customer.tenant._id || customer.tenant,
+      isActive: true,
+    }).select('_id participatesInOnlineOrders isFulfillmentCenter onlinePriority');
+
+    const candidateBranchIds = buildOnlineBranchCandidateIds({
+      tenant: customer.tenant,
+      branches: onlineBranches,
+      source: 'portal',
+      customerBranchId: customer?.branch || null,
+    });
+
+    if (candidateBranchIds.length === 0) {
+      return next(AppError.badRequest('No online-enabled branch is currently available for portal orders'));
+    }
+
+    let forcedOnlineBranchId = null;
+    if (!onlineFulfillmentSettings.allowMixedBranchOrders) {
+      forcedOnlineBranchId = candidateBranchIds.find((branchId) => (
+        preparedItems.every(({ product, qty }) => (
+          getBranchAvailableQuantity({
+            product,
+            branchId,
+            channel: 'online',
+          }) >= qty
+        ))
+      )) || null;
+
+      if (!forcedOnlineBranchId) {
+        return next(AppError.badRequest('No single branch can currently fulfill the full order'));
+      }
+    }
+
+    for (const { product, qty } of preparedItems) {
       const stockAllocation = resolveInventoryAllocation({
         product,
         quantity: qty,
-        preferredBranchId,
-        strictPreferredBranch,
+        preferredBranchId: forcedOnlineBranchId,
+        strictPreferredBranch: Boolean(forcedOnlineBranchId),
+        candidateBranchIds: forcedOnlineBranchId
+          ? [forcedOnlineBranchId]
+          : onlineFulfillmentSettings.allowCrossBranchOnlineAllocation
+            ? candidateBranchIds
+            : candidateBranchIds.slice(0, 1),
+        channel: 'online',
       });
+
       if (stockAllocation.availableQuantity < qty) {
-        return next(AppError.badRequest(`الكمية المطلوبة من "${product.name}" غير متوفرة`));
+        return next(AppError.badRequest('Requested quantity is not available for ' + product.name));
       }
 
       totalAmount += product.price * qty;
       invoiceItems.push({
         product: product._id,
+        allocatedBranch: stockAllocation.branchId || null,
         productName: product.name,
         sku: product.sku || '',
         quantity: qty,
@@ -1227,7 +1235,11 @@ class PortalController {
         totalPrice: product.price * qty,
       });
 
-      productUpdates.push({ product, qty, branchId: stockAllocation.branchId });
+      productUpdates.push({
+        product,
+        qty,
+        branchId: stockAllocation.branchId,
+      });
     }
 
     let finalTotalAmount = totalAmount;
@@ -1236,27 +1248,29 @@ class PortalController {
 
     if (couponCode) {
       const Coupon = require('../models/Coupon');
-      const coupon = await Coupon.findOne({ tenant: customer.tenant._id || customer.tenant, code: couponCode.toUpperCase().trim() });
+      const coupon = await Coupon.findOne({
+        tenant: customer.tenant._id || customer.tenant,
+        code: couponCode.toUpperCase().trim(),
+      });
 
       const validity = coupon ? coupon.isValid() : { valid: false };
       if (!coupon || !validity.valid) {
-        return next(AppError.badRequest(validity.reason || 'كود الخصم غير صالح أو منتهي الصلاحية'));
+        return next(AppError.badRequest(validity.reason || 'Coupon is invalid or expired'));
       }
       if (totalAmount < coupon.minOrderAmount) {
-        return next(AppError.badRequest(`الحد الأدنى للطلب لاستخدام هذا الكوبون هو ${coupon.minOrderAmount} ج.م`));
+        return next(AppError.badRequest('Coupon minimum order amount is ' + coupon.minOrderAmount));
       }
 
-      const isCustomerAllowed = coupon.applicableCustomers.length === 0 || coupon.applicableCustomers.some(id => id.toString() === customer._id.toString());
+      const isCustomerAllowed = coupon.applicableCustomers.length === 0 || coupon.applicableCustomers.some((id) => id.toString() === customer._id.toString());
       if (!isCustomerAllowed) {
-        return next(AppError.badRequest('غير مصرح لك باستخدام كود الخصم هذا'));
+        return next(AppError.badRequest('This coupon is not available for your account'));
       }
 
-      const customerUsages = coupon.usages.filter(u => u.customer?.toString() === customer._id.toString()).length;
+      const customerUsages = coupon.usages.filter((usage) => usage.customer?.toString() === customer._id.toString()).length;
       if (customerUsages >= (coupon.usagePerCustomer || 1)) {
-        return next(AppError.badRequest('لقد تجاوزت الحد المسموح لاستخدام هذا الكوبون'));
+        return next(AppError.badRequest('You reached the usage limit for this coupon'));
       }
 
-      // Check overall usage limit directly with atomic update
       const query = { _id: coupon._id };
       if (coupon.usageLimit) {
         query.usageCount = { $lt: coupon.usageLimit };
@@ -1269,7 +1283,7 @@ class PortalController {
       );
 
       if (!updatedCoupon && coupon.usageLimit) {
-        return next(AppError.badRequest('تم الوصول للحد الأقصى لاستخدام كود الخصم. يرجى إزالة الكوبون للمتابعة.'));
+        return next(AppError.badRequest('Coupon usage limit has been reached'));
       }
 
       appliedCoupon = updatedCoupon || coupon;
@@ -1289,53 +1303,48 @@ class PortalController {
     );
     finalTotalAmount = Math.max(0, finalTotalAmount + effectiveShippingAmount);
 
-    // Check Payment Method & Validate Limit / Documents
     const paymentMethod = req.body.paymentMethod === 'cash' ? 'cash' : 'deferred';
     if (paymentMethod === 'cash' && computedShippingSummary.supportsCashOnDelivery === false) {
-      return next(AppError.badRequest('الدفع عند الاستلام غير متاح لهذا المتجر'));
+      return next(AppError.badRequest('Cash on delivery is not available for this store'));
     }
-    const months = parseInt(req.body.months) || installmentSettings.defaultMonths || 6;
+    const months = parseInt(req.body.months, 10) || installmentSettings.defaultMonths || 6;
 
     let installments = [];
     let monthlyAmount = 0;
 
     if (paymentMethod === 'deferred') {
-      // 1. Check Credit Limit
       const availableCredit = customer.financials.creditLimit - customer.financials.outstandingBalance;
       if (finalTotalAmount > availableCredit) {
         if (appliedCoupon) {
           const Coupon = require('../models/Coupon');
           await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usageCount: -1 } });
         }
-        return next(AppError.badRequest(`الرصيد المتاح (${availableCredit.toLocaleString()}) لا يكفي لإتمام الطلب (${finalTotalAmount.toLocaleString()}) بطريقة الدفع الآجل`));
+        return next(AppError.badRequest('Available credit is not enough for this order'));
       }
 
-      // 2. Check Required Documents (Customer must have at least one uploaded document)
       if (!customer.documents || customer.documents.length === 0) {
         if (appliedCoupon) {
           const Coupon = require('../models/Coupon');
           await Coupon.findByIdAndUpdate(appliedCoupon._id, { $inc: { usageCount: -1 } });
         }
-        return next(AppError.badRequest(`غير مسموح بالشراء الآجل. يرجى رفع المستندات المطلوبة (مثل البطاقة الشخصية) أولاً من صفحة المستندات`));
+        return next(AppError.badRequest('Deferred payment requires customer documents first'));
       }
 
-      // 3. Create Installments
       monthlyAmount = Math.ceil(finalTotalAmount / months);
       const today = new Date();
 
-      for (let i = 1; i <= months; i++) {
+      for (let i = 1; i <= months; i += 1) {
         const date = new Date(today);
         date.setMonth(date.getMonth() + i);
         installments.push({
           installmentNumber: i,
           dueDate: date,
           amount: i === months ? finalTotalAmount - (monthlyAmount * (months - 1)) : monthlyAmount,
-          status: 'pending'
+          status: 'pending',
         });
       }
     }
 
-    // Resolve branch from the customer's scoped branch or the inventory row used during allocation.
     const uniqueBranchIds = collectUniqueBranchIds(productUpdates);
     const branchId = uniqueBranchIds.length === 1 ? uniqueBranchIds[0] : undefined;
 
@@ -1355,9 +1364,9 @@ class PortalController {
       remainingAmount: finalTotalAmount,
       status: 'pending',
       orderStatus: 'pending',
-      paymentMethod: paymentMethod, // 'cash' or 'deferred'
-      installments: installments, // empty if cash
-      createdBy: customer._id, // portal order — customer is the originator
+      paymentMethod,
+      installments,
+      createdBy: customer._id,
       source: 'portal',
       shippingAddress: {
         fullName: shippingAddress.fullName || customer.name,
@@ -1367,7 +1376,7 @@ class PortalController {
         governorate: shippingAddress.governorate || '',
         notes: shippingAddress.notes || '',
       },
-      notes: notes || 'طلب من خلال بوابة العملاء',
+      notes: notes || 'Portal order',
       shippingMethod: computedShippingSummary.shippingMethod,
       shippingZone: {
         code: computedShippingSummary.zoneCode,
@@ -1381,17 +1390,23 @@ class PortalController {
           }
         : undefined,
       electronicSignature: signature || null,
-      orderStatusHistory: [{ status: 'pending', note: 'تم استلام الطلب من البوابة الإلكترونية' }],
+      orderStatusHistory: [{ status: 'pending', note: 'Portal order received' }],
     });
 
     if (appliedCoupon) {
       const Coupon = require('../models/Coupon');
       await Coupon.findByIdAndUpdate(appliedCoupon._id, {
-        $push: { usages: { customer: customer._id, invoice: invoice._id, discountAmount, usedAt: new Date() } }
+        $push: {
+          usages: {
+            customer: customer._id,
+            invoice: invoice._id,
+            discountAmount,
+            usedAt: new Date(),
+          },
+        },
       });
     }
 
-    // Update Stock
     for (const update of productUpdates) {
       deductInventoryAllocation({
         product: update.product,
@@ -1401,7 +1416,6 @@ class PortalController {
       await update.product.save();
     }
 
-    // Update Customer Balance
     if (typeof customer.recordPurchase === 'function') {
       customer.recordPurchase(finalTotalAmount);
     } else {
@@ -1409,7 +1423,7 @@ class PortalController {
       customer.financials.outstandingBalance += finalTotalAmount;
     }
     await customer.save();
-    // Notify Admin/Owner users
+
     try {
       const Notification = require('../models/Notification');
       const User = require('../models/User');
@@ -1426,8 +1440,8 @@ class PortalController {
             tenant: tenantId,
             recipient: admin._id,
             type: 'order',
-            title: 'طلب جديد من البوابة',
-            message: `طلب جديد رقم #${invoice.invoiceNumber} بقيمة ${finalTotalAmount.toLocaleString()} من العميل ${customer.name}`,
+            title: 'New portal order',
+            message: `New order #${invoice.invoiceNumber} worth ${finalTotalAmount.toLocaleString()} from ${customer.name}`,
             icon: 'shopping-bag',
             color: 'primary',
             link: `/invoices/${invoice._id}`,
@@ -1435,23 +1449,24 @@ class PortalController {
         );
       }
     } catch (e) {
-      // Don't fail the order if notification fails
+      // Do not fail the order when notification creation fails
     }
 
-    // Create customer notification for order confirmation
     try {
       const Notification = require('../models/Notification');
       await Notification.create({
         tenant: customer.tenant._id || customer.tenant,
         customerRecipient: customer._id,
         type: 'order',
-        title: 'تم استلام طلبك',
-        message: `طلبك رقم #${invoice.invoiceNumber} بقيمة ${finalTotalAmount.toLocaleString()} ج.م قيد المراجعة`,
+        title: 'Order received',
+        message: `Your order #${invoice.invoiceNumber} worth ${finalTotalAmount.toLocaleString()} is under review`,
         icon: 'shopping-bag',
         color: 'success',
-        link: `/portal/orders/${invoice._id}`
+        link: `/portal/orders/${invoice._id}`,
       });
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      // ignore notification errors
+    }
 
     ApiResponse.created(res, {
       orderId: invoice._id,
@@ -1459,11 +1474,8 @@ class PortalController {
       totalAmount: finalTotalAmount,
       installments: installments.length,
       monthlyAmount,
-    }, 'تم استلام طلبك بنجاح');
+    }, 'Portal order received successfully');
   });
-
-  // ═══════════════════════════════════════════
-  //  PDF DOWNLOADS
   // ═══════════════════════════════════════════
 
   /**

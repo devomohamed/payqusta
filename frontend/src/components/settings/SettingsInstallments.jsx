@@ -55,13 +55,13 @@ export default function SettingsInstallments() {
           <CreditCard className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">إعدادات الأقساط</h2>
-          <p className="text-sm text-gray-400">تخصيص خيارات التقسيط</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">إعدادات الأقساط</h2>
+          <p className="text-sm text-subtle">تخصيص خيارات التقسيط</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
-        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors">
+      <div className="bg-white dark:bg-slate-950 rounded-2xl p-5 border border-gray-100 dark:border-white/5 shadow-sm">
+        <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-all">
           <input
             type="checkbox"
             checked={enabled}
@@ -69,15 +69,15 @@ export default function SettingsInstallments() {
             className="w-5 h-5 rounded text-primary-600 focus:ring-primary-500"
           />
           <div className="flex flex-col">
-            <span className="font-bold text-gray-900 dark:text-white">تفعيل حاسبة الأقساط للمتجر</span>
-            <span className="text-xs text-gray-500">عند تفعيل هذا الخيار ستظهر حاسبة الأقساط في صفحة تفاصيل المنتج.</span>
+            <span className="font-bold text-gray-900 dark:text-gray-100">تفعيل حاسبة الأقساط للمتجر</span>
+            <span className="text-xs text-subtle">عند تفعيل هذا الخيار ستظهر حاسبة الأقساط في صفحة تفاصيل المنتج.</span>
           </div>
         </label>
       </div>
 
       <div className={`space-y-4 transition-opacity duration-300 ${!enabled ? 'opacity-50 pointer-events-none' : ''}`}>
         {installmentConfigs.map((config, idx) => (
-          <div key={idx} className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div key={idx} className="p-4 rounded-xl bg-gray-50/50 dark:bg-slate-950 border border-gray-100 dark:border-white/5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end shadow-sm">
             <Input label="عدد الأشهر" type="number" value={config.months} onChange={(e) => {
               const newConfigs = [...installmentConfigs];
               newConfigs[idx].months = parseInt(e.target.value) || 0;
@@ -104,7 +104,7 @@ export default function SettingsInstallments() {
         <Button onClick={addConfig} variant="outline" className="border-dashed">+ إضافة خطة</Button>
       </div>
 
-      <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10">
         <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>
           حفظ التعديلات
         </Button>

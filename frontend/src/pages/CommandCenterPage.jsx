@@ -52,11 +52,11 @@ export default function CommandCenterPage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-500/25">
-          <Target className="w-6 h-6 text-white" />
+      <div className="app-surface-muted flex flex-wrap items-center gap-3 rounded-3xl p-5">
+        <div className="app-surface flex h-11 w-11 items-center justify-center rounded-2xl text-violet-600 dark:text-violet-300">
+          <Target className="w-6 h-6" />
         </div>
         <div className="flex-1">
           <h2 className="text-xl font-black">مركز القيادة</h2>
@@ -65,7 +65,7 @@ export default function CommandCenterPage() {
         <button onClick={() => setShowSettlement(true)} className="px-4 py-2.5 rounded-xl bg-primary-600 text-white font-bold text-sm shadow-lg shadow-primary-600/20 hover:bg-primary-700 transition-colors">
           تصفية الوردية
         </button>
-        <button onClick={loadAll} className="p-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        <button onClick={loadAll} className="app-surface rounded-xl p-2.5 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
@@ -74,7 +74,7 @@ export default function CommandCenterPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Health Score Card */}
         {healthData && (
-          <Card className="p-5 lg:col-span-1 relative overflow-hidden">
+          <Card className="app-surface-muted p-5 lg:col-span-1 relative overflow-hidden">
             <div className="absolute -left-8 -top-8 w-32 h-32 bg-gradient-to-br from-primary-500/20 to-violet-500/20 rounded-full blur-2xl" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
@@ -88,7 +88,7 @@ export default function CommandCenterPage() {
               <div className="mt-3 space-y-1">
                 {['collection', 'customers', 'inventory', 'profit'].map((k) => (
                   <div key={k} className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div className="flex-1 h-1.5 rounded-full bg-black/[0.06] dark:bg-white/[0.08] overflow-hidden">
                       <div className="h-full rounded-full bg-primary-500" style={{ width: `${(healthData.breakdown[k].score / healthData.breakdown[k].max) * 100}%` }} />
                     </div>
                     <span className="text-[10px] text-gray-400 w-6">{healthData.breakdown[k].score}</span>
@@ -102,7 +102,7 @@ export default function CommandCenterPage() {
         {/* Quick Stats */}
         {commandData && (
           <>
-            <Card className="p-4 border-2 border-primary-100 dark:border-primary-500/20">
+            <Card className="app-surface-muted p-4 border-2 border-primary-100 dark:border-primary-500/20">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center">
                   <Calendar className="w-5 h-5 text-primary-500" />
@@ -113,7 +113,7 @@ export default function CommandCenterPage() {
                 </div>
               </div>
             </Card>
-            <Card className="p-4 border-2 border-red-100 dark:border-red-500/20">
+            <Card className="app-surface-muted p-4 border-2 border-red-100 dark:border-red-500/20">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -124,7 +124,7 @@ export default function CommandCenterPage() {
                 </div>
               </div>
             </Card>
-            <Card className="p-4 border-2 border-amber-100 dark:border-amber-500/20">
+            <Card className="app-surface-muted p-4 border-2 border-amber-100 dark:border-amber-500/20">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
                   <Package className="w-5 h-5 text-amber-500" />
@@ -141,14 +141,14 @@ export default function CommandCenterPage() {
 
       {/* Smart Suggestions */}
       {commandData?.suggestions?.length > 0 && (
-        <Card className="p-5">
+        <Card className="app-surface p-5">
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="w-5 h-5 text-amber-500" />
             <h3 className="font-bold">اقتراحات ذكية</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {commandData.suggestions.map((s, i) => (
-              <div key={i} className={`p-4 rounded-xl border-2 ${s.priority === 'high' ? 'border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5' : 'border-gray-100 dark:border-gray-800'}`}>
+              <div key={i} className={`p-4 rounded-xl border-2 ${s.priority === 'high' ? 'border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5' : 'app-surface-muted border-gray-100/80 dark:border-white/10'}`}>
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">{s.icon}</span>
                   <div className="flex-1">
@@ -197,14 +197,14 @@ export default function CommandCenterPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-gray-100 dark:bg-gray-800/50 p-1.5 rounded-2xl">
+      <div className="app-surface-muted flex gap-2 rounded-2xl p-1">
         {[
           { key: 'overview', label: 'التحصيل', icon: DollarSign },
           { key: 'cashflow', label: 'التدفق النقدي', icon: TrendingUp },
           { key: 'achievements', label: 'الإنجازات', icon: Award },
         ].map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.key ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.key ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300' : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
               }`}>
             <tab.icon className="w-4 h-4" /> {tab.label}
           </button>
@@ -276,7 +276,7 @@ export default function CommandCenterPage() {
               </h4>
               <div className="space-y-3">
                 {commandData.branchPerformance.map((branch, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                  <div key={i} className="app-surface-muted flex items-center justify-between p-3 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-500/20 text-primary-600 flex items-center justify-center font-bold">
                         {i + 1}
@@ -332,7 +332,7 @@ export default function CommandCenterPage() {
             ) : (
               <div className="space-y-2">
                 {commandData.highRiskCustomers.map((c, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                  <div key={i} className="app-surface-muted flex items-center gap-3 p-3 rounded-xl">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: `${RISK_COLORS[c.creditEngine?.riskLevel || 'medium']}20`, color: RISK_COLORS[c.creditEngine?.riskLevel || 'medium'] }}>
                       {c.creditEngine?.score || '?'}
                     </div>
@@ -415,7 +415,7 @@ export default function CommandCenterPage() {
               <h4 className="font-bold">تقدمك</h4>
               <span className="text-2xl font-black text-primary-500">{achievements.stats.progress}%</span>
             </div>
-            <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden mb-3">
+            <div className="h-3 rounded-full bg-black/[0.06] dark:bg-white/[0.08] overflow-hidden mb-3">
               <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-violet-500 transition-all" style={{ width: `${achievements.stats.progress}%` }} />
             </div>
             <p className="text-xs text-gray-400">{achievements.stats.unlockedCount} من {achievements.stats.totalAchievements} إنجاز</p>
@@ -434,7 +434,7 @@ export default function CommandCenterPage() {
             <h4 className="font-bold mb-4">الإنجازات</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {achievements.achievements.map((a) => (
-                <div key={a.id} className={`p-4 rounded-xl text-center transition-all ${a.unlocked ? 'bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30' : 'bg-gray-50 dark:bg-gray-800/50 opacity-50'}`}>
+                <div key={a.id} className={`p-4 rounded-xl text-center transition-all ${a.unlocked ? 'bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30' : 'app-surface-muted opacity-50'}`}>
                   <span className="text-3xl block mb-2">{a.icon}</span>
                   <p className="font-bold text-xs">{a.name}</p>
                   <p className="text-[10px] text-gray-400 mt-1">{a.description}</p>

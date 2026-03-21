@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, Sun, Moon, Search, Store } from 'lucide-react';
+import { Menu, Sun, Moon, Search, Monitor, Zap } from 'lucide-react';
 import { useThemeStore, useAuthStore } from '../store';
-import { getStorefrontDomainUrl } from '../utils/storefrontHost';
 import NotificationDropdown from './NotificationDropdown';
 import GlobalSearch from './GlobalSearch';
 import BranchSwitcher from './BranchSwitcher';
 import LanguageSwitcher from './LanguageSwitcher';
+import ShiftStatusWidget from './ShiftStatusWidget';
 
 export default function Header({ onMenuClick }) {
   const location = useLocation();
-  const { dark, toggleTheme } = useThemeStore();
+  const navigate = useNavigate();
+  const { dark, themeMode, toggleTheme } = useThemeStore();
   const { tenant, user } = useAuthStore();
   const { t } = useTranslation('admin');
   const [searchOpen, setSearchOpen] = useState(false);
   const isSystemSuperAdmin =
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
-  const storefrontUrl = getStorefrontDomainUrl(tenant?.slug);
+  const ThemeIcon = themeMode === 'system' ? Monitor : dark ? Sun : Moon;
+  const themeLabel = themeMode === 'system'
+    ? 'الوضع التلقائي'
+    : dark
+      ? 'التبديل إلى الوضع الفاتح'
+      : 'التبديل إلى الوضع الداكن';
 
   const pageTitles = {
     '/': t('header.dashboard'),
@@ -46,30 +52,30 @@ export default function Header({ onMenuClick }) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-3 sm:px-4 md:px-6 min-h-16 py-2 sm:py-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
+      <header className="app-surface-glass sticky top-0 z-40 flex min-h-16 items-center justify-between gap-3 border-b px-3 py-2 sm:px-4 sm:py-0 md:px-6">
         <div className="flex min-w-0 items-center gap-3 overflow-hidden">
           <button
             onClick={onMenuClick}
-            className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+            className="app-text-soft rounded-xl p-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05] md:hidden"
             aria-label={t('header.open_navigation', 'فتح القائمة')}
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="h-5 w-5" />
           </button>
-          <div className="flex min-w-0 flex-col md:flex-row md:items-center md:gap-3 overflow-hidden">
-            <h2 className="text-lg sm:text-xl font-extrabold truncate">{title}</h2>
-            <div className="hidden md:block w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold truncate">
+          <div className="flex min-w-0 flex-col overflow-hidden md:flex-row md:items-center md:gap-3">
+            <h2 className="app-text-strong truncate text-lg font-extrabold sm:text-xl">{title}</h2>
+            <div className="mx-1 hidden h-6 w-px bg-[color:var(--surface-border)] md:block" />
+            <div className="flex items-center gap-1.5 truncate text-xs font-bold sm:text-sm">
               {user?.branch?.name ? (
-                <span className="text-primary-600 dark:text-primary-400 whitespace-nowrap">
+                <span className="whitespace-nowrap text-primary-600 dark:text-primary-300">
                   {user.branch.name}
                 </span>
               ) : (
-                <span className="text-primary-600 dark:text-primary-400 whitespace-nowrap">
+                <span className="whitespace-nowrap text-primary-600 dark:text-primary-300">
                   {tenant?.name}
                 </span>
               )}
               {isSystemSuperAdmin && (
-                <span className="mx-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                <span className="mx-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:bg-amber-400/15 dark:text-amber-200">
                   SUPER
                 </span>
               )}
@@ -78,36 +84,38 @@ export default function Header({ onMenuClick }) {
         </div>
 
         <div className="flex flex-shrink-0 items-center gap-1 sm:gap-1.5">
-          <a
-            href={storefrontUrl}
-            className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/40 font-bold text-sm transition-colors"
-            title={t('header.visit_store', 'زيارة المتجر')}
+          <button
+            onClick={() => navigate('/quick-sale')}
+            className="hidden items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/15 sm:flex"
+            title="البيع السريع"
           >
-            <Store className="w-4 h-4" />
-            <span className="hidden md:inline">متجري</span>
-          </a>
+            <Zap className="h-4 w-4" />
+            <span className="hidden md:inline">البيع السريع</span>
+          </button>
+
+          <ShiftStatusWidget />
 
           <BranchSwitcher />
 
           <button
             onClick={() => setSearchOpen(true)}
-            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
+            className="app-surface-muted app-text-soft hidden items-center gap-2 rounded-xl px-3 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05] md:flex"
             title={t('header.search_quick')}
           >
-            <Search className="w-4 h-4" />
+            <Search className="h-4 w-4" />
             <span className="text-sm">{t('header.search_placeholder')}</span>
-            <kbd className="hidden lg:inline-block px-2 py-0.5 text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded">
+            <kbd className="app-surface app-text-muted hidden rounded border border-[color:var(--surface-border)] px-2 py-0.5 text-xs lg:inline-block">
               Ctrl+K
             </kbd>
           </button>
 
           <button
             onClick={() => setSearchOpen(true)}
-            className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
+            className="app-text-soft rounded-xl p-2.5 transition-all active:scale-95 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] md:hidden"
             title={t('header.search_quick_mobile')}
             aria-label={t('header.search_quick_mobile', 'فتح البحث')}
           >
-            <Search className="w-5 h-5" />
+            <Search className="h-5 w-5" />
           </button>
 
           <NotificationDropdown mode="admin" />
@@ -116,11 +124,12 @@ export default function Header({ onMenuClick }) {
 
           <button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
-            aria-label={dark ? t('header.switch_to_light', 'التبديل إلى الوضع الفاتح') : t('header.switch_to_dark', 'التبديل إلى الوضع الداكن')}
+            className="app-text-soft rounded-xl p-2.5 transition-all active:scale-95 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+            aria-label={themeLabel}
+            title={themeLabel}
             aria-pressed={dark}
           >
-            {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <ThemeIcon className="h-5 w-5" />
           </button>
         </div>
       </header>

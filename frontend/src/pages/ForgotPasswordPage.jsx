@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { api } from '../store';
+import { api, useThemeStore } from '../store';
 import { Button, Input } from '../components/UI';
+import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const { dark } = useThemeStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,9 +35,9 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className={`app-shell-bg min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4 ${dark ? 'dark' : ''}`}>
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center">
+          <div className="app-surface rounded-[1.75rem] p-8 text-center shadow-xl">
             <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -44,7 +46,7 @@ export default function ForgotPasswordPage() {
               تم إرسال رابط إعادة تعيين كلمة المرور إلى<br />
               <strong className="text-primary-600 dark:text-primary-400">{email}</strong>
             </p>
-            <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl p-4 mb-6 text-right">
+            <div className="app-surface-muted mb-6 rounded-2xl border border-blue-200/60 p-4 text-right dark:border-blue-500/20">
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 <strong>📌 ملاحظة:</strong>
               </p>
@@ -61,6 +63,9 @@ export default function ForgotPasswordPage() {
               <ArrowRight className="w-4 h-4" />
               <span>العودة لتسجيل الدخول</span>
             </Link>
+            <div className="mt-6 flex justify-center">
+              <ThemeModeSwitcher compact />
+            </div>
           </div>
         </div>
       </div>
@@ -68,7 +73,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className={`app-shell-bg min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4 ${dark ? 'dark' : ''}`}>
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -84,7 +89,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+        <div className="app-surface rounded-[1.75rem] p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
@@ -123,6 +128,9 @@ export default function ForgotPasswordPage() {
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-8">
           © 2026 PayQusta. جميع الحقوق محفوظة.
         </p>
+        <div className="mt-4 flex justify-center">
+          <ThemeModeSwitcher compact />
+        </div>
       </div>
     </div>
   );

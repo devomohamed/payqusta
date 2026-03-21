@@ -1,8 +1,24 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const BUILD_ID = process.env.VITE_BUILD_ID || new Date().toISOString();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Read version from centralized file
+let APP_VERSION = '1.0.0';
+try {
+  const versionFile = readFileSync(join(__dirname, 'src/config/version.js'), 'utf-8');
+  const match = versionFile.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+  if (match) APP_VERSION = match[1];
+} catch (e) {
+  console.warn('Could not read version.js, using default');
+}
+
+const BUILD_ID = process.env.VITE_BUILD_ID || `${APP_VERSION}-${new Date().getTime()}`;
 
 export default defineConfig({
   define: {
@@ -11,7 +27,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'robots.txt', 'fonts/*.ttf'],
       manifest: {
         name: 'PayQusta POS',

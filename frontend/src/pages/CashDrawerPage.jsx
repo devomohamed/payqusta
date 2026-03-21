@@ -72,8 +72,8 @@ export default function CashDrawerPage() {
   const fmt = (n) => new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(n);
 
   return (
-    <div className="p-6 space-y-8 animate-fade-in">
-      <div className="flex justify-between items-center">
+    <div className="app-shell-bg app-text-soft space-y-8 p-4 sm:p-6 animate-fade-in">
+      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
         <div>
           <h1 className="text-2xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">إدارة الخزينة والورديات</h1>
           <p className="text-gray-500 mt-1">
@@ -86,7 +86,7 @@ export default function CashDrawerPage() {
       {loading ? <LoadingSpinner /> : (
         <>
           {!activeShift ? (
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl p-8 text-white text-center shadow-xl">
+            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-8 text-center text-white shadow-xl shadow-slate-950/20 transition-transform duration-300 motion-safe:hover:-translate-y-1">
               <Lock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <h2 className="text-2xl font-bold mb-2">لا توجد وردية مفتوحة</h2>
               <p className="text-gray-400 mb-6">يجب فتح وردية جديدة لبدء تسجيل المبيعات النقدية</p>
@@ -94,7 +94,7 @@ export default function CashDrawerPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-emerald-600 to-green-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-emerald-600 via-emerald-600 to-green-700 p-6 text-white shadow-xl shadow-emerald-900/20 transition-transform duration-300 motion-safe:hover:-translate-y-1">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
@@ -145,14 +145,14 @@ export default function CashDrawerPage() {
                 </div>
               </div>
 
-              <Card className="p-6 flex flex-col justify-center items-center text-center space-y-4">
+              <Card className="app-surface-muted flex flex-col justify-center items-center text-center space-y-4 p-6">
                 <Clock className="w-12 h-12 text-primary-500" />
                 <div>
                    <h3 className="text-xl font-bold">زمن الوردية</h3>
                    <p className="text-gray-500">مفتوحة منذ {Math.floor((new Date() - new Date(activeShift.startTime)) / 1000 / 60)} دقيقة</p>
                 </div>
                 {/* Motivation for Staff */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl w-full">
+                <div className="w-full rounded-2xl border border-blue-200/80 bg-blue-50/80 p-4 dark:border-blue-500/20 dark:bg-blue-500/10">
                   <p className="text-sm text-blue-800 dark:text-blue-200 font-bold">🎯 هدف اليوم: حقق مبيعات أعلى!</p>
                 </div>
               </Card>
@@ -162,10 +162,10 @@ export default function CashDrawerPage() {
           {/* History Table */}
           <div className="mt-10">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="w-5 h-5" /> {user?.role === 'admin' ? 'سجل ورديات الموظفين' : 'سجل وردياتي السابق'}</h3>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden rounded-3xl">
                <div className="overflow-x-auto">
                  <table className="w-full text-right text-sm">
-                   <thead className="bg-gray-50 dark:bg-gray-800">
+                   <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                      <tr>
                        <th className="p-4">التاريخ</th>
                        <th className="p-4">الموظف</th>
@@ -175,7 +175,7 @@ export default function CashDrawerPage() {
                        <th className="p-4">العجز/الزيادة</th>
                      </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                   <tbody className="divide-y divide-gray-100/80 dark:divide-white/5">
                      {history.length === 0 ? (
                        <tr>
                          <td colSpan="6" className="p-4">
@@ -188,7 +188,7 @@ export default function CashDrawerPage() {
                          </td>
                        </tr>
                      ) : history.map(shift => (
-                       <tr key={shift._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                       <tr key={shift._id} className="transition-colors duration-200 hover:bg-primary-500/[0.03] dark:hover:bg-white/[0.03]">
                          <td className="p-4">{new Date(shift.startTime).toLocaleDateString('ar-EG')}</td>
                          <td className="p-4">{shift.user?.name}</td>
                          <td className="p-4">{new Date(shift.startTime).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'})}</td>
@@ -231,12 +231,12 @@ export default function CashDrawerPage() {
       {/* Close Modal */}
       <Modal open={showCloseModal} onClose={() => setShowCloseModal(false)} title="إغلاق الوردية">
         <div className="space-y-4">
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
+          <div className="app-surface-muted rounded-2xl border border-dashed border-gray-300/80 p-4 text-center dark:border-white/10">
              <p className="text-gray-500 text-sm mb-1">المبلغ المتوقع في الدرج</p>
              <p className="text-4xl font-black text-gray-800 dark:text-gray-100">{activeShift && fmt(activeShift.expectedNow)}</p>
           </div>
           
-          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg text-sm text-yellow-800 dark:text-yellow-200">
+          <div className="rounded-2xl border border-yellow-200/80 bg-yellow-50/80 p-4 text-sm text-yellow-800 dark:border-yellow-500/20 dark:bg-yellow-500/10 dark:text-yellow-200">
             ⚠️ قم بعد النقود الموجودة في الدرج فعلياً واكتب الرقم أدناه. سيقوم النظام بحساب العجز أو الزيادة تلقائياً.
           </div>
 
@@ -250,9 +250,9 @@ export default function CashDrawerPage() {
           />
           
           {closingForm.actualCash > 0 && activeShift && (
-             <div className={`p-4 rounded-xl text-center font-bold text-lg animate-pulse-once ${
-                Number(closingForm.actualCash) - activeShift.expectedNow === 0 ? 'bg-green-100 text-green-700' : 
-                Number(closingForm.actualCash) - activeShift.expectedNow < 0 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+             <div className={`animate-pulse-once rounded-2xl p-4 text-center text-lg font-bold ${
+                Number(closingForm.actualCash) - activeShift.expectedNow === 0 ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300' : 
+                Number(closingForm.actualCash) - activeShift.expectedNow < 0 ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
              }`}>
                 {Number(closingForm.actualCash) - activeShift.expectedNow === 0 ? '✅ المبلغ مطابق تماماً' : 
                  Number(closingForm.actualCash) - activeShift.expectedNow < 0 ? `❌ يوجد عجز: ${fmt(Number(closingForm.actualCash) - activeShift.expectedNow)}` : 

@@ -294,7 +294,7 @@ export default function NotificationDropdown({ mode = 'admin' }) {
       {/* Bell Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-all active:scale-95"
+        className="relative p-2.5 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.05] text-gray-500 transition-all active:scale-95"
       >
         <Bell className={`w-5 h-5 ${unreadCount > 0 ? 'text-primary-500' : ''}`} />
         {unreadCount > 0 && (
@@ -306,9 +306,9 @@ export default function NotificationDropdown({ mode = 'admin' }) {
 
       {/* Dropdown */}
       {open && (
-        <div className={`fixed inset-x-4 top-[4.5rem] mt-0 w-auto max-w-[calc(100vw-2rem)] sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:w-[380px] ${i18n.dir() === 'rtl' ? 'sm:left-0' : 'sm:right-0'} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden z-50 animate-slide-up`}>
+        <div className={`fixed inset-x-4 top-[4.5rem] mt-0 w-auto max-w-[calc(100vw-2rem)] sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:w-[380px] ${i18n.dir() === 'rtl' ? 'sm:left-0' : 'sm:right-0'} app-surface rounded-2xl shadow-2xl border border-gray-100/80 dark:border-white/10 overflow-hidden z-50 animate-slide-up`}>
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100/80 dark:border-white/10">
             <h4 className="font-bold text-base">{t('notifications.title')}</h4>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
@@ -319,7 +319,7 @@ export default function NotificationDropdown({ mode = 'admin' }) {
                   <CheckCheck className="w-3.5 h-3.5" /> {t('notifications.mark_all_read')}
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+              <button onClick={() => setOpen(false)} className="app-surface-muted p-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.05] text-gray-400">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -346,7 +346,7 @@ export default function NotificationDropdown({ mode = 'admin' }) {
                   <div
                     key={n._id}
                     onClick={() => handleClick(n)}
-                    className={`flex items-start gap-3 px-5 py-3.5 cursor-pointer border-b border-gray-50 dark:border-gray-800/50 transition-all hover:bg-gray-50 dark:hover:bg-gray-800/30 group ${!n.isRead ? 'bg-primary-50/30 dark:bg-primary-500/5' : ''
+                    className={`flex items-start gap-3 px-5 py-3.5 cursor-pointer border-b border-gray-50 dark:border-gray-800/50 transition-all hover:bg-black/[0.02] dark:hover:bg-white/[0.03] group ${!n.isRead ? 'bg-primary-50/30 dark:bg-primary-500/5' : ''
                       }`}
                   >
                     {/* Icon */}

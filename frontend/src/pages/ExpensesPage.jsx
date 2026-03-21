@@ -135,11 +135,11 @@ export default function ExpensesPage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in app-text-soft">
       {/* Header */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-700 flex items-center justify-center shadow-lg shadow-rose-500/25">
-          <Receipt className="w-5 h-5 text-white" />
+      <div className="app-surface-muted flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
+        <div className="app-surface flex h-11 w-11 items-center justify-center rounded-2xl text-rose-600 dark:text-rose-300">
+          <Receipt className="w-5 h-5" />
         </div>
         <div className="flex-1">
           <h2 className="text-lg font-extrabold">المصروفات</h2>
@@ -152,7 +152,7 @@ export default function ExpensesPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="p-4 border-2 border-rose-100 dark:border-rose-500/20">
+          <Card className="app-surface-muted p-4 border-2 border-rose-100 dark:border-rose-500/20">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-400">إجمالي الشهر</p>
@@ -162,7 +162,7 @@ export default function ExpensesPage() {
             </div>
             <p className="text-[10px] text-gray-400 mt-1">{summary.count} مصروف</p>
           </Card>
-          <Card className="p-4">
+          <Card className="app-surface-muted p-4">
             <p className="text-xs text-gray-400 mb-2">توزيع حسب الفئة</p>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={120}>
@@ -182,7 +182,7 @@ export default function ExpensesPage() {
               />
             )}
           </Card>
-          <Card className="p-4">
+          <Card className="app-surface-muted p-4">
             <p className="text-xs text-gray-400 mb-2">أعلى الفئات</p>
             <div className="space-y-2">
               {(summary.byCategory || []).slice(0, 3).map((c, i) => (
@@ -198,10 +198,10 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters */}
-      <Card className="p-4">
+      <Card className="app-surface-muted p-4">
         <div className="flex flex-wrap items-center gap-3">
           <select value={filter.category} onChange={(e) => { setFilter({ ...filter, category: e.target.value }); setPage(1); }}
-            className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm">
+            className="app-surface rounded-xl border-2 border-transparent px-3 py-2 text-sm">
             <option value="">كل الفئات</option>
             {categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
           </select>
@@ -226,7 +226,7 @@ export default function ExpensesPage() {
         ) : (
           <div className="space-y-3">
             {expenses.map((exp) => (
-              <div key={exp._id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all">
+              <div key={exp._id} className="app-surface-muted flex items-center gap-4 rounded-2xl border-2 border-transparent p-4 transition-all duration-200 hover:border-gray-200/80 hover:-translate-y-0.5 dark:hover:border-white/10">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: `${CATEGORY_COLORS[exp.category] || '#6b7280'}20` }}>
                   {(CATEGORY_LABELS[exp.category] || '📋').split(' ')[0]}
                 </div>
@@ -256,32 +256,32 @@ export default function ExpensesPage() {
             <div>
               <label className="text-xs font-bold text-gray-500 mb-1 block">العنوان *</label>
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="مثال: إيجار المحل"
-                className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm" required />
+                className="app-surface w-full rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-500 mb-1 block">الفئة</label>
                 <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm">
+                  className="app-surface w-full rounded-xl border-2 border-transparent px-3 py-2.5 text-sm">
                   {categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 mb-1 block">المبلغ *</label>
                 <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0"
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm" required min="0" step="0.01" />
+                  className="app-surface w-full rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" required min="0" step="0.01" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-500 mb-1 block">التاريخ</label>
                 <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm" />
+                  className="app-surface w-full rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 mb-1 block">طريقة الدفع</label>
                 <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm">
+                  className="app-surface w-full rounded-xl border-2 border-transparent px-3 py-2.5 text-sm">
                   <option value="cash">نقد</option>
                   <option value="bank">تحويل بنكي</option>
                   <option value="card">بطاقة</option>
@@ -293,7 +293,7 @@ export default function ExpensesPage() {
               <label htmlFor="recurring" className="text-sm">مصروف متكرر</label>
               {form.isRecurring && (
                 <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}
-                  className="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 text-xs">
+                  className="app-surface rounded-lg border border-transparent px-2 py-1 text-xs">
                   <option value="daily">يومي</option>
                   <option value="weekly">أسبوعي</option>
                   <option value="monthly">شهري</option>
@@ -304,7 +304,7 @@ export default function ExpensesPage() {
             <div>
               <label className="text-xs font-bold text-gray-500 mb-1 block">ملاحظات</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
-                className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm resize-none" />
+                className="app-surface w-full resize-none rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" />
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="submit" className="flex-1">{editItem ? 'حفظ التعديلات' : 'إضافة المصروف'}</Button>

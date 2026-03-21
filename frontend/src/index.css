@@ -6,6 +6,24 @@
   --glass-border: rgba(255, 255, 255, 0.5);
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --app-bg: #f6f8fc;
+  --surface-1: #ffffff;
+  --surface-2: rgba(255, 255, 255, 0.82);
+  --surface-3: #eef3fb;
+  --surface-border: rgba(148, 163, 184, 0.18);
+  --surface-shadow: 0 22px 55px rgba(15, 23, 42, 0.08);
+  --text-strong: #0f172a;
+  --text-body: #1e293b;
+  --text-soft: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #f8fafc;
+  --accent-strong: #4f46e5;
+  --accent-soft: rgba(79, 70, 229, 0.12);
+  --hero-glow-1: rgba(79, 70, 229, 0.12);
+  --hero-glow-2: rgba(16, 185, 129, 0.08);
+  --hero-glow-3: rgba(245, 158, 11, 0.08);
+  --focus-border: #5c67e6;
+  --focus-ring: rgba(92, 103, 230, 0.18);
   
   /* Safe Area Insets for notches and navigation bars */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
@@ -14,11 +32,41 @@
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
 }
 
+.dark {
+  --app-bg: #020617;
+  --surface-1: #0f172a;
+  --surface-2: rgba(15, 23, 42, 0.82);
+  --surface-3: #15233d;
+  --surface-border: rgba(148, 163, 184, 0.18);
+  --surface-shadow: 0 24px 60px rgba(2, 6, 23, 0.5);
+  --text-strong: #ffffff;
+  --text-body: #e5eefb;
+  --text-soft: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #020617;
+  --accent-strong: #a5b4fc;
+  --accent-soft: rgba(129, 140, 248, 0.16);
+  --hero-glow-1: rgba(99, 102, 241, 0.18);
+  --hero-glow-2: rgba(56, 189, 248, 0.08);
+  --hero-glow-3: rgba(251, 191, 36, 0.08);
+  --focus-border: #7c8cff;
+  --focus-ring: rgba(124, 140, 255, 0.24);
+}
+
 body {
   font-family: 'Cairo', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--app-bg);
+  color: var(--text-body);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+select option {
+  background-color: var(--surface-1);
+  color: var(--text-strong);
+}
+
 
 /* Admin-only pattern background */
 .app-shell-pattern {
@@ -52,11 +100,85 @@ input[type=number] {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* Custom input styles */
-input:focus, select:focus, textarea:focus {
+input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
-  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+  border-color: var(--focus-border);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
+
+.app-shell-bg {
+  background:
+    radial-gradient(circle at 12% 12%, var(--hero-glow-1), transparent 28%),
+    radial-gradient(circle at 88% 8%, var(--hero-glow-2), transparent 24%),
+    radial-gradient(circle at 50% 100%, var(--hero-glow-3), transparent 26%),
+    var(--app-bg);
+}
+
+.app-surface {
+  background-color: var(--surface-1);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+}
+
+.app-surface-glass {
+  background-color: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.app-surface-muted {
+  background-color: var(--surface-3);
+  border: 1px solid var(--surface-border);
+}
+
+.app-text-soft {
+  color: var(--text-soft);
+}
+
+.app-text-muted {
+  color: var(--text-muted);
+}
+
+.app-text-body {
+  color: var(--text-body);
+}
+
+.app-text-strong {
+  color: var(--text-strong);
+}
+
+.app-text-inverse {
+  color: var(--text-inverse);
+}
+
+.app-field {
+  background-color: var(--surface-1);
+  color: var(--text-strong);
+}
+
+.app-field::placeholder {
+  color: var(--text-muted);
+}
+
+.app-heading-accent {
+  background-image: linear-gradient(135deg, var(--text-strong) 0%, var(--accent-strong) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.app-eye-candy-ring {
+  box-shadow:
+    0 0 0 1px var(--surface-border),
+    0 20px 48px rgba(15, 23, 42, 0.12),
+    0 0 0 8px var(--accent-soft);
+}
+
+.text-subtle { color: var(--text-soft); }
+.text-muted { color: var(--text-muted); }
 
 /* Fix aggressive browser autofill colors (especially email/password fields) */
 input:-webkit-autofill,
@@ -85,6 +207,13 @@ select:-webkit-autofill {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+  transition: all 0.3s ease;
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* Animations */
@@ -187,7 +316,7 @@ tr.hover-row:hover td { background-color: #f1f5f9; }
   .backdrop-blur-md,
   .backdrop-blur-lg,
   .backdrop-blur-xl,
-  [class*="backdrop-blur"] {
+  .app-surface-glass {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -196,6 +325,10 @@ tr.hover-row:hover td { background-color: #f1f5f9; }
   .glass {
     backdrop-filter: none !important;
     background: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  .app-surface-glass {
+    background-color: var(--surface-1);
   }
 
   /* Faster animations on mobile */

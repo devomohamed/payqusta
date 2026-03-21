@@ -80,11 +80,17 @@ async function restockInvoiceItems(invoice, requestedItems = []) {
     if (!product) continue;
 
     const variant = requestedItem.variantId ? product.variants.id(requestedItem.variantId) : null;
+    const matchingInvoiceItem = findMatchingInvoiceItem(invoice, requestedItem);
+    const allocatedBranchId =
+      matchingInvoiceItem?.allocatedBranch ||
+      matchingInvoiceItem?.branch ||
+      invoice.branch ||
+      null;
 
     restockInventoryAllocation({
       product,
       variant,
-      branchId: invoice.branch || null,
+      branchId: allocatedBranchId,
       quantity: requestedItem.quantity,
     });
 

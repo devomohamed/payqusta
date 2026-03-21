@@ -115,10 +115,10 @@ router.put('/auth/update-profile', authController.updateProfile);
 router.put('/auth/update-avatar', uploadLimiter, uploadAvatar, authController.updateAvatar);
 router.delete('/auth/remove-avatar', authController.removeAvatar);
 router.get('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'read'), authController.getTenantUsers);
-router.post('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
-router.put('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'update'), authController.updateTenantUser);
-router.delete('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'delete'), authController.deleteTenantUser);
-router.post('/auth/add-user', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), authController.addUser);
+router.post('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), auditLog('create', 'user'), authController.addUser);
+router.put('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'update'), auditLog('update', 'user'), authController.updateTenantUser);
+router.delete('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'delete'), auditLog('delete', 'user'), authController.deleteTenantUser);
+router.post('/auth/add-user', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), auditLog('create', 'user'), authController.addUser);
 router.post('/auth/switch-tenant', tenantController.switchTenant);
 router.post('/auth/create-store', authorize('vendor', 'admin'), tenantController.createMyTenant);
 

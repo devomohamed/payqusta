@@ -571,7 +571,7 @@ export default function ProductDetails() {
         {/* ─── Gallery ─── */}
         <div className="lg:col-span-7 space-y-6">
           <div
-            className="aspect-[4/3] sm:aspect-square bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-800 dark:to-gray-900/50 rounded-[2rem] overflow-hidden relative group cursor-zoom-in border border-gray-100 dark:border-gray-800 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
+            className="aspect-[4/3] sm:aspect-square app-surface-muted rounded-[2rem] overflow-hidden relative group cursor-zoom-in border border-gray-100/80 dark:border-white/10 transition-all shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setIsZoomed(false)}
             onClick={() => { setLightboxIndex(allImages.indexOf(activeImage)); setLightboxOpen(true); }}
@@ -605,7 +605,7 @@ export default function ProductDetails() {
                 <button
                   key={idx}
                   onClick={() => setActiveImage(img)}
-                  className={`w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 snap-center rounded-2xl overflow-hidden border-2 transition-all duration-300 ease-out ${activeImage === img ? 'border-primary-500 shadow-[0_4px_12px_rgb(var(--color-primary-500)/0.2)] scale-105' : 'border-transparent bg-white dark:bg-gray-800 hover:bg-gray-50 opacity-70 hover:opacity-100'}`}
+                  className={`w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 snap-center rounded-2xl overflow-hidden border-2 transition-all duration-300 ease-out ${activeImage === img ? 'border-primary-500 shadow-[0_4px_12px_rgb(var(--color-primary-500)/0.2)] scale-105' : 'border-transparent app-surface hover:bg-gray-50 dark:hover:bg-white/5 opacity-70 hover:opacity-100'}`}
                 >
                   <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain p-2" />
                 </button>
@@ -619,7 +619,7 @@ export default function ProductDetails() {
               <span className="w-1.5 h-6 bg-gradient-to-b from-primary-400 to-primary-600 rounded-full" />وصف المنتج
             </h3>
             <div
-              className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-800/40 p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
+              className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed app-surface p-8 rounded-[2rem] border border-gray-100/80 dark:border-white/10 shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
               dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف متاح لهذا المنتج.</p>' }}
             />
           </div>
@@ -644,7 +644,7 @@ export default function ProductDetails() {
                   <Share2 className="w-4 h-4" /> شارك
                 </button>
                 {shareOpen && (
-                  <div className="absolute left-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-2 min-w-[200px] z-30 animate-fade-in origin-top-left">
+                  <div className="absolute left-0 top-full mt-2 app-surface rounded-2xl shadow-xl border border-gray-100/80 dark:border-white/10 p-2 min-w-[200px] z-30 animate-fade-in origin-top-left">
                     <button onClick={copyLink} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-bold transition-colors">
                       {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
                       {copied ? 'تم النسخ!' : 'انسخ الرابط'}
@@ -660,7 +660,7 @@ export default function ProductDetails() {
             <h1 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white leading-[1.15] tracking-tight">{product.name}</h1>
 
             {/* Stars summary */}
-            <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 w-fit px-4 py-2 rounded-full border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-3 app-surface-muted w-fit px-4 py-2 rounded-full border border-gray-100/80 dark:border-white/10">
               <div className="flex gap-0.5">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className={`w-4 h-4 ${i < Math.round(reviewsStats.avgRating) ? 'fill-amber-400 text-amber-400 drop-shadow-sm' : 'text-gray-300 dark:text-gray-600'}`} />
@@ -676,8 +676,8 @@ export default function ProductDetails() {
 
             {(product.sku || product.barcode) && (
               <div className="flex flex-wrap items-center gap-2 pt-2">
-                {product.sku && <span className="text-[11px] font-mono text-gray-500 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg shadow-sm">SKU: <strong className="text-gray-700 dark:text-white select-all">{product.sku}</strong></span>}
-                {product.barcode && <span className="text-[11px] font-mono text-gray-500 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg shadow-sm">BC: <strong className="text-gray-700 dark:text-white select-all">{product.barcode}</strong></span>}
+                {product.sku && <span className="text-[11px] font-mono text-gray-500 app-surface border border-gray-200/80 dark:border-white/10 px-3 py-1.5 rounded-lg shadow-sm">SKU: <strong className="text-gray-700 dark:text-white select-all">{product.sku}</strong></span>}
+                {product.barcode && <span className="text-[11px] font-mono text-gray-500 app-surface border border-gray-200/80 dark:border-white/10 px-3 py-1.5 rounded-lg shadow-sm">BC: <strong className="text-gray-700 dark:text-white select-all">{product.barcode}</strong></span>}
               </div>
             )}
           </div>
@@ -702,7 +702,7 @@ export default function ProductDetails() {
                   </div>
                 )}
                 {product.taxable && (
-                  <p className="text-xs font-bold text-gray-400 mt-1.5 bg-gray-50 dark:bg-gray-800 w-fit px-2 py-0.5 rounded-md">{product.priceIncludesTax ? 'السعر شامل الضريبة' : `تُضاف ضريبة بنسبة ${product.taxRate}%`}</p>
+                  <p className="text-xs font-bold text-gray-400 mt-1.5 app-surface-muted w-fit px-2 py-0.5 rounded-md">{product.priceIncludesTax ? 'السعر شامل الضريبة' : `تُضاف ضريبة بنسبة ${product.taxRate}%`}</p>
                 )}
               </div>
 
@@ -764,7 +764,7 @@ export default function ProductDetails() {
                       key={v._id}
                       onClick={() => setSelectedVariant(v)}
                       disabled={v.stock === 0}
-                      className={`relative px-4 py-3 rounded-2xl border-2 text-sm font-bold transition-all duration-200 overflow-hidden ${selectedVariant?._id === v._id ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 text-primary-700 shadow-md transform scale-[1.02]' : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 hover:border-gray-200 hover:shadow-sm'} ${v.stock === 0 ? 'opacity-40 hover:scale-100 cursor-not-allowed bg-gray-50' : ''}`}
+                      className={`relative px-4 py-3 rounded-2xl border-2 text-sm font-bold transition-all duration-200 overflow-hidden ${selectedVariant?._id === v._id ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20 text-primary-700 shadow-md transform scale-[1.02]' : 'border-gray-100/80 dark:border-white/10 app-surface text-gray-600 hover:border-gray-200/80 hover:shadow-sm'} ${v.stock === 0 ? 'opacity-40 hover:scale-100 cursor-not-allowed bg-gray-50 dark:bg-white/5' : ''}`}
                     >
                       {selectedVariant?._id === v._id && (
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-400 to-primary-600" />
@@ -781,18 +781,18 @@ export default function ProductDetails() {
 
             {/* Variant Description Component */}
             {selectedVariant?.description && (
-              <div className="p-4 bg-gray-50/80 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2 mt-2">
+              <div className="p-4 app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 space-y-2 mt-2">
                 <span className="text-xs font-black text-primary-600 block">تفاصيل الموديل المُحدد:</span>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedVariant.description}</p>
               </div>
             )}
 
             {/* Quantity + Add to Cart */}
-            <div ref={addToCartRef} className="pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div ref={addToCartRef} className="pt-4 border-t border-gray-100/80 dark:border-white/10">
               {!isOutOfStock ? (
                 <div className="space-y-4">
                   <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="flex items-center gap-4 px-4 py-2 bg-white dark:bg-gray-900 rounded-2xl border-2 border-gray-100 dark:border-gray-800 shadow-sm shrink-0">
+                    <div className="flex items-center gap-4 px-4 py-2 app-surface rounded-2xl border-2 border-gray-100/80 dark:border-white/10 shadow-sm shrink-0">
                       <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 transition-colors active:scale-95">
                         <Minus className="w-4 h-4" />
                       </button>
@@ -814,7 +814,7 @@ export default function ProductDetails() {
                       <button
                         onClick={handleWishlist}
                         disabled={wishlistLoading}
-                        className={`w-16 h-16 flex items-center justify-center rounded-2xl border-2 transition-all active:scale-90 shrink-0 ${wishlistIds?.includes(product._id) ? 'border-red-100 bg-red-50 text-red-500 shadow-sm' : 'border-gray-100 bg-white dark:bg-gray-900 text-gray-400 hover:border-red-200 hover:text-red-400 dark:border-gray-800 shadow-sm'}`}
+                        className={`w-16 h-16 flex items-center justify-center rounded-2xl border-2 transition-all active:scale-90 shrink-0 ${wishlistIds?.includes(product._id) ? 'border-red-100 bg-red-50 text-red-500 shadow-sm' : 'border-gray-100/80 app-surface text-gray-400 hover:border-red-200 hover:text-red-400 dark:border-white/10 shadow-sm'}`}
                       >
                         <Heart className={`w-6 h-6 transition-transform duration-300 ${wishlistIds?.includes(product._id) ? 'fill-current scale-110' : 'hover:scale-110'}`} />
                       </button>
@@ -865,7 +865,7 @@ export default function ProductDetails() {
                           <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
                             <Check className="w-6 h-6" />
                           </div>
-                          <p className="font-bold text-gray-900">تم تسجيل طلبك للمتابعة</p>
+                          <p className="font-bold text-gray-900 dark:text-gray-100">تم تسجيل طلبك للمتابعة</p>
                           <p className="text-sm text-gray-500">سيصلك إشعار فور توفر المنتج لدينا!</p>
                         </div>
                       ) : (
@@ -954,13 +954,13 @@ export default function ProductDetails() {
 
         {/* Installment Calculator */}
         {storeSettings?.settings?.installments?.enabled !== false && (
-          <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+          <div className="pt-6 border-t border-gray-100/80 dark:border-white/10">
             <PortalInstallmentCalculator />
           </div>
         )}
 
         {/* Reviews */}
-        <div id="reviews-section" className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
+        <div id="reviews-section" className="pt-6 border-t border-gray-100/80 dark:border-white/10 space-y-4">
           <h3 className="text-xl font-black flex items-center gap-2">
             <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> آراء وتقييمات العملاء
           </h3>
@@ -999,7 +999,7 @@ export default function ProductDetails() {
           {sortedReviews.length > 0 ? (
             <div className="space-y-3">
               {sortedReviews.map(r => (
-                <div key={r._id} className="p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                <div key={r._id} className="p-4 app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="font-bold text-sm text-gray-900 dark:text-white">{r.customer?.name || 'مستخدم'}</span>
@@ -1019,7 +1019,7 @@ export default function ProductDetails() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+            <div className="text-center py-10 app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10">
               <Star className="w-10 h-10 text-gray-200 mx-auto mb-2" />
               <p className="text-gray-500 font-bold">لا توجد تقييمات حتى الآن</p>
               <p className="text-sm text-gray-400">سجل دخول لكتابة رايك وتقيمك عن المنتج والبائع</p>
@@ -1030,7 +1030,7 @@ export default function ProductDetails() {
 
       {/* ─── Related Products ─── */}
       {relatedProducts.length > 0 && (
-        <section className="mt-16 pt-10 border-t border-gray-100 dark:border-gray-800 animate-fade-in">
+        <section className="mt-16 pt-10 border-t border-gray-100/80 dark:border-white/10 animate-fade-in">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white">منتجات قد تعجبك</h2>
             <Link to={isPortal ? '/portal/products' : storefrontPath('/products')} className="text-sm font-bold text-primary-600 hover:text-primary-500 flex items-center gap-1">
@@ -1041,7 +1041,7 @@ export default function ProductDetails() {
             {relatedProducts.map(p => (
               <div
                 key={p._id}
-                className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                className="group app-surface rounded-2xl overflow-hidden border border-gray-100/80 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
                 <Link
                   to={isPortal ? `/portal/products/${p._id}` : storefrontPath(`/products/${p._id}`)}
@@ -1100,7 +1100,7 @@ export default function ProductDetails() {
                 to={storefrontPath(`/products/${p._id}`)}
                 className="flex-shrink-0 w-32 group"
               >
-                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 group-hover:border-primary-300 transition-all">
+                <div className="aspect-square app-surface-muted rounded-2xl overflow-hidden border border-gray-100/80 dark:border-white/10 group-hover:border-primary-300 transition-all">
                   {p.image ? (
                     <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" />
                   ) : (

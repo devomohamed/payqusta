@@ -45,7 +45,7 @@ export default function PortalInstallmentCalculator() {
     const result = calculate();
 
     return (
-        <div className="space-y-6 pb-20" dir={i18n.dir()}>
+        <div className="space-y-6 pb-20 app-text-soft" dir={i18n.dir()}>
             {/* Header */}
             <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function PortalInstallmentCalculator() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Input Form */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <div className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('installmentCalc.total_amount')}</label>
                         <div className="relative">
@@ -69,7 +69,7 @@ export default function PortalInstallmentCalculator() {
                                 value={totalAmount}
                                 onChange={(e) => setTotalAmount(e.target.value)}
                                 placeholder={t('installmentCalc.amount_placeholder')}
-                                className="w-full px-10 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition font-bold"
+                                className="app-surface w-full px-10 py-3 rounded-xl border border-transparent text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition font-bold"
                             />
                         </div>
                     </div>
@@ -83,7 +83,7 @@ export default function PortalInstallmentCalculator() {
                                 value={downPayment}
                                 onChange={(e) => setDownPayment(e.target.value)}
                                 placeholder={t('installmentCalc.down_placeholder')}
-                                className="w-full px-10 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none transition font-bold"
+                                className="app-surface w-full px-10 py-3 rounded-xl border border-transparent text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition font-bold"
                             />
                         </div>
                     </div>
@@ -97,7 +97,7 @@ export default function PortalInstallmentCalculator() {
                                     onClick={() => setDuration(opt.months)}
                                     className={`p-2 rounded-xl text-sm font-bold border-2 transition-all ${duration === opt.months
                                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                                        : 'border-transparent bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                        : 'border-transparent app-surface-muted text-gray-600 dark:text-gray-400 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                                         }`}
                                 >
                                     {opt.label}

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { api } from '../store';
+import { api, useThemeStore } from '../store';
 import { Button, Input } from '../components/UI';
+import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
@@ -12,6 +13,7 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { dark } = useThemeStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,7 +51,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className={`app-shell-bg min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4 ${dark ? 'dark' : ''}`}>
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -65,7 +67,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+        <div className="app-surface rounded-[1.75rem] p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* New Password */}
             <div>
@@ -142,6 +144,9 @@ export default function ResetPasswordPage() {
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-8">
           © 2026 PayQusta. جميع الحقوق محفوظة.
         </p>
+        <div className="mt-4 flex justify-center">
+          <ThemeModeSwitcher compact />
+        </div>
       </div>
     </div>
   );

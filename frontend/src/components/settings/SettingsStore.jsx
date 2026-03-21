@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
   Truck,
+  Clock,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore, api } from '../../store';
@@ -34,7 +35,8 @@ const createEmptyShippingZone = () => ({
 });
 
 export default function SettingsStore() {
-  const { tenant, getMe } = useAuthStore();
+  const { tenant, getMe, getBranches } = useAuthStore();
+  const [branches, setBranches] = useState([]);
   const [storeForm, setStoreForm] = useState({
     name: '',
     email: '',
@@ -63,6 +65,12 @@ export default function SettingsStore() {
     shippingSupportsCashOnDelivery: true,
     shippingAutoCreateShipment: false,
     shippingZones: [],
+    onlineFulfillmentMode: 'branch_priority',
+    defaultOnlineBranchId: '',
+    branchPriorityOrder: [],
+    allowCrossBranchOnlineAllocation: false,
+    allowMixedBranchOrders: false,
+    shiftDurationHours: 8,
   });
   const [saving, setSaving] = useState(false);
   const [applyingWatermark, setApplyingWatermark] = useState(false);
@@ -115,9 +123,36 @@ export default function SettingsStore() {
             isActive: zone.isActive !== false,
           }))
         : [],
+      onlineFulfillmentMode: tenant.settings?.onlineFulfillment?.mode || 'branch_priority',
+      defaultOnlineBranchId: tenant.settings?.onlineFulfillment?.defaultOnlineBranchId?._id
+        || tenant.settings?.onlineFulfillment?.defaultOnlineBranchId
+        || '',
+      branchPriorityOrder: Array.isArray(tenant.settings?.onlineFulfillment?.branchPriorityOrder)
+        ? tenant.settings.onlineFulfillment.branchPriorityOrder.map((branchItem) => branchItem?._id || branchItem).filter(Boolean)
+        : [],
+      allowCrossBranchOnlineAllocation: tenant.settings?.onlineFulfillment?.allowCrossBranchOnlineAllocation || false,
+      allowMixedBranchOrders: tenant.settings?.onlineFulfillment?.allowMixedBranchOrders || false,
+      shiftDurationHours: tenant.settings?.shiftDurationHours ?? 8,
     });
     setSubdomain(tenant.slug || '');
   }, [tenant]);
+
+  useEffect(() => {
+    let mounted = true;
+    getBranches?.()
+      .then((result) => {
+        if (!mounted) return;
+        setBranches(Array.isArray(result) ? result : []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setBranches([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [getBranches]);
 
   const updateShippingZone = (index, key, value) => {
     setStoreForm((prev) => ({
@@ -140,6 +175,19 @@ export default function SettingsStore() {
       ...prev,
       shippingZones: prev.shippingZones.filter((_, zoneIndex) => zoneIndex !== index),
     }));
+  };
+
+  const togglePriorityBranch = (branchId, checked) => {
+    setStoreForm((prev) => {
+      const nextPriorityOrder = checked
+        ? [...new Set([...(prev.branchPriorityOrder || []), branchId])]
+        : (prev.branchPriorityOrder || []).filter((currentId) => currentId !== branchId);
+
+      return {
+        ...prev,
+        branchPriorityOrder: nextPriorityOrder,
+      };
+    });
   };
 
   const handleSaveStore = async () => {
@@ -188,6 +236,14 @@ export default function SettingsStore() {
             autoCreateShipment: storeForm.shippingAutoCreateShipment,
             zones: storeForm.shippingZones,
           },
+          onlineFulfillment: {
+            mode: storeForm.onlineFulfillmentMode,
+            defaultOnlineBranchId: storeForm.defaultOnlineBranchId || null,
+            branchPriorityOrder: storeForm.branchPriorityOrder || [],
+            allowCrossBranchOnlineAllocation: storeForm.allowCrossBranchOnlineAllocation,
+            allowMixedBranchOrders: storeForm.allowMixedBranchOrders,
+          },
+          shiftDurationHours: storeForm.shiftDurationHours,
         },
       });
 
@@ -293,8 +349,8 @@ export default function SettingsStore() {
             <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">بيانات المتجر</h2>
-            <p className="text-sm text-gray-400">معلومات متجرك الأساسية</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">بيانات المتجر</h2>
+            <p className="text-sm text-subtle">معلومات متجرك الأساسية</p>
           </div>
         </div>
 
@@ -329,7 +385,7 @@ export default function SettingsStore() {
         <div className="rounded-2xl border border-primary-100 bg-primary-50/40 p-5 dark:border-primary-900/30 dark:bg-primary-900/10">
           <div className="mb-4">
             <h3 className="text-base font-bold text-primary-700 dark:text-primary-300">إعدادات الباركود</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted">
               التحكم في واجهات الباركود المحلي والدولي، والبحث بالكاميرا، ومصادر الباركود المطبوعة.
             </p>
           </div>
@@ -340,7 +396,7 @@ export default function SettingsStore() {
               <select
                 value={storeForm.barcodeMode}
                 onChange={(e) => setStoreForm({ ...storeForm, barcodeMode: e.target.value })}
-                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+                className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-800 dark:text-white"
               >
                 <option value="none">إخفاء واجهات الباركود</option>
                 <option value="international_only">دولي فقط</option>
@@ -349,14 +405,14 @@ export default function SettingsStore() {
               </select>
             </div>
 
-            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
               <input
                 type="checkbox"
                 checked={storeForm.autoGenerateLocalBarcode}
                 onChange={(e) => setStoreForm({ ...storeForm, autoGenerateLocalBarcode: e.target.checked })}
                 className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
               />
-              <span className="text-sm font-medium">توليد الباركود المحلي تلقائيًا عند إنشاء المنتج</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">توليد الباركود المحلي تلقائيًا عند إنشاء المنتج</span>
             </label>
 
             <div className="space-y-1.5">
@@ -364,7 +420,7 @@ export default function SettingsStore() {
               <select
                 value={storeForm.receiptBarcodeSource}
                 onChange={(e) => setStoreForm({ ...storeForm, receiptBarcodeSource: e.target.value })}
-                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+                className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-800 dark:text-white"
               >
                 <option value="none">بدون باركود</option>
                 <option value="international">الباركود الدولي</option>
@@ -377,7 +433,7 @@ export default function SettingsStore() {
               <select
                 value={storeForm.deliveryBarcodeSource}
                 onChange={(e) => setStoreForm({ ...storeForm, deliveryBarcodeSource: e.target.value })}
-                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+                className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-800 dark:text-white"
               >
                 <option value="none">بدون باركود</option>
                 <option value="international">الباركود الدولي</option>
@@ -386,14 +442,14 @@ export default function SettingsStore() {
             </div>
           </div>
 
-          <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
+          <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
             <input
               type="checkbox"
               checked={storeForm.storefrontBarcodeSearchEnabled}
               onChange={(e) => setStoreForm({ ...storeForm, storefrontBarcodeSearchEnabled: e.target.checked })}
               className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
             />
-            <span className="text-sm font-medium">تفعيل البحث بالكاميرا داخل المتجر الأمامي</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">تفعيل البحث بالكاميرا داخل المتجر الأمامي</span>
           </label>
         </div>
 
@@ -404,7 +460,7 @@ export default function SettingsStore() {
             </div>
             <div>
               <h3 className="text-base font-bold text-amber-700 dark:text-amber-300">إعدادات الشحن</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-subtle">
                 الرسوم الافتراضية، شركة الشحن، ومناطق التوصيل التي ستظهر في المتجر وتدخل ضمن ملخص الطلب.
               </p>
             </div>
@@ -412,34 +468,34 @@ export default function SettingsStore() {
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-white px-4 py-3 dark:border-amber-800/40 dark:bg-gray-900">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-gray-50 px-4 py-3 dark:border-amber-900/40 dark:bg-slate-950">
                 <input
                   type="checkbox"
                   checked={storeForm.shippingEnabled}
                   onChange={(e) => setStoreForm({ ...storeForm, shippingEnabled: e.target.checked })}
                   className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span className="text-sm font-medium">تفعيل الشحن داخل المتجر</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">تفعيل الشحن داخل المتجر</span>
               </label>
 
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-white px-4 py-3 dark:border-amber-800/40 dark:bg-gray-900">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-gray-50 px-4 py-3 dark:border-amber-900/40 dark:bg-slate-950">
                 <input
                   type="checkbox"
                   checked={storeForm.shippingSupportsCashOnDelivery}
                   onChange={(e) => setStoreForm({ ...storeForm, shippingSupportsCashOnDelivery: e.target.checked })}
                   className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span className="text-sm font-medium">السماح بالدفع عند الاستلام</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">السماح بالدفع عند الاستلام</span>
               </label>
 
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-white px-4 py-3 dark:border-amber-800/40 dark:bg-gray-900 md:col-span-2">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-gray-50 px-4 py-3 dark:border-amber-900/40 dark:bg-slate-950 md:col-span-2">
                 <input
                   type="checkbox"
                   checked={storeForm.shippingAutoCreateShipment}
                   onChange={(e) => setStoreForm({ ...storeForm, shippingAutoCreateShipment: e.target.checked })}
                   className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span className="text-sm font-medium">إنشاء الشحنة تلقائيًا بعد تأكيد الطلب عند تفعيل التكامل لاحقًا</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">إنشاء الشحنة تلقائيًا بعد تأكيد الطلب عند تفعيل التكامل لاحقًا</span>
               </label>
             </div>
 
@@ -449,7 +505,7 @@ export default function SettingsStore() {
                 <select
                   value={storeForm.shippingProvider}
                   onChange={(e) => setStoreForm({ ...storeForm, shippingProvider: e.target.value })}
-                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-amber-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+                  className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-amber-500 focus:ring-0 dark:border-gray-800 dark:bg-slate-950 dark:text-white"
                 >
                   <option value="local">شحن محلي</option>
                   <option value="bosta">Bosta</option>
@@ -545,7 +601,7 @@ export default function SettingsStore() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">مناطق ورسوم الشحن</h4>
-                  <p className="mt-1 text-xs text-gray-500">يمكنك تخصيص رسوم ومدة مختلفة لكل محافظة أو منطقة بدلًا من الرسوم الأساسية.</p>
+                  <p className="mt-1 text-xs text-muted">يمكنك تخصيص رسوم ومدة مختلفة لكل محافظة أو منطقة بدلًا من الرسوم الأساسية.</p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addShippingZone} icon={<Plus className="h-4 w-4" />}>
                   إضافة منطقة
@@ -554,7 +610,7 @@ export default function SettingsStore() {
 
               <div className="space-y-3">
                 {storeForm.shippingZones.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900">
+                  <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-muted dark:border-gray-800 dark:bg-slate-950">
                     لا توجد مناطق مخصصة الآن. سيتم استخدام الرسوم الأساسية في المتجر حتى تضيف مناطق شحن هنا.
                   </div>
                 ) : (
@@ -627,9 +683,168 @@ export default function SettingsStore() {
           </div>
         </div>
 
+        <div className="rounded-2xl border border-sky-100 bg-sky-50/50 p-5 dark:border-sky-900/30 dark:bg-sky-900/10">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-sky-700 dark:text-sky-300">Online Fulfillment Policy</h3>
+              <p className="mt-1 text-sm text-subtle">
+                Choose which branch should handle online orders, whether fallback to other branches is allowed,
+                and whether one order may be fulfilled from more than one branch.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Routing Mode</label>
+                <select
+                  value={storeForm.onlineFulfillmentMode}
+                  onChange={(e) => setStoreForm({ ...storeForm, onlineFulfillmentMode: e.target.value })}
+                  className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-sky-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="branch_priority">Branch priority</option>
+                  <option value="default_branch">Default branch</option>
+                  <option value="customer_branch">Customer branch first</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Default Online Branch</label>
+                <select
+                  value={storeForm.defaultOnlineBranchId || ''}
+                  onChange={(e) => setStoreForm({ ...storeForm, defaultOnlineBranchId: e.target.value })}
+                  className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-sky-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="">No default branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                <input
+                  type="checkbox"
+                  checked={storeForm.allowCrossBranchOnlineAllocation}
+                  onChange={(e) => setStoreForm({
+                    ...storeForm,
+                    allowCrossBranchOnlineAllocation: e.target.checked,
+                    allowMixedBranchOrders: e.target.checked ? storeForm.allowMixedBranchOrders : false,
+                  })}
+                  className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
+                />
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Allow fallback to another branch when the preferred branch cannot fulfill the order
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                <input
+                  type="checkbox"
+                  checked={storeForm.allowMixedBranchOrders}
+                  disabled={!storeForm.allowCrossBranchOnlineAllocation}
+                  onChange={(e) => setStoreForm({ ...storeForm, allowMixedBranchOrders: e.target.checked })}
+                  className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
+                />
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Allow one order to be fulfilled from more than one branch
+                </span>
+              </label>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+              <div className="mb-3">
+                <h4 className="text-sm font-bold app-text-strong">Branch Priority</h4>
+                <p className="mt-1 text-xs text-muted">
+                  Select the branches that should be considered first for online orders. The branch commerce settings
+                  still decide whether a branch is online-enabled.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {branches.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-muted dark:border-gray-800 dark:bg-slate-950">
+                    No branches found yet. Create branches first, then return here to define the routing policy.
+                  </div>
+                ) : (
+                  branches.map((branch) => {
+                    const isChecked = (storeForm.branchPriorityOrder || []).includes(branch._id);
+                    return (
+                      <label
+                        key={branch._id}
+                        className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-slate-950"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{branch.name}</p>
+                          <p className="text-xs text-muted">
+                            {branch.participatesInOnlineOrders ? 'Online enabled' : 'Not enabled for online orders'}
+                          </p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => togglePriorityBranch(branch._id, e.target.checked)}
+                          className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
+                        />
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end">
           <Button onClick={handleSaveStore} loading={saving} icon={<Save className="h-4 w-4" />}>
             حفظ بيانات المتجر
+          </Button>
+        </div>
+      </section>
+
+      <hr className="border-gray-100 dark:border-gray-800" />
+
+      <section className="space-y-6">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 shadow-lg">
+            <Clock className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">إعدادات التشغيل والورديات</h2>
+            <p className="text-sm text-gray-400">التحكم في نظام الورديات وساعات العمل</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-purple-100 bg-purple-50/40 p-5 dark:border-purple-900/30 dark:bg-purple-900/10">
+          <div className="mb-4 flex items-start gap-4">
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-purple-700 dark:text-purple-300">مدة الوردية الافتراضية</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                حدد عدد الساعات التي تنتهي بعدها الوردية تلقائيًا. (من 1 إلى 24 ساعة)
+              </p>
+            </div>
+            <div className="w-32">
+              <Input
+                type="number"
+                min="1"
+                max="24"
+                value={storeForm.shiftDurationHours}
+                onChange={(e) => setStoreForm({ ...storeForm, shiftDurationHours: Number(e.target.value) })}
+                className="text-center font-bold"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={handleSaveStore} loading={saving} icon={<Save className="h-4 w-4" />}>
+            حفظ إعدادات التشغيل
           </Button>
         </div>
       </section>
@@ -653,11 +868,11 @@ export default function SettingsStore() {
 
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-6 dark:border-indigo-500/10 dark:bg-indigo-500/5">
           <div className="max-w-xl">
-            <div className="mb-6 rounded-lg border border-indigo-100 bg-white p-4 text-right text-sm text-gray-500 dark:border-indigo-500/30 dark:bg-gray-900 dark:text-gray-400">
+            <div className="mb-6 rounded-lg border border-indigo-100 bg-white p-4 text-right text-sm text-subtle dark:border-indigo-500/30 dark:bg-slate-950">
               <p className="mb-2 font-bold text-indigo-800 dark:text-indigo-200">
                 ما هو رابط المتجر الأساسي؟
               </p>
-              <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+              <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-subtle dark:text-gray-300">
                 <li>
                   هذا الرابط مجاني وسريع الإعداد، ويمنح عملاءك مدخلًا مباشرًا لمتجرك.
                 </li>
@@ -758,8 +973,8 @@ export default function SettingsStore() {
             )}
 
             {tenant?.slug && (
-              <div className="mt-6 border-t border-indigo-100 pt-6 dark:border-indigo-500/10">
-                <p className="mb-2 text-sm text-gray-500">رابط متجرك النشط حاليًا:</p>
+              <div className="mt-6 border-t border-indigo-100 pt-6 dark:border-white/10">
+                <p className="mb-2 text-sm text-subtle">رابط متجرك النشط حاليًا:</p>
                 <a
                   href={activeStoreUrl}
                   target="_blank"
@@ -771,7 +986,7 @@ export default function SettingsStore() {
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 {isLocalEnvironment && activeProductionStoreUrl && (
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-2 text-xs text-muted">
                     بعد النشر سيعمل المتجر على:
                     {' '}
                     <span dir="ltr" className="font-mono text-indigo-500 dark:text-indigo-300">
@@ -809,7 +1024,7 @@ export default function SettingsStore() {
             <h2 className="text-xl font-bold text-teal-600 dark:text-teal-400">
               العلامة المائية للصور (Watermark)
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-subtle">
               طبع اسم متجرك بشكل شفاف على صور المنتجات تلقائيًا لحفظ الحقوق
             </p>
           </div>
@@ -818,7 +1033,7 @@ export default function SettingsStore() {
         <div className="rounded-2xl border border-teal-100 bg-teal-50/50 p-6 dark:border-teal-500/10 dark:bg-teal-500/5">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-4">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-teal-100 bg-white p-3 transition-colors hover:border-teal-300 dark:border-teal-800 dark:bg-gray-900">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-teal-100 bg-gray-50 p-3 transition-colors hover:border-teal-300 dark:border-teal-800 dark:bg-gray-900">
                 <input
                   type="checkbox"
                   checked={storeForm.watermarkEnabled}
@@ -827,7 +1042,7 @@ export default function SettingsStore() {
                   }
                   className="h-5 w-5 rounded text-teal-600 focus:ring-teal-500"
                 />
-                <span className="font-bold text-gray-800 dark:text-gray-200">
+                <span className="font-bold text-gray-900 dark:text-gray-100">
                   تفعيل العلامة المائية للصور الجديدة
                 </span>
               </label>
@@ -846,13 +1061,13 @@ export default function SettingsStore() {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">موقع العلامة المائية</label>
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">موقع العلامة المائية</label>
                   <select
                     value={storeForm.watermarkPosition}
                     onChange={(e) =>
                       setStoreForm({ ...storeForm, watermarkPosition: e.target.value })
                     }
-                    className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 transition-colors focus:border-teal-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900"
+                    className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-teal-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                   >
                     <option value="center">في المنتصف</option>
                     <option value="southeast">أسفل اليمين</option>
@@ -904,7 +1119,7 @@ export default function SettingsStore() {
                 </div>
               )}
 
-              <div className="absolute bottom-2 right-2 rounded bg-white/80 px-2 py-1 text-[10px] text-gray-400 dark:bg-gray-900/80">
+              <div className="absolute bottom-2 right-2 rounded bg-gray-50/80 px-2 py-1 text-[10px] text-muted dark:bg-slate-950/80">
                 معاينة تجريبية
               </div>
             </div>

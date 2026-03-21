@@ -45,10 +45,10 @@ export default function RevenueAnalyticsPage() {
     const fmt = (v) => Number(v || 0).toLocaleString('ar-EG', { maximumFractionDigits: 0 });
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
+        <div className="space-y-6 max-w-7xl mx-auto app-text-soft">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-2">
-                <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white">
+            <div className="app-surface-muted mb-2 flex items-center gap-3 rounded-3xl p-5">
+                <div className="app-surface flex items-center justify-center rounded-2xl p-3 text-indigo-600 dark:text-indigo-300">
                     <BarChart3 className="w-6 h-6" />
                 </div>
                 <div>
@@ -88,16 +88,16 @@ export default function RevenueAnalyticsPage() {
             {/* Activity + Revenue */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* User Activity */}
-                <div className={`rounded-2xl p-6 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="app-surface rounded-3xl p-6">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                         <Activity className="w-5 h-5 text-blue-500" /> نشاط المستخدمين
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700/50' : 'bg-blue-50'}`}>
+                        <div className="app-surface-muted rounded-2xl p-4">
                             <p className="text-sm text-gray-400 mb-1">يومي (DAU)</p>
                             <p className="text-3xl font-bold">{data.activity?.dau || 0}</p>
                         </div>
-                        <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700/50' : 'bg-indigo-50'}`}>
+                        <div className="app-surface-muted rounded-2xl p-4">
                             <p className="text-sm text-gray-400 mb-1">أسبوعي (WAU)</p>
                             <p className="text-3xl font-bold">{data.activity?.wau || 0}</p>
                         </div>
@@ -105,16 +105,16 @@ export default function RevenueAnalyticsPage() {
                 </div>
 
                 {/* Revenue Comparison */}
-                <div className={`rounded-2xl p-6 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="app-surface rounded-3xl p-6">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-green-500" /> مقارنة الإيرادات
                     </h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700/50' : 'bg-green-50'}`}>
+                        <div className="app-surface-muted rounded-2xl p-4">
                             <p className="text-sm text-gray-400 mb-1">هذا الشهر</p>
                             <p className="text-2xl font-bold">{fmt(data.revenue?.thisMonth)} جنيه</p>
                         </div>
-                        <div className={`p-4 rounded-xl ${dark ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                        <div className="app-surface-muted rounded-2xl p-4">
                             <p className="text-sm text-gray-400 mb-1">الشهر الماضي</p>
                             <p className="text-2xl font-bold">{fmt(data.revenue?.lastMonth)} جنيه</p>
                         </div>
@@ -135,7 +135,7 @@ export default function RevenueAnalyticsPage() {
 
             {/* Growth Over Time */}
             {data.growthOverTime?.length > 0 && (
-                <div className={`rounded-2xl p-6 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <div className="app-surface rounded-3xl p-6">
                     <h3 className="text-lg font-bold mb-4">نمو المتاجر الجديدة (آخر 6 شهور)</h3>
                     <div className="flex items-end gap-3 h-40">
                         {data.growthOverTime.map((item, idx) => {
@@ -161,15 +161,15 @@ export default function RevenueAnalyticsPage() {
 
 function KPICard({ dark, icon: Icon, label, value, sub, color }) {
     return (
-        <div className={`rounded-2xl p-5 border shadow-sm ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="app-surface-muted rounded-3xl p-5 transition-all duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg">
             <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}>
                     <Icon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-sm text-gray-400">{label}</span>
+                <span className="app-text-soft text-sm">{label}</span>
             </div>
             <p className="text-2xl font-bold mb-1">{value}</p>
-            {sub && <p className="text-xs text-gray-400">{sub}</p>}
+            {sub && <p className="app-text-soft text-xs">{sub}</p>}
         </div>
     );
 }
