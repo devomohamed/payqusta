@@ -119,7 +119,7 @@ export default function ProductComposer({
             showCloseButton={false}
             closeOnOutsideClick={false}
             bodyClassName="app-surface-muted flex h-full flex-col p-0"
-            contentClassName="h-[95vh] rounded-2xl"
+            contentClassName="h-[92vh] max-h-[900px] rounded-[2rem] shadow-2xl overflow-hidden"
             headerClassName="hidden"
             title="إضافة منتج"
         >
@@ -135,9 +135,9 @@ export default function ProductComposer({
                     stepErrors={stepErrors}
                 />
 
-                <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
+                <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row bg-slate-50/30 dark:bg-transparent">
                     <div className="flex-1 overflow-y-auto pb-24 no-scrollbar lg:pb-0">
-                        <div className="mx-auto max-w-4xl p-6 lg:p-8">
+                        <div className="mx-auto max-w-3xl p-6 lg:p-10">
                             {activeStep === 'basics' && (
                                 <ProductBasicsStep
                                     form={form}

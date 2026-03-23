@@ -187,31 +187,94 @@ export default function SuperAdminPlansPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      {/* Plans Section */}
-      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-            <Crown className="w-5 h-5 text-white" />
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <Crown className="w-6 h-6 text-white" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/80">Plans Control</p>
+              <h1 className="text-2xl font-extrabold">إدارة الباقات والأسعار</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                إدارة باقات الاشتراك وحدود الاستخدام مع عرض أوضح على الهاتف ومساحة عمل أسرع لفريق السوبر أدمن.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-extrabold">إدارة الباقات والأسعار</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              إجمالي الباقات: {plans.length} | النشطة: {activeCount}
-            </p>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Button variant="ghost" icon={<RefreshCw className="w-4 h-4" />} onClick={loadAllData} className="w-full sm:w-auto">
+              تحديث
+            </Button>
+            <Button icon={<Plus className="w-4 h-4" />} onClick={openCreate} className="w-full sm:w-auto">
+              باقة جديدة
+            </Button>
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="ghost" icon={<RefreshCw className="w-4 h-4" />} onClick={loadAllData}>
-            تحديث
-          </Button>
-          <Button icon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            باقة جديدة
-          </Button>
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <Card className="app-surface rounded-2xl p-4 text-center">
+            <p className="text-[11px] text-gray-400">إجمالي الباقات</p>
+            <p className="mt-1 text-xl font-black text-gray-900 dark:text-white">{plans.length}</p>
+          </Card>
+          <Card className="app-surface rounded-2xl p-4 text-center">
+            <p className="text-[11px] text-gray-400">النشطة</p>
+            <p className="mt-1 text-xl font-black text-emerald-600">{activeCount}</p>
+          </Card>
+          <Card className="app-surface rounded-2xl p-4 text-center">
+            <p className="text-[11px] text-gray-400">الشائعة</p>
+            <p className="mt-1 text-xl font-black text-amber-600">{plans.filter((plan) => plan.isPopular).length}</p>
+          </Card>
         </div>
-      </div>
+      </section>
 
-      <Card className="app-surface overflow-x-auto rounded-3xl">
+      <Card className="app-surface rounded-3xl">
+        <div className="space-y-3 p-4 md:hidden">
+          {plans.map((plan) => (
+            <div key={plan._id} className="rounded-3xl border border-white/60 p-4 dark:border-white/10">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-extrabold text-gray-900 dark:text-white">{plan.name}</p>
+                  <p className="mt-1 text-xs text-gray-500">{plan.description || '-'}</p>
+                </div>
+                <Badge variant={plan.isActive ? 'success' : 'gray'}>
+                  {plan.isActive ? 'نشطة' : 'متوقفة'}
+                </Badge>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {plan.isPopular && <Badge>الأكثر شيوعًا</Badge>}
+                <Badge variant="info">{plan.billingCycle === 'yearly' ? 'سنوي' : 'شهري'}</Badge>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                  <p className="text-[11px] text-gray-400">السعر</p>
+                  <p className="mt-1 font-black text-gray-900 dark:text-white">{(plan.price || 0).toLocaleString('ar-EG')} {plan.currency || 'EGP'}</p>
+                </div>
+                <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                  <p className="text-[11px] text-gray-400">الحدود</p>
+                  <p className="mt-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    منتجات {plan?.limits?.maxProducts ?? 0} • عملاء {plan?.limits?.maxCustomers ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">مستخدمون {plan?.limits?.maxUsers ?? 0} • فروع {plan?.limits?.maxBranches ?? 0}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Button size="sm" variant="ghost" icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(plan)} className="flex-1">
+                  تعديل
+                </Button>
+                {plan.isActive && (
+                  <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDisable(plan)} className="flex-1">
+                    إيقاف
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[980px]">
           <thead>
             <tr className="text-right text-xs text-gray-500 border-b border-gray-100/80 dark:border-white/10">
@@ -261,6 +324,7 @@ export default function SuperAdminPlansPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* Payment Methods Settings Section */}

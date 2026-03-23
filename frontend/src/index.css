@@ -59,7 +59,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--app-bg);
   color: var(--text-body);
+  overflow-x: hidden;
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html, body, #root {
+  min-height: 100%;
 }
 
 select option {
@@ -296,6 +301,10 @@ select:-webkit-autofill {
 }
 .animate-bounce-once { animation: bounceOnce 0.5s ease-out; }
 
+.mobile-app-main {
+  padding-bottom: calc(1rem + var(--safe-area-inset-bottom));
+}
+
 
 /* Toast styles */
 .toast-success { background: #10b981 !important; }
@@ -329,6 +338,17 @@ tr.hover-row:hover td { background-color: #f1f5f9; }
 
   .app-surface-glass {
     background-color: var(--surface-1);
+  }
+
+  .app-surface {
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+  }
+
+  .mobile-app-main {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+    padding-top: 0.875rem;
+    padding-bottom: calc(1rem + var(--safe-area-inset-bottom));
   }
 
   /* Faster animations on mobile */

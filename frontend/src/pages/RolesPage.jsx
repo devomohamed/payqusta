@@ -203,25 +203,44 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-6 app-text-soft">
-      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
-            <Shield className="h-7 w-7 text-primary-500" />
-            إدارة الأدوار والصلاحيات
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            أنشئ أدوارًا مخصصة، واجمع الصلاحيات حسب نطاق العمل، واترك ربط الفروع لشاشة الموظفين.
-          </p>
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-slate-950 via-primary-800 to-cyan-700 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(6,95,212,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Shield className="h-3.5 w-3.5" />
+              طبقات الوصول والصلاحيات
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">إدارة الأدوار والصلاحيات</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+              أنشئ أدوارًا دقيقة للفريق ورتّب الصلاحيات حسب نطاق العمل مع قراءة أوضح على الهاتف.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[500px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">أدوار مخصصة</p>
+              <p className="mt-2 text-2xl font-black">{roleStats.customRoles}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">أدوار افتراضية</p>
+              <p className="mt-2 text-2xl font-black">{roleStats.systemRoles}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">إجمالي الإجراءات</p>
+              <p className="mt-2 text-2xl font-black">{roleStats.totalPermissions}</p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => navigate('/admin/users')} icon={<Users className="h-4 w-4" />}>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Button variant="outline" onClick={() => navigate('/admin/users')} icon={<Users className="h-4 w-4" />} className="justify-center border-white/20 bg-white/10 text-white hover:bg-white/15">
             إدارة الموظفين
           </Button>
-          <Button onClick={handleOpenAdd} icon={<Plus className="h-4 w-4" />}>
+          <Button onClick={handleOpenAdd} icon={<Plus className="h-4 w-4" />} className="justify-center bg-white text-primary-700 hover:bg-white/90">
             دور جديد
           </Button>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="app-surface p-5">
@@ -371,7 +390,32 @@ export default function RolesPage() {
                     <p className="font-bold text-gray-900 dark:text-white">{group.label}</p>
                     <p className="mt-1 text-xs text-gray-500">{group.description}</p>
                   </div>
-                  <div className="overflow-x-auto">
+                  <div className="space-y-3 p-4 md:hidden">
+                    {group.resources.map((resourceId) => {
+                      const resource = PERMISSION_RESOURCES.find((entry) => entry.id === resourceId);
+                      if (!resource) return null;
+
+                      return (
+                        <div key={resource.id} className="rounded-2xl app-surface-muted p-4">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{resource.label}</p>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {PERMISSION_ACTIONS.map((action) => (
+                              <label key={action.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-700 dark:bg-gray-900/60 dark:text-gray-200">
+                                <span>{action.label}</span>
+                                <input
+                                  type="checkbox"
+                                  checked={hasPermission(resource.id, action.id)}
+                                  onChange={() => togglePermission(resource.id, action.id)}
+                                  className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="hidden overflow-x-auto md:block">
                     <table className="w-full min-w-[520px] text-sm">
                       <thead className="app-surface-muted">
                         <tr>

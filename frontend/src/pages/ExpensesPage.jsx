@@ -136,18 +136,44 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      {/* Header */}
-      <div className="app-surface-muted flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
-        <div className="app-surface flex h-11 w-11 items-center justify-center rounded-2xl text-rose-600 dark:text-rose-300">
-          <Receipt className="w-5 h-5" />
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-rose-600 via-fuchsia-600 to-slate-950 px-5 py-6 text-white shadow-[0_28px_80px_-46px_rgba(225,29,72,0.9)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Receipt className="h-3.5 w-3.5" />
+              مراقبة المصروفات والتكاليف
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">المصروفات</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+              تتبع الإنفاق اليومي والتشغيلي بصريًا مع قراءة أسرع على الهاتف وملخص أوضح للاتجاه المالي.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">إجمالي الفترة</p>
+              <p className="mt-2 text-lg font-black">{fmt(summary?.total)} ج.م</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">عدد المصروفات</p>
+              <p className="mt-2 text-2xl font-black">{fmt(summary?.count)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">النتائج الحالية</p>
+              <p className="mt-2 text-lg font-black">{fmt(total)} سجل ظاهر</p>
+            </div>
+          </div>
         </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-extrabold">المصروفات</h2>
-          <p className="text-xs text-gray-400">تتبع المصروفات لحساب الربح الحقيقي</p>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Button onClick={exportCSV} variant="outline" size="sm" className="justify-center border-white/20 bg-white/10 text-white hover:bg-white/15">
+            <Download className="w-4 h-4 ml-1" /> تصدير
+          </Button>
+          <Button onClick={() => setShowModal(true)} className="justify-center bg-white text-rose-700 hover:bg-white/90">
+            <Plus className="w-4 h-4 ml-1" /> إضافة مصروف
+          </Button>
         </div>
-        <Button onClick={exportCSV} variant="outline" size="sm"><Download className="w-4 h-4 ml-1" /> تصدير</Button>
-        <Button onClick={() => setShowModal(true)}><Plus className="w-4 h-4 ml-1" /> إضافة مصروف</Button>
-      </div>
+      </section>
 
       {/* Summary Cards */}
       {summary && (
@@ -198,7 +224,11 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters */}
-      <Card className="app-surface-muted p-4">
+      <Card className="app-surface-muted p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-sm font-black text-gray-900 dark:text-white">فلاتر المصروفات</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">اختر الفئة أو راجع الفترة الحالية بسرعة من الهاتف.</p>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <select value={filter.category} onChange={(e) => { setFilter({ ...filter, category: e.target.value }); setPage(1); }}
             className="app-surface rounded-xl border-2 border-transparent px-3 py-2 text-sm">
@@ -226,7 +256,7 @@ export default function ExpensesPage() {
         ) : (
           <div className="space-y-3">
             {expenses.map((exp) => (
-              <div key={exp._id} className="app-surface-muted flex items-center gap-4 rounded-2xl border-2 border-transparent p-4 transition-all duration-200 hover:border-gray-200/80 hover:-translate-y-0.5 dark:hover:border-white/10">
+              <div key={exp._id} className="app-surface-muted flex flex-col gap-4 rounded-2xl border-2 border-transparent p-4 transition-all duration-200 hover:border-gray-200/80 hover:-translate-y-0.5 dark:hover:border-white/10 sm:flex-row sm:items-center">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: `${CATEGORY_COLORS[exp.category] || '#6b7280'}20` }}>
                   {(CATEGORY_LABELS[exp.category] || '📋').split(' ')[0]}
                 </div>
@@ -237,10 +267,12 @@ export default function ExpensesPage() {
                     {exp.isRecurring && <Badge variant="info" className="mr-2">متكرر</Badge>}
                   </p>
                 </div>
-                <p className="text-lg font-extrabold text-rose-600">{fmt(exp.amount)}<span className="text-xs mr-0.5">ج.م</span></p>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(exp)} className="p-2 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors"><Edit2 className="w-4 h-4" /></button>
-                  <button onClick={() => handleDelete(exp._id)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                  <p className="text-lg font-extrabold text-rose-600">{fmt(exp.amount)}<span className="text-xs mr-0.5">ج.م</span></p>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(exp)} className="p-2 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => handleDelete(exp._id)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                  </div>
                 </div>
               </div>
             ))}

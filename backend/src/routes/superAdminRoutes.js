@@ -52,6 +52,10 @@ router.post('/subscription-requests/:id/reject', superAdminController.rejectSubs
 
 router.get('/leads', superAdminController.getPublicLeads);
 router.patch('/leads/:id', superAdminController.updatePublicLead);
+router.get('/notifications', requireSystemOwner, superAdminController.getNotificationSettings);
+router.put('/notifications', requireSystemOwner, superAdminController.updateNotificationSettings);
+router.post('/notifications/test-email', requireSystemOwner, superAdminController.testNotificationEmail);
+router.post('/notifications/test-sms', requireSystemOwner, superAdminController.testNotificationSms);
 
 router.get('/backup/stats', requireSystemOwner, superAdminController.getPlatformBackupStats);
 router.get('/backup/export-json', requireSystemOwner, superAdminController.exportPlatformBackupJSON);

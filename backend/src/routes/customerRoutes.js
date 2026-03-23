@@ -18,11 +18,13 @@ router.get('/:id/credit-assessment', authorize('vendor', 'admin', 'coordinator')
 
 router.post('/:id/send-statement', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.sendStatement);
 router.post('/:id/send-statement-pdf', authorize('vendor', 'admin', 'coordinator'), checkPermission('customers', 'update'), customerController.sendStatementPDF);
+router.post('/:id/resend-activation', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.resendActivation);
 router.post('/:id/block-sales', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.blockSales);
 router.post('/:id/unblock-sales', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.unblockSales);
 router.post('/:id/wallet/topup', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.topupWallet);
 router.post('/:id/redeem-points', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.redeemPoints);
 router.post('/broadcast', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.sendBroadcast);
+router.post('/:id/duplicate', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.duplicate);
 router.put('/:id', authorize('vendor', 'admin'), checkPermission('customers', 'update'), auditLog('update', 'customer'), customerController.update);
 router.put('/:id/whatsapp-preferences', authorize('vendor', 'admin'), checkPermission('customers', 'update'), customerController.updateWhatsAppPreferences);
 router.delete('/:id', authorize('vendor', 'admin'), checkPermission('customers', 'delete'), auditLog('delete', 'customer'), customerController.delete);

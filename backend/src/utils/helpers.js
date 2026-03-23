@@ -166,6 +166,9 @@ class Helpers {
     const obj = user.toObject ? user.toObject() : { ...user };
     delete obj.password;
     delete obj.__v;
+    if (obj.invitation) {
+      delete obj.invitation.tokenHash;
+    }
     return obj;
   }
 }

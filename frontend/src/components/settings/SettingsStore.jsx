@@ -689,10 +689,9 @@ export default function SettingsStore() {
               <Truck className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-sky-700 dark:text-sky-300">Online Fulfillment Policy</h3>
+              <h3 className="text-base font-bold text-sky-700 dark:text-sky-300">سياسة تجهيز الطلبات الأونلاين</h3>
               <p className="mt-1 text-sm text-subtle">
-                Choose which branch should handle online orders, whether fallback to other branches is allowed,
-                and whether one order may be fulfilled from more than one branch.
+                حدد الفرع الذي سيتولى تجهيز الطلبات الإلكترونية، وما إذا كان مسموحًا بالتحويل لفروع أخرى في حال عدم توفر المخزون، وإمكانية تجزئة الطلب بين أكثر من فرع.
               </p>
             </div>
           </div>
@@ -700,26 +699,26 @@ export default function SettingsStore() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Routing Mode</label>
+                <label className="text-sm font-medium">نظام توجيه الطلبات</label>
                 <select
                   value={storeForm.onlineFulfillmentMode}
                   onChange={(e) => setStoreForm({ ...storeForm, onlineFulfillmentMode: e.target.value })}
                   className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-sky-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                 >
-                  <option value="branch_priority">Branch priority</option>
-                  <option value="default_branch">Default branch</option>
-                  <option value="customer_branch">Customer branch first</option>
+                  <option value="branch_priority">أولوية الفروع</option>
+                  <option value="default_branch">الفرع الافتراضي دائمًا</option>
+                  <option value="customer_branch">فرع العميل أولاً</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Default Online Branch</label>
+                <label className="text-sm font-medium">الفرع الافتراضي للطلبات</label>
                 <select
                   value={storeForm.defaultOnlineBranchId || ''}
                   onChange={(e) => setStoreForm({ ...storeForm, defaultOnlineBranchId: e.target.value })}
                   className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-sky-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                 >
-                  <option value="">No default branch</option>
+                  <option value="">لا يوجد فرع افتراضي محدد</option>
                   {branches.map((branch) => (
                     <option key={branch._id} value={branch._id}>
                       {branch.name}
@@ -740,7 +739,7 @@ export default function SettingsStore() {
                   className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Allow fallback to another branch when the preferred branch cannot fulfill the order
+                  السماح بتحويل الطلب لفرع آخر في حالة نفاد المخزون من الفرع الأساسي (Fallback)
                 </span>
               </label>
 
@@ -753,24 +752,23 @@ export default function SettingsStore() {
                   className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Allow one order to be fulfilled from more than one branch
+                  السماح بتجزئة الطلب الواحد وتجهيزه من عدة فروع معاً حسب المخزون المتاح
                 </span>
               </label>
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="mb-3">
-                <h4 className="text-sm font-bold app-text-strong">Branch Priority</h4>
+                <h4 className="text-sm font-bold app-text-strong">أولوية الفروع</h4>
                 <p className="mt-1 text-xs text-muted">
-                  Select the branches that should be considered first for online orders. The branch commerce settings
-                  still decide whether a branch is online-enabled.
+                  حدد الفروع ذات الأولوية في تحويل وتجهيز الطلبات الإلكترونية (سيتم التجاوز عن الفروع غير المفعلة للطلب الأونلاين).
                 </p>
               </div>
 
               <div className="space-y-2">
                 {branches.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-muted dark:border-gray-800 dark:bg-slate-950">
-                    No branches found yet. Create branches first, then return here to define the routing policy.
+                    لم يتم إضافة أي فرع بعد. قم بإنشاء الفروع أولاً لإعداد سياسة التوجيه.
                   </div>
                 ) : (
                   branches.map((branch) => {
@@ -783,7 +781,7 @@ export default function SettingsStore() {
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{branch.name}</p>
                           <p className="text-xs text-muted">
-                            {branch.participatesInOnlineOrders ? 'Online enabled' : 'Not enabled for online orders'}
+                            {branch.participatesInOnlineOrders ? 'مفعل للطلبات الأونلاين' : 'غير مفعل للطلبات'}
                           </p>
                         </div>
                         <input

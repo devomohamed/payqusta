@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -32,6 +32,7 @@ const PublicSeoTopicPage = React.lazy(() => import('./pages/PublicSeoTopicPage')
 const PublicPaymentInstructionPage = React.lazy(() => import('./pages/PublicPaymentInstructionPage'));
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'));
+const ActivateAccountPage = React.lazy(() => import('./pages/ActivateAccountPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const ProductsPage = React.lazy(() => import('./pages/ProductsPage'));
 const CustomersPage = React.lazy(() => import('./pages/CustomersPage'));
@@ -101,6 +102,7 @@ const BranchManagement = React.lazy(() => import('./pages/BranchManagement'));
 const TenantManagementPage = React.lazy(() => import('./pages/TenantManagementPage'));
 const SuperAdminPlansPage = React.lazy(() => import('./pages/SuperAdminPlansPage'));
 const SubscriptionRequestsPage = React.lazy(() => import('./pages/SubscriptionRequestsPage'));
+const SuperAdminNotificationSettingsPage = React.lazy(() => import('./pages/SuperAdminNotificationSettingsPage'));
 const PortalOrdersAdminPage = React.lazy(() => import('./pages/PortalOrdersAdminPage'));
 const ReturnsManagementPage = React.lazy(() => import('./pages/ReturnsManagementPage'));
 const AddonStorePage = React.lazy(() => import('./pages/AddonStorePage'));
@@ -175,12 +177,12 @@ function MainLayout() {
   }, [location.pathname, location.search]);
 
   return (
-    <div className="app-shell-bg flex h-screen overflow-hidden">
+    <div className="app-shell-bg flex min-h-screen overflow-hidden">
       <Sidebar open={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-        <div className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth flex flex-col">
-          <main className="flex-1 p-4 lg:p-6 w-full max-w-[1600px] mx-auto">
+        <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden scroll-smooth">
+          <main className="mobile-app-main flex-1 w-full max-w-[1600px] mx-auto px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-6">
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -224,6 +226,7 @@ function MainLayout() {
                 <Route path="/tenant-management" element={<LazyRoute component={TenantManagementPage} message="جاري تحميل إدارة المتجر..." />} />
                 <Route path="/super-admin/plans" element={<LazyRoute component={SuperAdminPlansPage} message="جاري تحميل الخطط..." />} />
                 <Route path="/super-admin/requests" element={<LazyRoute component={SubscriptionRequestsPage} message="جاري تحميل الطلبات..." />} />
+                <Route path="/super-admin/notifications" element={<LazyRoute component={SuperAdminNotificationSettingsPage} message="جاري تحميل إعدادات الإشعارات..." />} />
                 <Route path="/portal-orders" element={<LazyRoute component={PortalOrdersAdminPage} message="جاري تحميل طلبات البوابة..." />} />
                 <Route path="/returns-management" element={<LazyRoute component={ReturnsManagementPage} message="جاري تحميل إدارة المرتجعات..." />} />
                 <Route path="/kyc-review" element={<LazyRoute component={KYCReviewPage} message="جاري تحميل مراجعة الهوية..." />} />
@@ -365,6 +368,7 @@ export default function App() {
           } />
           <Route path="/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message="جاري تحميل استعادة كلمة المرور..." />} />
           <Route path="/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message="جاري تحميل إعادة التعيين..." />} />
+          <Route path="/activate-account/:token" element={<LazyRoute component={ActivateAccountPage} message="جاري تحميل صفحة التفعيل..." />} />
           <Route path="/" element={
             isAuthenticated ? (
               <ProtectedRoute>

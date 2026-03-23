@@ -56,6 +56,8 @@ router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
 router.post('/auth/forgot-password', authValidations.forgotPassword, authController.forgotPassword);
 router.post('/auth/reset-password/:token', authValidations.resetPassword, authController.resetPassword);
+router.get('/auth/activate-account/:token', authController.getActivationDetails);
+router.post('/auth/activate-account/:token', authController.activateAccount);
 router.post('/auth/logout', protect, authController.logout);
 router.post('/auth/logout-all', protect, authController.logoutAll);
 
@@ -116,6 +118,7 @@ router.put('/auth/update-avatar', uploadLimiter, uploadAvatar, authController.up
 router.delete('/auth/remove-avatar', authController.removeAvatar);
 router.get('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'read'), authController.getTenantUsers);
 router.post('/auth/users', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), auditLog('create', 'user'), authController.addUser);
+router.post('/auth/users/:id/resend-invitation', authorize('vendor', 'admin'), checkPermission('users', 'create'), authController.resendTenantUserInvitation);
 router.put('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'update'), auditLog('update', 'user'), authController.updateTenantUser);
 router.delete('/auth/users/:id', authorize('vendor', 'admin'), checkPermission('users', 'delete'), auditLog('delete', 'user'), authController.deleteTenantUser);
 router.post('/auth/add-user', authorize('vendor', 'admin'), checkPermission('users', 'create'), checkLimit('user'), auditLog('create', 'user'), authController.addUser);
@@ -234,6 +237,10 @@ router.post('/settings/whatsapp/create-templates', authorize('admin'), requireFe
 router.post('/settings/whatsapp/detect-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.detectTemplates);
 router.post('/settings/whatsapp/apply-templates', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.applyTemplateMapping);
 router.put('/settings/branding', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateBranding);
+router.get('/settings/notification-channels', authorize('vendor', 'admin'), checkPermission('settings', 'read'), settingsController.getNotificationChannelsStatus);
+router.put('/settings/notification-channels', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateNotificationChannels);
+router.post('/settings/notification-channels/test-email', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.testNotificationEmail);
+router.post('/settings/notification-channels/test-sms', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.testNotificationSms);
 router.post('/settings/logo', authorize('vendor', 'admin'), checkPermission('settings', 'update'), uploadLimiter, upload.single('logo'), settingsController.uploadLogo);
 router.get('/settings/subdomain-availability', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.checkSubdomainAvailability);
 router.put('/settings/subdomain', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateSubdomain);
@@ -310,6 +317,7 @@ router.delete('/admin/plans/:id', authorize('admin'), planController.deletePlan)
 // User Management
 router.get('/admin/users', authorize('admin'), adminController.getUsers);
 router.post('/admin/users', authorize('admin'), auditLog('create', 'user'), adminController.createUser);
+router.post('/admin/users/:id/resend-invitation', authorize('admin'), auditLog('update', 'user'), adminController.resendUserInvitation);
 router.put('/admin/users/:id', authorize('admin'), auditLog('update', 'user'), adminController.updateUser);
 router.delete('/admin/users/:id', authorize('admin'), auditLog('delete', 'user'), adminController.deleteUser);
 

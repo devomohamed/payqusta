@@ -6,6 +6,8 @@ const Expense = require('../models/Expense');
 const { ROLES } = require('../config/constants');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
+const crypto = require('crypto');
+const ActivationService = require('../services/ActivationService');
 
 const BRANCH_TYPE_VALUES = ['store', 'warehouse', 'fulfillment_center', 'hybrid'];
 const SHIPPING_ORIGIN_KEYS = ['governorate', 'city', 'area', 'addressLine', 'postalCode'];
@@ -160,9 +162,9 @@ class BranchController {
         name,
         address,
         phone,
+        managerId,
         managerName,
         managerEmail,
-        managerPassword,
         managerPhone,
         cameras,
         tenantId,
@@ -188,9 +190,9 @@ class BranchController {
         return next(AppError.badRequest(`عذرًا، باقتك الحالية تسمح بحد أقصى ${maxBranches} فرع.`));
       }
 
-      if (managerEmail || managerPassword || managerName || managerPhone) {
-        if (!managerEmail || !managerPassword || !managerName || !managerPhone) {
-          return next(AppError.badRequest('يرجى إدخال جميع بيانات مدير الفرع: الاسم، البريد، الهاتف، وكلمة المرور'));
+      if (managerEmail || managerName || managerPhone) {
+        if (!managerEmail || !managerName || !managerPhone) {
+          return next(AppError.badRequest('يرجى إدخال جميع بيانات مدير الفرع: الاسم، البريد، الهاتف'));
         }
         const existingUser = await User.findOne({ email: managerEmail });
         if (existingUser) {
@@ -210,11 +212,21 @@ class BranchController {
       }]);
 
       let managerUser = null;
-      if (managerEmail) {
+      if (managerId) {
+        managerUser = await User.findById(managerId);
+        if (!managerUser) {
+          return next(AppError.notFound('المستخدم المحدد غير موجود'));
+        }
+        if (!managerUser.assignedBranches.includes(branch._id)) {
+          managerUser.assignedBranches.push(branch._id);
+          await managerUser.save();
+        }
+        branch.manager = managerUser._id;
+        await branch.save();
+      } else if (managerEmail) {
         [managerUser] = await User.create([{
           name: managerName,
           email: managerEmail,
-          password: managerPassword,
           phone: managerPhone,
           role: ROLES.COORDINATOR,
           tenant: targetTenantId,
@@ -222,10 +234,22 @@ class BranchController {
           primaryBranch: branch._id,
           assignedBranches: [branch._id],
           branchAccessMode: 'single_branch',
+          isActive: false,
+          isEmailVerified: false,
+          isPhoneVerified: false,
         }]);
 
         branch.manager = managerUser._id;
         await branch.save();
+
+        if (managerUser) {
+          // Send activation asynchronously
+          ActivationService.inviteUser(managerUser, tenant, {
+            preferredChannel: 'auto',
+          }).catch((err) => {
+            console.error('Failed to send manager activation:', err);
+          });
+        }
       }
 
       const hydratedBranch = await populateBranch(branch._id);
@@ -246,9 +270,9 @@ class BranchController {
         phone,
         cameras,
         isActive,
+        managerId,
         managerName,
         managerEmail,
-        managerPassword,
         managerPhone,
       } = req.body;
 
@@ -268,7 +292,21 @@ class BranchController {
       Object.assign(branch, normalizeBranchCommercePayload(req.body, branch));
       await branch.save();
 
-      if (managerName || managerEmail || managerPhone || managerPassword) {
+      if (managerId === null || managerId === '') {
+        branch.manager = null;
+        await branch.save();
+      } else if (managerId) {
+        const managerUser = await User.findById(managerId);
+        if (!managerUser) {
+          return next(AppError.notFound('المستخدم المحدد غير موجود'));
+        }
+        if (!managerUser.assignedBranches.includes(branch._id)) {
+          managerUser.assignedBranches.push(branch._id);
+          await managerUser.save();
+        }
+        branch.manager = managerUser._id;
+        await branch.save();
+      } else if (managerName || managerEmail || managerPhone || managerPassword) {
         if (branch.manager) {
           const managerUser = await User.findById(branch.manager);
           if (managerUser) {
@@ -282,19 +320,19 @@ class BranchController {
             if (managerName) managerUser.name = managerName;
             if (managerEmail) managerUser.email = managerEmail;
             if (managerPhone) managerUser.phone = managerPhone;
-            if (managerPassword) managerUser.password = managerPassword;
             await managerUser.save();
           }
-        } else if (managerEmail && managerPassword && managerName && managerPhone) {
+        } else if (managerEmail && managerName && managerPhone) {
           const existing = await User.findOne({ email: managerEmail });
           if (existing) {
             return next(AppError.badRequest('البريد الإلكتروني لمدير الفرع مستخدم بالفعل'));
           }
 
+          const generatedPassword = crypto.randomBytes(8).toString('hex');
           const managerUser = await User.create({
             name: managerName,
             email: managerEmail,
-            password: managerPassword,
+            password: generatedPassword,
             phone: managerPhone,
             role: ROLES.COORDINATOR,
             tenant: req.user?.isSuperAdmin ? branch.tenant : req.tenantId,
@@ -302,10 +340,21 @@ class BranchController {
             primaryBranch: branch._id,
             assignedBranches: [branch._id],
             branchAccessMode: 'single_branch',
+            isEmailVerified: false,
+            isPhoneVerified: false,
           });
 
           branch.manager = managerUser._id;
           await branch.save();
+
+          // Send activation asynchronously
+          ActivationService.sendSystemSetup({
+            actorId: managerUser._id,
+            actorType: 'user',
+            tenantId: managerUser.tenant,
+          }).catch((err) => {
+            console.error('Failed to send manager activation:', err);
+          });
         }
       }
 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Calendar, Truck, TrendingUp, AlertTriangle, Clock, DollarSign,
-    Download, Filter, ChevronDown, ChevronUp, Printer, FileSpreadsheet,
-    Phone, Eye, RefreshCw, PieChart, Search,
+    AlertTriangle, Clock, ChevronDown, ChevronUp, Printer, FileSpreadsheet,
+    RefreshCw, Search,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dashboardApi } from '../store';
@@ -125,44 +124,47 @@ export default function SupplierAgingReportPage() {
 
     return (
         <div className="space-y-6 animate-fade-in pb-10 app-text-soft">
-            {/* Header */}
-            <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="app-surface flex h-12 w-12 items-center justify-center rounded-2xl text-primary-600 dark:text-primary-300">
-                        <Clock className="w-6 h-6" />
+            <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="space-y-4">
+                        <div className="app-surface flex h-12 w-12 items-center justify-center rounded-2xl text-primary-600 dark:text-primary-300">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Supplier Aging Matrix</p>
+                            <h1 className="text-2xl font-black text-gray-900 dark:text-white">أعمار ديون الموردين</h1>
+                            <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                                تحليل المديونيات المستحقة للموردين حسب الفترات الزمنية، مع تصفية أسرع وتمثيل أوضح على الهاتف.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-black text-gray-900 dark:text-white">أعمار ديون الموردين</h1>
-                        <p className="text-sm text-gray-400">تحليل المديونيات المستحقة للموردين حسب الفترة الزمنية</p>
+                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                        <Button variant="ghost" onClick={fetchAgingData} className="w-full sm:w-auto"><RefreshCw className="w-4 h-4" /> تحديث</Button>
+                        <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto"><Printer className="w-4 h-4" /> طباعة</Button>
+                        <Button onClick={exportCSV} className="w-full sm:w-auto"><FileSpreadsheet className="w-4 h-4" /> تصدير</Button>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" onClick={fetchAgingData}><RefreshCw className="w-4 h-4" /></Button>
-                    <Button variant="outline" onClick={() => window.print()}><Printer className="w-4 h-4" /> طباعة</Button>
-                    <Button onClick={exportCSV}><FileSpreadsheet className="w-4 h-4" /> تصدير</Button>
-                </div>
-            </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                <Card className="app-surface-muted p-4 border-primary-100 dark:border-primary-900/20">
-                    <p className="text-[10px] uppercase tracking-wider font-bold text-primary-600 mb-1">إجمالي المستحقات</p>
-                    <p className="text-xl font-black text-gray-900 dark:text-white">{fmt(summary.total)} <span className="text-[10px]">ج.م</span></p>
-                    <p className="text-[10px] text-gray-400 mt-1">{summary.supplierCount} مورد</p>
-                </Card>
-
-                {AGING_BUCKETS.map(b => (
-                    <Card
-                        key={b.key}
-                        className={`app-surface-muted cursor-pointer p-4 transition-all duration-200 hover:border-primary-300 motion-safe:hover:-translate-y-0.5 ${filterBucket === b.key ? 'ring-2 ring-primary-500' : ''}`}
-                        onClick={() => setFilterBucket(filterBucket === b.key ? 'all' : b.key)}
-                    >
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">{b.label}</p>
-                        <p className={`text-xl font-black ${BUCKET_STYLES[b.key]?.text}`}>{fmt(summary[b.key] || 0)}</p>
-                        <p className="text-[10px] text-gray-400 mt-1">{((summary[b.key] / Math.max(summary.total, 1)) * 100).toFixed(1)}%</p>
+                <div className="mt-5 grid grid-cols-2 lg:grid-cols-6 gap-4">
+                    <Card className="app-surface-muted p-4 border-primary-100 dark:border-primary-900/20">
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-primary-600 mb-1">إجمالي المستحقات</p>
+                        <p className="text-xl font-black text-gray-900 dark:text-white">{fmt(summary.total)} <span className="text-[10px]">ج.م</span></p>
+                        <p className="text-[10px] text-gray-400 mt-1">{summary.supplierCount} مورد</p>
                     </Card>
-                ))}
-            </div>
+
+                    {AGING_BUCKETS.map(b => (
+                        <Card
+                            key={b.key}
+                            className={`app-surface-muted cursor-pointer p-4 transition-all duration-200 hover:border-primary-300 motion-safe:hover:-translate-y-0.5 ${filterBucket === b.key ? 'ring-2 ring-primary-500' : ''}`}
+                            onClick={() => setFilterBucket(filterBucket === b.key ? 'all' : b.key)}
+                        >
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1">{b.label}</p>
+                            <p className={`text-xl font-black ${BUCKET_STYLES[b.key]?.text}`}>{fmt(summary[b.key] || 0)}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">{((summary[b.key] / Math.max(summary.total, 1)) * 100).toFixed(1)}%</p>
+                        </Card>
+                    ))}
+                </div>
+            </section>
 
             {/* Main Content */}
             <Card className="app-surface overflow-hidden rounded-3xl">
@@ -182,7 +184,61 @@ export default function SupplierAgingReportPage() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="space-y-3 p-4 md:hidden">
+                    {paginated.map((supplier) => (
+                        <div key={supplier._id} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-100 text-sm font-bold dark:bg-gray-800">
+                                        {supplier.name?.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="font-extrabold text-gray-900 dark:text-white">{supplier.name}</p>
+                                        <p className="mt-1 text-xs text-gray-400">{supplier.phone || 'بدون رقم'}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    {supplier.status === 'critical' ? <Badge variant="danger">خطير</Badge> :
+                                        supplier.status === 'warning' ? <Badge variant="warning">متأخر</Badge> :
+                                            supplier.status === 'delayed' ? <Badge variant="warning" className="opacity-70">قريب</Badge> :
+                                                <Badge variant="success">منتظم</Badge>}
+                                </div>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                                    <p className="text-[11px] text-gray-400">الإجمالي</p>
+                                    <p className="mt-1 font-black text-gray-900 dark:text-white">{fmt(supplier.total)}</p>
+                                </div>
+                                <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                                    <p className="text-[11px] text-gray-400">الحالي 0-30</p>
+                                    <p className="mt-1 font-black text-emerald-600">{supplier.current > 0 ? fmt(supplier.current) : '-'}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                                    <p className="text-gray-400">31-60</p>
+                                    <p className={`mt-1 font-bold ${supplier.days30 > 0 ? 'text-amber-600' : 'text-gray-300'}`}>{supplier.days30 > 0 ? fmt(supplier.days30) : '-'}</p>
+                                </div>
+                                <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                                    <p className="text-gray-400">61-90</p>
+                                    <p className={`mt-1 font-bold ${supplier.days61 > 0 ? 'text-orange-600' : 'text-gray-300'}`}>{supplier.days61 > 0 ? fmt(supplier.days61) : '-'}</p>
+                                </div>
+                                <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                                    <p className="text-gray-400">91-120</p>
+                                    <p className={`mt-1 font-bold ${supplier.days90 > 0 ? 'text-red-500' : 'text-gray-300'}`}>{supplier.days90 > 0 ? fmt(supplier.days90) : '-'}</p>
+                                </div>
+                                <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                                    <p className="text-gray-400">+120</p>
+                                    <p className={`mt-1 font-black ${supplier.over90 > 0 ? 'text-rose-600 underline' : 'text-gray-300'}`}>{supplier.over90 > 0 ? fmt(supplier.over90) : '-'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-right">
                         <thead>
                             <tr className="app-surface-muted text-[11px] font-bold uppercase tracking-wider text-gray-400">

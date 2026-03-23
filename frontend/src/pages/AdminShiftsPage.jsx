@@ -209,18 +209,37 @@ export default function AdminShiftsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 font-cairo animate-fade-in" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-primary-50 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-600 dark:text-primary-400">
-            <History className="w-7 h-7" />
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-slate-950 via-primary-800 to-violet-700 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(79,70,229,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <History className="h-3.5 w-3.5" />
+              Shift Monitoring Center
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">لوحة مراقبة الورديات</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">مراقبة وتقييم جميع ورديات الفروع والنقدية بشكل لحظي من واجهة أوضح على الهاتف والتابلت.</p>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-1">لوحة مراقبة الورديات</h1>
-            <p className="text-sm text-gray-500 font-medium">مراقبة وتقييم جميع ورديات الفروع والنقدية بشكل لحظي</p>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:min-w-[620px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الورديات المفتوحة</p>
+              <p className="mt-2 text-2xl font-black">{openCount}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الورديات المغلقة</p>
+              <p className="mt-2 text-2xl font-black">{closedCount}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">إجمالي المبيعات</p>
+              <p className="mt-2 text-lg font-black">{fmt(totalSales)} ج.م</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">العجز / الزيادة</p>
+              <p className="mt-2 text-lg font-black">{totalVariance > 0 ? '+' : ''}{fmt(totalVariance)} ج.م</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -352,8 +371,61 @@ export default function AdminShiftsPage() {
         </div>
 
         {/* Tables */}
-        <div className="overflow-x-auto min-h-[400px]">
+        <div className="min-h-[400px]">
            {activeTab === 'history' ? (
+              <>
+              <div className="space-y-3 p-4 md:hidden">
+                {shifts.length === 0 && !loading ? (
+                  <EmptyState title="لا توجد بيانات" description="لم يتم العثور على ورديات تطابق بحثك" />
+                ) : (
+                  shifts.map((shift) => (
+                    <div key={shift._id} className="app-surface-muted rounded-2xl p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-gray-900 dark:text-white">{shift.branch?.name || shift.user?.branch?.name || 'الفرع الرئيسي'}</p>
+                          <p className="mt-1 text-[11px] text-gray-400">{shift.user?.name}</p>
+                        </div>
+                        {shift.status === 'open' ? (
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">نشطة الآن</Badge>
+                        ) : (
+                          <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-800">مغلقة</Badge>
+                        )}
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                          <p className="text-[10px] text-gray-400">المدة</p>
+                          <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{shiftDuration(shift.startTime, shift.endTime)}</p>
+                        </div>
+                        <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                          <p className="text-[10px] text-gray-400">المبيعات</p>
+                          <p className="mt-1 text-xs font-black text-emerald-600">{fmt(shift.totalCashSales)}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs text-gray-500">{format(new Date(shift.startTime), 'Pp', { locale: ar })}</p>
+                      <p className={`mt-2 text-xs font-black ${shift.status === 'closed' ? (shift.variance < 0 ? 'text-red-500' : shift.variance > 0 ? 'text-amber-500' : 'text-gray-400') : 'text-gray-400'}`} dir="ltr">
+                        {shift.status === 'closed' ? `${shift.variance > 0 ? '+' : ''}${fmt(shift.variance)} ج.م` : '-'}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setSelectedShift(shift)}
+                          className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-bold text-gray-700 transition-all hover:bg-primary-50 hover:text-primary-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-primary-900/30 dark:hover:text-primary-400"
+                        >
+                          التفاصيل
+                        </button>
+                        {shift.status === 'open' && (
+                          <button
+                            onClick={() => setForceCloseModal(shift)}
+                            className="rounded-xl bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
+                          >
+                            إغلاق إداري
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm text-right">
                  {/* ... existing table headers ... */}
                  <thead className="bg-gray-50/80 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-gray-800">
@@ -433,7 +505,39 @@ export default function AdminShiftsPage() {
                     ))}
                  </tbody>
               </table>
+              </div>
+              </>
            ) : (
+             <>
+             <div className="space-y-3 p-4 md:hidden">
+               {analytics.length === 0 && !loading ? (
+                 <EmptyState title="لا توجد بيانات" description="لا توجد تحليلات متاحة لهذه الفترة" />
+               ) : (
+                 analytics.map((day, idx) => (
+                   <div key={idx} className="app-surface-muted rounded-2xl p-4">
+                     <p className="text-sm font-black text-gray-900 dark:text-white">{format(new Date(day.day), 'EEEE, d MMMM yyyy', { locale: ar })}</p>
+                     <p className="mt-1 text-[11px] text-gray-400">{day.branchName || 'الفرع الرئيسي'}</p>
+                     <div className="mt-3 grid grid-cols-2 gap-2">
+                       <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                         <p className="text-[10px] text-gray-400">الورديات</p>
+                         <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{day.shiftCount}</p>
+                       </div>
+                       <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                         <p className="text-[10px] text-gray-400">المبيعات</p>
+                         <p className="mt-1 text-xs font-black text-emerald-600">{fmt(day.totalSales)}</p>
+                       </div>
+                     </div>
+                     <div className="mt-3 flex items-center justify-between text-xs">
+                       <span className={`${day.totalVariance < 0 ? 'text-red-500' : day.totalVariance > 0 ? 'text-amber-500' : 'text-gray-400'} font-black`} dir="ltr">
+                         {day.totalVariance > 0 ? '+' : ''}{fmt(day.totalVariance)} ج.م
+                       </span>
+                       <span className="font-black text-blue-600 dark:text-blue-400">{fmt(day.totalActual)} ج.م</span>
+                     </div>
+                   </div>
+                 ))
+               )}
+             </div>
+             <div className="hidden overflow-x-auto md:block">
              <table className="w-full text-sm text-right">
                 <thead className="bg-gray-50/80 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-gray-800">
                    <tr>
@@ -479,6 +583,8 @@ export default function AdminShiftsPage() {
                    ))}
                 </tbody>
              </table>
+             </div>
+             </>
            )}
         </div>
       </div>

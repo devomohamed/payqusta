@@ -261,7 +261,7 @@ export default function BusinessReportsPage() {
   return (
     <div className="space-y-6 app-text-soft">
       {/* Header */}
-      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
+      <div className="app-surface-muted flex flex-col gap-5 rounded-3xl p-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex items-center gap-3">
           <div className={`p-3 ${reportType?.color} rounded-xl text-white`}>
             <Icon className="w-6 h-6" />
@@ -271,10 +271,10 @@ export default function BusinessReportsPage() {
             <p className={`${dark ? 'text-gray-400' : 'text-gray-500'}`}>تقارير شاملة وتحليلات مفصلة</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="app-surface flex items-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+            className="app-surface flex items-center justify-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
           >
             <Filter className="w-4 h-4" />
             الفلاتر
@@ -282,7 +282,7 @@ export default function BusinessReportsPage() {
           <button
             onClick={handlePrint}
             disabled={!reportData || loading}
-            className="app-surface flex items-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/[0.03]"
+            className="app-surface flex items-center justify-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/[0.03]"
           >
             <Printer className="w-4 h-4" />
             طباعة / PDF
@@ -290,7 +290,7 @@ export default function BusinessReportsPage() {
           <button
             onClick={handleExport}
             disabled={!reportData || loading}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             تصدير Excel
@@ -299,7 +299,7 @@ export default function BusinessReportsPage() {
       </div>
 
       {/* Report Type Selection */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {REPORT_TYPES.map(report => {
           const ReportIcon = report.icon;
           return (
@@ -328,7 +328,7 @@ export default function BusinessReportsPage() {
           <Calendar className={`w-4 h-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
           <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفترة الزمنية</span>
         </div>
-        <div className="grid grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
           {DATE_RANGES.map(range => (
             <button
               key={range.id}
@@ -346,7 +346,7 @@ export default function BusinessReportsPage() {
         </div>
 
         {selectedRange === 'custom' && (
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               type="date"
               value={customStart}
@@ -377,7 +377,7 @@ export default function BusinessReportsPage() {
           className="app-surface-muted rounded-2xl p-4"
         >
           <h3 className={`text-sm font-medium mb-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>فلاتر متقدمة</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {selectedReport === 'sales' && (
               <div>
                 <label className={`block text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>تجميع حسب</label>
@@ -555,7 +555,7 @@ function SalesReportView({ data }) {
 
   return (
     <>
-      <div className="summary-grid grid grid-cols-4 gap-4">
+      <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard title="إجمالي الفواتير" value={data?.summary?.totalInvoices || 0} icon={BarChart3} color="bg-blue-500" dark={dark} />
         <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
         <SummaryCard title="إجمالي الأرباح" value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-purple-500" dark={dark} />
@@ -631,7 +631,7 @@ function ProfitReportView({ data }) {
 
   return (
     <>
-      <div className="summary-grid grid grid-cols-4 gap-4">
+      <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-blue-500" dark={dark} />
         <SummaryCard title="إجمالي التكاليف" value={`${safeNum(data?.summary?.totalCost)} جنيه`} icon={TrendingUp} color="bg-red-500" dark={dark} />
         <SummaryCard title="صافي الأرباح" value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-green-500" dark={dark} />
@@ -716,7 +716,7 @@ function InventoryReportView({ data }) {
 
   return (
     <>
-      <div className="summary-grid grid grid-cols-4 gap-4">
+      <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard title="إجمالي المنتجات" value={data?.summary?.totalProducts || 0} icon={Package} color="bg-blue-500" dark={dark} />
         <SummaryCard title="إجمالي العناصر" value={data?.summary?.totalItems || 0} icon={BarChart3} color="bg-green-500" dark={dark} />
         <SummaryCard title="قيمة المخزون" value={`${safeNum(data?.summary?.totalValue)} جنيه`} icon={DollarSign} color="bg-purple-500" dark={dark} />
@@ -780,7 +780,7 @@ function CustomerReportView({ data }) {
 
   return (
     <>
-      <div className="summary-grid grid grid-cols-4 gap-4">
+      <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard title="إجمالي العملاء" value={data?.summary?.totalCustomers || 0} icon={Users} color="bg-blue-500" dark={dark} />
         <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
         <SummaryCard title="المستحقات" value={`${safeNum(data?.summary?.totalOutstanding)} جنيه`} icon={TrendingUp} color="bg-orange-500" dark={dark} />
@@ -835,7 +835,7 @@ function ProductPerformanceView({ data }) {
 
   return (
     <>
-      <div className="summary-grid grid grid-cols-4 gap-4">
+      <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard title="منتجات مباعة" value={data?.summary?.totalProductsSold || 0} icon={Package} color="bg-blue-500" dark={dark} />
         <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
         <SummaryCard title="إجمالي الأرباح" value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-purple-500" dark={dark} />

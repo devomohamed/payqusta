@@ -194,9 +194,9 @@ export default function Sidebar({ open, onClose }) {
   const canAccessSuppliers = can('suppliers', 'read') || user?.role === 'admin';
 
   const renderSidebarContent = () => (
-    <div className="flex flex-col h-full bg-white dark:bg-[#0B1120]">
+    <div className="app-shell-bg flex h-full flex-col bg-white/95 dark:bg-[#0B1120]/95">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-100 dark:border-white/5">
+      <div className="px-5 py-5 border-b border-gray-100/80 dark:border-white/5">
         <div className="flex items-center gap-3">
           {tenant?.branding?.logo ? (
             <AnimatedBrandLogo
@@ -220,7 +220,7 @@ export default function Sidebar({ open, onClose }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 pt-4 pb-24 space-y-1 overflow-y-auto no-scrollbar">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4 pb-[calc(6rem+var(--safe-area-inset-bottom))] no-scrollbar">
         {/* Super Admin Section - Only for Super Admin */}
         {isSystemSuperAdmin && (
           <>
@@ -234,6 +234,7 @@ export default function Sidebar({ open, onClose }) {
             <NavItem to="/super-admin/requests" icon={FileText} label={t('sidebar.subscription_requests')} tone="amber" />
             <NavItem to="/super-admin/leads" icon={MessageCircle} label="Public Leads" tone="amber" />
             <NavItem to="/tenant-management" icon={Building2} label={t('sidebar.store_management')} tone="amber" />
+            <NavItem to="/super-admin/notifications" icon={Bell} label="Platform Notifications" tone="amber" />
             <div className="my-3 border-t border-gray-200 dark:border-gray-700"></div>
           </>
         )}
@@ -509,7 +510,7 @@ export default function Sidebar({ open, onClose }) {
       </nav>
 
       {/* User Card */}
-      <div className="p-3 border-t border-gray-100 dark:border-white/5">
+      <div className="safe-area-bottom p-3 border-t border-gray-100/80 dark:border-white/5">
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-transparent dark:border-white/5">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
             {user?.name?.charAt(0) || 'U'}
@@ -527,7 +528,7 @@ export default function Sidebar({ open, onClose }) {
           </button>
         </div>
       </div>
-      <div className="px-6 py-3 text-center border-t border-gray-100 dark:border-white/5 bg-gray-50/30 dark:bg-white/[0.02]">
+      <div className="px-6 py-3 text-center border-t border-gray-100/80 dark:border-white/5 bg-gray-50/30 dark:bg-white/[0.02]">
         <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] opacity-50">
           PayQusta v{APP_VERSION}
         </p>
@@ -538,7 +539,7 @@ export default function Sidebar({ open, onClose }) {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex w-64 flex-shrink-0 ${isRTL ? 'border-l' : 'border-r'} border-gray-100/80 dark:border-gray-800 bg-white dark:bg-slate-950 flex-col shadow-[1px_0_0_0_rgba(0,0,0,0.02)]`}>
+      <aside className={`hidden md:flex w-[17.5rem] flex-shrink-0 ${isRTL ? 'border-l' : 'border-r'} border-gray-100/80 dark:border-gray-800 bg-white/95 dark:bg-slate-950/95 flex-col shadow-[1px_0_0_0_rgba(0,0,0,0.02)]`}>
         {renderSidebarContent()}
       </aside>
 
@@ -546,7 +547,7 @@ export default function Sidebar({ open, onClose }) {
       {open && (
         <div className="md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <aside className={`absolute ${isRTL ? 'right-0' : 'left-0'} top-0 bottom-0 w-72 bg-white dark:bg-[#0B1120] shadow-2xl ${isRTL ? 'animate-slide-right' : 'animate-slide-left'} flex flex-col`}>
+      <aside className={`safe-area-top safe-area-bottom absolute ${isRTL ? 'right-0' : 'left-0'} top-0 bottom-0 w-[min(86vw,22rem)] bg-white/95 dark:bg-[#0B1120]/95 shadow-2xl ${isRTL ? 'animate-slide-right' : 'animate-slide-left'} flex flex-col`}>
             <button
               onClick={onClose}
               className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-4 p-2 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.05] text-gray-400`}

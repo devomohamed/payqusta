@@ -121,22 +121,23 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="app-surface rounded-[1.75rem] p-4 sm:p-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <p className="app-text-muted text-xs font-black uppercase tracking-[0.18em]">لوحة التحكم</p>
-            <h1 className="mt-2 text-2xl font-black text-gray-900 dark:text-white">صورة سريعة لأداء المتجر</h1>
+    <div className="space-y-5 animate-fade-in sm:space-y-8">
+      <div className="app-surface relative overflow-hidden rounded-[1.75rem] p-4 sm:p-5 lg:p-6">
+        <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-primary-500/10 via-primary-500/5 to-transparent pointer-events-none" />
+        <div className="relative flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="app-text-muted text-[11px] font-black uppercase tracking-[0.22em]">لوحة التحكم</p>
+            <h1 className="mt-2 text-xl font-black text-gray-900 dark:text-white sm:text-2xl lg:text-[2rem]">صورة سريعة لأداء المتجر</h1>
             <p className="app-text-soft mt-2 text-sm leading-7">
               المؤشرات الأهم، المتحصلات، والمخزون في شاشة واحدة تساعدك على اتخاذ قرار أسرع.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             {can('invoices', 'create') && (
               <Link
                 to="/quick-sale"
-                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl sm:w-auto sm:py-2.5"
               >
                 <Zap className="h-4 w-4" />
                 بيع سريع
@@ -145,19 +146,19 @@ export default function DashboardPage() {
             {can('reports', 'read') && (
               <Link
                 to="/reports"
-                className="app-surface-muted inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-white dark:text-gray-100 dark:hover:bg-white/10"
+                className="app-surface-muted inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 transition-colors hover:bg-white dark:text-gray-100 dark:hover:bg-white/10 sm:w-auto sm:py-2.5"
               >
                 <BarChart3 className="h-4 w-4 text-violet-500" />
                 التقارير
               </Link>
             )}
             {(user?.role === 'admin' || user?.isSuperAdmin) && branches.length > 0 && (
-              <div className="app-surface-muted flex items-center gap-2 rounded-2xl p-1.5 shadow-sm">
+              <div className="app-surface-muted flex w-full items-center gap-2 rounded-2xl p-1.5 shadow-sm sm:w-auto">
                 <Store className="mr-2 h-4 w-4 text-gray-400" />
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="cursor-pointer border-none bg-transparent text-sm font-bold focus:ring-0"
+                  className="min-w-0 flex-1 cursor-pointer border-none bg-transparent text-sm font-bold focus:ring-0 sm:flex-none"
                 >
                   <option value="all">كل الفروع</option>
                   {branches.map((branch) => (
@@ -208,7 +209,7 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {can('reports', 'read') && (
           <StatCard
             title="إجمالي المبيعات"
@@ -266,7 +267,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
         <AIStockWidget />
 
         {can('reports', 'read') && (
@@ -352,7 +353,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
         <Card className="p-5">
           <h3 className="mb-4 text-base font-bold text-gray-900 dark:text-gray-100">الأكثر مبيعًا</h3>
           {data.topProducts?.length > 0 ? (

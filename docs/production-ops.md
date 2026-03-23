@@ -50,6 +50,17 @@ Tenant-facing in-app alerts also exist for:
 
 - auto-backup failures
 
+Minimum alert routing before calling the system production-ready:
+
+| Alert class | Source | Destination | Owner |
+| --- | --- | --- | --- |
+| Process down / readiness failure | `/api/health/ready`, Cloud Run health, uptime monitor | on-call Slack/Discord webhook | backend owner |
+| Startup task failure | `/api/v1/ops/status`, webhook alert | on-call Slack/Discord webhook | backend owner |
+| Repeated failing jobs | `/api/v1/ops/status`, rollout validation | on-call Slack/Discord webhook | backend owner |
+| Backup failures | in-app backup alert + ops webhook | support + backend owner | operations owner |
+| Payment/shipping webhook failures | application logs + ops webhook | backend owner | integrations owner |
+| Storefront degradation | uptime monitor + CDN/edge logs | on-call Slack/Discord webhook | frontend/storefront owner |
+
 ## Logging
 
 Relevant env vars:
@@ -119,6 +130,39 @@ At minimum, production should monitor:
 - webhook alert delivery success
 - failed auto-backup notifications or repeated backup failures
 
+Minimum dashboard set before calling the system stable production:
+
+1. `Application health`
+   - readiness
+   - liveness
+   - uptime
+   - response codes
+2. `Jobs and startup`
+   - failing jobs
+   - expired locks
+   - startup task failures
+3. `Database`
+   - connection state
+   - slow queries
+   - storage growth
+   - backup success/failure trend
+4. `Traffic and business critical paths`
+   - storefront request rate
+   - checkout success/failure
+   - portal auth failures
+   - invoice creation failures
+5. `Infrastructure`
+   - Cloud Run instance count
+   - CPU / memory saturation
+   - container restarts
+   - storage/asset delivery errors
+
+Minimum ownership map:
+
+- backend owner: health, jobs, protected ops, invoice creation, DB health
+- storefront/frontend owner: storefront availability, asset delivery, checkout front-door health
+- operations owner: release checklist execution, backup drills, alert routing upkeep
+
 ## Scripted Monitoring Helpers
 
 Local or operator-triggered helpers now available:
@@ -135,6 +179,13 @@ Local or operator-triggered helpers now available:
 - expired job locks exceed the configured threshold
 - required ops metrics are missing
 
+Recommended artifact location per rollout:
+
+- `backend/artifacts/releases/<release-id>/release-validation.json`
+- `backend/artifacts/releases/<release-id>/release-validation.md`
+- `backend/artifacts/releases/<release-id>/ops-snapshot.json`
+- `backend/artifacts/releases/<release-id>/ops-metrics.prom`
+
 ## GitHub Rollout Validation
 
 The repository now ships a manual/scheduled workflow:
@@ -147,3 +198,12 @@ Usage:
 2. Set repository secret `OPS_BEARER_TOKEN` to a valid admin/vendor bearer token if protected ops checks should run.
 3. Trigger the workflow manually after deploy, or let the daily schedule run.
 4. Download the uploaded artifacts if you need the latest JSON snapshot, Prometheus metrics dump, or rollout gate report.
+
+## CI Visibility
+
+The main CI workflow now reports DB-backed E2E readiness in its step summary before running the default backend suite.
+
+That means operators can tell directly from the GitHub Actions UI whether:
+
+- `TEST_MONGODB_URI` is configured and DB-backed E2E can run
+- or the pipeline is currently in `skip-safe only` mode for `tests/e2e`

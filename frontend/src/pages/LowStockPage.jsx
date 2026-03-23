@@ -122,31 +122,37 @@ export default function LowStockPage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-500/20">
-            <AlertTriangle className="h-6 w-6 text-amber-600" />
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/80">Restock Radar</p>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">المنتجات منخفضة المخزون</h2>
+              <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                متابعة فورية للنواقص الحرجة حسب المورد، مع أوامر إعادة تخزين أسرع وتصميم أوضح على الهاتف.
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold">المنتجات منخفضة المخزون</h2>
-            <p className="text-sm text-gray-500">{products.length} منتج يحتاج إلى إعادة تخزين</p>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Button variant="outline" onClick={load} icon={<RefreshCw className="h-4 w-4" />} className="w-full sm:w-auto">
+              تحديث
+            </Button>
+            <Button
+              variant="whatsapp"
+              onClick={handleBulkRestock}
+              loading={sendingBulk}
+              disabled={products.every((product) => !product?.supplier)}
+              icon={<Send className="h-4 w-4" />}
+              className="w-full sm:w-auto"
+            >
+              إرسال طلبات لكل الموردين
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={load} icon={<RefreshCw className="h-4 w-4" />}>
-            تحديث
-          </Button>
-          <Button
-            variant="whatsapp"
-            onClick={handleBulkRestock}
-            loading={sendingBulk}
-            disabled={products.every((product) => !product?.supplier)}
-            icon={<Send className="h-4 w-4" />}
-          >
-            إرسال طلبات لكل الموردين
-          </Button>
-        </div>
-      </div>
+      </section>
 
       {loading ? <LoadingSpinner /> : products.length === 0 ? (
         <EmptyState
@@ -177,7 +183,7 @@ export default function LowStockPage() {
 
           {groupedBySupplier.map(([supplierId, group]) => (
             <Card key={supplierId} className="overflow-hidden">
-              <div className={`flex items-center justify-between px-5 py-4 ${supplierId === 'no-supplier' ? 'bg-gray-50 dark:bg-gray-800/50' : 'bg-primary-50 dark:bg-primary-500/10'}`}>
+              <div className={`flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${supplierId === 'no-supplier' ? 'bg-gray-50 dark:bg-gray-800/50' : 'bg-primary-50 dark:bg-primary-500/10'}`}>
                 <div className="flex items-center gap-3">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${supplierId === 'no-supplier' ? 'bg-gray-200 dark:bg-gray-700' : 'bg-primary-100 dark:bg-primary-500/20'}`}>
                     <Building2 className={`h-5 w-5 ${supplierId === 'no-supplier' ? 'text-gray-500' : 'text-primary-600'}`} />
@@ -207,7 +213,64 @@ export default function LowStockPage() {
                 ) : null}
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="space-y-3 p-4 md:hidden">
+                {group.products.map((product) => {
+                  const needed = getNeededQuantity(product);
+                  const status = getStockStatus(product);
+                  return (
+                    <div key={product._id} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${status === 'out_of_stock' ? 'bg-red-100 text-red-500 dark:bg-red-500/20' : 'bg-amber-100 text-amber-500 dark:bg-amber-500/20'}`}>
+                            <Package className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 dark:text-white">{product.name}</p>
+                            <p className="mt-1 font-mono text-xs text-gray-400">{product.sku || 'بدون SKU'}</p>
+                          </div>
+                        </div>
+                        {stockBadge(product)}
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm">
+                        <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                          <p className="text-[11px] text-gray-400">الحالي</p>
+                          <p className={`mt-1 font-black ${status === 'out_of_stock' ? 'text-red-500' : 'text-amber-500'}`}>
+                            {Number(product?.stock?.quantity) || 0}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                          <p className="text-[11px] text-gray-400">الحد الأدنى</p>
+                          <p className="mt-1 font-black text-gray-900 dark:text-white">{Number(product?.stock?.minQuantity) || 5}</p>
+                        </div>
+                        <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                          <p className="text-[11px] text-gray-400">المطلوب</p>
+                          <p className="mt-1 font-black text-primary-600">{needed}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        {supplierId !== 'no-supplier' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRequestRestock(product)}
+                            loading={sendingOrders[product._id]}
+                            icon={<Send className="h-3 w-3" />}
+                            className="w-full"
+                          >
+                            إرسال طلب إعادة تخزين
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-gray-400">أضف مورد أولاً قبل إنشاء الطلب</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">

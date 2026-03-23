@@ -11,6 +11,7 @@ const Helpers = require('../utils/helpers');
 const PDFService = require('../services/PDFService');
 const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
+const ActivationService = require('../services/ActivationService');
 const catchAsync = require('../utils/catchAsync');
 const logger = require('../utils/logger');
 
@@ -56,6 +57,10 @@ class CustomerController {
       return next(AppError.badRequest('يجب تحديد المتجر لإضافة عميل'));
     }
 
+    if (!req.body.phone && !req.body.email) {
+      return next(AppError.badRequest('أدخل رقم هاتف أو بريداً إلكترونياً للعميل'));
+    }
+
     const customerData = {
       ...req.body,
       tenant: tenantId,
@@ -66,7 +71,7 @@ class CustomerController {
       },
       whatsapp: {
         enabled: true,
-        number: Helpers.formatPhoneForWhatsApp(req.body.phone),
+        number: req.body.phone ? Helpers.formatPhoneForWhatsApp(req.body.phone) : undefined,
       },
     };
 
@@ -77,11 +82,27 @@ class CustomerController {
     }
 
     const customer = await Customer.create(customerData);
+    const invitation = await ActivationService.inviteCustomer(customer, null, {
+      preferredChannel: req.body.activationChannel || 'auto',
+    });
 
     // Send Notification
     NotificationService.onNewCustomer(tenantId, customer.name).catch(() => { });
 
-    ApiResponse.created(res, customer, 'تم إضافة العميل بنجاح');
+    return ApiResponse.created(res, {
+      customer,
+      invitation,
+    }, 'ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ø¹Ù…ÙŠÙ„ Ø¨Ù†Ø¬Ø§Ø­');
+  });
+
+  resendActivation = catchAsync(async (req, res) => {
+    const result = await ActivationService.resendCustomerActivation(
+      req.params.id,
+      req.tenantId,
+      req.body?.activationChannel || 'auto'
+    );
+
+    ApiResponse.success(res, result, 'Activation link resent successfully');
   });
 
   update = catchAsync(async (req, res, next) => {
@@ -119,14 +140,77 @@ class CustomerController {
     ApiResponse.success(res, customer, 'تم تحديث بيانات العميل');
   });
 
+  duplicate = catchAsync(async (req, res, next) => {
+    const original = await Customer.findOne({ _id: req.params.id, ...req.tenantFilter });
+    if (!original) return next(AppError.notFound('العميل الأصلي غير موجود'));
+
+    // Create a copy of the original document
+    const customerData = original.toObject();
+
+    // Remove unique and sensitive fields
+    delete customerData._id;
+    delete customerData.id;
+    delete customerData.createdAt;
+    delete customerData.updatedAt;
+    delete customerData.__v;
+
+    // Reset financial and unique data
+    customerData.name = `${original.name} (نسخة)`;
+    customerData.phone = `${original.phone}-copy`; // User must change this
+    customerData.barcode = ''; // Will be auto-generated
+    customerData.financials = {
+      totalPurchases: 0,
+      totalPaid: 0,
+      outstandingBalance: 0,
+      creditLimit: original.financials?.creditLimit || 10000,
+    };
+    customerData.gamification = {
+      points: 0,
+      level: 1,
+      badges: [],
+      nextLevelPoints: 1000,
+    };
+    customerData.wallet = {
+      balance: 0,
+    };
+    customerData.isActive = false; // Requires activation or manual toggle
+    customerData.activationToken = undefined;
+    customerData.activationTokenExpires = undefined;
+
+    const newCustomer = await Customer.create({
+      ...customerData,
+      tenant: req.tenantId,
+      createdBy: req.user._id,
+    });
+
+    ApiResponse.success(res, newCustomer, 'تم تكرار بيانات العميل بنجاح. يرجى تحديث رقم الهاتف والبيانات المطلوبة.');
+  });
+
   delete = catchAsync(async (req, res, next) => {
-    const customer = await Customer.findOneAndUpdate(
-      { _id: req.params.id, ...req.tenantFilter },
-      { isActive: false },
-      { new: true }
-    );
+    const customer = await Customer.findOne({ _id: req.params.id, ...req.tenantFilter });
     if (!customer) return next(AppError.notFound('العميل غير موجود'));
-    ApiResponse.success(res, null, 'تم حذف العميل');
+
+    // Financial Checks
+    if (customer.financials && customer.financials.outstandingBalance > 0) {
+      return next(new AppError('لا يمكن حذف العميل لوجود مديونية مستحقة عليه.', 400));
+    }
+
+    // Check for unpaid invoices
+    const unpaidInvoicesCount = await Invoice.countDocuments({
+      customer: customer._id,
+      tenant: req.tenantId,
+      status: { $in: ['pending', 'partial', 'overdue'] }
+    });
+
+    if (unpaidInvoicesCount > 0) {
+      return next(new AppError('لا يمكن حذف العميل لوجود فواتير غير مسددة بالكامل.', 400));
+    }
+
+    // Soft delete
+    customer.isActive = false;
+    await customer.save();
+
+    ApiResponse.success(res, null, 'تم حذف العميل بنجاح');
   });
 
   getTopCustomers = catchAsync(async (req, res, next) => {

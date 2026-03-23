@@ -85,6 +85,7 @@ At minimum, production should define:
 - `JWT_SECRET`
 - `CLIENT_URL`
 - `APP_URL`
+- `UPLOAD_STORAGE` set explicitly to `gcs` or `mongodb`
 
 ### Recommended env vars
 
@@ -108,6 +109,12 @@ Recommended choices:
 
 - `UPLOAD_STORAGE=gcs` for durable object storage
 - `UPLOAD_STORAGE=mongodb` only as a fallback when GCS is unavailable
+
+Release preflight now treats these as rollout rules:
+
+- `UPLOAD_STORAGE=local` is a hard failure for production rollout
+- missing `UPLOAD_STORAGE` is a hard failure for production rollout
+- `UPLOAD_STORAGE=gcs` requires `GCS_BUCKET_NAME`
 
 ### Background jobs
 
@@ -143,6 +150,7 @@ Recommended use:
 - scripted preflight -> `npm --prefix backend run release:preflight`
 - scripted rollout smoke -> `npm --prefix backend run release:smoke -- --app-url=https://service-url`
 - scripted tenant onboarding check -> `npm --prefix backend run release:onboarding -- --app-url=https://service-url --auth-token=...`
+- scripted DB-backed E2E readiness check -> `npm --prefix backend run test:e2e:readiness`
 
 ## Deployment checklist
 
@@ -151,7 +159,7 @@ Before deploy:
 - confirm frontend builds cleanly
 - confirm `MONGODB_URI` targets the intended database
 - confirm `CLIENT_URL` and `APP_URL` match the production hostname
-- confirm upload storage configuration is durable
+- confirm upload storage configuration is durable and explicit (`gcs` preferred, `mongodb` approved fallback)
 - capture a fresh backup
 
 After deploy:
@@ -161,6 +169,7 @@ After deploy:
 - sign into the backoffice
 - load a storefront page
 - verify uploads render
+- upload one fresh image and confirm it still renders after the deployed instance is recycled or revisited
 - verify one protected API call and one public storefront API call
 
 ## Rollback reality
@@ -186,7 +195,7 @@ GitHub Actions is now codified in:
 
 Current automation:
 
-- backend unit + integration tests
+- backend unit + integration tests plus skip-safe E2E loading
 - frontend production build
 - optional DB-backed E2E suite when `TEST_MONGODB_URI` is configured in repository secrets
 

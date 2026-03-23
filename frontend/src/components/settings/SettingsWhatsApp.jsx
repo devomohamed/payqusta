@@ -305,6 +305,7 @@ export default function SettingsWhatsApp() {
             { key: 'reminder', label: 'تذكير قسط', icon: '⏰', defaultLang: 'ar_EG' },
             { key: 'payment', label: 'تأكيد دفعة', icon: '✅', defaultLang: 'ar_EG' },
             { key: 'restock', label: 'طلب تخزين', icon: '📦', defaultLang: 'en' },
+            { key: 'activation', label: 'كود التفعيل / دعوة', icon: '🔑', defaultLang: 'ar_EG' },
           ].map((item) => (
             <div key={item.key} className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-slate-950 border border-gray-100 dark:border-white/5 shadow-sm">
               <span className="text-lg">{item.icon}</span>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, Camera, CheckCircle, Flashlight, Keyboard, ScanLine, Upload, X } from 'lucide-react';
+import { AlertCircle, Camera, CheckCircle, Flashlight, ScanLine, Upload, X } from 'lucide-react';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { Button, Input } from './UI';
 
@@ -162,7 +162,11 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+        dir="rtl"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-gray-100 p-4">
           <div className="flex items-center gap-2">
             <ScanLine className="h-5 w-5 text-primary-500" />
@@ -200,12 +204,12 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
             <div className="grid grid-cols-2 gap-3">
               <Button type="button" onClick={startCameraScanning} className="h-16 justify-center rounded-2xl">
                 <Camera className="ml-2 h-5 w-5" />
-                Scan
+                مسح بالكاميرا
               </Button>
               <label className="flex h-16 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 font-semibold text-gray-600 transition-colors hover:border-primary-400 hover:bg-primary-50">
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 <Upload className="ml-2 h-5 w-5" />
-                Upload
+                رفع صورة
               </label>
             </div>
           )}
@@ -214,33 +218,28 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
             <div className="grid grid-cols-2 gap-3">
               <Button type="button" variant="ghost" onClick={stopCameraScanning} className="rounded-2xl">
                 <X className="ml-2 h-4 w-4" />
-                Stop
+                إيقاف
               </Button>
               {torchSupported ? (
                 <Button type="button" variant={torchEnabled ? 'primary' : 'outline'} onClick={toggleTorch} className="rounded-2xl">
                   <Flashlight className="ml-2 h-4 w-4" />
-                  Torch
+                  تشغيل الفلاش
                 </Button>
               ) : <div />}
             </div>
           ) : null}
 
-          <div className="relative">
-            <div className="absolute inset-x-0 top-0 flex justify-center">
-              <span className="bg-white px-3 text-xs text-gray-400">أو أدخل يدويًا</span>
-            </div>
-            <hr className="mt-2 border-gray-200" />
-          </div>
-
-          <form onSubmit={handleManualSubmit} className="flex gap-2">
+          <form onSubmit={handleManualSubmit} className="flex items-stretch gap-2 pt-1">
             <Input
               ref={inputRef}
+              className="flex-1"
               value={manualCode}
               onChange={(event) => setManualCode(event.target.value)}
               placeholder="أدخل الباركود..."
-              icon={<Keyboard className="h-4 w-4" />}
+              inputMode="text"
+              dir="ltr"
             />
-            <Button type="submit">إضافة</Button>
+            <Button type="submit" className="min-w-[5.5rem] rounded-2xl">إضافة</Button>
           </form>
 
           <div className="rounded-2xl bg-gray-50 p-3 text-xs text-gray-500">

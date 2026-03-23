@@ -188,20 +188,38 @@ export default function InstallmentsDashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 transition-transform duration-300 motion-safe:hover:-translate-y-0.5">
-            <CreditCard className="h-6 w-6 text-white" />
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 transition-transform duration-300 motion-safe:hover:-translate-y-0.5">
+              <CreditCard className="h-6 w-6 text-white" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Collections Desk</p>
+              <h1 className="text-2xl font-extrabold dark:text-white">لوحة الأقساط والآجل</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-400 dark:text-gray-300">متابعة الديون المستحقة، الأقساط القادمة، والعملاء المتأخرين من واجهة أخف على الهاتف.</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-extrabold dark:text-white">لوحة الأقساط والآجل</h1>
-            <p className="text-sm text-gray-400 dark:text-gray-300">متابعة الديون المستحقة، الأقساط القادمة، والعملاء المتأخرين</p>
-          </div>
+          <Button onClick={fetchData} variant="outline" icon={<RefreshCw className="h-4 w-4" />} className="w-full sm:w-auto">تحديث البيانات</Button>
         </div>
-        <Button onClick={fetchData} variant="outline" icon={<RefreshCw className="h-4 w-4" />}>تحديث البيانات</Button>
-      </div>
 
-      <div className="app-surface-muted flex flex-wrap items-center gap-2 rounded-2xl p-1">
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <Card className="app-surface rounded-2xl p-4 text-center">
+            <p className="text-[11px] text-gray-400">أقساط قادمة</p>
+            <p className="mt-1 text-xl font-black text-blue-600">{upcoming.length}</p>
+          </Card>
+          <Card className="app-surface rounded-2xl p-4 text-center">
+            <p className="text-[11px] text-gray-400">ديون متأخرة</p>
+            <p className="mt-1 text-xl font-black text-red-500">{overdue.length}</p>
+          </Card>
+          <Card className="app-surface rounded-2xl p-4 text-center">
+            <p className="text-[11px] text-gray-400">عملاء مديونون</p>
+            <p className="mt-1 text-xl font-black text-amber-600">{debtors.length}</p>
+          </Card>
+        </div>
+      </section>
+
+      <div className="app-surface-muted flex items-center gap-2 overflow-x-auto rounded-2xl p-1 no-scrollbar">
         {[
           { id: 'upcoming', label: 'أقساط قادمة مستحقة', icon: Calendar },
           { id: 'overdue', label: 'ديون متأخرة', icon: AlertTriangle },
@@ -222,10 +240,36 @@ export default function InstallmentsDashboardPage() {
         {loading ? (
           <div className="p-12 text-center"><LoadingSpinner text="جاري تحميل البيانات..." /></div>
         ) : (
-          <div className="overflow-x-auto p-4">
+          <div className="p-4">
             {activeTab === 'upcoming' && (
               upcoming.length === 0 ? <EmptyState icon={<CheckCircle className="h-8 w-8 text-emerald-500" />} title="لا توجد أقساط قادمة" description="كل العملاء مسددين لأقساطهم" /> : (
                 <>
+                  <div className="space-y-3 md:hidden">
+                    {visibleUpcoming.map((invoice) => (
+                      <div key={getInvoiceId(invoice)} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-extrabold text-primary-600 dark:text-primary-400">{invoice.invoiceNumber}</p>
+                            <p className="mt-1 text-sm text-gray-700 dark:text-white">{invoice.customer?.name || 'عميل نقدي'}</p>
+                          </div>
+                          <Badge variant="info">قادم</Badge>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                          <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                            <p className="text-[11px] text-gray-400">تاريخ الاستحقاق</p>
+                            <p className="mt-1 font-black text-blue-600 dark:text-blue-400">{formatDate(invoice.dueDate)}</p>
+                          </div>
+                          <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                            <p className="text-[11px] text-gray-400">القسط / المتبقي</p>
+                            <p className="mt-1 font-black text-gray-900 dark:text-white">{fmt(invoice.amount)} / {fmt(getRemainingAmount(invoice))} ج.م</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-2">{renderActions(invoice, 'primary', 'سداد جزئي/كلي')}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-sm">
                     <thead className="bg-black/[0.02] dark:bg-white/[0.03]"><tr><th className="px-4 py-3 text-right">رقم الفاتورة</th><th className="px-4 py-3 text-right">العميل</th><th className="px-4 py-3 text-center">تاريخ الاستحقاق</th><th className="px-4 py-3 text-center">قيمة القسط / المتبقي</th><th className="px-4 py-3 text-center">الإجراءات</th></tr></thead>
                     <tbody>
@@ -240,6 +284,7 @@ export default function InstallmentsDashboardPage() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                   <Pagination currentPage={upcomingPage} totalPages={Math.max(1, Math.ceil(upcoming.length / PAGE_SIZE))} totalItems={upcoming.length} onPageChange={setUpcomingPage} />
                 </>
               )
@@ -248,6 +293,37 @@ export default function InstallmentsDashboardPage() {
             {activeTab === 'overdue' && (
               overdue.length === 0 ? <EmptyState icon={<CheckCircle className="h-8 w-8 text-emerald-500" />} title="لا توجد ديون متأخرة" description="لا يوجد عملاء متأخرين عن السداد" /> : (
                 <>
+                  <div className="space-y-3 md:hidden">
+                    {visibleOverdue.map((invoice) => {
+                      const refDate = nextDue(invoice)?.date || invoice?.dueDate || invoice?.createdAt;
+                      const days = Math.max(0, Math.floor((new Date() - new Date(refDate)) / (1000 * 60 * 60 * 24)));
+                      const overdueAmount = (invoice.installments || []).filter((item) => item?.status === 'overdue').reduce((sum, item) => sum + getInstallmentRemaining(item), 0);
+                      return (
+                        <div key={getInvoiceId(invoice)} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-extrabold text-gray-900 dark:text-white">{invoice.invoiceNumber}</p>
+                              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{invoice.customer?.name || 'عميل نقدي'}</p>
+                            </div>
+                            <Badge variant="danger">{days} يوم</Badge>
+                          </div>
+                          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                              <p className="text-[11px] text-gray-400">المتأخر</p>
+                              <p className="mt-1 font-black text-red-600 dark:text-red-400">{fmt(overdueAmount || getRemainingAmount(invoice))} ج.م</p>
+                            </div>
+                            <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                              <p className="text-[11px] text-gray-400">إجمالي المتبقي</p>
+                              <p className="mt-1 font-black text-gray-900 dark:text-white">{fmt(getRemainingAmount(invoice))} ج.م</p>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex flex-col gap-2">{renderActions(invoice, 'danger', 'السداد الآن')}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-sm">
                     <thead className="bg-red-50/80 dark:bg-red-500/10"><tr><th className="px-4 py-3 text-right text-red-600">رقم الفاتورة</th><th className="px-4 py-3 text-right text-red-600">العميل</th><th className="px-4 py-3 text-center text-red-600">أيام التأخير</th><th className="px-4 py-3 text-center text-red-600">المتأخر / المتبقي</th><th className="px-4 py-3 text-center text-red-600">الإجراءات</th></tr></thead>
                     <tbody>
@@ -267,6 +343,7 @@ export default function InstallmentsDashboardPage() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                   <Pagination currentPage={overduePage} totalPages={Math.max(1, Math.ceil(overdue.length / PAGE_SIZE))} totalItems={overdue.length} onPageChange={setOverduePage} />
                 </>
               )
@@ -275,6 +352,34 @@ export default function InstallmentsDashboardPage() {
             {activeTab === 'all_debts' && (
               debtors.length === 0 ? <EmptyState icon={<CheckCircle className="h-8 w-8 text-emerald-500" />} title="لا توجد ديون" description="لا يوجد أي ديون مستحقة على العملاء" /> : (
                 <>
+                  <div className="space-y-3 md:hidden">
+                    {visibleDebtors.map((customer) => (
+                      <div key={customer._id} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-extrabold text-gray-900 dark:text-white">{customer.name}</p>
+                            <p className="mt-1 text-xs text-gray-400" dir="ltr">{customer.phone}</p>
+                          </div>
+                          <Badge variant="danger">{fmt(customer.financials?.outstandingBalance)} ج.م</Badge>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                          <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                            <p className="text-[11px] text-gray-400">الحد الائتماني</p>
+                            <p className="mt-1 font-black text-gray-900 dark:text-white">{fmt(customer.financials?.creditLimit)} ج.م</p>
+                          </div>
+                          <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                            <p className="text-[11px] text-gray-400">إجمالي المديونية</p>
+                            <p className="mt-1 font-black text-red-500 dark:text-red-400">{fmt(customer.financials?.outstandingBalance)} ج.م</p>
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <Button size="sm" variant="outline" icon={<Eye className="h-4 w-4" />} onClick={() => loadCustomerProfile(customer)} className="w-full">عرض الملف</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-sm">
                     <thead className="bg-black/[0.02] dark:bg-white/[0.03]"><tr><th className="px-4 py-3 text-right">العميل</th><th className="px-4 py-3 text-right">رقم الهاتف</th><th className="px-4 py-3 text-center">الحد الائتماني</th><th className="px-4 py-3 text-center">إجمالي المديونية</th><th className="px-4 py-3 text-center">الإجراءات</th></tr></thead>
                     <tbody>
@@ -291,6 +396,7 @@ export default function InstallmentsDashboardPage() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                   <Pagination currentPage={debtorsPage} totalPages={Math.max(1, Math.ceil(debtors.length / PAGE_SIZE))} totalItems={debtors.length} onPageChange={setDebtorsPage} />
                 </>
               )

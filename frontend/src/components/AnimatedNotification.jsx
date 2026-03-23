@@ -21,6 +21,7 @@ export const useNotificationStore = create((set) => ({
       message: notification.message,
       duration: notification.duration || 4000,
       action: notification.action, // { label: 'Text', onClick: fn }
+      secondaryAction: notification.secondaryAction,
     };
 
     set((state) => ({
@@ -142,17 +143,32 @@ function NotificationItem({ notification, onRemove }) {
               {notification.message}
             </p>
 
-            {/* Action Button */}
-            {notification.action && (
-              <button
-                onClick={() => {
-                  notification.action.onClick();
-                  onRemove();
-                }}
-                className={`mt-2 text-sm font-medium ${colors.button}`}
-              >
-                {notification.action.label}
-              </button>
+            {/* Action Buttons */}
+            {(notification.action || notification.secondaryAction) && (
+              <div className="mt-2 flex items-center gap-3">
+                {notification.action && (
+                  <button
+                    onClick={() => {
+                      notification.action.onClick();
+                      onRemove();
+                    }}
+                    className={`text-sm font-medium ${colors.button}`}
+                  >
+                    {notification.action.label}
+                  </button>
+                )}
+                {notification.secondaryAction && (
+                  <button
+                    onClick={() => {
+                      notification.secondaryAction.onClick();
+                      onRemove();
+                    }}
+                    className={`text-sm font-medium ${colors.button} opacity-80 hover:opacity-100`}
+                  >
+                    {notification.secondaryAction.label}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 

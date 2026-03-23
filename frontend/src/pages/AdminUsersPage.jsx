@@ -36,7 +36,7 @@ const INITIAL_FORM = {
   name: '',
   email: '',
   phone: '',
-  password: '',
+  invitationChannel: 'auto',
   role: 'vendor',
   customRole: '',
   branch: '',
@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
       name: userItem.name || '',
       email: userItem.email || '',
       phone: userItem.phone || '',
-      password: '',
+      invitationChannel: userItem.phone && userItem.email ? 'auto' : userItem.phone ? 'sms' : 'email',
       role: userItem.role || 'vendor',
       customRole: userItem.customRole?._id || '',
       branch: userItem.branch?._id || '',
@@ -257,12 +257,8 @@ export default function AdminUsersPage() {
       return toast.error('الاسم والبريد الإلكتروني مطلوبان');
     }
 
-    if (!editId && (!form.phone.trim() || (isSuperAdmin && !form.tenantId))) {
+    if (!editId && isSuperAdmin && !form.tenantId) {
       return toast.error('أكمل الحقول الأساسية قبل الحفظ');
-    }
-
-    if (!editId && !form.password.trim()) {
-      return toast.error('كلمة المرور مطلوبة عند إنشاء المستخدم');
     }
 
     setSaving(true);
@@ -278,8 +274,11 @@ export default function AdminUsersPage() {
         assignedBranches: form.assignedBranches || [],
         branchAccessMode: form.branchAccessMode,
         isActive: form.isActive,
-        ...(form.password ? { password: form.password } : {}),
       };
+
+      if (form.password) {
+        payload.password = form.password;
+      }
 
       if (editId) {
         await adminApi.updateUser(editId, payload);
@@ -288,6 +287,7 @@ export default function AdminUsersPage() {
         await adminApi.createUser({
           ...payload,
           tenantId: isSuperAdmin ? form.tenantId : user?.tenant?._id,
+          invitationChannel: form.invitationChannel,
         });
         toast.success('تم إنشاء المستخدم بنجاح');
       }
@@ -301,14 +301,71 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleInviteSave = async () => {
+    if (!form.name.trim() || !form.email.trim()) {
+      return toast.error('Name and email are required');
+    }
+
+    if (!editId && isSuperAdmin && !form.tenantId) {
+      return toast.error('Select a tenant before creating the user');
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        role: form.role,
+        customRole: form.customRole || null,
+        branch: form.primaryBranch || form.branch || null,
+        primaryBranch: form.primaryBranch || form.branch || null,
+        assignedBranches: form.assignedBranches || [],
+        branchAccessMode: form.branchAccessMode,
+        isActive: form.isActive,
+      };
+
+      if (editId) {
+        await adminApi.updateUser(editId, payload);
+        toast.success('User updated successfully');
+      } else {
+        await adminApi.createUser({
+          ...payload,
+          tenantId: isSuperAdmin ? form.tenantId : user?.tenant?._id,
+          invitationChannel: form.invitationChannel || 'auto',
+        });
+        toast.success('User created and invitation sent');
+      }
+
+      closeModal();
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to save user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDelete = async (userId) => {
     notify.custom({
       type: 'error',
-      title: 'تأكيد تعطيل المستخدم',
-      message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول بعد ذلك.',
+      title: 'تأكيد الحذف أو التعطيل',
+      message: 'هل تريد تعطيل حساب المستخدم فقط (مؤقتاً) أم حذفه نهائياً من النظام؟',
       duration: 10000,
       action: {
-        label: 'تعطيل المستخدم',
+        label: 'حذف نهائي',
+        onClick: async () => {
+          try {
+            await adminApi.deleteUser(userId, { hardDelete: true });
+            notify.success('تم حذف المستخدم نهائياً', 'تم الحفظ');
+            load();
+          } catch (error) {
+            notify.error(error.response?.data?.message || 'تعذر حذف المستخدم', 'حدث خطأ');
+          }
+        },
+      },
+      secondaryAction: {
+        label: 'تعطيل فقط',
         onClick: async () => {
           try {
             await adminApi.deleteUser(userId);
@@ -384,35 +441,59 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6 app-text-soft">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-3">
-          <Badge variant="info" className="w-fit">Employee Access Control</Badge>
-          <div className="flex items-start gap-4">
-            <div className="rounded-[1.6rem] bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 text-white shadow-2xl shadow-emerald-500/25">
-              <Users className="h-7 w-7" />
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-emerald-700 via-teal-700 to-slate-950 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(5,150,105,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Users className="h-3.5 w-3.5" />
+              Employee Access Control
             </div>
-            <div>
-              <h1 className="text-3xl font-black app-text-strong">إدارة الموظفين والصلاحيات</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-7 app-text-muted">
-                أدر الأدوار المخصصة، نطاق الفروع، وتاريخ التعديلات من شاشة واحدة متسقة مع سياسة الصلاحيات الجديدة.
-              </p>
+            <div className="flex items-start gap-4">
+              <div className="rounded-[1.6rem] bg-white/10 p-4 text-white shadow-2xl backdrop-blur-sm">
+                <Users className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black text-white">إدارة الموظفين والصلاحيات</h1>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-white/80">
+                  أدر الأدوار المخصصة، نطاق الفروع، وتاريخ التعديلات من شاشة واحدة أوضح وأكثر راحة على الهاتف.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:min-w-[560px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">إجمالي المستخدمين</p>
+              <p className="mt-2 text-2xl font-black">{summary.total}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الحسابات النشطة</p>
+              <p className="mt-2 text-2xl font-black">{summary.active}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">أدوار مخصصة</p>
+              <p className="mt-2 text-2xl font-black">{summary.customRoles}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">نطاق فرعي</p>
+              <p className="mt-2 text-2xl font-black">{summary.scopedUsers}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
+        <div className="mt-5 flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
           <Link
             to="/admin/audit-logs?resource=user"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--surface-border)] app-surface px-4 py-3 text-sm font-semibold app-text-body transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03] lg:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15 lg:w-auto"
           >
-            <FileSearch className="h-4 w-4 text-primary-500" />
+            <FileSearch className="h-4 w-4 text-white" />
             سجل تعديلات الموظفين
           </Link>
-          <Button onClick={openAdd} size="lg" icon={<Plus className="h-4 w-4" />} className="w-full lg:w-auto">
+          <Button onClick={openAdd} size="lg" icon={<Plus className="h-4 w-4" />} className="w-full bg-white text-emerald-700 hover:bg-white/90 lg:w-auto">
             إضافة مستخدم جديد
           </Button>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard title="إجمالي المستخدمين" value={summary.total} caption="بعد الفلاتر الحالية" icon={Users} tone="primary" />
@@ -422,6 +503,10 @@ export default function AdminUsersPage() {
       </div>
 
       <Card className="app-surface-muted p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-sm font-black app-text-strong">البحث والتصفية</p>
+          <p className="mt-1 text-xs app-text-muted">ابحث بالاسم أو البريد أو الهاتف، وفلتر حسب الدور أو المتجر للوصول الأسرع للحسابات.</p>
+        </div>
         <div className={`grid gap-4 ${isSuperAdmin ? 'lg:grid-cols-[1.4fr_repeat(2,minmax(0,0.8fr))]' : 'lg:grid-cols-[1.6fr_0.9fr]'}`}>
           <div className="relative">
             <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 app-text-muted" />
@@ -476,7 +561,62 @@ export default function AdminUsersPage() {
         />
       ) : (
         <Card className="overflow-hidden rounded-[1.75rem]">
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-4 md:hidden">
+            {users.map((userItem) => (
+              <div key={userItem._id} className="app-surface-muted rounded-2xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20">
+                    {userItem.name?.charAt(0) || 'م'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-black app-text-strong">{userItem.name}</p>
+                      <Badge variant={getRoleBadgeVariant(userItem)}>{getRoleLabel(userItem)}</Badge>
+                      <Badge variant={userItem.isActive ? 'success' : 'danger'}>{userItem.isActive ? 'نشط' : 'معطل'}</Badge>
+                    </div>
+                    <p className="mt-1 truncate text-[11px] app-text-muted">{userItem.email}</p>
+                    {userItem.phone ? <p className="mt-1 text-[11px] app-text-muted">{userItem.phone}</p> : null}
+                    <p className="mt-2 text-[11px] app-text-muted">
+                      {isSuperAdmin
+                        ? (userItem.tenant?.name || 'مدير نظام')
+                        : (userItem.primaryBranch?.name || userItem.branch?.name || 'بدون ربط فرعي')}
+                    </p>
+                    {!isSuperAdmin ? <p className="mt-1 text-[11px] app-text-muted">{getBranchScopeLabel(userItem)}</p> : null}
+                    <p className="mt-1 text-[11px] app-text-muted">{format(new Date(userItem.createdAt), 'dd MMM yyyy', { locale: ar })}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    to={buildAuditTrailLink(userItem)}
+                    className="inline-flex items-center justify-center rounded-xl p-2.5 app-surface app-text-body transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+                    title="عرض سجل التدقيق"
+                  >
+                    <FileSearch className="h-4 w-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(userItem)}
+                    className="rounded-xl p-2.5 text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10"
+                    title="تعديل"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  {userItem.role !== 'admin' && userItem.isActive && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(userItem._id)}
+                      className="rounded-xl p-2.5 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+                      title="تعطيل"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[980px]">
               <thead>
                 <tr className="app-surface-muted border-b border-black/5 dark:border-white/10">
@@ -716,20 +856,21 @@ export default function AdminUsersPage() {
               <div className="mb-4">
                 <h3 className="text-base font-black app-text-strong">الحالة وكلمة المرور</h3>
                 <p className="mt-1 text-sm app-text-muted">
-                  {editId ? 'يمكنك إبقاء كلمة المرور فارغة إذا لم تكن تريد تغييرها.' : 'كلمة المرور مطلوبة عند إنشاء الحساب لأول مرة.'}
+                  {editId ? 'يمكنك إبقاء كلمة المرور فارغة إذا لم تكن تريد تغييرها.' : 'اترك الحقل فارغاً لإرسال دعوة للمستخدم عبر إحدى القنوات لتفعيل حسابه وتعيين كلمة السر بنفسه.'}
                 </p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
                   type="password"
-                  label={editId ? 'كلمة مرور جديدة' : 'كلمة المرور'}
+                  label={editId ? 'كلمة مرور جديدة' : 'كلمة المرور (اختياري)'}
                   value={form.password}
                   onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                  placeholder={editId ? 'اتركها فارغة إذا لم تتغير' : '8 أحرف على الأقل'}
+                  placeholder={editId ? 'اتركها فارغة إذا لم تتغير' : 'اتركها فارغة لإرسال دعوة للمستخدم'}
+                  autoComplete="new-password"
                 />
 
-                {editId && (
+                {editId ? (
                   <div>
                     <label className="mb-2 block text-sm font-bold app-text-strong">الحالة</label>
                     <select
@@ -741,7 +882,21 @@ export default function AdminUsersPage() {
                       <option value="inactive">معطل</option>
                     </select>
                   </div>
-                )}
+                ) : !form.password ? (
+                  <div>
+                    <label className="mb-2 block text-sm font-bold app-text-strong">طريقة إرسال رابط الدعوة</label>
+                    <select
+                      value={form.invitationChannel || 'auto'}
+                      onChange={(event) => setForm((current) => ({ ...current, invitationChannel: event.target.value }))}
+                      className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
+                    >
+                      <option value="auto">تلقائي (رسالة ثم بريد إلكتروني)</option>
+                      <option value="whatsapp">عبر واتساب (WhatsApp)</option>
+                      <option value="email">عبر البريد الإلكتروني فقط</option>
+                      <option value="sms">عبر رسالة نصية (SMS) فقط</option>
+                    </select>
+                  </div>
+                ) : null}
               </div>
             </Card>
 

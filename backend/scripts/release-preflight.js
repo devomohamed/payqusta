@@ -52,6 +52,16 @@ function printResult(icon, label, message) {
   console.log(`${icon} ${label}: ${message}`);
 }
 
+function normalizeUploadStorage(env) {
+  const explicitMode = String(env.UPLOAD_STORAGE || '').trim().toLowerCase();
+
+  if (['gcs', 'google'].includes(explicitMode)) return 'gcs';
+  if (['mongodb', 'mongo', 'db'].includes(explicitMode)) return 'mongodb';
+  if (['local', 'filesystem', 'fs'].includes(explicitMode)) return 'local';
+  if (env.GCS_BUCKET_NAME) return 'gcs';
+  return 'unknown';
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const envFileArg = args['env-file'];
@@ -85,6 +95,7 @@ function main() {
   const hasMongoConnection = Boolean(env.MONGODB_URI || env.MONGO_URI);
   const missingRequired = required.filter((key) => !env[key]);
   const missingRecommended = recommended.filter((key) => !env[key]);
+  const uploadStorageMode = normalizeUploadStorage(env);
 
   console.log('Release preflight');
   console.log(`Env file: ${envFile}`);
@@ -129,6 +140,25 @@ function main() {
     recommended.forEach((key) => printResult('OK', key, 'present'));
   }
 
+  if (uploadStorageMode === 'gcs') {
+    if (!env.GCS_BUCKET_NAME) {
+      printResult('X', 'UPLOAD_STORAGE', 'gcs mode requires GCS_BUCKET_NAME');
+    } else {
+      printResult('OK', 'UPLOAD_STORAGE', `durable mode selected (${uploadStorageMode})`);
+      printResult('OK', 'GCS_BUCKET_NAME', env.GCS_BUCKET_NAME);
+    }
+  } else if (uploadStorageMode === 'mongodb') {
+    printResult('OK', 'UPLOAD_STORAGE', 'durable fallback selected (mongodb)');
+  } else if (uploadStorageMode === 'local') {
+    printResult('X', 'UPLOAD_STORAGE', 'local storage is not allowed for production rollout');
+  } else {
+    printResult(
+      'X',
+      'UPLOAD_STORAGE',
+      'production rollout requires an explicit durable mode: set UPLOAD_STORAGE=gcs or UPLOAD_STORAGE=mongodb'
+    );
+  }
+
   const hasErrors =
     !hasMongoConnection ||
     missingRequired.length > 0 ||
@@ -137,7 +167,10 @@ function main() {
     !env.CLIENT_URL ||
     !isHttpUrl(env.CLIENT_URL) ||
     (strictIntegrations && missingRecommended.length > 0) ||
-    (env.PLATFORM_ROOT_DOMAIN && env.PLATFORM_ROOT_DOMAIN.includes(' '));
+    (env.PLATFORM_ROOT_DOMAIN && env.PLATFORM_ROOT_DOMAIN.includes(' ')) ||
+    uploadStorageMode === 'local' ||
+    uploadStorageMode === 'unknown' ||
+    (uploadStorageMode === 'gcs' && !env.GCS_BUCKET_NAME);
 
   console.log('');
   if (dryRun) {

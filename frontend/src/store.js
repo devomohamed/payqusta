@@ -382,6 +382,7 @@ export const customersApi = {
   create: (data) => api.post('/customers', data),
   update: (id, data) => api.put(`/customers/${id}`, data),
   delete: (id) => api.delete(`/customers/${id}`),
+  resendActivation: (id, data) => api.post(`/customers/${id}/resend-activation`, data),
   getTop: (limit) => api.get('/customers/top', { params: { limit } }),
   getDebtors: () => api.get('/customers/debtors'),
   getTransactions: (id) => api.get(`/customers/${id}/transactions`),
@@ -516,6 +517,10 @@ export const settingsApi = {
   updateStore: (data) => api.put('/settings/store', data),
   updateWhatsApp: (data) => api.put('/settings/whatsapp', data),
   updateBranding: (data) => api.put('/settings/branding', data),
+  getNotificationChannels: () => api.get('/settings/notification-channels'),
+  updateNotificationChannels: (data) => api.put('/settings/notification-channels', data),
+  testNotificationEmail: (data) => api.post('/settings/notification-channels/test-email', data),
+  testNotificationSms: (data) => api.post('/settings/notification-channels/test-sms', data),
   updateUser: (data) => api.put('/settings/user', data),
   changePassword: (data) => api.put('/settings/password', data),
 };
@@ -546,6 +551,10 @@ export const superAdminApi = {
   rejectSubscriptionRequest: (id, reason) => api.post(`/super-admin/subscription-requests/${id}/reject`, { reason }),
   getPublicLeads: (params) => api.get('/super-admin/leads', { params }),
   updatePublicLead: (id, data) => api.patch(`/super-admin/leads/${id}`, data),
+  getNotificationSettings: () => api.get('/super-admin/notifications'),
+  updateNotificationSettings: (data) => api.put('/super-admin/notifications', data),
+  testNotificationEmail: (data) => api.post('/super-admin/notifications/test-email', data),
+  testNotificationSms: (data) => api.post('/super-admin/notifications/test-sms', data),
 };
 
 // Admin API (Legacy / Tenant Admin)
@@ -560,9 +569,15 @@ export const adminApi = {
   createBranch: (data) => api.post('/branches', data), // Create branch for tenant
   getUsers: (params) => api.get('/admin/users', { params }),
   createUser: (data) => api.post('/admin/users', data),
+  resendUserInvitation: (id, data) => api.post(`/admin/users/${id}/resend-invitation`, data),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
-  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  deleteUser: (id, params) => api.delete(`/admin/users/${id}`, { params }),
   getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
+};
+
+export const activationApi = {
+  getDetails: (token) => api.get(`/auth/activate-account/${token}`),
+  activate: (token, data) => api.post(`/auth/activate-account/${token}`, data),
 };
 
 // Reports API (Business Reports)

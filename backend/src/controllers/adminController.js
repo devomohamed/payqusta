@@ -16,6 +16,7 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const catchAsync = require('../utils/catchAsync');
+const ActivationService = require('../services/ActivationService');
 const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
 const { resolveUserRoleAssignment, resolveUserBranchAssignment } = require('../utils/userAccessHelpers');
 
@@ -287,7 +288,7 @@ class AdminController {
    * Create user in any tenant
    */
   createUser = catchAsync(async (req, res, next) => {
-    const { name, email, phone, password, role, customRole, tenantId, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
+    const { name, email, phone, password, role, customRole, tenantId, branch, primaryBranch, assignedBranches, branchAccessMode, invitationChannel } = req.body;
 
     // Basic role string validation
     if (!role || typeof role !== 'string') {
@@ -297,18 +298,26 @@ class AdminController {
     // Ensure tenantId is correct for non-super admins
     const targetTenantId = req.user.isSuperAdmin ? tenantId : req.user.tenant;
 
+    if (!targetTenantId) {
+      return next(AppError.badRequest('A target tenant is required'));
+    }
+
+    if (!email) {
+      return next(AppError.badRequest('User email is required'));
+    }
+
     // Check if tenant exists (only if tenantId is provided or forced)
     if (targetTenantId) {
       const tenant = await Tenant.findById(targetTenantId);
       if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
     }
 
-    if (!password || password.length < 8) {
+    if (password && password.length < 8) {
       return next(AppError.badRequest('كلمة المرور مطلوبة ويجب أن تكون 8 أحرف على الأقل'));
     }
 
     // Check if email already exists
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email, tenant: targetTenantId });
     if (existing) {
       return next(AppError.badRequest('البريد الإلكتروني مستخدم بالفعل'));
     }
@@ -332,10 +341,39 @@ class AdminController {
       role: roleAssignment.role,
       customRole: roleAssignment.customRole,
       tenant: targetTenantId,
+      isActive: password ? true : false,
       ...(branchAssignment || {}),
     });
 
-    ApiResponse.created(res, user, 'تم إنشاء المستخدم بنجاح');
+    let invitation = null;
+    if (!password) {
+      invitation = await ActivationService.inviteUser(user, null, {
+        preferredChannel: invitationChannel || 'auto',
+      });
+    }
+
+    return ApiResponse.created(res, {
+      user: Helpers.sanitizeUser(user),
+      invitation,
+    }, 'User created successfully');
+  });
+
+  resendUserInvitation = catchAsync(async (req, res, next) => {
+    const query = { _id: req.params.id };
+    if (!req.user.isSuperAdmin) {
+      query.tenant = req.user.tenant;
+    }
+
+    const user = await User.findOne(query);
+    if (!user) return next(AppError.notFound('Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯'));
+
+    const result = await ActivationService.resendUserInvitation(
+      user._id,
+      user.tenant,
+      req.body?.invitationChannel || 'auto'
+    );
+
+    ApiResponse.success(res, result, 'Invitation resent successfully');
   });
 
   /**
@@ -399,6 +437,12 @@ class AdminController {
     const query = { _id: req.params.id };
     if (!req.user.isSuperAdmin) {
       query.tenant = req.user.tenant;
+    }
+
+    if (req.query.hardDelete === 'true') {
+      const user = await User.findOneAndDelete(query);
+      if (!user) return next(AppError.notFound('المستخدم غير موجود'));
+      return ApiResponse.success(res, null, 'تم حذف المستخدم نهائياً');
     }
 
     const user = await User.findOneAndUpdate(

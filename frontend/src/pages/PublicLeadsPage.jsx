@@ -121,32 +121,35 @@ export default function PublicLeadsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      <div className="app-surface-muted flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between rounded-3xl p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-            <Inbox className="h-6 w-6" />
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+              <Inbox className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-500/80">Lead Intake Desk</p>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white">طلبات الموقع العامة</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                كل الطلبات القادمة من صفحة التواصل العامة: ديمو، أسعار، ترحيل، أو استفسارات مباشرة قبل التسجيل.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white">طلبات الموقع العامة</h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              كل الطلبات القادمة من صفحة التواصل العامة: ديمو، أسعار، ترحيل، أو استفسارات مباشرة قبل التسجيل.
-            </p>
-          </div>
-        </div>
 
-        <form onSubmit={handleSearchSubmit} className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="min-w-[220px]">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث بالاسم أو البريد أو النشاط"
-            />
-          </div>
-          <Button type="submit" variant="outline" icon={<Search className="h-4 w-4" />}>
-            بحث
-          </Button>
-        </form>
-      </div>
+          <form onSubmit={handleSearchSubmit} className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+            <div className="min-w-[220px]">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="ابحث بالاسم أو البريد أو النشاط"
+              />
+            </div>
+            <Button type="submit" variant="outline" icon={<Search className="h-4 w-4" />} className="w-full sm:w-auto">
+              بحث
+            </Button>
+          </form>
+        </div>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {[
@@ -181,7 +184,52 @@ export default function PublicLeadsPage() {
         />
       ) : (
         <div className="app-surface overflow-hidden rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-4 md:hidden">
+            {leads.map((lead) => (
+              <div key={lead._id} className="rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-extrabold text-gray-900 dark:text-white">{lead.name}</p>
+                    <p className="mt-1 text-xs text-gray-500">{lead.email}</p>
+                    {lead.phone && <p className="mt-1 text-xs text-gray-500">{lead.phone}</p>}
+                  </div>
+                  <Badge variant={statusBadgeVariant[lead.status] || 'gray'}>{statusLabel[lead.status] || lead.status}</Badge>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                    <p className="text-[11px] text-gray-400">النشاط</p>
+                    <p className="mt-1 font-semibold text-gray-800 dark:text-gray-100">{lead.businessName || '-'}</p>
+                    <p className="mt-1 text-xs text-gray-500">{lead.teamSize || 'unknown'}</p>
+                  </div>
+                  <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                    <p className="text-[11px] text-gray-400">النوع</p>
+                    <div className="mt-1">
+                      <Badge variant="info">{typeLabel[lead.requestType] || lead.requestType}</Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                  <p className="text-[11px] text-gray-400">الرسالة</p>
+                  <p className="mt-1 line-clamp-4 text-sm leading-7 text-gray-600 dark:text-gray-300">{lead.message}</p>
+                </div>
+
+                <div className="mt-3 text-xs text-gray-500">
+                  <div>{new Date(lead.submittedAt || lead.createdAt).toLocaleString('ar-EG')}</div>
+                  {lead.sourcePage && <div className="mt-1">{lead.sourcePage}</div>}
+                </div>
+
+                <div className="mt-4">
+                  <Button size="sm" variant="outline" onClick={() => openLead(lead)} icon={<ExternalLink className="h-4 w-4" />} className="w-full">
+                    عرض وتحديث
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[980px] text-right text-sm">
               <thead className="app-surface-muted">
                 <tr>

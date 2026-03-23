@@ -4,7 +4,7 @@ import {
   FileText, Send, Phone, Calendar, CreditCard, TrendingUp, TrendingDown,
   ShieldAlert, ShieldCheck, Ban, CheckCircle, Clock, AlertTriangle,
   Download, History, DollarSign, ChevronDown, ChevronUp, Package,
-  RefreshCw, ChevronLeft, ChevronRight, CheckSquare, Square, XCircle, Trash2, Bell, BellOff,
+  RefreshCw, ChevronLeft, ChevronRight, CheckSquare, Square, XCircle, Trash2, Bell, BellOff, Copy
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { notify } from '../components/AnimatedNotification';
@@ -34,8 +34,7 @@ export default function CustomersPage() {
     notes: '',
     creditLimit: 10000,
     barcode: '',
-    password: '',
-    confirmPassword: '',
+    activationChannel: 'auto',
   });
 
   // Customer Details Modal
@@ -135,8 +134,7 @@ export default function CustomersPage() {
       notes: '',
       creditLimit: 10000,
       barcode: '',
-      password: '',
-      confirmPassword: '',
+      activationChannel: 'auto',
     });
     setShowModal(true);
   };
@@ -151,8 +149,7 @@ export default function CustomersPage() {
       notes: c.notes || '',
       creditLimit: c.financials?.creditLimit || 10000,
       barcode: c.barcode || '',
-      password: '',
-      confirmPassword: '',
+      activationChannel: c.phone && c.email ? 'auto' : c.phone ? 'sms' : 'email',
     });
     setShowModal(true);
   };
@@ -186,10 +183,6 @@ export default function CustomersPage() {
 
   const handleSave = async () => {
     if (!form.name || !form.phone) return toast.error('الاسم والهاتف مطلوبين');
-    if (!editId && !form.password) return toast.error('كلمة المرور مطلوبة');
-    if (!editId && form.password.length < 6) return toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-    if (!editId && form.password !== form.confirmPassword) return toast.error('تأكيد كلمة المرور غير مطابق');
-
     setSaving(true);
     try {
       const payload = {
@@ -202,8 +195,8 @@ export default function CustomersPage() {
         barcode: form.barcode,
       };
 
-      if (!editId && form.password) {
-        payload.password = form.password;
+      if (!editId) {
+        payload.activationChannel = form.activationChannel || 'auto';
       }
 
       if (editId) {
@@ -433,9 +426,75 @@ export default function CustomersPage() {
     });
   };
 
+  const handleDelete = (customer) => {
+    const hasBalance = (customer.financials?.outstandingBalance || 0) > 0;
+    
+    notify.custom({
+      type: 'error',
+      title: 'تأكيد حذف العميل',
+      message: hasBalance 
+        ? `تحذير: العميل لديه مديونية مستحقة بقيمة ${fmt(customer.financials.outstandingBalance)} ج.م. هل أنت متأكد من حذفه؟`
+        : `هل أنت متأكد من حذف العميل "${customer.name}"؟`,
+      duration: 10000,
+      action: {
+        label: 'حذف العميل',
+        onClick: async () => {
+          try {
+            await customersApi.delete(customer._id);
+            notify.success('تم حذف العميل بنجاح');
+            load();
+          } catch (err) {
+            notify.error(err.response?.data?.message || 'حدث خطأ في الحذف');
+          }
+        },
+      },
+    });
+  };
+
+  const handleDuplicate = async (id) => {
+    try {
+      const res = await api.post(`/customers/${id}/duplicate`);
+      notify.success('تم تكرار العميل بنجاح. يرجى تحديث البيانات الجديدة.');
+      load();
+      // Optionally open the edit modal for the new customer
+      if (res.data?.data?._id) {
+        // Wait a bit for the list to refresh then open edit
+        setTimeout(() => {
+          openEdit(res.data.data);
+        }, 500);
+      }
+    } catch (err) {
+      notify.error(err.response?.data?.message || 'فشل تكرار العميل');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-
+      <div className="app-surface rounded-[1.75rem] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-xl font-black text-gray-900 dark:text-white sm:text-2xl">
+              <Users className="h-6 w-6 text-primary-600" />
+              إدارة العملاء
+            </h1>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              راجع قاعدة العملاء، المديونيات، والنقاط من عرض أوضح ومريح على الموبايل.
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <button
+              onClick={() => window.location.href = '/marketing'}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary-100 bg-primary-50 px-4 py-3 text-sm font-bold text-primary-600 transition-colors hover:bg-primary-100 sm:w-auto sm:py-2.5"
+            >
+              <TrendingUp className="w-4 h-4" />
+              لوحة التسويق
+            </button>
+            <Button icon={<Plus className="w-4 h-4" />} onClick={openAdd} className="w-full sm:w-auto">
+              إضافة عميل
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Header */}
       <div className="app-surface-muted flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -466,14 +525,6 @@ export default function CustomersPage() {
         >
           إعادة الفلاتر
         </button>
-        <button
-          onClick={() => window.location.href = '/marketing'}
-          className="w-full sm:w-auto px-3 py-2.5 rounded-xl border-2 border-primary-100 bg-primary-50 text-primary-600 text-sm hover:bg-primary-100 transition-colors flex items-center justify-center gap-2"
-        >
-          <TrendingUp className="w-4 h-4" />
-          لوحة التسويق
-        </button>
-        <Button icon={<Plus className="w-4 h-4" />} onClick={openAdd}>إضافة عميل</Button>
       </div>
 
       {/* Bulk Actions Bar */}
@@ -499,7 +550,83 @@ export default function CustomersPage() {
         <EmptyState icon={<Users className="w-8 h-8" />} title="لا يوجد عملاء" description={search ? `لا نتائج لـ "${search}"` : 'ابدأ بإضافة أول عميل'} />
       ) : (
         <>
-          <Card className="overflow-hidden">
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {customers.map((c) => (
+              <Card key={c._id} className={`overflow-hidden rounded-[1.5rem] p-4 ${selectedIds.includes(c._id) ? 'ring-2 ring-primary-500/30' : ''}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <button onClick={() => toggleSelect(c._id)} className="mt-1">
+                      {selectedIds.includes(c._id)
+                        ? <CheckSquare className="w-5 h-5 text-primary-500" />
+                        : <Square className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+                      }
+                    </button>
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold ${c.salesBlocked ? 'bg-red-100 dark:bg-red-500/20 text-red-600' : 'bg-primary-50 dark:bg-primary-500/10 text-primary-600'}`}>
+                      {c.salesBlocked ? <Ban className="w-4 h-4" /> : c.name?.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-black text-gray-900 dark:text-white">{c.name}</p>
+                        {tierBadge(c.tier)}
+                        {c.salesBlocked && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">ممنوع</span>}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400" dir="ltr">{c.phone}</p>
+                      <p className="mt-1 line-clamp-1 text-[11px] text-gray-400 dark:text-gray-500">{c.address || 'بدون عنوان'}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => openDetails(c)} className="rounded-xl bg-primary-50 p-2 text-primary-500 dark:bg-primary-500/10">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">المشتريات</p>
+                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{fmt(c.financials?.totalPurchases)} ج.م</p>
+                  </div>
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">المتبقي</p>
+                    <p className={`mt-1 text-sm font-black ${(c.financials?.outstandingBalance || 0) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {(c.financials?.outstandingBalance || 0) > 0 ? `${fmt(c.financials?.outstandingBalance)} ج.م` : 'مسدد'}
+                    </p>
+                  </div>
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">الفرع</p>
+                    <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white">{c.branch?.name || '—'}</p>
+                  </div>
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">النقاط</p>
+                    <p className="mt-1 flex items-center gap-1 text-sm font-black text-amber-500"><Star className="w-3.5 h-3.5" fill="currentColor" />{c.gamification?.points || 0}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <button onClick={(e) => openEdit(c, e)} className="app-surface-muted flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-600 dark:text-gray-300">
+                    <FileText className="w-4 h-4" />
+                    تعديل
+                  </button>
+                  <button onClick={() => window.open(`https://wa.me/${c.phone}`, '_blank')} className="flex items-center justify-center gap-1.5 rounded-xl bg-green-50 px-3 py-2.5 text-xs font-bold text-green-600 dark:bg-green-500/10 dark:text-green-400">
+                    <MessageCircle className="w-4 h-4" />
+                    واتساب
+                  </button>
+                  <button onClick={() => openDetails(c)} className="flex items-center justify-center gap-1.5 rounded-xl bg-primary-50 px-3 py-2.5 text-xs font-bold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                    <Eye className="w-4 h-4" />
+                    تفاصيل
+                  </button>
+                  <button onClick={() => handleDuplicate(c._id)} className="app-surface-muted flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold text-blue-600 dark:text-blue-400">
+                    <Copy className="w-4 h-4" />
+                    نسخ
+                  </button>
+                  <button onClick={() => handleDelete(c)} className="flex items-center justify-center gap-1.5 rounded-xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                    <Trash2 className="w-4 h-4" />
+                    حذف
+                  </button>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="hidden overflow-hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] text-sm">
                 <thead>
@@ -559,8 +686,14 @@ export default function CustomersPage() {
                           <button onClick={(e) => openEdit(c, e)} className="app-surface-muted p-2 rounded-lg text-gray-500 transition-colors hover:bg-gray-100" title="تعديل">
                             <FileText className="w-4 h-4" />
                           </button>
+                          <button onClick={() => handleDuplicate(c._id)} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-500 hover:bg-blue-100 transition-colors" title="تكرار">
+                            <Copy className="w-4 h-4" />
+                          </button>
                           <button onClick={() => window.open(`https://wa.me/${c.phone}`, '_blank')} className="p-2 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-500 hover:bg-green-100 transition-colors" title="WhatsApp">
                             <MessageCircle className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(c)} className="p-2 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-colors" title="حذف">
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -580,22 +713,19 @@ export default function CustomersPage() {
           <Input label="اسم العميل *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input label="رقم الهاتف *" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="01XXXXXXXXX" />
           {!editId && (
-            <>
-              <Input
-                label="كلمة المرور *"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="6 أحرف أو أكثر"
-              />
-              <Input
-                label="تأكيد كلمة المرور *"
-                type="password"
-                value={form.confirmPassword}
-                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                placeholder="أعد إدخال كلمة المرور"
-              />
-            </>
+            <div>
+              <label className="mb-2 block text-sm font-bold app-text-strong">طريقة إرسال رابط التفعيل</label>
+              <select
+                value={form.activationChannel}
+                onChange={(e) => setForm({ ...form, activationChannel: e.target.value })}
+                className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
+              >
+                <option value="auto">تلقائي (SMS ثم بريد إذا فشل)</option>
+                <option value="whatsapp">رسالة واتساب (WhatsApp)</option>
+                <option value="sms">رسالة نصية فقط (SMS)</option>
+                <option value="email">بريد إلكتروني فقط</option>
+              </select>
+            </div>
           )}
           <Input label="البريد الإلكتروني" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Input label="العنوان" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />

@@ -70,17 +70,39 @@ export default function CashDrawerPage() {
   };
 
   const fmt = (n) => new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(n);
+  const varianceIssues = history.filter((shift) => Number(shift.variance || 0) !== 0).length;
 
   return (
     <div className="app-shell-bg app-text-soft space-y-8 p-4 sm:p-6 animate-fade-in">
-      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
-        <div>
-          <h1 className="text-2xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">إدارة الخزينة والورديات</h1>
-          <p className="text-gray-500 mt-1">
-            {user?.role === 'admin' || user?.isSuperAdmin ? 'متابعة نقدية الفروع والموظفين' : 'إدارة ورديتك ومبيعاتك اليومية'}
-          </p>
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-emerald-700 via-green-700 to-slate-950 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(22,163,74,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Wallet className="h-3.5 w-3.5" />
+              Cash Control Center
+            </div>
+            <h1 className="mt-4 bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">إدارة الخزينة والورديات</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+              {user?.role === 'admin' || user?.isSuperAdmin ? 'متابعة نقدية الفروع والموظفين مع قراءة أسرع للسجل والانحرافات على الموبايل.' : 'إدارة ورديتك ومبيعاتك اليومية من شاشة أخف وأسهل في الاستخدام.'}
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الحالة الحالية</p>
+              <p className="mt-2 text-lg font-black">{activeShift ? 'وردية مفتوحة' : 'لا توجد وردية'}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">سجل الورديات</p>
+              <p className="mt-2 text-2xl font-black">{history.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">انحرافات مسجلة</p>
+              <p className="mt-2 text-2xl font-black">{varianceIssues}</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Active Shift Area */}
       {loading ? <LoadingSpinner /> : (
@@ -163,7 +185,45 @@ export default function CashDrawerPage() {
           <div className="mt-10">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="w-5 h-5" /> {user?.role === 'admin' ? 'سجل ورديات الموظفين' : 'سجل وردياتي السابق'}</h3>
             <Card className="overflow-hidden rounded-3xl">
-               <div className="overflow-x-auto">
+               <div className="space-y-3 p-4 md:hidden">
+                 {history.length === 0 ? (
+                   <EmptyState
+                     icon={History}
+                     title="لا يوجد سجل سابق"
+                     description="ستظهر الورديات المغلقة السابقة هنا بمجرد إتمام أول وردية."
+                     className="py-4"
+                   />
+                 ) : history.map(shift => (
+                   <div key={shift._id} className="app-surface-muted rounded-2xl p-4">
+                     <div className="flex items-start justify-between gap-3">
+                       <div>
+                         <p className="text-sm font-black text-gray-900 dark:text-white">{shift.user?.name || '—'}</p>
+                         <p className="mt-1 text-[11px] text-gray-400">{new Date(shift.startTime).toLocaleDateString('ar-EG')}</p>
+                       </div>
+                       {shift.variance === 0 ? (
+                         <Badge variant="success">مطابق ✅</Badge>
+                       ) : shift.variance < 0 ? (
+                         <Badge variant="danger" className="dir-ltr">عجز {fmt(shift.variance)}</Badge>
+                       ) : (
+                         <Badge variant="warning" className="dir-ltr">زيادة +{fmt(shift.variance)}</Badge>
+                       )}
+                     </div>
+
+                     <div className="mt-3 grid grid-cols-2 gap-2">
+                       <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                         <p className="text-[10px] text-gray-400">الفتح</p>
+                         <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{new Date(shift.startTime).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'})}</p>
+                       </div>
+                       <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                         <p className="text-[10px] text-gray-400">الإغلاق</p>
+                         <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{shift.endTime ? new Date(shift.endTime).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '—'}</p>
+                       </div>
+                     </div>
+                     <p className="mt-3 text-sm font-black text-emerald-600">{fmt(shift.totalCashSales)}</p>
+                   </div>
+                 ))}
+               </div>
+               <div className="hidden overflow-x-auto md:block">
                  <table className="w-full text-right text-sm">
                    <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                      <tr>

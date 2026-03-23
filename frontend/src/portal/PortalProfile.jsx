@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Save, Award, Star, ShoppingBag, Crown, Shield, FileText, ChevronLeft, Bell } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
+import { Input } from '../components/UI';
 
 const tierConfig = {
   bronze: { label: 'برونزي', color: 'from-amber-600 to-amber-800', icon: Shield },
@@ -193,7 +194,6 @@ export default function PortalProfile() {
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400">{t('profile.form.phone')}</label>
-              {/* Note: This is a UI UX placeholder for a real OTP modal if implemented */}
               <button type="button" onClick={() => notify.info(t('profile.form.phone_otp'))} className="text-xs text-primary-500 hover:underline">
                 {t('profile.form.change_phone')}
               </button>
@@ -263,229 +263,223 @@ export default function PortalProfile() {
       )}
 
       {/* Password Section */}
-      {
-        activeSection === 'password' && (
-          <form onSubmit={handleChangePassword} className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.current')}</label>
-              <div className="relative">
-                <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showCurrentPass ? 'text' : 'password'}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className={`${inputClass} ltr:pl-11 rtl:pr-11`}
-                  placeholder="••••••"
-                  required
-                />
-                <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  {showCurrentPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
+      {activeSection === 'password' && (
+        <form onSubmit={handleChangePassword} className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.current')}</label>
+            <div className="relative">
+              <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type={showCurrentPass ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className={`${inputClass} ltr:pl-11 rtl:pr-11`}
+                placeholder="••••••"
+                required
+                autoComplete="current-password"
+              />
+              <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                {showCurrentPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.new')}</label>
-              <div className="relative">
-                <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showNewPass ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className={`${inputClass} ltr:pl-11 rtl:pr-11`}
-                  placeholder={t('profile.password.min_chars')}
-                  required
-                  minLength={6}
-                />
-                <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  {showNewPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              {/* Fake Password Strength for better UX affordance */}
-              {newPassword && (
-                <div className="mt-2 flex items-center gap-1">
-                  <div className={`h-1 flex-1 rounded-full ${newPassword.length > 0 ? 'bg-red-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${newPassword.length >= 6 ? 'bg-yellow-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                  <div className={`h-1 flex-1 rounded-full ${newPassword.length >= 8 && /[A-Za-z]/.test(newPassword) && /[0-9]/.test(newPassword) ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                </div>
-              )}
+          <div>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.new')}</label>
+            <div className="relative">
+              <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type={showNewPass ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className={`${inputClass} ltr:pl-11 rtl:pr-11`}
+                placeholder={t('profile.password.min_chars')}
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+              <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                {showNewPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.confirm')}</label>
-              <div className="relative">
-                <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={inputClass}
-                  placeholder={t('profile.password.confirm_placeholder')}
-                  required
-                  minLength={6}
-                />
+            {/* Fake Password Strength for better UX affordance */}
+            {newPassword && (
+              <div className="mt-2 flex items-center gap-1">
+                <div className={`h-1 flex-1 rounded-full ${newPassword.length > 0 ? 'bg-red-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <div className={`h-1 flex-1 rounded-full ${newPassword.length >= 6 ? 'bg-yellow-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <div className={`h-1 flex-1 rounded-full ${newPassword.length >= 8 && /[A-Za-z]/.test(newPassword) && /[0-9]/.test(newPassword) ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
               </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-xl shadow-red-500/30 hover:shadow-red-500/50 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Lock className="w-5 h-5" />
-                  {t('profile.password.change')}
-                </>
-              )}
-            </button>
-          </form>
-        )
-      }
-
-      {/* Points Section */}
-      {
-        activeSection === 'points' && (
-          <div className="space-y-4">
-            {pointsLoading ? (
-              <div className="flex justify-center py-16">
-                <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-              </div>
-            ) : !pointsData ? (
-              <div className="text-center py-16">
-                <Star className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">{t('profile.points.no_data')}</p>
-              </div>
-            ) : (
-              <>
-                {/* Points Summary */}
-                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
-                  <div className="relative z-10 text-center">
-                    <Star className="w-10 h-10 mx-auto mb-2 fill-current" />
-                    <p className="text-white/80 text-sm mb-1">{t('profile.points.balance')}</p>
-                    <p className="text-5xl font-black">{pointsData.currentPoints || 0}</p>
-                    <p className="text-white/70 text-xs mt-2">{t('profile.points.available')}</p>
-                  </div>
-                </div>
-
-                {/* Tier Info */}
-                <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
-                  <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('profile.points.tier_level')}</h3>
-                  <div className="flex items-start gap-3 sm:items-center">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${tier.color} rounded-xl flex items-center justify-center text-white`}>
-                      <TierIcon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900 dark:text-white">{t('profile.tiers.customer', { tier: t(`profile.tiers.${customer?.tier || 'bronze'}`) })}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {t('profile.points.total_purchases', { amount: pointsData.totalPurchases?.toLocaleString() || 0 })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tier Progress */}
-                  {pointsData.nextTier && (
-                    <div className="mt-4">
-                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        <span>{tier.label}</span>
-                        <span>{(tierConfig[pointsData.nextTier.name] || {}).label || pointsData.nextTier.name}</span>
-                      </div>
-                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full bg-gradient-to-r ${tier.color} rounded-full transition-all`}
-                          style={{ width: `${Math.min((pointsData.nextTier.progress || 0), 100)}%` }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        {t('profile.points.remaining_upgrade', { amount: pointsData.nextTier.remaining?.toLocaleString() })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 text-center">
-                    <ShoppingBag className="w-6 h-6 text-primary-500 mx-auto mb-2" />
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.invoices_count')}</p>
-                    <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalInvoices || 0}</p>
-                  </div>
-                  <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 text-center">
-                    <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.earned_points')}</p>
-                    <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalPointsEarned || 0}</p>
-                  </div>
-                </div>
-
-                {/* Badges */}
-                {pointsData.badges && pointsData.badges.length > 0 && (
-                  <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
-                    <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-primary-500" />
-                      {t('profile.points.badges')}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {pointsData.badges.map((badge, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1.5 rounded-full text-xs font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
-                        >
-                          {badge}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
             )}
           </div>
-        )
-      }
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.confirm')}</label>
+            <div className="relative">
+              <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={inputClass}
+                placeholder={t('profile.password.confirm_placeholder')}
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-xl shadow-red-500/30 hover:shadow-red-500/50 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Lock className="w-5 h-5" />
+                {t('profile.password.change')}
+              </>
+            )}
+          </button>
+        </form>
+      )}
+
+      {/* Points Section */}
+      {activeSection === 'points' && (
+        <div className="space-y-4">
+          {pointsLoading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            </div>
+          ) : !pointsData ? (
+            <div className="text-center py-16">
+              <Star className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">{t('profile.points.no_data')}</p>
+            </div>
+          ) : (
+            <>
+              {/* Points Summary */}
+              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
+                <div className="relative z-10 text-center">
+                  <Star className="w-10 h-10 mx-auto mb-2 fill-current" />
+                  <p className="text-white/80 text-sm mb-1">{t('profile.points.balance')}</p>
+                  <p className="text-5xl font-black">{pointsData.currentPoints || 0}</p>
+                  <p className="text-white/70 text-xs mt-2">{t('profile.points.available')}</p>
+                </div>
+              </div>
+
+              {/* Tier Info */}
+              <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
+                <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3">{t('profile.points.tier_level')}</h3>
+                <div className="flex items-start gap-3 sm:items-center">
+                  <div className={`w-12 h-12 bg-gradient-to-br ${tier.color} rounded-xl flex items-center justify-center text-white`}>
+                    <TierIcon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white">{t('profile.tiers.customer', { tier: t(`profile.tiers.${customer?.tier || 'bronze'}`) })}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {t('profile.points.total_purchases', { amount: pointsData.totalPurchases?.toLocaleString() || 0 })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tier Progress */}
+                {pointsData.nextTier && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <span>{tier.label}</span>
+                      <span>{(tierConfig[pointsData.nextTier.name] || {}).label || pointsData.nextTier.name}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${tier.color} rounded-full transition-all`}
+                        style={{ width: `${Math.min((pointsData.nextTier.progress || 0), 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      {t('profile.points.remaining_upgrade', { amount: pointsData.nextTier.remaining?.toLocaleString() })}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 text-center">
+                  <ShoppingBag className="w-6 h-6 text-primary-500 mx-auto mb-2" />
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.invoices_count')}</p>
+                  <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalInvoices || 0}</p>
+                </div>
+                <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 text-center">
+                  <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('profile.points.earned_points')}</p>
+                  <p className="font-black text-xl text-gray-900 dark:text-white">{pointsData.totalPointsEarned || 0}</p>
+                </div>
+              </div>
+
+              {/* Badges */}
+              {pointsData.badges && pointsData.badges.length > 0 && (
+                <div className="app-surface rounded-2xl p-4 border border-gray-100/80 dark:border-white/10 shadow-sm">
+                  <h3 className="font-bold text-sm text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <Award className="w-4 h-4 text-primary-500" />
+                    {t('profile.points.badges')}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {pointsData.badges.map((badge, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 rounded-full text-xs font-bold bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Settings Sections Placeholders for explicit flow navigation */}
-      {
-        activeSection === 'addresses' && (
-          <div className="app-surface rounded-2xl p-5 sm:p-8 border border-gray-100/80 dark:border-white/10 shadow-sm text-center">
-            <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('profile.addresses_page.title')}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{t('profile.addresses_page.desc')}</p>
-            <Link to="/portal/addresses" className="inline-flex items-center gap-2 bg-primary-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all">
-              {t('profile.addresses_page.go_to')}
-            </Link>
-          </div>
-        )
-      }
+      {activeSection === 'addresses' && (
+        <div className="app-surface rounded-2xl p-5 sm:p-8 border border-gray-100/80 dark:border-white/10 shadow-sm text-center">
+          <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('profile.addresses_page.title')}</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">{t('profile.addresses_page.desc')}</p>
+          <Link to="/portal/addresses" className="inline-flex items-center gap-2 bg-primary-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all">
+            {t('profile.addresses_page.go_to')}
+          </Link>
+        </div>
+      )}
 
-      {
-        activeSection === 'settings' && (
-          <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm overflow-hidden divide-y divide-gray-100/80 dark:divide-white/10">
-            <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.offers_title')}</h4>
-                <p className="text-xs text-gray-500 mt-1">{t('profile.settings.offers_desc')}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:-translate-x-full peer-checked:bg-primary-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-              </label>
+      {activeSection === 'settings' && (
+        <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm overflow-hidden divide-y divide-gray-100/80 dark:divide-white/10">
+          <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.offers_title')}</h4>
+              <p className="text-xs text-gray-500 mt-1">{t('profile.settings.offers_desc')}</p>
             </div>
-            <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.orders_title')}</h4>
-                <p className="text-xs text-gray-500 mt-1">{t('profile.settings.orders_desc')}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:-translate-x-full peer-checked:bg-primary-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-              </label>
-            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:-translate-x-full peer-checked:bg-primary-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
           </div>
-        )
-      }
-
-    </div >
+          <div className="p-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="font-bold text-gray-900 dark:text-white text-sm">{t('profile.settings.orders_title')}</h4>
+              <p className="text-xs text-gray-500 mt-1">{t('profile.settings.orders_desc')}</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:-translate-x-full peer-checked:bg-primary-500 after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -96,11 +96,11 @@ function formatReportLabel(value) {
 
 function FormatToggle({ value, onChange }) {
   return (
-    <div className="app-surface-muted inline-flex rounded-2xl p-1">
+    <div className="app-surface-muted inline-flex w-full rounded-2xl p-1 sm:w-auto">
       <button
         type="button"
         onClick={() => onChange('json')}
-        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+        className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all sm:flex-none ${
           value === 'json'
             ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
             : 'app-text-soft hover:text-gray-900 dark:hover:text-gray-100'
@@ -112,7 +112,7 @@ function FormatToggle({ value, onChange }) {
       <button
         type="button"
         onClick={() => onChange('excel')}
-        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+        className={`inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all sm:flex-none ${
           value === 'excel'
             ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
             : 'app-text-soft hover:text-gray-900 dark:hover:text-gray-100'

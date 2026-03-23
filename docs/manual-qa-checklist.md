@@ -2,6 +2,16 @@
 
 Use this checklist before major rollouts that touch storefront, portal, admin, shipping, or payments.
 
+## Ownership Map
+
+- `Storefront / Public`: storefront or frontend owner
+- `Portal`: portal owner
+- `Admin / Backoffice`: backend or admin-surface owner
+- `Shipping / Payments`: integrations owner
+- `Ops`: release operator or backend owner
+
+No release should leave all sections to one implicit owner. If a surface changed, assign that section before rollout starts.
+
 ## Viewports
 
 - `320x568`
@@ -13,6 +23,10 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 
 ## Public / Storefront
 
+Owner:
+
+- storefront or frontend owner
+
 - home page loads without layout overflow
 - product catalog filters/search work
 - product details CTA remains reachable on mobile
@@ -23,6 +37,10 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 
 ## Portal
 
+Owner:
+
+- portal owner
+
 - customer login works
 - portal home renders quick actions and stats
 - orders list/details open correctly on mobile
@@ -31,6 +49,10 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 - support message flow works
 
 ## Admin / Backoffice
+
+Owner:
+
+- backend or admin-surface owner
 
 - login works
 - dashboard loads without console-breaking errors
@@ -46,6 +68,10 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 
 ## Shipping / Payments
 
+Owner:
+
+- integrations owner
+
 - create one safe test order
 - record one payment
 - verify refund status surfaces correctly
@@ -56,6 +82,10 @@ Use this checklist before major rollouts that touch storefront, portal, admin, s
 - cancel one allocated order and verify stock returns to the original allocated branch
 
 ## Ops
+
+Owner:
+
+- release operator or backend owner
 
 - `/api/health`
 - `/api/health/ready`

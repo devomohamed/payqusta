@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Loader2, Info } from 'lucide-react';
+import { X, Loader2, Info, Eye, EyeOff } from 'lucide-react';
 
 // ========== MODAL ==========
 export function Modal({
@@ -219,6 +219,9 @@ export function Button({
 // ========== INPUT ==========
 export const Input = React.forwardRef(({ label, error, tooltip, className = '', id: providedId, ...props }, ref) => {
   const inputId = providedId || React.useId();
+  const [showPassword, setShowPassword] = React.useState(false);
+  const isPassword = props.type === 'password';
+
   const errorId = error ? `${inputId}-error` : undefined;
   const describedBy = [props['aria-describedby'], errorId].filter(Boolean).join(' ') || undefined;
 
@@ -238,17 +241,32 @@ export const Input = React.forwardRef(({ label, error, tooltip, className = '', 
           )}
         </div>
       )}
-      <input
-        ref={ref}
-        id={inputId}
-        aria-invalid={!!error}
-        aria-describedby={describedBy}
-        className={`app-surface app-field w-full px-4 py-2.5 rounded-xl border-2 transition-all duration-200 ${error
-          ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
-          : 'border-transparent focus:border-primary-500/30 dark:focus:border-primary-400/40 focus:ring-2 focus:ring-primary-500/20'
-          }`}
-        {...props}
-      />
+      <div className="relative">
+        <input
+          ref={ref}
+          id={inputId}
+          aria-invalid={!!error}
+          aria-describedby={describedBy}
+          className={`app-surface app-field w-full px-4 py-2.5 rounded-xl border-2 transition-all duration-200 ${
+            isPassword ? 'pl-11' : ''
+          } ${error
+            ? 'border-red-300 dark:border-red-500/50 focus:border-red-500'
+            : 'border-transparent focus:border-primary-500/30 dark:focus:border-primary-400/40 focus:ring-2 focus:ring-primary-500/20'
+            }`}
+          {...props}
+          type={isPassword ? (showPassword ? 'text' : 'password') : props.type}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-primary-500 transition-colors"
+            tabIndex="-1"
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
       {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
@@ -500,3 +518,29 @@ export function OwnerTableSkeleton({ rows = 8, columns = 6 }) {
     </div>
   );
 }
+
+export function Switch({ checked, onChange, label, description, disabled = false }) {
+  return (
+    <label className={`flex items-start gap-3 w-full ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer group'}`}>
+      <div className="relative mt-0.5 min-w-max flex items-center">
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={checked}
+          onChange={(e) => !disabled && onChange(e.target.checked)}
+          disabled={disabled}
+        />
+        <div className={`w-11 h-6 rounded-full transition-colors duration-300 ${checked ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+          <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+        </div>
+      </div>
+      {(label || description) && (
+        <div className="flex flex-col">
+          {label && <span className="text-sm font-semibold text-gray-900 dark:text-white transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400">{label}</span>}
+          {description && <span className="text-xs text-subtle mt-1 leading-relaxed max-w-sm">{description}</span>}
+        </div>
+      )}
+    </label>
+  );
+}
+

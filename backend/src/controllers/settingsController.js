@@ -6,10 +6,14 @@
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Branch = require('../models/Branch');
+const SystemConfig = require('../models/SystemConfig');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const WhatsAppService = require('../services/WhatsAppService');
+const EmailService = require('../services/EmailService');
+const SmsService = require('../services/SmsService');
 const catchAsync = require('../utils/catchAsync');
+const { ensureSystemConfig, getPlatformNotificationSettings } = require('../services/notificationConfigService');
 const {
   applyTenantBarcodeSettings,
   getTenantBarcodeSettings,
@@ -136,6 +140,8 @@ class SettingsController {
         customDomainStatus: tenant.customDomainStatus,
         customDomainLastCheckedAt: tenant.customDomainLastCheckedAt,
         subscription: tenant.subscription,
+        notificationChannels: req.user ? tenant.notificationChannels : undefined,
+        notificationBranding: req.user ? tenant.notificationBranding : undefined,
         whatsapp: req.user ? tenant.whatsapp : undefined, // Only show WhatsApp full config to logged in users
       },
       user: user ? {
@@ -407,6 +413,149 @@ class SettingsController {
       customDomainStatus: tenant.customDomainStatus,
       customDomainLastCheckedAt: tenant.customDomainLastCheckedAt,
     }, 'Branding settings updated successfully');
+  });
+
+  getNotificationChannelsStatus = catchAsync(async (req, res, next) => {
+    const [tenant, systemConfig] = await Promise.all([
+      Tenant.findById(req.tenantId),
+      ensureSystemConfig(),
+    ]);
+
+    if (!tenant) return next(AppError.notFound('Store not found'));
+
+    const notifications = getPlatformNotificationSettings(systemConfig);
+    const platformEmail = notifications?.platformEmail || {};
+    const platformSms = notifications?.platformSms || {};
+
+    const platformStatus = {
+      defaults: notifications?.defaults || {},
+      tenantPolicy: notifications?.tenantPolicy || {},
+      platformEmail: {
+        enabled: !!platformEmail.enabled,
+        configured: Boolean(
+          (platformEmail.host && platformEmail.user && platformEmail.pass)
+          || (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS)
+          || process.env.NODE_ENV !== 'production'
+        ),
+      },
+      platformSms: {
+        enabled: !!platformSms.enabled,
+        configured: Boolean(platformSms.provider === 'mock' || platformSms.baseUrl),
+      },
+    };
+
+    ApiResponse.success(res, {
+      tenant: {
+        notificationChannels: tenant.notificationChannels || {},
+        notificationBranding: tenant.notificationBranding || {},
+      },
+      platform: platformStatus,
+    });
+  });
+
+  updateNotificationChannels = catchAsync(async (req, res, next) => {
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) return next(AppError.notFound('Store not found'));
+
+    const nextChannels = req.body?.notificationChannels || {};
+    const nextBranding = req.body?.notificationBranding || {};
+
+    tenant.notificationChannels = {
+      ...(tenant.notificationChannels?.toObject?.() || tenant.notificationChannels || {}),
+      ...nextChannels,
+      email: {
+        ...(tenant.notificationChannels?.email?.toObject?.() || tenant.notificationChannels?.email || {}),
+        ...(nextChannels.email || {}),
+      },
+      sms: {
+        ...(tenant.notificationChannels?.sms?.toObject?.() || tenant.notificationChannels?.sms || {}),
+        ...(nextChannels.sms || {}),
+      },
+      routing: {
+        ...(tenant.notificationChannels?.routing?.toObject?.() || tenant.notificationChannels?.routing || {}),
+        ...(nextChannels.routing || {}),
+      },
+    };
+
+    tenant.notificationBranding = {
+      ...(tenant.notificationBranding?.toObject?.() || tenant.notificationBranding || {}),
+      ...nextBranding,
+    };
+
+    await tenant.save();
+
+    ApiResponse.success(res, {
+      notificationChannels: tenant.notificationChannels,
+      notificationBranding: tenant.notificationBranding,
+    }, 'Notification channels updated successfully');
+  });
+
+  testNotificationEmail = catchAsync(async (req, res, next) => {
+    const { email, notificationChannels, notificationBranding } = req.body;
+    if (!email) return next(AppError.badRequest('Test email address is required'));
+
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) return next(AppError.notFound('Store not found'));
+
+    if (notificationChannels) {
+      tenant.notificationChannels = {
+        ...(tenant.notificationChannels?.toObject?.() || tenant.notificationChannels || {}),
+        ...notificationChannels,
+      };
+    }
+    if (notificationBranding) {
+      tenant.notificationBranding = {
+        ...(tenant.notificationBranding?.toObject?.() || tenant.notificationBranding || {}),
+        ...notificationBranding,
+      };
+    }
+
+    const config = await EmailService.resolveTenantEmailConfig(tenant);
+    const result = await EmailService.sendNotificationTestEmail({ to: email, tenant });
+
+    ApiResponse.success(res, {
+      ...result,
+      configSource: config.source,
+    }, result.success ? 'Test email sent successfully' : 'Test email failed');
+  });
+
+  testNotificationSms = catchAsync(async (req, res, next) => {
+    const { phone, notificationChannels, notificationBranding } = req.body;
+
+    if (!phone) return next(AppError.badRequest('يرجى إدخال رقم هاتف للاختبار'));
+
+    logger.info(`[CONTROLLER] testNotificationSms received phone: ${phone}, channels: ${JSON.stringify(notificationChannels?.sms)}`);
+
+    // Fetch fresh tenant data and override with unsaved changes for the test
+    const tenant = await Tenant.findById(req.tenantId);
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    if (notificationChannels?.sms) {
+      tenant.notificationChannels = {
+        ...(tenant.notificationChannels?.toObject?.() || tenant.notificationChannels || {}),
+        sms: {
+          ...tenant.notificationChannels.sms,
+          ...notificationChannels.sms,
+          enabled: true, // Force enabled for the test
+        }
+      };
+    }
+    if (notificationBranding) {
+      tenant.notificationBranding = {
+        ...(tenant.notificationBranding?.toObject?.() || tenant.notificationBranding || {}),
+        ...notificationBranding,
+      };
+    }
+
+
+    const config = await SmsService.resolveConfig(tenant);
+    logger.info(`[CONTROLLER] Resolved SMS Config for Test: ${config.provider} via ${config.source}`);
+    const result = await SmsService.sendTestMessage({ phone, tenant });
+
+    ApiResponse.success(res, {
+      ...result,
+      configSource: config.source,
+    }, result.success ? 'تم إرسال رسالة الاختبار بنجاح' : 'فشل إرسال رسالة الاختبار');
   });
 
   /**

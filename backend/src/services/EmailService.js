@@ -6,6 +6,7 @@
 const nodemailer = require('nodemailer');
 const path = require('path');
 const logger = require('../utils/logger');
+const { ensureSystemConfig, getPlatformNotificationSettings } = require('./notificationConfigService');
 
 const normalizeEmailHost = (value = '') => String(value || '').trim().toLowerCase();
 
@@ -162,10 +163,11 @@ class EmailService {
         return;
       }
 
+      const envPort = parseInt(process.env.EMAIL_PORT || '587');
       this.transporter = nodemailer.createTransport({
         host: emailHost,
-        port: parseInt(process.env.EMAIL_PORT || '587'),
-        secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+        port: envPort,
+        secure: envPort === 465 ? true : process.env.EMAIL_SECURE === 'true',
         auth: {
           user: emailUser,
           pass: emailPass,
@@ -491,9 +493,217 @@ class EmailService {
       html,
     });
   }
+
+  async resolveTenantEmailConfig(tenant = null) {
+    const systemConfig = await ensureSystemConfig();
+    const notifications = getPlatformNotificationSettings(systemConfig);
+    const tenantEmail = tenant?.notificationChannels?.email || {};
+    const tenantBranding = tenant?.notificationBranding || {};
+    const platformEmail = notifications?.platformEmail || {};
+
+    if (
+      tenantEmail.enabled
+      && tenantEmail.mode === 'custom_smtp'
+      && tenantEmail.host
+      && tenantEmail.user
+      && tenantEmail.pass
+    ) {
+      return {
+        source: 'tenant_custom',
+        host: tenantEmail.host,
+        port: Number(tenantEmail.port || 587),
+        secure: !!tenantEmail.secure,
+        user: tenantEmail.user,
+        pass: tenantEmail.pass,
+        fromEmail: tenantEmail.fromEmail || tenantEmail.user,
+        fromName: tenantEmail.fromName || tenantBranding.senderName || tenant?.name || 'PayQusta',
+        systemConfig,
+      };
+    }
+
+    const hasEnvConfig = Boolean(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
+
+    if (
+      (platformEmail.enabled || hasEnvConfig)
+      && (
+        (platformEmail.host && platformEmail.user && platformEmail.pass)
+        || hasEnvConfig
+        || process.env.NODE_ENV !== 'production'
+      )
+    ) {
+      // If we are here because of hasEnvConfig but platform doesn't have it, we use env
+      return {
+        source: 'platform_default',
+        host: platformEmail.host || process.env.EMAIL_HOST || '',
+        port: Number(platformEmail.port || process.env.EMAIL_PORT || 587),
+        secure: platformEmail.secure ?? process.env.EMAIL_SECURE === 'true',
+        user: platformEmail.user || process.env.EMAIL_USER || '',
+        pass: platformEmail.pass || process.env.EMAIL_PASS || '',
+        fromEmail: platformEmail.fromEmail || process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@payqusta.com',
+        fromName: tenantBranding.senderName || tenant?.name || platformEmail.fromName || 'PayQusta',
+        systemConfig,
+      };
+    }
+
+    return {
+      source: 'mock',
+      host: '',
+      port: 0,
+      secure: false,
+      user: '',
+      pass: '',
+      fromEmail: process.env.EMAIL_FROM || 'noreply@payqusta.com',
+      fromName: tenantBranding.senderName || tenant?.name || 'PayQusta',
+      systemConfig,
+    };
+  }
+
+  async sendTenantAwareEmail({ tenant, to, subject, text, html, attachments = [] }) {
+    const config = await this.resolveTenantEmailConfig(tenant);
+
+    if (config.source === 'mock') {
+      logger.warn(`[EMAIL:MOCK] ${to} | ${subject}`);
+      return {
+        success: true,
+        provider: 'mock',
+        messageId: `email_mock_${Date.now()}`,
+      };
+    }
+
+    const isSecure = Number(config.port) === 465 ? true : !!config.secure;
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: Number(config.port) || 587,
+      secure: isSecure,
+      auth: {
+        user: config.user,
+        pass: normalizeEmailPassword(config.host, config.pass),
+      },
+    });
+
+    const fromHeader = config.fromEmail.includes('<')
+      ? config.fromEmail
+      : `"${config.fromName}" <${config.fromEmail}>`;
+
+    const info = await transporter.sendMail({
+      from: fromHeader,
+      to,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+
+    return {
+      success: true,
+      provider: config.source,
+      messageId: info.messageId,
+    };
+  }
+
+  buildActivationEmailHtml({ recipientName, activationUrl, tenant, systemConfig, actorType = 'customer' }) {
+    const primaryColor = tenant?.branding?.primaryColor || '#102542';
+    const secondaryColor = tenant?.branding?.secondaryColor || '#3aa5ff';
+    const storeName = tenant?.name || 'PayQusta';
+    const showPoweredBy = tenant?.notificationBranding?.showPoweredByFooter !== false
+      && systemConfig?.notifications?.defaults?.poweredByEnabled !== false;
+    const poweredByUrl = systemConfig?.notifications?.defaults?.poweredByUrl || 'https://payqusta.com';
+    const actorLabel = actorType === 'user' ? 'دعوة فريق العمل' : 'تفعيل حسابك';
+
+    return `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { margin: 0; padding: 0; background: #eef2f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #142033; }
+          .wrap { max-width: 640px; margin: 32px auto; background: #fff; border-radius: 28px; overflow: hidden; border: 1px solid #dbe3ee; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12); }
+          .hero { padding: 34px 36px 28px; background: linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%); color: #fff; text-align: right; }
+          .pill { display: inline-block; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,0.18); font-size: 12px; font-weight: 700; margin-bottom: 18px; }
+          .hero h1 { margin: 0 0 10px; font-size: 30px; }
+          .hero p { margin: 0; line-height: 1.9; color: rgba(255,255,255,0.92); }
+          .content { padding: 34px 36px; text-align: right; }
+          .content h2 { margin: 0 0 14px; font-size: 24px; color: #142033; }
+          .content p { margin: 0 0 16px; color: #53657c; line-height: 1.9; font-size: 15px; }
+          .summary { margin: 20px 0; background: #f7fafe; border: 1px solid #d9e8fb; border-radius: 18px; padding: 18px 20px; }
+          .cta { text-align: center; padding: 12px 0; }
+          .cta a { display: inline-block; padding: 15px 28px; border-radius: 14px; text-decoration: none; color: #fff; font-weight: 700; background: linear-gradient(135deg, ${secondaryColor} 0%, ${primaryColor} 100%); }
+          .link { margin-top: 20px; background: #fbfcfe; border: 1px dashed #c8d7ea; border-radius: 16px; padding: 16px 18px; }
+          .link a { color: ${secondaryColor}; text-decoration: none; word-break: break-all; }
+          .footer { padding: 22px 36px 32px; text-align: center; color: #7b8ca1; background: #fbfcfe; border-top: 1px solid #edf2f7; font-size: 12px; }
+          .brand-logo { max-width: 88px; max-height: 88px; border-radius: 18px; background: rgba(255,255,255,0.16); padding: 10px; margin-bottom: 18px; }
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <div class="hero">
+            ${tenant?.branding?.logo ? `<img class="brand-logo" src="${tenant.branding.logo}" alt="${storeName}" />` : ''}
+            <div class="pill">${storeName}</div>
+            <h1>${actorLabel}</h1>
+            <p>مرحباً ${recipientName || 'بك'}، تم تجهيز رابط التفعيل الخاص بك للانضمام إلى ${storeName} بشكل آمن وسريع.</p>
+          </div>
+          <div class="content">
+            <h2>ابدأ الآن</h2>
+            <p>اضغط على الزر التالي لتعيين كلمة المرور وإكمال التفعيل. الرابط صالح لفترة محدودة لحماية حسابك.</p>
+            <div class="summary">
+              <strong>البراند:</strong> ${storeName}<br />
+              <strong>نوع الإجراء:</strong> ${actorType === 'user' ? 'دعوة موظف / مستخدم داخلي' : 'تفعيل بوابة العميل'}
+            </div>
+            <div class="cta">
+              <a href="${activationUrl}">إكمال التفعيل</a>
+            </div>
+            <div class="link">
+              <strong>إذا لم يعمل الزر:</strong><br />
+              <a href="${activationUrl}">${activationUrl}</a>
+            </div>
+          </div>
+          <div class="footer">
+            <div>هذه الرسالة أُرسلت لتفعيل حسابك لدى ${storeName}.</div>
+            ${showPoweredBy ? `<div style="margin-top:8px"><a href="${poweredByUrl}" style="color:#8d99ae;text-decoration:none">Powered by Payqusta</a></div>` : ''}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  async sendActivationEmail({ recipient, activationUrl, tenant, actorType = 'customer' }) {
+    const config = await this.resolveTenantEmailConfig(tenant);
+    const subject = actorType === 'user'
+      ? `دعوة الانضمام إلى ${tenant?.name || 'PayQusta'}`
+      : `تفعيل حسابك لدى ${tenant?.name || 'PayQusta'}`;
+
+    const html = this.buildActivationEmailHtml({
+      recipientName: recipient?.name,
+      activationUrl,
+      tenant,
+      systemConfig: config.systemConfig,
+      actorType,
+    });
+
+    const text = `مرحباً ${recipient?.name || ''}\n\nقم بإكمال التفعيل من خلال الرابط التالي:\n${activationUrl}`;
+
+    return this.sendTenantAwareEmail({
+      tenant,
+      to: recipient?.email,
+      subject,
+      text,
+      html,
+    });
+  }
+
+  async sendNotificationTestEmail({ to, tenant }) {
+    return this.sendTenantAwareEmail({
+      tenant,
+      to,
+      subject: `اختبار قناة البريد - ${tenant?.name || 'PayQusta'}`,
+      text: `هذه رسالة اختبار من ${tenant?.name || 'PayQusta'}`,
+      html: `<div dir="rtl" style="font-family:Segoe UI,Tahoma,sans-serif;padding:24px"><h2>اختبار البريد</h2><p>هذه رسالة اختبار من ${tenant?.name || 'PayQusta'}.</p></div>`,
+    });
+  }
 }
 
 // Singleton instance
 const emailService = new EmailService();
 module.exports = emailService;
-

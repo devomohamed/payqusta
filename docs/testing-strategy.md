@@ -27,6 +27,7 @@ npm run test:unit
 npm run test:integration
 npm run test:ci
 npm run test:e2e
+npm run test:e2e:readiness
 npm run test:smoke
 ```
 
@@ -45,9 +46,11 @@ Command intent:
 - `test:integration`
   App-level API checks using the Express app factory.
 - `test:ci`
-  The default GitHub Actions command. Runs unit + integration suites without coverage overhead.
+  The default GitHub Actions command. Runs unit + integration suites plus skip-safe E2E loading without coverage overhead.
 - `test:e2e`
   Runs DB-backed end-to-end suites. Requires `TEST_MONGODB_URI`.
+- `test:e2e:readiness`
+  Prints whether `TEST_MONGODB_URI` is configured so operators and CI logs make it explicit whether DB-backed E2E will run or skip.
 - `test`
   Full Jest run with coverage for local deeper inspection.
 - `sanity:check`
@@ -64,6 +67,7 @@ GitHub Actions workflow:
 What it does:
 
 - installs backend dependencies with `npm ci`
+- reports DB-backed E2E readiness in CI logs
 - installs frontend dependencies with `npm ci`
 - runs on `push` to `main`/`master`
 - runs on `pull_request`
@@ -71,6 +75,7 @@ What it does:
 - executes `npm run sanity:check`
 - executes `npm run smoke:routes`
 - executes the frontend production build
+- executes `npm run test:e2e` in a separate job only when `TEST_MONGODB_URI` is configured in repository secrets
 
 CI environment variables are kept minimal on purpose:
 
@@ -97,7 +102,7 @@ Required environment:
 - `TEST_MONGODB_URI`
 - optional `TEST_MONGODB_DB_NAME` (defaults to `payqusta_e2e`)
 
-If `TEST_MONGODB_URI` is not set, the DB-backed suite is skipped safely.
+If `TEST_MONGODB_URI` is not set, the DB-backed suite is skipped safely. This is why `test:ci` can include `tests/e2e` without requiring MongoDB in the default CI job.
 
 ## What Is Covered Now
 

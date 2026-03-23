@@ -17,6 +17,9 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const catchAsync = require('../utils/catchAsync');
 const NotificationService = require('../services/NotificationService');
+const EmailService = require('../services/EmailService');
+const SmsService = require('../services/SmsService');
+const { ensureSystemConfig, getPlatformNotificationSettings } = require('../services/notificationConfigService');
 const { getStarterCategorySettings } = require('../services/starterCatalogService');
 const { buildTenantJsonBackup } = require('../services/backupExportService');
 const backupController = require('./backupController');
@@ -766,6 +769,77 @@ class SuperAdminController {
     await lead.save();
 
     ApiResponse.success(res, lead, '\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0637\u0644\u0628 \u0628\u0646\u062C\u0627\u062D');
+  });
+
+  getNotificationSettings = catchAsync(async (req, res) => {
+    const systemConfig = await ensureSystemConfig();
+    const notifications = getPlatformNotificationSettings(systemConfig);
+
+    ApiResponse.success(res, {
+      notifications,
+    });
+  });
+
+  updateNotificationSettings = catchAsync(async (req, res) => {
+    const systemConfig = await ensureSystemConfig();
+    const nextNotifications = req.body?.notifications || {};
+
+    systemConfig.notifications = {
+      ...(systemConfig.notifications?.toObject?.() || systemConfig.notifications || {}),
+      ...nextNotifications,
+      platformEmail: {
+        ...(systemConfig.notifications?.platformEmail?.toObject?.() || systemConfig.notifications?.platformEmail || {}),
+        ...(nextNotifications.platformEmail || {}),
+      },
+      platformSms: {
+        ...(systemConfig.notifications?.platformSms?.toObject?.() || systemConfig.notifications?.platformSms || {}),
+        ...(nextNotifications.platformSms || {}),
+      },
+      defaults: {
+        ...(systemConfig.notifications?.defaults?.toObject?.() || systemConfig.notifications?.defaults || {}),
+        ...(nextNotifications.defaults || {}),
+      },
+      tenantPolicy: {
+        ...(systemConfig.notifications?.tenantPolicy?.toObject?.() || systemConfig.notifications?.tenantPolicy || {}),
+        ...(nextNotifications.tenantPolicy || {}),
+      },
+    };
+
+    await systemConfig.save();
+
+    ApiResponse.success(res, {
+      notifications: systemConfig.notifications,
+    }, 'Platform notification settings updated successfully');
+  });
+
+  testNotificationEmail = catchAsync(async (req, res, next) => {
+    const { email } = req.body;
+    if (!email) return next(AppError.badRequest('Test email address is required'));
+
+    const config = await EmailService.resolveTenantEmailConfig(null);
+    const result = await EmailService.sendNotificationTestEmail({
+      to: email,
+      tenant: { name: 'PayQusta', notificationBranding: { senderName: 'PayQusta' } },
+    });
+
+    ApiResponse.success(res, {
+      ...result,
+      configSource: config.source,
+    }, result.success ? 'Platform test email sent successfully' : 'Platform test email failed');
+  });
+
+  testNotificationSms = catchAsync(async (req, res, next) => {
+    const { phone } = req.body;
+    if (!phone) return next(AppError.badRequest('Test phone number is required'));
+
+    const tenant = { name: 'PayQusta', notificationBranding: { senderName: 'PayQusta' } };
+    const config = await SmsService.resolveConfig(tenant);
+    const result = await SmsService.sendTestMessage({ phone, tenant });
+
+    ApiResponse.success(res, {
+      ...result,
+      configSource: config.source,
+    }, result.success ? 'Platform test SMS sent successfully' : 'Platform test SMS failed');
   });
 
   /**

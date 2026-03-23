@@ -80,38 +80,72 @@ const FinancialsPage = () => {
         </div>
     );
 
+    const highlights = activeTab === 'pnl'
+        ? [
+            { label: 'الإيرادات', value: `${parseFloat(pnlData?.revenue?.gross || 0).toLocaleString('ar-EG')} ج.م` },
+            { label: 'المصاريف', value: `${parseFloat(pnlData?.operatingExpenses?.total || 0).toLocaleString('ar-EG')} ج.م` },
+            { label: 'صافي الربح', value: `${parseFloat(pnlData?.netProfit || 0).toLocaleString('ar-EG')} ج.م` },
+        ]
+        : activeTab === 'ledger'
+            ? [
+                { label: 'الحركات', value: `${ledgerData.length.toLocaleString('ar-EG')}` },
+                { label: 'الفترة من', value: dateRange.startDate },
+                { label: 'إلى', value: dateRange.endDate },
+            ]
+            : [
+                { label: 'تدفق داخل', value: `${parseFloat(forecastData?.next30Days?.inflow || 0).toLocaleString('ar-EG')} ج.م` },
+                { label: 'تدفق خارج', value: `${parseFloat(forecastData?.next30Days?.outflow || 0).toLocaleString('ar-EG')} ج.م` },
+                { label: 'الصافي', value: `${parseFloat(forecastData?.next30Days?.net || 0).toLocaleString('ar-EG')} ج.م` },
+            ];
+
     return (
         <div className="space-y-6 app-text-soft">
-            <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <DollarSign className="w-8 h-8 text-indigo-600" />
-                        التقارير المالية والمحاسبية
-                    </h1>
-                    <p className="app-text-soft">تتبع الأرباح، دفتر الأستاذ، وتوقعات السيولة</p>
-                </div>
+            <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-slate-950 via-indigo-950 to-cyan-700 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(14,116,144,0.9)] sm:px-6">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+                            <DollarSign className="h-3.5 w-3.5" />
+                            غرفة التحكم المالي
+                        </div>
+                        <h1 className="mt-4 flex items-center gap-2 text-2xl font-black sm:text-3xl">
+                            التقارير المالية والمحاسبية
+                        </h1>
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+                            تتبع الأرباح، دفتر الأستاذ، وتوقعات السيولة من واجهة أوضح على الهاتف مع قراءة أسرع للأرقام.
+                        </p>
+                    </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="app-surface flex rounded-2xl p-1">
-                        {['pnl', 'ledger', 'forecast'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${activeTab === tab
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                                        : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
-                                    }`}
-                            >
-                                {tab === 'pnl' ? 'الأرباح والخسائر' : tab === 'ledger' ? 'دفتر الأستاذ' : 'توقعات السيولة'}
-                            </button>
+                    <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[500px]">
+                        {highlights.map((item) => (
+                            <div key={item.label} className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                                <p className="text-xs font-bold text-white/65">{item.label}</p>
+                                <p className="mt-2 text-lg font-black">{item.value}</p>
+                            </div>
                         ))}
                     </div>
+                </div>
+            </section>
+
+            <div className="app-surface-muted overflow-x-auto rounded-2xl p-1 no-scrollbar">
+                <div className="flex min-w-max gap-2">
+                    {['pnl', 'ledger', 'forecast'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${activeTab === tab
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                    : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
+                                }`}
+                        >
+                            {tab === 'pnl' ? 'الأرباح والخسائر' : tab === 'ledger' ? 'دفتر الأستاذ' : 'توقعات السيولة'}
+                        </button>
+                    ))}
                 </div>
             </div>
 
             {activeTab !== 'forecast' && (
-                <div className="app-surface-muted flex flex-wrap items-center gap-4 rounded-2xl p-4">
-                    <div className="flex items-center gap-2">
+                <div className="app-surface-muted grid grid-cols-1 gap-3 rounded-2xl p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Calendar className="w-5 h-5 text-gray-400" />
                         <span className="text-sm font-medium">الفترة من:</span>
                         <input
@@ -121,7 +155,7 @@ const FinancialsPage = () => {
                             className="app-surface rounded-xl border border-transparent p-2 text-sm"
                         />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium">إلى:</span>
                         <input
                             type="date"
@@ -130,7 +164,7 @@ const FinancialsPage = () => {
                             className="app-surface rounded-xl border border-transparent p-2 text-sm"
                         />
                     </div>
-                    <button className="mr-auto flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/30">
+                    <button className="flex items-center justify-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/30">
                         <Download className="w-5 h-5" />
                         تصدير Excel
                     </button>
@@ -276,7 +310,49 @@ const FinancialsPage = () => {
 
                     {activeTab === 'ledger' && (
                         <div className="app-surface overflow-hidden rounded-3xl animate-fade-in">
-                            <div className="overflow-x-auto">
+                            <div className="space-y-3 p-4 md:hidden">
+                                {ledgerData.map((entry, idx) => (
+                                    <div key={`${entry.date}-${idx}`} className="app-surface-muted rounded-2xl p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white">{entry.title}</p>
+                                                <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+                                                    {format(new Date(entry.date), 'dd MMMM yyyy', { locale: ar })}
+                                                </p>
+                                            </div>
+                                            <span className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase ${entry.type === 'sale' ? 'bg-green-100 text-green-700' :
+                                                    entry.type === 'expense' ? 'bg-red-100 text-red-700' :
+                                                        entry.type === 'purchase' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-blue-100 text-blue-700'
+                                                }`}>
+                                                {entry.type}
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                            <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                                                <p className="text-[10px] text-gray-400">مدين</p>
+                                                <p className="mt-1 text-xs font-black text-green-600">{entry.debit > 0 ? entry.debit.toLocaleString('ar-EG') : '-'}</p>
+                                            </div>
+                                            <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                                                <p className="text-[10px] text-gray-400">دائن</p>
+                                                <p className="mt-1 text-xs font-black text-red-600">{entry.credit > 0 ? entry.credit.toLocaleString('ar-EG') : '-'}</p>
+                                            </div>
+                                        </div>
+                                        <p className={`mt-3 text-xs font-semibold ${entry.status === 'paid' || entry.status === 'completed' ? 'text-green-500' : 'text-amber-500'}`}>
+                                            ● {entry.status === 'paid' || entry.status === 'completed' ? 'مكتمل' : 'معلق'}
+                                        </p>
+                                    </div>
+                                ))}
+                                {ledgerData.length === 0 && (
+                                    <EmptyState
+                                        icon={ArrowRightLeft}
+                                        title="لا توجد حركات مالية"
+                                        description="لا توجد قيود أو حركات ضمن الفترة المحددة."
+                                        className="py-4"
+                                    />
+                                )}
+                            </div>
+                            <div className="hidden overflow-x-auto md:block">
                                 <table className="w-full text-right border-collapse">
                                     <thead>
                                         <tr className="app-surface-muted text-sm uppercase text-gray-500 dark:text-gray-400">

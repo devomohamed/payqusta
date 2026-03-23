@@ -215,6 +215,57 @@ const tenantSchema = new mongoose.Schema(
         lastBackupKey: { type: String, default: '' },
       },
     },
+    notificationChannels: {
+      email: {
+        enabled: { type: Boolean, default: false },
+        mode: {
+          type: String,
+          enum: ['platform_default', 'custom_smtp', 'disabled'],
+          default: 'platform_default',
+        },
+        host: { type: String, default: '' },
+        port: { type: Number, default: 587 },
+        secure: { type: Boolean, default: false },
+        user: { type: String, default: '' },
+        pass: { type: String, default: '' },
+        fromEmail: { type: String, default: '' },
+        fromName: { type: String, default: '' },
+      },
+      sms: {
+        enabled: { type: Boolean, default: false },
+        mode: {
+          type: String,
+          enum: ['platform_default', 'custom_provider', 'disabled'],
+          default: 'platform_default',
+        },
+        provider: {
+          type: String,
+          enum: ['mock', 'twilio', 'twilio_verify', 'generic_http', 'disabled'],
+          default: 'mock',
+        },
+        baseUrl: { type: String, default: '' },
+        apiKey: { type: String, default: '' },
+        apiSecret: { type: String, default: '' },
+        senderId: { type: String, default: '' },
+      },
+      routing: {
+        mode: {
+          type: String,
+          enum: ['smart', 'email_only', 'sms_only', 'whatsapp_only', 'whatsapp_preferred'],
+          default: 'smart',
+        },
+        fallbackEnabled: { type: Boolean, default: true },
+        preferSmsWhenPhoneExists: { type: Boolean, default: true },
+        preferEmailWhenEmailExists: { type: Boolean, default: false },
+      },
+    },
+    notificationBranding: {
+      senderName: { type: String, default: '' },
+      replyToEmail: { type: String, default: '' },
+      supportPhone: { type: String, default: '' },
+      supportEmail: { type: String, default: '' },
+      showPoweredByFooter: { type: Boolean, default: true },
+    },
     // WhatsApp configuration
     whatsapp: {
       enabled: { type: Boolean, default: false },
@@ -229,6 +280,7 @@ const tenantSchema = new mongoose.Schema(
         reminder: { type: String },     // e.g. 'payqusta_reminder' or 'payment_reminder'
         payment: { type: String },      // e.g. 'payqusta_payment' or 'payment_received'
         restock: { type: String },      // e.g. 'payqusta_restock' or 'restock_request'
+        activation: { type: String },   // e.g. 'payqusta_activation' or 'account_activation'
       },
       // Per-tenant template language mapping
       templateLanguages: {
@@ -237,6 +289,7 @@ const tenantSchema = new mongoose.Schema(
         reminder: { type: String, default: 'ar_EG' },
         payment: { type: String, default: 'ar_EG' },
         restock: { type: String, default: 'en' },
+        activation: { type: String, default: 'ar_EG' },
       },
       notifications: {
         installmentReminder: { type: Boolean, default: true },

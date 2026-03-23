@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  RefreshCcw, Search, Filter, Eye, CheckCircle, XCircle, Package,
-  Clock, AlertTriangle, ArrowLeft, MessageSquare, Hash, User, Phone
+  RefreshCcw, Search, Eye, CheckCircle, XCircle, Package, Clock, User
 } from 'lucide-react';
-import { useAuthStore, api as globalApi } from '../store';
+import { api as globalApi } from '../store';
 import { Card, LoadingSpinner, EmptyState, Modal } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 
@@ -31,8 +30,6 @@ export default function ReturnsManagementPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectNotes, setRejectNotes] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(null);
-  const { token } = useAuthStore();
-
   const api = useCallback((method, url, data) =>
     globalApi({ method, url, data }),
     []
@@ -83,48 +80,60 @@ export default function ReturnsManagementPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      {/* Header */}
-      <div className="app-surface-muted flex flex-col items-start justify-between gap-4 rounded-3xl p-4 sm:flex-row sm:items-center sm:p-5">
-        <div>
-          <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <RefreshCcw className="w-6 h-6 text-orange-500" /> إدارة المرتجعات
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">مراجعة طلبات المرتجعات من العملاء</p>
-        </div>
-        <button onClick={load} className="app-surface flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300">
-          <RefreshCcw className="w-4 h-4" /> تحديث
-        </button>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'قيد المراجعة', count: stats.pending || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'pending' },
-          { label: 'تمت الموافقة', count: stats.approved || 0, color: 'text-green-600 bg-green-50 dark:bg-green-900/20', filter: 'approved' },
-          { label: 'مرفوض', count: stats.rejected || 0, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', filter: 'rejected' },
-          { label: 'مكتمل', count: stats.completed || 0, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', filter: 'completed' },
-        ].map((s) => (
-          <button
-            key={s.filter}
-            onClick={() => setStatusFilter(statusFilter === s.filter ? '' : s.filter)}
-            className={`rounded-2xl border p-4 text-center transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${statusFilter === s.filter ? 'border-primary-500 shadow-lg shadow-primary-500/10' : 'border-transparent'} ${s.color}`}
-          >
-            <p className="text-2xl font-black">{s.count}</p>
-            <p className="text-xs font-bold mt-1 opacity-70">{s.label}</p>
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300">
+              <RefreshCcw className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-500/80">Returns Control</p>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">إدارة المرتجعات</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                مراجعة مرتجعات العملاء مع عرض أسرع للحالة، والإجراءات، والتفاصيل الأساسية على شاشات الهاتف.
+              </p>
+            </div>
+          </div>
+          <button onClick={load} className="app-surface flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300 sm:w-auto">
+            <RefreshCcw className="w-4 h-4" /> تحديث
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="بحث باسم العميل أو رقم الفاتورة..."
-          className="app-surface w-full rounded-2xl border border-transparent py-2.5 pl-4 pr-10 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
-        />
-      </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[
+            { label: 'قيد المراجعة', count: stats.pending || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'pending' },
+            { label: 'تمت الموافقة', count: stats.approved || 0, color: 'text-green-600 bg-green-50 dark:bg-green-900/20', filter: 'approved' },
+            { label: 'مرفوض', count: stats.rejected || 0, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', filter: 'rejected' },
+            { label: 'مكتمل', count: stats.completed || 0, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', filter: 'completed' },
+          ].map((s) => (
+            <button
+              key={s.filter}
+              onClick={() => setStatusFilter(statusFilter === s.filter ? '' : s.filter)}
+              className={`rounded-2xl border p-4 text-center transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${statusFilter === s.filter ? 'border-primary-500 shadow-lg shadow-primary-500/10' : 'border-transparent'} ${s.color}`}
+            >
+              <p className="text-2xl font-black">{s.count}</p>
+              <p className="mt-1 text-xs font-bold opacity-70">{s.label}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <Card className="app-surface-muted rounded-[2rem] p-4">
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Search</p>
+          <h2 className="mt-2 text-lg font-extrabold text-gray-900 dark:text-white">بحث سريع</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">ابحث باسم العميل أو رقم الفاتورة مع الاحتفاظ بفلاتر الحالة أعلاه.</p>
+        </div>
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث باسم العميل أو رقم الفاتورة..."
+            className="app-surface w-full rounded-2xl border border-transparent py-3 pl-4 pr-10 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
+          />
+        </div>
+      </Card>
 
       {/* Table */}
       {loading ? <LoadingSpinner /> : returns.length === 0 ? (
@@ -135,7 +144,83 @@ export default function ReturnsManagementPage() {
         />
       ) : (
         <Card className="overflow-hidden rounded-3xl">
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-4 md:hidden">
+            {returns.map((ret) => (
+              <div key={ret._id} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-extrabold text-gray-900 dark:text-white">{ret.customer?.name || '—'}</p>
+                    <p className="mt-1 text-xs text-gray-400">{ret.customer?.phone || 'بدون رقم هاتف'}</p>
+                  </div>
+                  <StatusBadge status={ret.status} />
+                </div>
+
+                <div className="mt-4 flex items-center gap-3">
+                  {ret.product?.images?.[0] ? (
+                    <img src={ret.product.images[0]} alt="" className="h-12 w-12 rounded-2xl object-cover" />
+                  ) : (
+                    <div className="app-surface-muted flex h-12 w-12 items-center justify-center rounded-2xl">
+                      <Package className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white">{ret.product?.name || '—'}</p>
+                    <p className="mt-1 text-xs text-primary-600">#{ret.invoice?.invoiceNumber || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                    <p className="text-[11px] text-gray-400">سبب الإرجاع</p>
+                    <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{REASON_LABELS[ret.reason] || ret.reason}</p>
+                  </div>
+                  <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                    <p className="text-[11px] text-gray-400">الكمية</p>
+                    <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{ret.quantity}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+                  <span>{new Date(ret.createdAt).toLocaleDateString('ar-EG')}</span>
+                  {ret.refundStatus && ret.refundStatus !== 'none' ? <span>استرداد: {ret.refundStatus}</span> : <span>مرتجع عميل</span>}
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <button onClick={() => setSelected(ret)} className="rounded-2xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 dark:bg-blue-900/20">
+                    عرض التفاصيل
+                  </button>
+                  {ret.status === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => updateReturn(ret._id, 'approved')}
+                        disabled={actionLoading}
+                        className="rounded-2xl bg-green-50 px-4 py-2 text-sm font-bold text-green-600 transition-all duration-200 hover:bg-green-100 disabled:opacity-50 dark:bg-green-900/20"
+                      >
+                        موافقة
+                      </button>
+                      <button
+                        onClick={() => setShowRejectModal(ret._id)}
+                        className="rounded-2xl bg-red-50 px-4 py-2 text-sm font-bold text-red-500 transition-all duration-200 hover:bg-red-100 dark:bg-red-900/20"
+                      >
+                        رفض
+                      </button>
+                    </>
+                  )}
+                  {ret.status === 'approved' && (
+                    <button
+                      onClick={() => updateReturn(ret._id, 'completed')}
+                      disabled={actionLoading}
+                      className="rounded-2xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 disabled:opacity-50 dark:bg-blue-900/20"
+                    >
+                      إكمال المرتجع
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm text-right">
               <thead>
                 <tr className="border-b border-gray-100/80 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.03]">
@@ -231,10 +316,10 @@ export default function ReturnsManagementPage() {
       <Modal open={!!selected} onClose={() => setSelected(null)} title="تفاصيل طلب المرتجع" size="md">
         {selected && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={selected.status} />
               {selected.status === 'pending' && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button onClick={() => updateReturn(selected._id, 'approved')} disabled={actionLoading}
                     className="px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-bold hover:bg-green-600 transition disabled:opacity-50 flex items-center gap-1">
                     <CheckCircle className="w-4 h-4" /> موافقة
@@ -265,7 +350,7 @@ export default function ReturnsManagementPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="app-surface-muted rounded-2xl p-4">
                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-2 flex items-center gap-1"><User className="w-3 h-3" /> العميل</h4>
                 <p className="font-bold">{selected.customer?.name}</p>

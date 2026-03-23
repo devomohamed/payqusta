@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    FileText, Check, X, Search, Image as ImageIcon,
+    FileText, Check, X, Image as ImageIcon,
     Clock, AlertCircle
 } from 'lucide-react';
 import { superAdminApi } from '../store';
@@ -76,23 +76,39 @@ export default function SubscriptionRequestsPage() {
 
     return (
         <div className="space-y-6 animate-fade-in app-text-soft">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                        <FileText className="w-6 h-6 text-white" />
+            <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="space-y-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                            <FileText className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500/80">Subscription Review Desk</p>
+                            <h1 className="text-2xl font-extrabold">طلبات الاشتراكات والإيصالات</h1>
+                            <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                                مراجعة إيصالات الدفع اليدوية للمشتركين الجدد مع واجهة أخف على الهاتف ومسار أسرع للموافقة أو الرفض.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-extrabold">طلبات الاشتراكات والإيصالات</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            مراجعة إيصالات الدفع اليدوية (انستاباي ومحافظ الكاش) والموافقة عليها.
-                        </p>
+                    <div className="grid grid-cols-3 gap-3 sm:w-auto">
+                        <div className="app-surface rounded-2xl p-4 text-center">
+                            <p className="text-[11px] text-gray-400">إجمالي الطلبات</p>
+                            <p className="mt-1 text-xl font-black text-gray-900 dark:text-white">{requests.length}</p>
+                        </div>
+                        <div className="app-surface rounded-2xl p-4 text-center">
+                            <p className="text-[11px] text-gray-400">المعلقة</p>
+                            <p className="mt-1 text-xl font-black text-amber-600">{requests.filter((request) => request.status === 'pending').length}</p>
+                        </div>
+                        <div className="app-surface rounded-2xl p-4 text-center">
+                            <p className="text-[11px] text-gray-400">المفعلة</p>
+                            <p className="mt-1 text-xl font-black text-emerald-600">{requests.filter((request) => request.status === 'approved').length}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* Filters */}
-            <div className="app-surface-muted flex p-1 rounded-xl shadow-sm border border-gray-100/80 dark:border-white/10 w-fit">
+            <div className="app-surface-muted flex w-full overflow-x-auto rounded-2xl border border-gray-100/80 p-1 shadow-sm no-scrollbar dark:border-white/10 sm:w-fit">
                 <button
                     onClick={() => setFilter('pending')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'text-gray-500 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
@@ -127,7 +143,80 @@ export default function SubscriptionRequestsPage() {
                 />
             ) : (
                 <div className="app-surface rounded-xl shadow-sm border border-gray-100/80 dark:border-white/10 overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="space-y-3 p-4 md:hidden">
+                        {requests.map((request) => (
+                            <div key={request._id} className="app-surface rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="font-extrabold text-gray-900 dark:text-white">{request.tenant?.name || 'متجر محذوف'}</p>
+                                        <p className="mt-1 text-xs text-gray-400">{request.tenant?.phone || '-'} {request.tenant?.email ? `• ${request.tenant?.email}` : ''}</p>
+                                    </div>
+                                    <div>
+                                        {request.status === 'pending' && <Badge variant="warning">قيد المراجعة</Badge>}
+                                        {request.status === 'approved' && <Badge variant="success">تم التفعيل</Badge>}
+                                        {request.status === 'rejected' && <Badge variant="danger" title={request.rejectionReason}>مرفوض</Badge>}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                    <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                                        <p className="text-[11px] text-gray-400">الباقة</p>
+                                        <p className="mt-1 font-semibold text-gray-800 dark:text-gray-100">{request.plan?.name || '-'}</p>
+                                        <p className="mt-1 text-xs text-gray-400">{request.plan?.price} {request.plan?.currency}</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                                        <p className="text-[11px] text-gray-400">طريقة الدفع</p>
+                                        <div className="mt-1">
+                                            <Badge variant="info">
+                                                {request.gateway === 'instapay' ? 'إنستاباي' : request.gateway === 'vodafone_cash' ? 'فودافون كاش' : request.gateway}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    <span dir="ltr">{new Date(request.createdAt).toLocaleString('ar-EG')}</span>
+                                </div>
+
+                                <div className="mt-4 space-y-2">
+                                    <button
+                                        onClick={() => setSelectedReceipt(request.receiptImage)}
+                                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                                    >
+                                        <ImageIcon className="w-4 h-4" />
+                                        عرض الإيصال
+                                    </button>
+
+                                    {request.status === 'pending' && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+                                                onClick={() => handleApprove(request._id)}
+                                                loading={processingId === request._id}
+                                                disabled={processingId !== null}
+                                            >
+                                                تفعيل
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                className="text-xs"
+                                                onClick={() => openRejectModal(request)}
+                                                disabled={processingId !== null}
+                                            >
+                                                رفض
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="w-full text-right text-sm">
                             <thead className="app-surface-muted border-b border-gray-100/80 dark:border-white/10">
                                 <tr>

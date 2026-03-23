@@ -1057,38 +1057,42 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6 app-text-soft">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Package className="w-7 h-7 text-primary-600" />
-            {t('products.title')}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {t('products.total_count', { count: headerProductsCount })}
-          </p>
-        </div>
-        <div className="flex w-full sm:w-auto items-stretch sm:items-center gap-2 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => setActivePageTab('categories')}>
-            <Tag className="w-4 h-4" />
-            {t('products.manage_categories')}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowBarcodeScanner(true)}>
-            <Scan className="w-4 h-4" />
-            {t('products.scan_barcode')}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowProductSearch(true)}>
-            <Search className="w-4 h-4" />
-            {t('products.import_product')}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet className="w-4 h-4" />
-            استيراد Excel
-          </Button>
-          <Button onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            {t('products.add_product')}
-          </Button>
+      <div className="app-surface rounded-[1.75rem] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-xl font-black text-gray-900 dark:text-white sm:text-2xl">
+              <Package className="w-7 h-7 text-primary-600" />
+              {t('products.title')}
+            </h1>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              إدارة الكتالوج، المخزون، والباركود من واجهة أوضح ومتناسقة على الموبايل.
+            </p>
+            <p className="mt-1 text-xs font-bold text-primary-600 dark:text-primary-300">
+              {t('products.total_count', { count: headerProductsCount })}
+            </p>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setActivePageTab('categories')} className="w-full sm:w-auto justify-center">
+              <Tag className="w-4 h-4" />
+              {t('products.manage_categories')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowBarcodeScanner(true)} className="w-full sm:w-auto justify-center">
+              <Scan className="w-4 h-4" />
+              {t('products.scan_barcode')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowProductSearch(true)} className="w-full sm:w-auto justify-center">
+              <Search className="w-4 h-4" />
+              {t('products.import_product')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowImportModal(true)} className="w-full sm:w-auto justify-center">
+              <FileSpreadsheet className="w-4 h-4" />
+              استيراد Excel
+            </Button>
+            <Button onClick={openNew} className="col-span-2 w-full justify-center sm:col-span-1 sm:w-auto">
+              <Plus className="w-4 h-4" />
+              {t('products.add_product')}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1125,7 +1129,7 @@ export default function ProductsPage() {
 
       {/* Filters */}
       {!isIncompleteTab && (
-        <div className="app-surface-muted flex flex-col gap-3 rounded-2xl p-3 sm:flex-row">
+        <div className="app-surface-muted grid grid-cols-1 gap-3 rounded-2xl p-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.7fr)]">
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input

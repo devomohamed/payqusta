@@ -102,6 +102,14 @@ export default function PurchaseOrdersPage() {
     () => form.items.reduce((sum, item) => sum + Number(item.totalCost || 0), 0),
     [form.items]
   );
+  const visibleOrderValue = useMemo(
+    () => orders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0),
+    [orders]
+  );
+  const pendingOrdersCount = useMemo(
+    () => orders.filter((order) => ['draft', 'pending', 'approved', 'partial'].includes(order.status)).length,
+    [orders]
+  );
 
   useEffect(() => {
     loadSuppliers();
@@ -554,20 +562,51 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ShoppingCart className="w-7 h-7 text-primary-500" />
-            نظام مشتريات الموردين
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">إنشاء واعتماد واستلام أوامر الشراء مع تسجيل مالي تلقائي للمورد</p>
-        </div>
-        <Button onClick={handleOpenCreate} icon={<Plus className="w-4 h-4" />}>
-          أمر شراء جديد
-        </Button>
-      </div>
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-primary-700 via-sky-700 to-slate-950 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(37,99,235,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <ShoppingCart className="h-3.5 w-3.5" />
+              دورة شراء الموردين
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">نظام مشتريات الموردين</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+              أنشئ واعتمد واستلم أوامر الشراء من واجهة أوضح على الهاتف مع قراءة أسرع للحالة والتكلفة والاستلام.
+            </p>
+          </div>
 
-      <Card className="p-4">
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[500px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الأوامر الظاهرة</p>
+              <p className="mt-2 text-2xl font-black">{pagination.totalItems.toLocaleString('ar-EG')}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">تحتاج متابعة</p>
+              <p className="mt-2 text-2xl font-black">{pendingOrdersCount.toLocaleString('ar-EG')}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">القيمة الظاهرة</p>
+              <p className="mt-2 text-lg font-black">{visibleOrderValue.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Button onClick={handleOpenCreate} icon={<Plus className="w-4 h-4" />} className="justify-center bg-white text-primary-700 hover:bg-white/90">
+            أمر شراء جديد
+          </Button>
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90">
+            <Truck className="h-4 w-4" />
+            الاستلام يحدّث المخزون ويربط القيمة بالمورد تلقائيًا
+          </div>
+        </div>
+      </section>
+
+      <Card className="p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-sm font-black text-gray-900 dark:text-white">فلاتر أوامر الشراء</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">حدّد الحالة أو المورد للوصول الأسرع للطلبات المفتوحة.</p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Select
             label="حالة الأمر"
@@ -606,7 +645,86 @@ export default function PurchaseOrdersPage() {
         />
       ) : (
         <Card>
-          <div className="overflow-x-auto">
+          <div className="space-y-4 p-4 md:hidden">
+            {orders.map((order) => {
+              const progress = getReceivedProgress(order);
+              const canApprove = order.status === 'draft' || order.status === 'pending';
+              const canReceive = ['approved', 'pending', 'partial'].includes(order.status);
+              const canCancel = ['draft', 'pending', 'approved'].includes(order.status) && Number(order.receivedValue || 0) <= 0;
+
+              return (
+                <div key={order._id} className="app-surface-muted rounded-2xl p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-xs text-gray-500">{order.orderNumber}</p>
+                      <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{order.supplier?.name || '—'}</p>
+                      <p className="mt-1 text-[11px] text-gray-400">{order.branch?.name || 'الفرع الرئيسي'} · {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: ar })}</p>
+                    </div>
+                    <Badge variant={STATUS_COLORS[order.status] || 'gray'}>
+                      {STATUS_LABELS[order.status] || order.status}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/70">
+                      <p className="text-[10px] text-gray-400">الاستلام</p>
+                      <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{progress.received}/{progress.total}</p>
+                    </div>
+                    <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/70">
+                      <p className="text-[10px] text-gray-400">السداد</p>
+                      <p className="mt-1 text-xs font-black text-primary-600">{order.paymentType === 'cash' ? 'نقدي' : 'آجل'}</p>
+                    </div>
+                    <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/70">
+                      <p className="text-[10px] text-gray-400">الإجمالي</p>
+                      <p className="mt-1 text-xs font-black text-emerald-600">{Number(order.totalAmount || 0).toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-xs text-gray-500">مستحق: {Number(order.outstandingAmount || 0).toFixed(2)} ج.م</p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {canApprove && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleUpdateStatus(order._id, 'approved')}
+                        icon={<Check className="w-4 h-4" />}
+                      >
+                        اعتماد
+                      </Button>
+                    )}
+                    {canReceive && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleOpenReceive(order._id)}
+                        icon={<Package className="w-4 h-4" />}
+                      >
+                        استلام
+                      </Button>
+                    )}
+                    {canCancel && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleUpdateStatus(order._id, 'cancelled')}
+                        icon={<X className="w-4 h-4" />}
+                      >
+                        إلغاء
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleOpenPdf(order._id, order.orderNumber)}
+                      icon={<FileDown className="w-4 h-4" />}
+                      title="PDF"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>

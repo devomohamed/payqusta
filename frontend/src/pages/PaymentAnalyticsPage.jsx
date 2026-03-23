@@ -9,9 +9,7 @@ import {
   DollarSign,
   CreditCard,
   CheckCircle,
-  XCircle,
-  Clock,
-  Download
+  Calendar
 } from 'lucide-react';
 import { api } from '../store';
 import toast from 'react-hot-toast';
@@ -90,31 +88,42 @@ const PaymentAnalytics = () => {
   return (
     <div className="space-y-6 p-6 app-text-soft">
       {/* Header */}
-      <div className="app-surface-muted flex items-center justify-between rounded-3xl p-5">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            تحليلات الدفع الإلكتروني
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            إحصائيات شاملة حول المدفوعات الإلكترونية
-          </p>
-        </div>
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+              <CreditCard className="h-6 w-6" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Payments Pulse</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">تحليلات الدفع الإلكتروني</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-400">
+                إحصائيات شاملة حول المدفوعات الإلكترونية، مع توزيع أوضح للمؤشرات والرسوم على الهاتف.
+              </p>
+            </div>
+          </div>
 
-        {/* Period Selector */}
-        <select
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          className="app-surface rounded-xl border border-transparent px-4 py-2 text-gray-900 dark:text-white"
-        >
-          <option value="7">آخر 7 أيام</option>
-          <option value="30">آخر 30 يوم</option>
-          <option value="90">آخر 3 شهور</option>
-          <option value="365">آخر سنة</option>
-        </select>
-      </div>
+          <div className="w-full sm:w-auto">
+            <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <Calendar className="h-4 w-4" />
+              الفترة
+            </label>
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="app-surface w-full rounded-xl border border-transparent px-4 py-3 text-gray-900 dark:text-white sm:min-w-[220px]"
+            >
+              <option value="7">آخر 7 أيام</option>
+              <option value="30">آخر 30 يوم</option>
+              <option value="90">آخر 3 شهور</option>
+              <option value="365">آخر سنة</option>
+            </select>
+          </div>
+        </div>
+      </section>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {/* Total Amount */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-4">
@@ -181,7 +190,7 @@ const PaymentAnalytics = () => {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Gateway Comparison */}
         <div className="app-surface rounded-3xl p-6">
           <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
@@ -265,7 +274,52 @@ const PaymentAnalytics = () => {
         <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
           تفاصيل البوابات
         </h3>
-        <div className="overflow-x-auto">
+        <div className="space-y-3 md:hidden">
+          {gatewayData.map((gateway, index) => (
+            <div key={gateway.name} className="rounded-3xl border border-white/60 p-4 dark:border-white/10">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-3 w-3 rounded-full"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <p className="font-bold text-gray-900 dark:text-white">{gateway.name}</p>
+                </div>
+                <span className={`
+                  rounded-full px-2 py-1 text-sm font-medium
+                  ${parseFloat(gateway.successRate) >= 80
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : parseFloat(gateway.successRate) >= 60
+                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  }
+                `}>
+                  {gateway.successRate}%
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                  <p className="text-[11px] text-gray-400">عدد المعاملات</p>
+                  <p className="mt-1 font-black text-gray-900 dark:text-white">{gateway.count}</p>
+                </div>
+                <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                  <p className="text-[11px] text-gray-400">إجمالي المبلغ</p>
+                  <p className="mt-1 font-black text-gray-900 dark:text-white">{gateway.amount.toLocaleString()} ج.م</p>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-2xl bg-black/[0.03] p-3 text-sm dark:bg-white/[0.04]">
+                <p className="text-[11px] text-gray-400">متوسط المعاملة</p>
+                <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">
+                  {(gateway.amount / gateway.count).toFixed(0)} ج.م
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">

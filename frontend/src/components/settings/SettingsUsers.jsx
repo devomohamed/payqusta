@@ -19,7 +19,7 @@ export default function SettingsUsers() {
     name: '',
     email: '',
     phone: '',
-    password: '',
+    invitationChannel: 'auto',
     role: 'coordinator',
     isActive: true
   });
@@ -47,7 +47,7 @@ export default function SettingsUsers() {
       name: '',
       email: '',
       phone: '',
-      password: '',
+      invitationChannel: 'auto',
       role: 'coordinator',
       isActive: true
     });
@@ -62,7 +62,7 @@ export default function SettingsUsers() {
       phone: user.phone || '',
       role: user.role,
       isActive: user.isActive,
-      password: ''
+      invitationChannel: user.phone && user.email ? 'auto' : user.phone ? 'sms' : 'email'
     });
     setShowModal(true);
   };
@@ -73,7 +73,7 @@ export default function SettingsUsers() {
       return;
     }
 
-    if (!editId && !form.password) {
+    if (false) {
       notify.warning('كلمة المرور مطلوبة للمستخدم الجديد');
       return;
     }
@@ -81,10 +81,21 @@ export default function SettingsUsers() {
     setSaving(true);
     try {
       if (editId) {
-        await api.put(`/auth/users/${editId}`, form);
+        await api.put(`/auth/users/${editId}`, {
+          name: form.name,
+          phone: form.phone,
+          role: form.role,
+          isActive: form.isActive,
+        });
         notify.success('تم تحديث المستخدم');
       } else {
-        await api.post('/auth/users', form);
+        await api.post('/auth/users', {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          role: form.role,
+          invitationChannel: form.invitationChannel,
+        });
         notify.success('تم إضافة المستخدم');
       }
       setShowModal(false);
@@ -97,21 +108,47 @@ export default function SettingsUsers() {
   };
 
   const handleDelete = async (id) => {
-    const approved = await confirm.show({
-      title: 'تعطيل مستخدم',
-      message: 'هل أنت متأكد من تعطيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول بعد ذلك.',
-      confirmLabel: 'تعطيل',
-      type: 'warning'
+    notify.custom({
+      type: 'error',
+      title: 'تأكيد الحذف أو التعطيل',
+      message: 'هل تريد تعطيل حساب المستخدم فقط (مؤقتاً) أم حذفه نهائياً من النظام؟',
+      duration: 10000,
+      action: {
+        label: 'حذف نهائي',
+        onClick: async () => {
+          try {
+            await api.delete(`/auth/users/${id}?hardDelete=true`);
+            notify.success('تم حذف المستخدم نهائياً', 'تم الحفظ');
+            loadUsers();
+          } catch (error) {
+            notify.error(error.response?.data?.message || 'تعذر حذف المستخدم', 'حدث خطأ');
+          }
+        },
+      },
+      secondaryAction: {
+        label: 'تعطيل فقط',
+        onClick: async () => {
+          try {
+            await api.delete(`/auth/users/${id}`);
+            notify.success('تم تعطيل المستخدم بنجاح', 'تم الحفظ');
+            loadUsers();
+          } catch (error) {
+            notify.error(error.response?.data?.message || 'تعذر تعطيل المستخدم', 'حدث خطأ');
+          }
+        },
+      },
     });
+  };
 
-    if (!approved) return;
-
+  const handleResend = async (user) => {
     try {
-      await api.delete(`/auth/users/${id}`);
-      notify.success('تم تعطيل المستخدم');
+      await api.post(`/auth/users/${user._id}/resend-invitation`, {
+        invitationChannel: user.phone ? 'auto' : 'email',
+      });
+      notify.success('ØªÙ… Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¯Ø¹ÙˆØ©');
       loadUsers();
     } catch (error) {
-      notify.error('فشل التعطيل');
+      notify.error(error.response?.data?.message || 'ÙØ´Ù„ Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¯Ø¹ÙˆØ©');
     }
   };
 
@@ -192,6 +229,12 @@ export default function SettingsUsers() {
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => handleResend(user)}
+                        className="rounded-lg px-2 text-xs font-bold text-emerald-600 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                      >
+                        Resend
+                      </button>
+                      <button
                         onClick={() => handleDelete(user._id)}
                         className="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
                       >
@@ -243,6 +286,21 @@ export default function SettingsUsers() {
             onChange={(event) => setForm({ ...form, password: event.target.value })}
             placeholder={editId ? 'اتركه فارغًا للإبقاء على الحالية' : ''}
           />
+
+          {!editId && (
+            <div>
+              <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">Invitation Channel</label>
+              <select
+                value={form.invitationChannel}
+                onChange={(event) => setForm({ ...form, invitationChannel: event.target.value })}
+                className="app-surface-muted w-full rounded-xl border-2 border-gray-100/80 px-4 py-2.5 text-gray-900 outline-none transition-all focus:border-primary-500 dark:border-white/10 dark:text-white dark:focus:border-primary-400"
+              >
+                <option value="auto">Smart / Auto</option>
+                <option value="email">Email</option>
+                <option value="sms">SMS</option>
+              </select>
+            </div>
+          )}
 
           {editId && (
             <div>

@@ -57,10 +57,10 @@ const INITIAL_FORM = {
     addressLine: '',
     postalCode: '',
   },
+  managerId: '',
   managerName: '',
   managerEmail: '',
   managerPhone: '',
-  managerPassword: '',
 };
 
 function ToggleTile({ title, description, checked, onChange, icon: Icon }) {
@@ -158,19 +158,23 @@ export default function BranchManagement() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [searchTerm, setSearchTerm] = useState('');
   const [tenantFilter, setTenantFilter] = useState('all');
+  const [availableManagers, setAvailableManagers] = useState([]);
+  const [managerSelectionMode, setManagerSelectionMode] = useState('none'); // 'none', 'existing', 'new'
 
   const fetchBranches = async () => {
     setLoading(true);
     try {
-      const [branchesRes, tenantsRes] = await Promise.all([
+      const [branchesRes, tenantsRes, usersRes] = await Promise.all([
         api.get('/branches', { params: { isActive: true, limit: 200 } }),
         isSuperAdmin ? api.get('/admin/tenants?limit=1000') : Promise.resolve({ data: { data: [] } }),
+        api.get('/auth/users', { params: { limit: 200 } }).catch(() => ({ data: { data: [] } })),
       ]);
 
       setBranches(branchesRes.data?.data?.branches || []);
       if (isSuperAdmin) {
         setTenants(tenantsRes.data?.data || []);
       }
+      setAvailableManagers(usersRes.data?.data || []);
     } catch (error) {
       toast.error('فشل تحميل بيانات الفروع');
     } finally {
@@ -185,6 +189,7 @@ export default function BranchManagement() {
   const resetForm = () => {
     setForm(INITIAL_FORM);
     setEditingBranch(null);
+    setManagerSelectionMode('none');
   };
 
   const setShippingOriginField = (field, value) => {
@@ -211,12 +216,16 @@ export default function BranchManagement() {
       return toast.error('رقم هاتف الفرع غير صالح');
     }
 
-    if (form.managerName || form.managerEmail || form.managerPhone || form.managerPassword) {
-      if (!form.managerName || !form.managerEmail || !form.managerPhone || (!editingBranch && !form.managerPassword)) {
+    if (managerSelectionMode === 'new') {
+      if (!form.managerName || !form.managerEmail || !form.managerPhone) {
         return toast.error('يرجى إدخال جميع بيانات مدير الفرع المطلوبة');
       }
       if (!validatePhone(form.managerPhone)) {
         return toast.error('رقم هاتف مدير الفرع غير صالح');
+      }
+    } else if (managerSelectionMode === 'existing') {
+      if (!form.managerId) {
+        return toast.error('يرجى اختيار المدير من القائمة');
       }
     }
 
@@ -226,10 +235,10 @@ export default function BranchManagement() {
         name: form.name.trim(),
         address: form.address.trim(),
         phone: form.phone.trim(),
-        managerName: form.managerName.trim(),
-        managerEmail: form.managerEmail.trim(),
-        managerPhone: form.managerPhone.trim(),
-        managerPassword: form.managerPassword,
+        managerId: managerSelectionMode === 'existing' ? form.managerId : (managerSelectionMode === 'none' ? '' : undefined),
+        managerName: managerSelectionMode === 'new' ? form.managerName.trim() : undefined,
+        managerEmail: managerSelectionMode === 'new' ? form.managerEmail.trim() : undefined,
+        managerPhone: managerSelectionMode === 'new' ? form.managerPhone.trim() : undefined,
         shippingOrigin: {
           governorate: form.shippingOrigin.governorate.trim(),
           city: form.shippingOrigin.city.trim(),
@@ -288,11 +297,16 @@ export default function BranchManagement() {
         addressLine: branch.shippingOrigin?.addressLine || '',
         postalCode: branch.shippingOrigin?.postalCode || '',
       },
+      managerId: branch.manager?._id || '',
       managerName: branch.manager?.name || '',
       managerEmail: branch.manager?.email || '',
       managerPhone: branch.manager?.phone || '',
-      managerPassword: '',
     });
+    if (branch.manager) {
+      setManagerSelectionMode('existing');
+    } else {
+      setManagerSelectionMode('none');
+    }
     setShowModal(true);
   };
 
@@ -322,44 +336,49 @@ export default function BranchManagement() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-3">
-          <Badge variant="info" className="w-fit">Branch Commerce Model</Badge>
-          <div className="flex items-start gap-4">
-            <div className="rounded-[1.6rem] bg-gradient-to-br from-primary-500 via-primary-600 to-cyan-500 p-4 text-white shadow-2xl shadow-primary-500/25">
-              <Building2 className="h-7 w-7" />
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-cyan-700 via-primary-700 to-slate-950 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(8,145,178,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Building2 className="h-3.5 w-3.5" />
+              Branch Commerce Model
             </div>
-            <div>
-              <h1 className="text-3xl font-black app-text-strong">إدارة الفروع</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-7 app-text-muted">
-                اضبط هيكل الفرع، تشغيل الأونلاين، مركز التنفيذ، الاستلام من الفرع، ومصدر الشحن
-                من شاشة واحدة واضحة لصاحب البراند.
-              </p>
+            <div className="flex items-start gap-4">
+              <div className="rounded-[1.6rem] bg-white/10 p-4 text-white shadow-2xl backdrop-blur-sm">
+                <Building2 className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black text-white">إدارة الفروع</h1>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-white/80">
+                  اضبط هيكل الفرع، تشغيل الأونلاين، مركز التنفيذ، الاستلام من الفرع، ومصدر الشحن
+                  من شاشة واحدة أوضح وأكثر راحة على الهاتف.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
-          <Link
-            to="/admin/audit-logs?resource=branch"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--surface-border)] app-surface px-4 py-3 text-sm font-semibold app-text-body transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03] lg:w-auto"
-          >
-            <FileSearch className="h-4 w-4 text-primary-500" />
-            سجل تغييرات الفروع
-          </Link>
-          <Button
-            size="lg"
-            icon={<Plus className="h-4 w-4" />}
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="w-full lg:w-auto"
-          >
-            إضافة فرع جديد
-          </Button>
+          <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
+            <Link
+              to="/admin/audit-logs?resource=branch"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15 lg:w-auto"
+            >
+              <FileSearch className="h-4 w-4 text-white" />
+              سجل تغييرات الفروع
+            </Link>
+            <Button
+              size="lg"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              className="w-full bg-white text-primary-700 hover:bg-white/90 lg:w-auto"
+            >
+              إضافة فرع جديد
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard title="إجمالي الفروع" value={summary.total} caption="عدد الفروع المعروضة بعد الفلاتر الحالية" icon={Store} tone="primary" />
@@ -369,6 +388,10 @@ export default function BranchManagement() {
       </div>
 
       <Card className="p-4 sm:p-5">
+        <div className="mb-4">
+          <p className="text-sm font-black app-text-strong">البحث والتصفية</p>
+          <p className="mt-1 text-xs app-text-muted">ابحث باسم الفرع أو المدير أو مصدر الشحن، وضيّق النتائج حسب المتجر عند الحاجة.</p>
+        </div>
         <div className="flex flex-col gap-3 xl:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 app-text-muted" />
@@ -702,37 +725,85 @@ export default function BranchManagement() {
             <Card className="p-5">
               <div className="mb-4">
                 <h3 className="text-base font-black app-text-strong">مدير الفرع</h3>
-                <p className="mt-1 text-sm app-text-muted">يمكنك إنشاء مدير جديد أو تحديث بيانات المدير الحالي من نفس الشاشة.</p>
+                <p className="mt-1 text-sm app-text-muted">يمكنك إبقاء الفرع بدون مدير، أو اختيار مدير موجود أو إنشاء حساب جديد.</p>
               </div>
 
-              <div className="space-y-4">
-                <Input
-                  label="اسم المدير"
-                  value={form.managerName}
-                  onChange={(event) => setForm((current) => ({ ...current, managerName: event.target.value }))}
-                  placeholder="أحمد محمد"
-                />
-                <Input
-                  label="البريد الإلكتروني"
-                  type="email"
-                  value={form.managerEmail}
-                  onChange={(event) => setForm((current) => ({ ...current, managerEmail: event.target.value }))}
-                  placeholder="manager@brand.com"
-                />
-                <Input
-                  label="رقم الهاتف"
-                  value={form.managerPhone}
-                  onChange={(event) => setForm((current) => ({ ...current, managerPhone: event.target.value }))}
-                  placeholder="01012345678"
-                />
-                <Input
-                  label="كلمة المرور"
-                  type="password"
-                  value={form.managerPassword}
-                  onChange={(event) => setForm((current) => ({ ...current, managerPassword: event.target.value }))}
-                  placeholder={editingBranch ? 'اتركها فارغة إذا لم ترد التغيير' : 'أدخل كلمة المرور'}
-                />
+              <div className="mb-6 flex overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-black/[0.02] p-1 dark:bg-white/[0.02]">
+                <button
+                  type="button"
+                  onClick={() => setManagerSelectionMode('none')}
+                  className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                    managerSelectionMode === 'none'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  بدون مدير
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManagerSelectionMode('existing')}
+                  className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                    managerSelectionMode === 'existing'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  اختيار حالي
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManagerSelectionMode('new')}
+                  className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                    managerSelectionMode === 'new'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  مدير جديد
+                </button>
               </div>
+
+              {managerSelectionMode === 'existing' && (
+                <div className="space-y-4 animate-fade-in">
+                  <Select
+                    label="اختر المدير"
+                    value={form.managerId}
+                    onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
+                  >
+                    <option value="">-- اختر مدير --</option>
+                    {availableManagers.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name} {m.email ? `(${m.email})` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+
+              {managerSelectionMode === 'new' && (
+                <div className="space-y-4 animate-fade-in">
+                  <Input
+                    label="اسم المدير"
+                    value={form.managerName}
+                    onChange={(event) => setForm((current) => ({ ...current, managerName: event.target.value }))}
+                    placeholder="أحمد محمد"
+                  />
+                  <Input
+                    label="البريد الإلكتروني"
+                    type="email"
+                    value={form.managerEmail}
+                    onChange={(event) => setForm((current) => ({ ...current, managerEmail: event.target.value }))}
+                    placeholder="manager@brand.com"
+                  />
+                  <Input
+                    label="رقم الهاتف"
+                    value={form.managerPhone}
+                    onChange={(event) => setForm((current) => ({ ...current, managerPhone: event.target.value }))}
+                    placeholder="01012345678"
+                  />
+                </div>
+              )}
             </Card>
           </div>
         </div>

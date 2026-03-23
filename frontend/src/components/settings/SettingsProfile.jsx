@@ -6,6 +6,7 @@ import {
 import { useAuthStore, useThemeStore, api } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
+import { useTranslation } from 'react-i18next';
 
 const InfoCard = ({ icon: Icon, label, value, color }) => (
   <div className="p-4 rounded-xl border border-gray-100 dark:border-white/5 bg-white dark:bg-slate-950 shadow-sm flex items-center gap-4">
@@ -26,6 +27,7 @@ const InfoCard = ({ icon: Icon, label, value, color }) => (
 );
 
 export default function SettingsProfile() {
+  const { t } = useTranslation();
   const { user, tenant, getMe, logoutAll } = useAuthStore();
   const { dark } = useThemeStore();
 
@@ -41,7 +43,6 @@ export default function SettingsProfile() {
       setUserForm({ name: user.name || '', email: user.email || '', phone: user.phone || '' });
     }
   }, [user]);
-
   const handleSaveUser = async () => {
     if (!userForm.name) return notify.warning('الاسم مطلوب');
     setSaving({ ...saving, user: true });

@@ -357,6 +357,27 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
+      <div className="app-surface rounded-[1.75rem] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="flex items-center gap-2 text-xl font-black text-gray-900 dark:text-white sm:text-2xl">
+              <FileText className="h-6 w-6 text-primary-600" />
+              إدارة الفواتير
+            </h1>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              متابعة الحالة، الدفعات، والطباعة من عرض مرن وواضح على الموبايل.
+            </p>
+          </div>
+          <Button
+            icon={<Plus className="w-5 h-5" />}
+            onClick={openCreate}
+            className="w-full sm:w-auto shadow-lg shadow-primary-500/20"
+          >
+            إنشاء فاتورة جديدة
+          </Button>
+        </div>
+      </div>
+
       {/* Header Actions */}
       <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -407,14 +428,6 @@ export default function InvoicesPage() {
         >
           إعادة الفلاتر
         </button>
-
-        <Button
-          icon={<Plus className="w-5 h-5" />}
-          onClick={openCreate}
-          className="w-full sm:w-auto shadow-lg shadow-primary-500/20"
-        >
-          إنشاء فاتورة جديدة
-        </Button>
       </div>
 
       {loading ? <OwnerTableSkeleton rows={10} columns={8} /> : invoices.length === 0 ? (
@@ -425,7 +438,120 @@ export default function InvoicesPage() {
         />
       ) : (
         <>
-          <Card className="overflow-hidden rounded-3xl">
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {invoices.map((inv) => (
+              <Card key={inv._id} className="overflow-hidden rounded-[1.5rem] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-primary-600 dark:text-primary-400">{inv.invoiceNumber}</p>
+                    <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white">{inv.customer?.name || '—'}</p>
+                    <p className="mt-1 text-xs text-gray-400 dark:text-white/60">{inv.customer?.phone || 'بدون هاتف'}</p>
+                  </div>
+                  <div className="shrink-0">
+                    {statusBadge(inv.status)}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">الإجمالي</p>
+                    <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{fmt(inv.totalAmount)} ج.م</p>
+                  </div>
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">المتبقي</p>
+                    <p className={`mt-1 text-sm font-black ${inv.remainingAmount > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {inv.remainingAmount > 0 ? `${fmt(inv.remainingAmount)} ج.م` : 'مسدد'}
+                    </p>
+                  </div>
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">الفرع</p>
+                    <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white">{inv.branch?.name || '—'}</p>
+                  </div>
+                  <div className="app-surface-muted rounded-2xl p-3">
+                    <p className="text-[10px] text-gray-400">طريقة الدفع</p>
+                    <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white">{methodLabel(inv.paymentMethod)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-white/60">
+                  <span>{new Date(inv.createdAt).toLocaleDateString('ar-EG')}</span>
+                  <span>{new Date(inv.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  {inv.remainingAmount > 0 ? (
+                    <>
+                      <button
+                        onClick={() => openPay(inv)}
+                        className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        title="تسجيل دفعة"
+                      >
+                        <CreditCard className="mx-auto w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handlePayAll(inv)}
+                        className="rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                        title="سداد كامل"
+                      >
+                        <Check className="mx-auto w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openLinkModal(inv)}
+                        className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+                        title="إنشاء رابط دفع"
+                      >
+                        <LinkIcon className="mx-auto w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="col-span-3 flex items-center justify-center rounded-xl bg-emerald-50 p-2.5 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleSendWhatsApp(inv)}
+                    className="rounded-xl bg-green-50 p-2.5 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+                    title="إرسال عبر واتساب"
+                  >
+                    <Send className="mx-auto w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handlePrintDocument(inv, 'receipt')}
+                    className="rounded-xl bg-slate-50 p-2.5 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300"
+                    title="طباعة الإيصال"
+                  >
+                    <Printer className="mx-auto w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handlePrintDocument(inv, 'delivery')}
+                    className="rounded-xl bg-cyan-50 p-2.5 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-300"
+                    title="طباعة تيكيت التوصيل"
+                  >
+                    <Truck className="mx-auto w-4 h-4" />
+                  </button>
+                  {!inv.shippingDetails?.waybillNumber ? (
+                    <button
+                      onClick={() => handleCreateWaybill(inv)}
+                      className="rounded-xl bg-orange-50 p-2.5 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
+                      title="إنشاء بوليصة شحن"
+                    >
+                      <Send className="mx-auto w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleTrackWaybill(inv)}
+                      className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                      title={`تتبع الشحنة: ${inv.shippingDetails.waybillNumber}`}
+                    >
+                      <ExternalLink className="mx-auto w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="hidden overflow-hidden rounded-3xl md:block">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] text-sm text-right">
                 <thead>

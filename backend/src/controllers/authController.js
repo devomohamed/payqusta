@@ -1,8 +1,8 @@
 /**
- * Auth Controller — Registration, Login, Token Management
- * Handles vendor registration (creates tenant + user)
+ * Auth Controller - Registration, Login, Token Management
  */
 
+const crypto = require('crypto');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 const Plan = require('../models/Plan');
@@ -11,8 +11,8 @@ const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const logger = require('../utils/logger');
-const crypto = require('crypto');
 const emailService = require('../services/EmailService');
+const ActivationService = require('../services/ActivationService');
 const catchAsync = require('../utils/catchAsync');
 const { getUserPermissions } = require('../middleware/checkPermission');
 const { getStarterCategorySettings, seedStarterCatalogForTenant } = require('../services/starterCatalogService');
@@ -20,23 +20,16 @@ const { processImage, deleteFile } = require('../middleware/upload');
 const { resolveUserRoleAssignment, resolveUserBranchAssignment } = require('../utils/userAccessHelpers');
 
 class AuthController {
-  /**
-   * POST /api/v1/auth/register
-   * Register a new vendor (creates Tenant + User)
-   */
   register = catchAsync(async (req, res, next) => {
     const { name, email, phone, password, storeName, storePhone, storeAddress } = req.body;
 
-    // Check if email exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(AppError.conflict('البريد الإلكتروني مسجل بالفعل'));
     }
 
-    // Fetch the free plan if it exists
     const freePlan = await Plan.findOne({ price: 0 });
 
-    // Create Tenant first
     const tenant = await Tenant.create({
       name: storeName || `متجر ${name}`,
       businessInfo: {
@@ -57,7 +50,6 @@ class AuthController {
       },
     });
 
-    // Create User (Vendor role)
     const user = await User.create({
       name,
       email,
@@ -65,17 +57,19 @@ class AuthController {
       password,
       role: 'admin',
       tenant: tenant._id,
+      invitation: {
+        status: 'activated',
+        channel: 'none',
+        fallbackChannel: 'none',
+        activatedAt: new Date(),
+      },
     });
 
-    // Link tenant to owner
     tenant.owner = user._id;
     await tenant.save();
     await seedStarterCatalogForTenant(tenant._id);
 
-    // Generate token
     const token = user.generateAuthToken();
-
-    // Update last login
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
@@ -93,9 +87,6 @@ class AuthController {
     }, 'تم إنشاء الحساب بنجاح');
   });
 
-  /**
-   * POST /api/v1/auth/login
-   */
   login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
@@ -103,10 +94,19 @@ class AuthController {
       return next(AppError.badRequest('البريد الإلكتروني وكلمة المرور مطلوبان'));
     }
 
-    // Find user with password
-    const user = await User.findOne({ email }).select('+password').populate('tenant', 'name slug branding subscription customDomain customDomainStatus customDomainLastCheckedAt');
+    const user = await User.findOne({ email })
+      .select('+password')
+      .populate('tenant', 'name slug branding subscription customDomain customDomainStatus customDomainLastCheckedAt');
 
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
+      return next(AppError.unauthorized('بيانات الدخول غير صحيحة'));
+    }
+
+    if (!user.password || ['pending', 'sent', 'fallback_sent'].includes(user.invitation?.status)) {
+      return next(AppError.unauthorized('الحساب لم يكتمل تفعيله بعد. افتح رابط الدعوة أو اطلب إعادة إرساله.'));
+    }
+
+    if (!(await user.comparePassword(password))) {
       return next(AppError.unauthorized('بيانات الدخول غير صحيحة'));
     }
 
@@ -114,14 +114,10 @@ class AuthController {
       return next(AppError.unauthorized('تم تعطيل هذا الحساب'));
     }
 
-    // Generate token
     const token = user.generateAuthToken();
-
-    // Update last login
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
-    // Audit log
     if (user.tenant) {
       AuditLog.log({
         tenant: user.tenant._id,
@@ -131,10 +127,9 @@ class AuthController {
         details: { ip: req.ip },
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
-      }).catch(() => { });
+      }).catch(() => {});
     }
 
-    // Get user permissions
     const permissions = await getUserPermissions(user);
 
     ApiResponse.success(res, {
@@ -145,11 +140,7 @@ class AuthController {
     }, 'تم تسجيل الدخول بنجاح');
   });
 
-  /**
-   * GET /api/v1/auth/me
-   * Get current logged-in user
-   */
-  getMe = catchAsync(async (req, res, next) => {
+  getMe = catchAsync(async (req, res) => {
     const user = await User.findById(req.user._id)
       .populate('tenant', 'name slug branding settings subscription customDomain customDomainStatus customDomainLastCheckedAt')
       .populate('branch', 'name')
@@ -157,7 +148,6 @@ class AuthController {
       .populate('assignedBranches', 'name')
       .populate('customRole');
 
-    // Get user permissions
     const permissions = await getUserPermissions(user);
 
     ApiResponse.success(res, {
@@ -167,14 +157,10 @@ class AuthController {
     });
   });
 
-  /**
-   * PUT /api/v1/auth/update-password
-   */
   updatePassword = catchAsync(async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
 
     const user = await User.findById(req.user._id).select('+password');
-
     if (!(await user.comparePassword(currentPassword))) {
       return next(AppError.unauthorized('كلمة المرور الحالية غير صحيحة'));
     }
@@ -183,28 +169,18 @@ class AuthController {
     await user.save();
 
     const token = user.generateAuthToken();
-
     ApiResponse.success(res, { token }, 'تم تغيير كلمة المرور بنجاح');
   });
 
-  /**
-   * POST /api/v1/auth/forgot-password
-   * Send password reset email
-   */
   forgotPassword = catchAsync(async (req, res, next) => {
     const { email } = req.body;
-    const shouldExposeResetDebug = process.env.PASSWORD_RESET_DEBUG_RESPONSE === 'true'
-      || process.env.NODE_ENV !== 'production';
 
     if (!email) {
       return next(AppError.badRequest('البريد الإلكتروني مطلوب'));
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
-
     if (!user) {
-      // Don't reveal if user exists or not (security)
       return ApiResponse.success(res, null, 'إذا كان البريد الإلكتروني مسجلاً، ستتلقى رسالة لإعادة تعيين كلمة المرور');
     }
 
@@ -212,24 +188,18 @@ class AuthController {
       return next(AppError.badRequest('هذا الحساب معطل'));
     }
 
-    // Generate reset token
     const resetToken = user.createPasswordResetToken();
-    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
     await user.save({ validateBeforeSave: false });
 
-    // Send email
     try {
       const emailResult = await emailService.sendPasswordResetEmailModern(user, resetToken);
       if (!emailResult?.success) {
         throw new Error(emailResult?.error || 'Email service reported an unsuccessful send');
       }
-      logger.info(`Password reset email sent to ${email}`);
     } catch (emailError) {
-      // Reset token if email fails
       user.passwordResetToken = undefined;
       user.passwordResetExpires = undefined;
       await user.save({ validateBeforeSave: false });
-
       logger.error('Failed to send password reset email:', emailError);
       return next(AppError.internal('حدث خطأ في إرسال البريد الإلكتروني'));
     }
@@ -237,10 +207,6 @@ class AuthController {
     ApiResponse.success(res, null, 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
   });
 
-  /**
-   * POST /api/v1/auth/reset-password/:token
-   * Reset password with token
-   */
   resetPassword = catchAsync(async (req, res, next) => {
     const { token } = req.params;
     const { password } = req.body;
@@ -253,10 +219,7 @@ class AuthController {
       return next(AppError.badRequest('كلمة المرور لا تقل عن 6 أحرف'));
     }
 
-    // Hash the token from URL
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
-    // Find user with valid token
     const user = await User.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
@@ -266,24 +229,41 @@ class AuthController {
       return next(AppError.badRequest('الرابط غير صالح أو منتهي الصلاحية'));
     }
 
-    // Set new password
     user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save();
 
-    // Generate new token
     const authToken = user.generateAuthToken();
-
     logger.info(`Password reset successful for ${user.email}`);
 
     ApiResponse.success(res, { token: authToken }, 'تم إعادة تعيين كلمة المرور بنجاح');
   });
 
-  /**
-   * PUT /api/v1/auth/update-profile
-   * Update user name and phone
-   */
+  getActivationDetails = catchAsync(async (req, res) => {
+    const preview = await ActivationService.getActivationPreview(req.params.token);
+    ApiResponse.success(res, preview);
+  });
+
+  activateAccount = catchAsync(async (req, res, next) => {
+    const { password } = req.body;
+
+    if (!password || password.length < 8) {
+      return next(AppError.badRequest('كلمة المرور يجب أن تكون 8 أحرف على الأقل'));
+    }
+
+    const result = await ActivationService.activateByToken(req.params.token, password);
+
+    if (result.actorType === 'user') {
+      return ApiResponse.success(res, {
+        actorType: result.actorType,
+        token: result.actor.generateAuthToken(),
+      }, 'تم تفعيل الحساب بنجاح');
+    }
+
+    ApiResponse.success(res, { actorType: result.actorType }, 'تم تفعيل الحساب بنجاح');
+  });
+
   updateProfile = catchAsync(async (req, res, next) => {
     const { name, phone } = req.body;
 
@@ -294,14 +274,9 @@ class AuthController {
     if (phone) user.phone = phone;
 
     await user.save({ validateBeforeSave: false });
-
     ApiResponse.success(res, { user: Helpers.sanitizeUser(user) }, 'تم تحديث الملف الشخصي بنجاح');
   });
 
-  /**
-   * PUT /api/v1/auth/update-avatar
-   * Upload user avatar
-   */
   updateAvatar = catchAsync(async (req, res, next) => {
     if (!req.file) return next(AppError.badRequest('يرجى اختيار صورة'));
 
@@ -326,10 +301,6 @@ class AuthController {
     ApiResponse.success(res, { avatar: user.avatar }, 'تم تحديث الصورة الشخصية');
   });
 
-  /**
-   * DELETE /api/v1/auth/remove-avatar
-   * Remove user avatar
-   */
   removeAvatar = catchAsync(async (req, res, next) => {
     const user = await User.findById(req.user._id);
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
@@ -345,24 +316,29 @@ class AuthController {
     ApiResponse.success(res, null, 'تم حذف الصورة الشخصية');
   });
 
-  /**
-   * POST /api/v1/auth/add-user
-   * Add a user to the tenant (supplier, coordinator, etc.)
-   */
   addUser = catchAsync(async (req, res, next) => {
-    const { name, email, phone, password, role, customRole, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      role,
+      customRole,
+      branch,
+      primaryBranch,
+      assignedBranches,
+      branchAccessMode,
+      invitationChannel,
+    } = req.body;
 
-    // Basic role string validation
     if (!role || typeof role !== 'string') {
       return next(AppError.badRequest('يرجى تحديد الدور'));
     }
 
-    if (!password || password.length < 8) {
-      return next(AppError.badRequest('كلمة المرور مطلوبة ويجب أن تكون 8 أحرف على الأقل'));
+    if (!email && !phone) {
+      return next(AppError.badRequest('أدخل بريداً إلكترونياً أو رقم هاتف لإرسال الدعوة'));
     }
 
-    // Check if email exists in this tenant
-    const existing = await User.findOne({ email, tenant: req.tenantId });
+    const existing = email ? await User.findOne({ email, tenant: req.tenantId }) : null;
     if (existing) {
       return next(AppError.badRequest('البريد الإلكتروني موجود بالفعل في هذا المتجر'));
     }
@@ -382,27 +358,38 @@ class AuthController {
       name,
       email,
       phone,
-      password,
       role: roleAssignment.role,
       customRole: roleAssignment.customRole,
       tenant: req.tenantId,
+      isActive: false,
       ...(branchAssignment || {}),
+    });
+
+    const invitation = await ActivationService.inviteUser(user, null, {
+      preferredChannel: invitationChannel || 'auto',
     });
 
     ApiResponse.created(res, {
       user: Helpers.sanitizeUser(user),
-    }, 'تم إضافة المستخدم بنجاح');
+      invitation,
+    }, 'تمت إضافة المستخدم بنجاح');
   });
 
-  /**
-   * GET /api/v1/auth/users
-   * Get all users for the current tenant
-   */
-  getTenantUsers = catchAsync(async (req, res, next) => {
+  resendTenantUserInvitation = catchAsync(async (req, res) => {
+    const result = await ActivationService.resendUserInvitation(
+      req.params.id,
+      req.tenantId,
+      req.body?.invitationChannel || 'auto'
+    );
+
+    ApiResponse.success(res, result, 'تمت إعادة إرسال الدعوة');
+  });
+
+  getTenantUsers = catchAsync(async (req, res) => {
     const { page, limit, skip } = Helpers.getPaginationParams(req.query);
     const filter = {
       tenant: req.tenantId,
-      _id: { $ne: req.user._id } // Exclude current user
+      _id: { $ne: req.user._id },
     };
 
     if (req.query.search) {
@@ -429,10 +416,6 @@ class AuthController {
     ApiResponse.paginated(res, users, { page, limit, total });
   });
 
-  /**
-   * PUT /api/v1/auth/users/:id
-   * Update a user in the current tenant
-   */
   updateTenantUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { name, phone, role, customRole, password, isActive, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
@@ -441,7 +424,7 @@ class AuthController {
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
 
     if (name) user.name = name;
-    if (phone) user.phone = phone;
+    if (phone !== undefined) user.phone = phone;
     if (typeof isActive === 'boolean') user.isActive = isActive;
     if (password) user.password = password;
 
@@ -473,39 +456,31 @@ class AuthController {
     }
 
     await user.save();
-
     ApiResponse.success(res, { user: Helpers.sanitizeUser(user) }, 'تم تحديث البيانات بنجاح');
   });
 
-  /**
-   * DELETE /api/v1/auth/users/:id
-   * Deactivate a user in the current tenant
-   */
   deleteTenantUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-
     const user = await User.findOne({ _id: id, tenant: req.tenantId });
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
 
-    // Prevent deleting the last vendor/admin? 
-    // For now just soft delete
+    if (req.query.hardDelete === 'true') {
+      await User.deleteOne({ _id: id, tenant: req.tenantId });
+      return ApiResponse.success(res, null, 'تم حذف المستخدم نهائياً');
+    }
+
     user.isActive = false;
     await user.save({ validateBeforeSave: false });
 
     ApiResponse.success(res, null, 'تم تعطيل المستخدم');
   });
 
-  /**
-   * POST /api/v1/auth/logout-all
-   * Logout from all devices by incrementing sessionVersion
-   */
   logoutAll = catchAsync(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { $inc: { sessionVersion: 1 } });
 
-    // Audit log (non-blocking)
     if (req.user) {
       AuditLog.log({
-        tenant: req.user.tenant || req.tenantId, // Handle cases where tenant might be in different places
+        tenant: req.user.tenant || req.tenantId,
         user: req.user._id,
         action: 'logout_all',
         resource: 'auth',
@@ -518,10 +493,7 @@ class AuthController {
     ApiResponse.success(res, null, 'تم تسجيل الخروج من جميع الأجهزة بنجاح');
   });
 
-  /**
-   * POST /api/v1/auth/logout
-   */
-  logout = catchAsync(async (req, res, next) => {
+  logout = catchAsync(async (req, res) => {
     if (req.user) {
       AuditLog.log({
         tenant: req.user.tenant || req.tenantId,
@@ -533,6 +505,7 @@ class AuthController {
         userAgent: req.get('User-Agent'),
       }).catch((err) => logger.error(`Logout audit log failed: ${err.message}`));
     }
+
     ApiResponse.success(res, null, 'تم تسجيل الخروج بنجاح');
   });
 }

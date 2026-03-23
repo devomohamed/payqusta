@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Shield, Calendar, Download, RefreshCw, AlertTriangle, Star, Users, DollarSign, Package } from 'lucide-react';
+import { BarChart3, TrendingUp, Shield, Calendar, Download, AlertTriangle, Users, DollarSign, Package } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import toast from 'react-hot-toast';
-import { dashboardApi, api } from '../store';
+import { dashboardApi } from '../store';
 import { Card, Badge, LoadingSpinner } from '../components/UI';
 
 const TABS = [
@@ -68,31 +68,64 @@ export default function ReportsPage() {
     toast.success('تم تصدير التقرير ✅');
   };
 
+  const reportHighlights = activeTab === 'profit'
+    ? [
+      { label: 'أقوى طريقة دفع', value: profitData?.revenueByMethod?.[0]?._id === 'cash' ? 'نقد' : profitData?.revenueByMethod?.[0]?._id === 'installment' ? 'أقساط' : profitData?.revenueByMethod?.[0]?._id === 'deferred' ? 'آجل' : '—' },
+      { label: 'أفضل العملاء', value: `${profitData?.profitableCustomers?.length || 0}` },
+      { label: 'منتجات رابحة', value: `${profitData?.profitableProducts?.length || 0}` },
+    ]
+    : activeTab === 'risk'
+      ? [
+        { label: 'مخاطر مرتفعة', value: `${riskData?.summary?.high || 0}` },
+        { label: 'مخاطر متوسطة', value: `${riskData?.summary?.medium || 0}` },
+        { label: 'إجمالي المستحقات', value: `${fmt(riskData?.summary?.totalOutstanding)} ج.م` },
+      ]
+      : [
+        { label: 'متأخرات', value: `${fmt(collectionsData?.overdue?.total)} ج.م` },
+        { label: 'اليوم', value: `${fmt(collectionsData?.today?.total)} ج.م` },
+        { label: 'هذا الأسبوع', value: `${fmt(collectionsData?.week?.total)} ج.م` },
+      ];
+
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      {/* Header */}
-      <div className="app-surface-muted flex flex-wrap items-center gap-3 rounded-3xl p-4 sm:p-5">
-        <div className="app-surface flex h-11 w-11 items-center justify-center rounded-2xl text-violet-600 dark:text-violet-300">
-          <BarChart3 className="w-5 h-5" />
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-slate-950 via-indigo-950 to-primary-700 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(79,70,229,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <BarChart3 className="h-3.5 w-3.5" />
+              مركز ذكاء الأعمال
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">التقارير والتحليلات</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+              راقب الربحية والمخاطر والتحصيل من واجهة أخف على الموبايل مع تبويبات أوضح وقراءة أسرع للبيانات.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
+            {reportHighlights.map((item) => (
+              <div key={item.label} className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                <p className="text-xs font-bold text-white/65">{item.label}</p>
+                <p className="mt-2 text-lg font-black">{item.value}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">التقارير والتحليلات</h2>
-          <p className="text-xs text-gray-400 dark:text-white/60">ذكاء الأعمال وتحليل الأرباح والمخاطر</p>
-        </div>
-      </div>
+      </section>
 
       {/* Tabs */}
-      <div className="app-surface-muted flex gap-2 rounded-2xl p-1">
-        {TABS.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-              activeTab === tab.key
-                ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300'
-                : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
-            }`}>
-            <tab.icon className="w-4 h-4" /> {tab.label}
-          </button>
-        ))}
+      <div className="app-surface-muted overflow-x-auto rounded-2xl p-1 no-scrollbar">
+        <div className="flex min-w-max gap-2">
+          {TABS.map((tab) => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`flex min-w-[150px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 sm:flex-1 ${
+                activeTab === tab.key
+                  ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300'
+                  : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
+              }`}>
+              <tab.icon className="w-4 h-4" /> {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? <LoadingSpinner /> : (
@@ -113,10 +146,10 @@ export default function ReportsPage() {
 
               {/* Profitable Products */}
               <Card className="p-5">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-bold flex items-center gap-2"><Package className="w-4 h-4 text-primary-500" /> أكثر المنتجات ربحاً</h3>
                   <button onClick={() => exportCSV(profitData.profitableProducts?.map((p) => ({ الاسم: p.name, الفئة: p.category, الإيراد: p.totalRevenue, التكلفة: p.totalCost, الربح: p.profit, الكمية: p.totalSold, 'هامش%': Math.round(p.margin) })), 'profit-products')}
-                    className="flex items-center gap-1 text-xs text-primary-500 font-semibold hover:bg-primary-50 dark:hover:bg-primary-500/10 px-2.5 py-1.5 rounded-lg transition-colors">
+                    className="flex items-center gap-1 self-start rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10">
                     <Download className="w-3.5 h-3.5" /> تصدير CSV
                   </button>
                 </div>
@@ -137,30 +170,62 @@ export default function ReportsPage() {
                     ))}
                   </div>
                   {(profitData.profitableProducts || []).length > 0 && (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={(profitData.profitableProducts || []).slice(0, 6)} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
-                        <Tooltip formatter={(v) => `${v.toLocaleString('ar-EG')} ج.م`} contentStyle={{ borderRadius: 12, fontFamily: 'Cairo' }} />
-                        <Bar dataKey="profit" fill="#10b981" radius={[0, 8, 8, 0]} name="الربح" />
-                        <Bar dataKey="totalRevenue" fill="#6366f1" radius={[0, 8, 8, 0]} name="الإيراد" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="hidden lg:block">
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={(profitData.profitableProducts || []).slice(0, 6)} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                          <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={(v) => `${v.toLocaleString('ar-EG')} ج.م`} contentStyle={{ borderRadius: 12, fontFamily: 'Cairo' }} />
+                          <Bar dataKey="profit" fill="#10b981" radius={[0, 8, 8, 0]} name="الربح" />
+                          <Bar dataKey="totalRevenue" fill="#6366f1" radius={[0, 8, 8, 0]} name="الإيراد" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   )}
                 </div>
               </Card>
 
               {/* Profitable Customers */}
               <Card className="p-5">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-bold flex items-center gap-2"><Users className="w-4 h-4 text-primary-500" /> أفضل العملاء</h3>
                   <button onClick={() => exportCSV(profitData.profitableCustomers?.map((c) => ({ الاسم: c.name, الهاتف: c.phone, الحالة: c.tier, المشتريات: c.totalSpent, المدفوع: c.totalPaid, الفواتير: c.invoiceCount })), 'top-customers')}
-                    className="flex items-center gap-1 text-xs text-primary-500 font-semibold hover:bg-primary-50 dark:hover:bg-primary-500/10 px-2.5 py-1.5 rounded-lg transition-colors">
+                    className="flex items-center gap-1 self-start rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10">
                     <Download className="w-3.5 h-3.5" /> تصدير CSV
                   </button>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="space-y-3 md:hidden">
+                  {(profitData.profitableCustomers || []).map((c, i) => (
+                    <div key={`${c.phone}-${i}`} className="app-surface-muted rounded-2xl p-4">
+                      <div className="flex items-start gap-3">
+                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${i < 3 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-white/60'}`}>{i + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-black text-gray-900 dark:text-white">{c.name}</p>
+                            {c.tier === 'vip' ? <Badge variant="warning">⭐ VIP</Badge> : c.tier === 'premium' ? <Badge variant="success">Premium</Badge> : <Badge variant="gray">عادي</Badge>}
+                          </div>
+                          <p className="mt-1 text-[11px] text-gray-400 dark:text-white/50">{c.phone || 'بدون هاتف'}</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/60">
+                          <p className="text-[10px] text-gray-400">المشتريات</p>
+                          <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{fmt(c.totalSpent)}</p>
+                        </div>
+                        <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/60">
+                          <p className="text-[10px] text-gray-400">المدفوع</p>
+                          <p className="mt-1 text-xs font-black text-emerald-500">{fmt(c.totalPaid)}</p>
+                        </div>
+                        <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/60">
+                          <p className="text-[10px] text-gray-400">الفواتير</p>
+                          <p className="mt-1 text-xs font-black text-primary-600">{c.invoiceCount}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-sm">
                     <thead><tr className="border-b border-gray-100/80 dark:border-white/10">
                       {['', 'العميل', 'الحالة', 'المشتريات', 'المدفوع', 'الفواتير'].map((h) => <th key={h} className="px-3 py-2 text-right text-xs font-bold text-gray-400">{h}</th>)}
@@ -226,28 +291,30 @@ export default function ReportsPage() {
                 </Card>
 
                 <Card className="p-5 col-span-2">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h4 className="font-bold text-sm">تقييم العملاء</h4>
                     <button onClick={() => exportCSV(riskData.customers?.map((c) => ({ الاسم: c.name, الهاتف: c.phone, 'درجة المخاطر': c.riskScore, المستوى: RISK_LABELS[c.riskLevel], المستحق: c.outstandingBalance, 'نسبة السداد%': c.paymentRatio, 'فواتير متأخرة': c.overdueInvoices })), 'risk-report')}
-                      className="flex items-center gap-1 text-xs text-primary-500 font-semibold hover:bg-primary-50 dark:hover:bg-primary-500/10 px-2.5 py-1.5 rounded-lg transition-colors">
+                      className="flex items-center gap-1 self-start rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10">
                       <Download className="w-3.5 h-3.5" /> تصدير
                     </button>
                   </div>
                   <div className="space-y-2 max-h-[350px] overflow-y-auto">
                     {(riskData.customers || []).map((c) => (
-                      <div key={c._id} className={`app-surface-muted flex items-center gap-3 rounded-2xl p-3 border-2 transition-colors ${
+                      <div key={c._id} className={`app-surface-muted flex flex-col gap-3 rounded-2xl border-2 p-3 transition-colors sm:flex-row sm:items-center ${
                         c.riskLevel === 'high' ? 'border-red-100 dark:border-red-500/20 bg-red-50/50 dark:bg-red-500/5'
                           : c.riskLevel === 'medium' ? 'border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5'
                           : 'border-gray-100 dark:border-gray-800'
                       }`}>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black" style={{ background: `${RISK_COLORS[c.riskLevel]}20`, color: RISK_COLORS[c.riskLevel] }}>
-                          {c.riskScore}
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black" style={{ background: `${RISK_COLORS[c.riskLevel]}20`, color: RISK_COLORS[c.riskLevel] }}>
+                            {c.riskScore}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-sm text-gray-900 dark:text-white">{c.name}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-white/50">{c.phone} · سداد: {c.paymentRatio}% · {c.overdueInvoices} متأخر</p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 dark:text-white">{c.name}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-white/50">{c.phone} · سداد: {c.paymentRatio}% · {c.overdueInvoices} متأخر</p>
-                        </div>
-                        <div className="text-left">
+                        <div className="flex items-center justify-between gap-3 sm:mr-auto sm:block sm:text-left">
                           <p className="text-sm font-bold" style={{ color: RISK_COLORS[c.riskLevel] }}>{fmt(c.outstandingBalance)} ج.م</p>
                           <Badge variant={c.riskLevel === 'high' ? 'danger' : c.riskLevel === 'medium' ? 'warning' : 'success'}>
                             {RISK_LABELS[c.riskLevel]}
@@ -296,11 +363,11 @@ export default function ReportsPage() {
                 { key: 'week', title: '🟡 خلال الأسبوع', items: collectionsData.week?.items, color: 'amber' },
               ].map((section) => (
                 <Card key={section.key} className="p-5">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h4 className="font-bold text-sm">{section.title} ({section.items?.length || 0})</h4>
                     {(section.items?.length || 0) > 0 && (
                       <button onClick={() => exportCSV(section.items.map((i) => ({ العميل: i.customer?.name, الهاتف: i.customer?.phone, الفاتورة: i.invoiceNumber, المبلغ: i.amount, المتبقي: i.remaining, تاريخ_الاستحقاق: new Date(i.dueDate).toLocaleDateString('ar-EG') })), `collections-${section.key}`)}
-                        className="flex items-center gap-1 text-xs text-primary-500 font-semibold"><Download className="w-3 h-3" /> CSV</button>
+                        className="flex items-center gap-1 self-start text-xs font-semibold text-primary-500"><Download className="w-3 h-3" /> CSV</button>
                     )}
                   </div>
                   {(section.items?.length || 0) === 0 ? (
@@ -308,13 +375,13 @@ export default function ReportsPage() {
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {section.items.map((item, idx) => (
-                        <div key={idx} className="app-surface-muted flex items-center gap-3 rounded-2xl p-3">
+                        <div key={idx} className="app-surface-muted flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-center">
                           <div className={`flex h-9 w-9 items-center justify-center rounded-xl font-bold text-xs ${COLLECTION_STYLES[section.color]?.badge || COLLECTION_STYLES.primary.badge}`}>{item.installmentNumber || '#'}</div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm text-gray-900 dark:text-white">{item.customer?.name || '—'}</p>
                             <p className="text-[10px] text-gray-400 dark:text-white/50">{item.invoiceNumber} · {new Date(item.dueDate).toLocaleDateString('ar-EG')}</p>
                           </div>
-                          <div className="text-left">
+                          <div className="flex items-center justify-between gap-3 sm:mr-auto sm:block sm:text-left">
                             <p className={`text-sm font-extrabold ${COLLECTION_STYLES[section.color]?.amount || COLLECTION_STYLES.primary.amount}`}>{fmt(item.remaining)} ج.م</p>
                             {item.paidAmount > 0 && <p className="text-[10px] text-emerald-500">دفع: {fmt(item.paidAmount)}</p>}
                           </div>

@@ -8,8 +8,9 @@ import {
   Palette,
   Users,
   Globe,
+  BellRing
 } from 'lucide-react';
-import { useThemeStore, useAuthStore } from '../store';
+import { useAuthStore } from '../store';
 import { LoadingSpinner } from '../components/UI';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
@@ -19,20 +20,21 @@ const SettingsWhatsApp = lazy(() => import('../components/settings/SettingsWhats
 const SettingsInstallments = lazy(() => import('../components/settings/SettingsInstallments'));
 const SettingsUsers = lazy(() => import('../components/settings/SettingsUsers'));
 const SettingsWhiteLabel = lazy(() => import('../components/settings/SettingsWhiteLabel'));
+const SettingsNotificationChannels = lazy(() => import('../components/settings/SettingsNotificationChannels'));
 const SettingsSystem = lazy(() => import('../components/settings/SettingsSystem'));
 
 const ALL_TABS = [
-  { id: 'store', label: 'المتجر', icon: Store, adminOnly: true },
-  { id: 'profile', label: 'حسابي', icon: User, adminOnly: false },
-  { id: 'users', label: 'المستخدمون', icon: Users, adminOnly: true },
-  { id: 'whatsapp', label: 'واتساب', icon: MessageCircle, adminOnly: true, superOnly: true },
-  { id: 'installments', label: 'الأقساط', icon: CreditCard, adminOnly: true },
-  { id: 'whitelabel', label: 'المظهر والهوية البصرية', icon: Palette, adminOnly: true },
-  { id: 'system', label: 'معلومات النظام', icon: Globe, adminOnly: false },
+  { id: 'profile', label: 'حسابي', description: 'المعلومات الشخصية والأمان', icon: User, adminOnly: false },
+  { id: 'store', label: 'المتجر', description: 'إعدادات المنشأة', icon: Store, adminOnly: true },
+  { id: 'users', label: 'المستخدمون', description: 'صلاحيات ومدراء النظام', icon: Users, adminOnly: true },
+  { id: 'installments', label: 'الأقساط', description: 'سياسات الدفع والتقسيط', icon: CreditCard, adminOnly: true },
+  { id: 'whitelabel', label: 'الهوية البصرية', description: 'تخصيص ألوان وشعار المنصة', icon: Palette, adminOnly: true },
+  { id: 'whatsapp', label: 'واتساب', description: 'ربط وإعداد رسائل واتساب', icon: MessageCircle, adminOnly: true, superOnly: true },
+  { id: 'notifications', label: 'الإشعارات', description: 'قنوات التنبيه والرسائل', icon: BellRing, adminOnly: true },
+  { id: 'system', label: 'حالة النظام', description: 'تحديثات ومعلومات النظام', icon: Globe, adminOnly: false },
 ];
 
 export default function SettingsPage() {
-  const { dark, themeMode } = useThemeStore();
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -45,105 +47,130 @@ export default function SettingsPage() {
   const defaultTab = tabs.length > 0 ? tabs[0].id : 'profile';
   const urlTab = searchParams.get('tab');
   const activeTab = (urlTab && tabs.some((tab) => tab.id === urlTab)) ? urlTab : defaultTab;
-  const currentThemeLabel = themeMode === 'system' ? 'تلقائي' : themeMode === 'dark' ? 'داكن' : 'فاتح';
-  const currentThemeDescription =
-    themeMode === 'system'
-      ? `المنصة تتبع إعدادات الجهاز الآن على الوضع ${dark ? 'الداكن' : 'الفاتح'}.`
-      : themeMode === 'dark'
-        ? 'مظهر مريح للعين مع أسطح أهدأ وتباين أعلى.'
-        : 'مظهر واضح ومضيء مناسب لبيئات العمل اليومية.';
 
   const setActiveTab = (id) => setSearchParams({ tab: id });
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'store':
-        return <SettingsStore />;
-      case 'profile':
-        return <SettingsProfile />;
-      case 'users':
-        return <SettingsUsers />;
-      case 'whatsapp':
-        return <SettingsWhatsApp />;
-      case 'installments':
-        return <SettingsInstallments />;
-      case 'whitelabel':
-        return <SettingsWhiteLabel />;
-      case 'system':
-        return <SettingsSystem />;
-      default:
-        return null;
+      case 'profile': return <SettingsProfile />;
+      case 'store': return <SettingsStore />;
+      case 'users': return <SettingsUsers />;
+      case 'installments': return <SettingsInstallments />;
+      case 'whitelabel': return <SettingsWhiteLabel />;
+      case 'whatsapp': return <SettingsWhatsApp />;
+      case 'notifications': return <SettingsNotificationChannels />;
+      case 'system': return <SettingsSystem />;
+      default: return null;
     }
   };
 
+  const currentTabInfo = tabs.find(t => t.id === activeTab);
+
   return (
-    <div className="space-y-6">
-      <section className="app-surface rounded-[1.75rem] p-5 sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-2xl">
-            <p className="app-text-muted text-xs font-black uppercase tracking-[0.18em]">التفضيلات العامة</p>
-            <h1 className="mt-2 text-2xl font-black text-gray-900 dark:text-white">الإعدادات وتجربة العرض</h1>
-            <p className="app-text-soft mt-2 text-sm leading-7">
-              نظّم طريقة ظهور المنصة للمستخدمين ووحّد تجربة الدارك مود واللايت مود عبر النظام كله.
-            </p>
-          </div>
-
-          <div className="app-surface-muted rounded-2xl p-4 text-right xl:max-w-sm">
-            <p className="app-text-muted text-xs font-black uppercase tracking-[0.18em]">الوضع الحالي</p>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-lg font-black text-gray-900 dark:text-white">{currentThemeLabel}</p>
-                <p className="app-text-soft mt-1 text-sm leading-6">{currentThemeDescription}</p>
-              </div>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ${dark ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'bg-white text-primary-600'}`}>
-                <Palette className="h-5 w-5" />
-              </div>
-            </div>
-          </div>
+    <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8 pb-12">
+      {/* Header Section */}
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">الإعدادات</h1>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
+            إدارة تفضيلات حسابك، إعدادات النظام، والتحكم في تجربة الاستخدام بشكل كامل.
+          </p>
         </div>
-
-        <div className="mt-5 border-t border-gray-200/70 pt-5 dark:border-white/10">
-          <ThemeModeSwitcher />
+        
+        {/* Theme Widget */}
+        <div className="flex items-center gap-3 app-surface rounded-2xl p-2 pr-4 shadow-sm border border-gray-100 dark:border-white/5 w-fit">
+          <div className="hidden sm:block">
+            <p className="text-xs font-bold text-gray-900 dark:text-white">مظهر النظام</p>
+          </div>
+          <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 hidden sm:block mx-1"></div>
+          <ThemeModeSwitcher compact={true} />
         </div>
-      </section>
+      </div>
 
-      <div className="flex min-h-[calc(100vh-240px)] flex-col gap-6 lg:h-[calc(100vh-240px)] lg:flex-row">
-        <div className="w-full flex-shrink-0 lg:w-72">
-          <div className="app-surface sticky top-6 h-full overflow-hidden rounded-[1.75rem]">
-            <div className="border-b border-gray-200/70 p-4 dark:border-white/10">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">الإعدادات</h2>
-            </div>
-
-            <nav className="space-y-1.5 p-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                const colorClass = isActive
-                  ? 'bg-primary-50 text-primary-600 shadow-sm ring-1 ring-primary-200/70 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-500/20'
-                  : 'app-text-soft hover:bg-gray-50 dark:hover:bg-white/5';
-
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right transition-all ${colorClass}`}
-                  >
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isActive ? 'bg-white text-primary-600 dark:bg-primary-500/10 dark:text-primary-300' : 'app-surface-muted app-text-muted'}`}>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 lg:min-h-[calc(100vh-220px)]">
+        {/* Sidebar Nav */}
+        <div className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-6">
+          <nav className="flex overflow-x-auto lg:flex-col gap-2 pb-3 lg:pb-0 no-scrollbar snap-x">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`group relative flex min-w-[220px] lg:min-w-0 items-center justify-between gap-3 rounded-2xl p-3 text-right transition-all duration-200 snap-start
+                    ${isActive 
+                      ? 'bg-primary-50 dark:bg-primary-500/10 shadow-sm ring-1 ring-primary-200/50 dark:ring-primary-500/20' 
+                      : 'hover:bg-gray-50 dark:hover:bg-white/5 active:scale-[0.98]'
+                    }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span 
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors
+                        ${isActive 
+                          ? 'bg-white text-primary-600 dark:bg-primary-500/20 dark:text-primary-400 shadow-sm' 
+                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700/50'
+                        }`}
+                    >
                       <Icon className="h-5 w-5" />
                     </span>
-                    <span className="font-bold">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
+                    <div>
+                      <p className={`font-bold transition-colors ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'}`}>
+                        {tab.label}
+                      </p>
+                      <p className={`text-xs mt-0.5 hidden sm:block ${isActive ? 'text-primary-600/70 dark:text-primary-400/70' : 'text-gray-500 dark:text-gray-500'}`}>
+                        {tab.description}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {isActive && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-500 rounded-l-full dark:bg-primary-400 hidden lg:block"></div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        <div className="app-surface min-w-0 flex-1 overflow-y-auto rounded-[1.75rem] p-6">
-          <Suspense fallback={<LoadingSpinner text="جاري التحميل..." />}>
-            {renderTabContent()}
-          </Suspense>
+        {/* Content Area */}
+        <div className="flex-1 min-w-0 flex flex-col h-full">
+          <div className="app-surface rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden flex-1 flex flex-col bg-white dark:bg-gray-900/50 backdrop-blur-xl">
+            {/* Context Header */}
+            <div className="border-b border-gray-100 dark:border-white/5 px-6 py-5 sm:px-8 sm:py-6 bg-gray-50/50 dark:bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                {currentTabInfo && (
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                    <currentTabInfo.icon className="w-5 h-5" />
+                  </span>
+                )}
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white">
+                    {currentTabInfo?.label}
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {currentTabInfo?.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rendered View */}
+            <div className="p-6 sm:p-8 flex-1">
+              <Suspense 
+                fallback={
+                  <div className="flex h-40 items-center justify-center">
+                    <LoadingSpinner text="جاري التحميل..." />
+                  </div>
+                }
+              >
+                {renderTabContent()}
+              </Suspense>
+            </div>
+          </div>
         </div>
+        
       </div>
     </div>
   );

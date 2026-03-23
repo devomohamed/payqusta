@@ -1,10 +1,11 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Zap, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, useAuthStore, useThemeStore } from '../store';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
+import { Input } from '../components/UI';
 
 function formatPlanPrice(plan) {
   const price = Number(plan?.price || 0);
@@ -15,7 +16,6 @@ function formatPlanPrice(plan) {
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [registerData, setRegisterData] = useState({ name: '', storeName: '', phone: '' });
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -233,28 +233,18 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="auth-password" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">كلمة المرور</label>
-              <div className="relative">
-                <input
-                  id="auth-password"
-                  name="password"
-                  type={showPass ? 'text' : 'password'}
-                  autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`${authInputClass} pl-12`}
-                  placeholder="••••••"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
-                >
-                  {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
+              <Input
+                label="كلمة المرور"
+                id="auth-password"
+                name="password"
+                type="password"
+                autoComplete={isRegister ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••"
+                required
+                minLength={6}
+              />
             </div>
 
             {!isRegister && (

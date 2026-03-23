@@ -304,28 +304,33 @@ export default function StocktakePage() {
 
   return (
     <div className="relative space-y-5 pb-24 animate-fade-in">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white">
-            <CheckSquare className="w-6 h-6 text-primary-500" />
-            الجرد الشامل للمخزون
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            عدّ فعلي يدوي أو بالمسح، ثم حفظ الفروقات على الفرع المحدد مباشرة.
-          </p>
-        </div>
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+              <CheckSquare className="w-6 h-6" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Stocktake Console</p>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">الجرد الشامل للمخزون</h1>
+              <p className="mt-1 max-w-2xl text-sm leading-7 text-gray-500">
+                عدّ فعلي يدوي أو بالمسح، ثم حفظ الفروقات على الفرع المحدد مباشرة.
+              </p>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant={scanMode ? 'primary' : 'outline'} onClick={toggleScanMode}>
-            <Camera className="w-4 h-4" />
-            {scanMode ? 'إيقاف المسح' : 'بدء المسح'}
-          </Button>
-          <Button variant="ghost" onClick={resetCounts}>
-            <RefreshCw className="w-4 h-4" />
-            إعادة التعيين
-          </Button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Button variant={scanMode ? 'primary' : 'outline'} onClick={toggleScanMode} className="w-full sm:w-auto">
+              <Camera className="w-4 h-4" />
+              {scanMode ? 'إيقاف المسح' : 'بدء المسح'}
+            </Button>
+            <Button variant="ghost" onClick={resetCounts} className="w-full sm:w-auto">
+              <RefreshCw className="w-4 h-4" />
+              إعادة التعيين
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
       <div className="flex flex-wrap items-center gap-3">
         {!userBranchId && branches.length > 0 ? (
@@ -406,7 +411,64 @@ export default function StocktakePage() {
         />
       ) : (
         <Card className="overflow-hidden border-2 border-gray-200 dark:border-gray-800">
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-4 md:hidden">
+            {visibleProducts.map((product) => (
+              <div key={product._id} className="rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-extrabold text-gray-900 dark:text-white">{product.name}</p>
+                    <p className="mt-1 font-mono text-[10px] text-gray-400">{getDisplayCode(product)}</p>
+                    <p className="mt-1 text-xs text-gray-500">{product.category?.name || product.category || 'بدون فئة'}</p>
+                  </div>
+                  {product.diff === 0 ? (
+                    <Badge variant="gray">متطابق</Badge>
+                  ) : product.diff > 0 ? (
+                    <Badge variant="success">+{product.diff}</Badge>
+                  ) : (
+                    <Badge variant="danger">{product.diff}</Badge>
+                  )}
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                    <p className="text-[11px] text-gray-400">النظامي</p>
+                    <p className="mt-1 font-mono font-black text-gray-900 dark:text-white">{product.systemQty}</p>
+                  </div>
+                  <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                    <p className="text-[11px] text-gray-400">الفعلي</p>
+                    <p className="mt-1 font-mono font-black text-primary-600">{product.actualQty}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustQuantity(product._id, -1)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition-colors hover:bg-red-100 hover:text-red-600 dark:bg-gray-800"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    value={product.actualQty}
+                    onChange={(event) => handleQuantityChange(product._id, event.target.value)}
+                    onFocus={(event) => event.target.select()}
+                    className="w-24 rounded-xl border-2 border-primary-200 bg-white px-2 py-2 text-center font-mono font-bold transition-colors focus:border-primary-500 focus:outline-none dark:border-primary-800 dark:bg-gray-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustQuantity(product._id, 1)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition-colors hover:bg-emerald-100 hover:text-emerald-600 dark:bg-gray-800"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-right text-sm">
               <thead className="bg-gray-50/50 text-xs text-gray-500 dark:bg-gray-800/50">
                 <tr>
@@ -478,14 +540,14 @@ export default function StocktakePage() {
       )}
 
       {hasChanges ? (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-6 rounded-2xl border-2 border-primary-200 bg-white p-4 shadow-2xl dark:border-primary-800 dark:bg-gray-900">
+        <div className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1.5rem)] max-w-3xl -translate-x-1/2 flex-col items-start gap-4 rounded-2xl border-2 border-primary-200 bg-white p-4 shadow-2xl dark:border-primary-800 dark:bg-gray-900 sm:bottom-6 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
           <div>
             <p className="font-bold text-primary-700 dark:text-primary-400">توجد فروقات غير محفوظة</p>
             <p className="text-xs text-gray-500">يمكنك متابعة المسح أو الحفظ الآن.</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={resetCounts}>إعادة تعيين</Button>
-            <Button icon={<Save className="h-4 w-4" />} onClick={handleSaveStocktake} loading={saving}>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Button variant="ghost" onClick={resetCounts} className="flex-1 sm:flex-none">إعادة تعيين</Button>
+            <Button icon={<Save className="h-4 w-4" />} onClick={handleSaveStocktake} loading={saving} className="flex-1 sm:flex-none">
               اعتماد الجرد
             </Button>
           </div>

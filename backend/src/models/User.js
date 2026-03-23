@@ -1,5 +1,5 @@
 /**
- * User Model — Authentication & Authorization
+ * User Model - Authentication & Authorization
  * Supports multi-tenant with role-based access control
  */
 
@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { ROLES } = require('../config/constants');
+
 const BRANCH_ACCESS_MODES = ['all_branches', 'assigned_branches', 'single_branch'];
 
 const userSchema = new mongoose.Schema(
@@ -27,15 +28,13 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, 'رقم الهاتف مطلوب'],
       trim: true,
       match: [/^01[0125][0-9]{8}$/, 'رقم هاتف غير صالح، يجب أن يبدأ بـ 01 ويتكون من 11 رقم'],
     },
     password: {
       type: String,
-      required: [true, 'كلمة المرور مطلوبة'],
       minlength: [6, 'كلمة المرور لا تقل عن 6 أحرف'],
-      select: false, // Don't return password by default
+      select: false,
     },
     role: {
       type: String,
@@ -51,7 +50,6 @@ const userSchema = new mongoose.Schema(
     branch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch',
-      // Optional - for branch-level users
     },
     primaryBranch: {
       type: mongoose.Schema.Types.ObjectId,
@@ -70,7 +68,6 @@ const userSchema = new mongoose.Schema(
     isSuperAdmin: {
       type: Boolean,
       default: false,
-      // Super Admin = System Owner (can see all tenants)
     },
     customRole: {
       type: mongoose.Schema.Types.ObjectId,
@@ -83,13 +80,37 @@ const userSchema = new mongoose.Schema(
     }],
     avatar: { type: String, default: null },
     isActive: { type: Boolean, default: true },
-    sessionVersion: { type: Number, default: 0 }, // Incremented to invalidate all sessions
+    sessionVersion: { type: Number, default: 0 },
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: { type: String, select: false },
+    isEmailVerified: { type: Boolean, default: false },
+    isPhoneVerified: { type: Boolean, default: false },
     lastLogin: { type: Date },
     passwordChangedAt: { type: Date },
     passwordResetToken: { type: String },
     passwordResetExpires: { type: Date },
+    invitation: {
+      status: {
+        type: String,
+        enum: ['not_sent', 'pending', 'sent', 'fallback_sent', 'failed', 'activated', 'expired'],
+        default: 'not_sent',
+      },
+      channel: {
+        type: String,
+        enum: ['sms', 'email', 'auto', 'none'],
+        default: 'auto',
+      },
+      fallbackChannel: {
+        type: String,
+        enum: ['sms', 'email', 'none'],
+        default: 'none',
+      },
+      tokenHash: { type: String, default: '' },
+      expiresAt: { type: Date, default: null },
+      sentAt: { type: Date, default: null },
+      activatedAt: { type: Date, default: null },
+      lastError: { type: String, default: '' },
+    },
 
     // Gamification & Performance
     gamification: {
@@ -98,13 +119,12 @@ const userSchema = new mongoose.Schema(
       dailyTarget: { type: Number, default: 1000 },
       badges: [{
         id: String,
-        awardedAt: { type: Date, default: Date.now }
+        awardedAt: { type: Date, default: Date.now },
       }],
       streak: { type: Number, default: 0 },
-      lastSaleDate: { type: Date }
+      lastSaleDate: { type: Date },
     },
-    // Commission settings
-    commissionRate: { type: Number, default: 0, min: 0, max: 100 }, // Percentage of profit
+    commissionRate: { type: Number, default: 0, min: 0, max: 100 },
   },
   {
     timestamps: true,
@@ -113,9 +133,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Compound unique index: email is unique per tenant
 userSchema.index({ email: 1, tenant: 1 }, { unique: true });
-userSchema.index({ phone: 1, tenant: 1 });
+userSchema.index({ phone: 1, tenant: 1 }, { sparse: true });
 userSchema.index({ role: 1, tenant: 1 });
 userSchema.index({ primaryBranch: 1, tenant: 1 });
 
@@ -139,28 +158,26 @@ userSchema.pre('validate', function (next) {
   next();
 });
 
-// Hash password before saving
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
 
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
-  this.passwordChangedAt = Date.now() - 1000; // Ensure token is created after
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
-// Instance method: Compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password || !candidatePassword) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Instance method: Generate JWT token
 userSchema.methods.generateAuthToken = function () {
   return jwt.sign(
     {
       id: this._id,
       role: this.role,
-      tenant: this.tenant?._id ? this.tenant._id.toString() : this.tenant, // Ensure only ID is embedded
+      tenant: this.tenant?._id ? this.tenant._id.toString() : this.tenant,
       sv: this.sessionVersion || 0,
     },
     process.env.JWT_SECRET,
@@ -168,7 +185,6 @@ userSchema.methods.generateAuthToken = function () {
   );
 };
 
-// Instance method: Check if password changed after token was issued
 userSchema.methods.changedPasswordAfter = function (jwtTimestamp) {
   if (this.passwordChangedAt) {
     const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
@@ -177,18 +193,10 @@ userSchema.methods.changedPasswordAfter = function (jwtTimestamp) {
   return false;
 };
 
-// Instance method: Create password reset token
 userSchema.methods.createPasswordResetToken = function () {
-  // Generate random token
   const resetToken = crypto.randomBytes(32).toString('hex');
-
-  // Hash token and save to database
   this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-  // Set expiry time (1 hour)
   this.passwordResetExpires = Date.now() + 60 * 60 * 1000;
-
-  // Return unhashed token (to send via email)
   return resetToken;
 };
 

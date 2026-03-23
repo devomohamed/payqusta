@@ -13,6 +13,7 @@ on:
       - "docs/production-ops.md"
       - "docs/deployment.md"
       - "docs/environment-variables.md"
+      - "docs/release-checklist.md"
   pull_request:
     paths:
       - "backend/**"
@@ -22,6 +23,7 @@ on:
       - "docs/production-ops.md"
       - "docs/deployment.md"
       - "docs/environment-variables.md"
+      - "docs/release-checklist.md"
 
 jobs:
   backend-test:
@@ -49,6 +51,9 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci
+
+      - name: Report DB-backed E2E readiness
+        run: npm run test:e2e:readiness
 
       - name: Run backend CI test suite
         run: npm run test:ci
@@ -111,6 +116,9 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci
+
+      - name: Confirm DB-backed E2E readiness
+        run: npm run test:e2e:readiness
 
       - name: Run DB-backed E2E suite
         run: npm run test:e2e

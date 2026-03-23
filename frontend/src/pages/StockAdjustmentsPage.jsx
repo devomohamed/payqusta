@@ -161,22 +161,40 @@ export default function StockAdjustmentsPage() {
 
   return (
     <div className="space-y-6 p-6 animate-fade-in">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-2xl font-black text-transparent dark:from-white dark:to-gray-300">
-            تسويات المخزون
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">سجل التالف والعجز والفقد والتسويات اليدوية لكل فرع.</p>
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-slate-950 via-gray-900 to-blue-800 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(30,64,175,0.85)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Archive className="h-3.5 w-3.5" />
+              ضبط المخزون والتسويات
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">تسويات المخزون</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">سجل التالف والعجز والفقد والتسويات اليدوية لكل فرع من واجهة أوضح على الهاتف.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[460px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الإجمالي الظاهر</p>
+              <p className="mt-2 text-2xl font-black">{summary.total}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">تسويات بزيادة</p>
+              <p className="mt-2 text-2xl font-black">{summary.increases}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">نقص أو فاقد</p>
+              <p className="mt-2 text-2xl font-black">{summary.decreases}</p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => void fetchAdjustments()} icon={<RefreshCw className="h-4 w-4" />}>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Button variant="outline" onClick={() => void fetchAdjustments()} icon={<RefreshCw className="h-4 w-4" />} className="justify-center border-white/20 bg-white/10 text-white hover:bg-white/15">
             تحديث
           </Button>
-          <Button icon={<Plus className="h-5 w-5" />} onClick={() => setShowModal(true)}>
+          <Button icon={<Plus className="h-5 w-5" />} onClick={() => setShowModal(true)} className="justify-center bg-white text-blue-700 hover:bg-white/90">
             تسوية جديدة
           </Button>
         </div>
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="border-l-4 border-blue-500 p-4">
@@ -201,7 +219,34 @@ export default function StockAdjustmentsPage() {
         />
       ) : (
         <Card className="overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-4 md:hidden">
+            {adjustments.map((adjustment) => (
+              <div key={adjustment._id} className="app-surface-muted rounded-2xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-gray-900 dark:text-white">{adjustment.product?.name || 'منتج غير معروف'}</p>
+                    <p className="mt-1 text-[11px] text-gray-400">{adjustment.branch?.name || 'الفرع الرئيسي'} · {new Date(adjustment.createdAt).toLocaleDateString('ar-EG')}</p>
+                  </div>
+                  <Badge variant={TYPES[adjustment.type]?.color || 'gray'}>
+                    {TYPES[adjustment.type]?.label || adjustment.type}
+                  </Badge>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                    <p className="text-[10px] text-gray-400">الكمية</p>
+                    <p className="mt-1 text-xs font-black text-gray-900 dark:text-white" dir="ltr">{adjustment.quantity}</p>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                    <p className="text-[10px] text-gray-400">بواسطة</p>
+                    <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{adjustment.user?.name || 'غير محدد'}</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-gray-500">{getProductCode(adjustment.product)}</p>
+                {adjustment.reason ? <p className="mt-2 text-xs text-gray-500">{adjustment.reason}</p> : null}
+              </div>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-right text-sm">
               <thead className="border-b border-gray-100 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-800/50">
                 <tr>

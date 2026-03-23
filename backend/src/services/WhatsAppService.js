@@ -17,6 +17,7 @@ const DEFAULT_TEMPLATES = {
   INVOICE: 'payqusta_invoice',
   RESTOCK: 'payqusta_restock',
   PAYMENT_RECEIVED: 'payqusta_payment',
+  ACTIVATION: 'payqusta_activation',
 };
 
 // Default Language codes per template
@@ -138,6 +139,7 @@ class WhatsAppService {
       reminder: DEFAULT_TEMPLATES.PAYMENT_REMINDER,
       payment: DEFAULT_TEMPLATES.PAYMENT_RECEIVED,
       restock: DEFAULT_TEMPLATES.RESTOCK,
+      activation: DEFAULT_TEMPLATES.ACTIVATION,
     };
     return purposeMap[purpose] || DEFAULT_TEMPLATES.INVOICE;
   }
@@ -487,6 +489,32 @@ class WhatsAppService {
     const templateName = this.getTemplateName('payment', tenantWhatsapp);
     const lang = this.getTemplateLanguage('payment', tenantWhatsapp);
     return this.sendTemplate(phone, templateName, lang, params, [], [], tenantWhatsapp);
+  }
+
+  /**
+   * Send activation link using template
+   * Params: {{1}} = name, {{2}} = activation_url
+   */
+  async sendActivationTemplate(phone, name, url, tenantWhatsapp = null) {
+    const params = [name, url];
+    const templateName = this.getTemplateName('activation', tenantWhatsapp);
+    const lang = this.getTemplateLanguage('activation', tenantWhatsapp);
+    
+    // Fallback to regular message if template fails or not set up
+    // In a production environment, we'd prefer templates but for trial/sandbox, a regular message might work better if session is open
+    const result = await this.sendTemplate(phone, templateName, lang, params, [], [], tenantWhatsapp);
+    
+    if (!result.success && result.reason === 'not_configured') {
+       // if not even configured, fail early
+       return result;
+    }
+    
+    if (!result.success) {
+      logger.info(`[WhatsApp] Activation template failed, trying regular message as fallback...`);
+      return this.sendMessage(phone, `مرحباً ${name} 👋\n\nشكراً لانضمامك إلينا! يرجى تفعيل حسابك من خلال الرابط التالي:\n\n${url}`, tenantWhatsapp);
+    }
+    
+    return result;
   }
 
   /**

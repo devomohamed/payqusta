@@ -259,30 +259,32 @@ export default function AgingReportPage() {
 
   return (
     <div className="space-y-6 animate-fade-in app-text-soft">
-      {/* Header */}
-      <div className="app-surface-muted flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="app-surface flex h-12 w-12 items-center justify-center rounded-2xl text-orange-600 dark:text-orange-300">
-            <Clock className="w-6 h-6" />
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="app-surface flex h-12 w-12 items-center justify-center rounded-2xl text-orange-600 dark:text-orange-300">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-500/80">Receivables Aging</p>
+              <h1 className="text-2xl font-extrabold">تقرير أعمار الديون</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-400">تحليل عمر المديونيات حسب الفترة الزمنية مع فرز وتصفية أوضح على الهاتف.</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-extrabold">تقرير أعمار الديون</h1>
-            <p className="text-sm text-gray-400">تحليل عمر المديونيات حسب الفترة الزمنية</p>
-          </div>
-        </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchAgingData} icon={<RefreshCw className="w-4 h-4" />}>
-            تحديث
-          </Button>
-          <Button variant="outline" onClick={printReport} icon={<Printer className="w-4 h-4" />}>
-            طباعة
-          </Button>
-          <Button onClick={exportToExcel} icon={<FileSpreadsheet className="w-4 h-4" />}>
-            تصدير Excel
-          </Button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <Button variant="outline" onClick={fetchAgingData} icon={<RefreshCw className="w-4 h-4" />} className="w-full sm:w-auto">
+              تحديث
+            </Button>
+            <Button variant="outline" onClick={printReport} icon={<Printer className="w-4 h-4" />} className="w-full sm:w-auto">
+              طباعة
+            </Button>
+            <Button onClick={exportToExcel} icon={<FileSpreadsheet className="w-4 h-4" />} className="w-full sm:w-auto">
+              تصدير Excel
+            </Button>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -380,7 +382,48 @@ export default function AgingReportPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="space-y-3 p-4 md:hidden">
+              {paginatedCustomers.map((customer) => (
+                <div key={customer._id} className="rounded-3xl border border-white/60 p-4 dark:border-white/10">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-white font-bold">
+                        {customer.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold">{customer.name}</p>
+                        <p className="text-xs text-gray-400">{customer.phone}</p>
+                      </div>
+                    </div>
+                    <Badge variant="warning">{fmt(customer.financials?.outstandingBalance)} ج.م</Badge>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    {AGING_BUCKETS.map((bucket) => (
+                      <div key={bucket.key} className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
+                        <p className="text-[11px] text-gray-400">{bucket.label}</p>
+                        <p className={`mt-1 font-bold ${BUCKET_STYLES[bucket.key]?.text}`}>
+                          {customer.aging?.[bucket.key] > 0 ? fmt(customer.aging[bucket.key]) : '-'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                    <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                      <p className="text-gray-400">متوسط أيام السداد</p>
+                      <p className="mt-1 font-bold">{customer.paymentBehavior?.avgPaymentDays || 0} يوم</p>
+                    </div>
+                    <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
+                      <p className="text-gray-400">الحد الائتماني</p>
+                      <p className="mt-1 font-bold">{fmt(customer.financials?.creditLimit)} ج.م</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-sm">
                 <thead className="app-surface-muted">
                   <tr>

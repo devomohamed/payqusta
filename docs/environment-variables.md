@@ -14,6 +14,32 @@ Notes:
 - `import.meta.env.PROD` is a Vite built-in flag, not a manually configured variable.
 - `MONGO_URI` still appears in helper scripts and should be treated as legacy. The main runtime uses `MONGODB_URI`.
 
+## Environment matrix
+
+Use this matrix to remove ambiguity between local development, staging, production, and CI.
+
+| Variable / concern | Dev | Staging | Production | CI |
+| --- | --- | --- | --- | --- |
+| `NODE_ENV` | `development` | `production` | `production` | `test` |
+| `MONGODB_URI` | required | required | required | optional unless integration tests need it |
+| `TEST_MONGODB_URI` | optional | optional | not used by runtime | required only for DB-backed E2E |
+| `JWT_SECRET` | required | required | required | required |
+| `CLIENT_URL` | local frontend URL | staging public URL | production public URL | not required unless smoke scripts use it |
+| `APP_URL` | local frontend URL | staging public URL | production public URL | not required unless smoke scripts use it |
+| `PLATFORM_ROOT_DOMAIN` | optional | required | required | recommended |
+| `UPLOAD_STORAGE` | `local` allowed | explicit durable mode required | explicit durable mode required | not required |
+| Upload durability target | local disk acceptable | `gcs` preferred, `mongodb` approved fallback | `gcs` preferred, `mongodb` approved fallback | N/A |
+| `OPS_BEARER_TOKEN` | optional | recommended | required for protected rollout validation | optional |
+| `OPS_MONITOR_URL` | optional | recommended | recommended | optional |
+| Payment/shipping secrets | optional/sandbox | required when feature is enabled | required when feature is enabled | not required unless tests depend on them |
+
+Rules:
+
+- Do not leave `UPLOAD_STORAGE` implicit in staging or production.
+- Do not use `UPLOAD_STORAGE=local` in staging or production.
+- Treat `CLIENT_URL`, `APP_URL`, and `PLATFORM_ROOT_DOMAIN` as release blockers for hosted environments.
+- Store `TEST_MONGODB_URI` only in local private env files or CI secrets, never in committed examples with real credentials.
+
 ## Minimum local backend setup
 
 ```env
@@ -40,8 +66,8 @@ APP_URL=http://127.0.0.1:5173
 | --- | --- | --- | --- |
 | `MONGODB_URI` | Yes | none | Main MongoDB connection string used by the backend runtime. |
 | `MONGO_URI` | No | none | Legacy helper-script fallback; not the primary runtime variable. |
-| `TEST_MONGODB_URI` | No | none | Dedicated database connection string for DB-backed E2E runs. |
-| `TEST_MONGODB_DB_NAME` | No | `payqusta_e2e` | Overrides the database name used by DB-backed E2E suites. |
+| `TEST_MONGODB_URI` | No | none | Dedicated database connection string for DB-backed E2E runs. In GitHub Actions, store it as repository secret `TEST_MONGODB_URI`. |
+| `TEST_MONGODB_DB_NAME` | No | `payqusta_e2e` | Overrides the database name used by DB-backed E2E suites. CI currently uses `payqusta_e2e_ci`. |
 | `JWT_SECRET` | Yes | none | Signs JWTs for tenant users and portal customers. |
 | `JWT_EXPIRE` | No | `7d` or `30d` depending on call site | Token lifetime. |
 | `SUPER_ADMIN_EMAIL` | No | `super@payqusta.com` | Identifies the platform-level super admin user in several flows. |
@@ -213,3 +239,34 @@ APP_URL=http://127.0.0.1:5173
 - When deploying to Cloud Run with private or ephemeral disks, choose `UPLOAD_STORAGE=gcs` or `UPLOAD_STORAGE=mongodb`.
 - Keep secrets out of Git and CI logs.
 - Do not commit `cloudrun.env`; keep it local and derive it from `cloudrun.env.example`.
+
+## Recommended hosted examples
+
+### Staging / production on Cloud Run
+
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>?retryWrites=true&w=majority
+JWT_SECRET=replace-with-a-strong-random-secret
+CLIENT_URL=https://staging-or-prod.payqusta.store
+APP_URL=https://staging-or-prod.payqusta.store
+PLATFORM_ROOT_DOMAIN=payqusta.store
+UPLOAD_STORAGE=gcs
+GCS_BUCKET_NAME=replace-with-your-bucket
+GCS_PROJECT_ID=payqusta
+GCS_MAKE_UPLOADS_PUBLIC=false
+OPS_BEARER_TOKEN=replace-with-a-long-random-token
+```
+
+### Hosted fallback when GCS is not ready yet
+
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>?retryWrites=true&w=majority
+JWT_SECRET=replace-with-a-strong-random-secret
+CLIENT_URL=https://staging-or-prod.payqusta.store
+APP_URL=https://staging-or-prod.payqusta.store
+PLATFORM_ROOT_DOMAIN=payqusta.store
+UPLOAD_STORAGE=mongodb
+OPS_BEARER_TOKEN=replace-with-a-long-random-token
+```

@@ -156,70 +156,107 @@ export default function SuppliersPage() {
   };
 
   const fmt = (n) => (n || 0).toLocaleString('ar-EG');
+  const activeSuppliersCount = suppliers.filter((supplier) => supplier.isActive !== false).length;
+  const outstandingSuppliersCount = suppliers.filter((supplier) => (supplier.financials?.outstandingBalance || 0) > 0).length;
+  const visibleOutstandingBalance = suppliers.reduce((sum, supplier) => sum + Number(supplier.financials?.outstandingBalance || 0), 0);
 
   return (
     <div className="space-y-5 animate-fade-in">
 
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Truck className="w-6 h-6 text-primary-600" />
-            إدارة الموردين
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {pagination.totalItems} مورد مسجل
-          </p>
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/50 bg-gradient-to-br from-emerald-600 via-teal-600 to-slate-950 px-5 py-6 text-white shadow-[0_28px_70px_-42px_rgba(13,148,136,0.9)] sm:px-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+              <Truck className="h-3.5 w-3.5" />
+              شبكة التوريد والمشتريات
+            </div>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">إدارة الموردين</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
+              راقب حالة الموردين، المستحقات المفتوحة، وتفاصيل التواصل من واجهة أنظف وأسهل على الموبايل.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[460px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">الموردون الظاهرون</p>
+              <p className="mt-2 text-2xl font-black">{pagination.totalItems.toLocaleString('ar-EG')}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">النشطون الآن</p>
+              <p className="mt-2 text-2xl font-black">{activeSuppliersCount.toLocaleString('ar-EG')}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+              <p className="text-xs font-bold text-white/65">إجمالي المستحق الظاهر</p>
+              <p className="mt-2 text-lg font-black">{fmt(visibleOutstandingBalance)} ج.م</p>
+            </div>
+          </div>
         </div>
-        {canEdit && (
-          <Button onClick={openAdd}>
-            <Plus className="w-4 h-4" /> إضافة مورد
-          </Button>
-        )}
-      </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          {canEdit && (
+            <Button onClick={openAdd} className="justify-center bg-white text-emerald-700 hover:bg-white/90">
+              <Plus className="w-4 h-4" /> إضافة مورد
+            </Button>
+          )}
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90">
+            <CreditCard className="h-4 w-4" />
+            {outstandingSuppliersCount.toLocaleString('ar-EG')} مورد لديهم مستحقات
+          </div>
+        </div>
+      </section>
 
       {/* ── Tabs ── */}
-      <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === t.key
-              ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="app-surface-muted overflow-x-auto rounded-2xl p-1 no-scrollbar">
+        <div className="flex min-w-max items-center gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`min-w-[118px] rounded-xl px-4 py-2.5 text-xs font-bold transition-all sm:flex-1 ${activeTab === t.key
+                ? 'bg-white dark:bg-gray-700 text-primary-600 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Search + Filters ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث بالاسم أو الهاتف..."
-            className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
+      <div className="app-surface rounded-[1.5rem] p-4 sm:p-5">
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-black text-gray-900 dark:text-white">تصفية الموردين بسرعة</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">ابحث بالاسم أو الهاتف أو خصص النتائج حسب الفئة.</p>
+          </div>
         </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
-          <option value="">كل الفئات</option>
-          {categories.map((cat) => (
-            <React.Fragment key={cat._id}>
-              <option value={cat._id}>{cat.icon} {cat.name}</option>
-              {(cat.children || []).map(sub => (
-                <option key={sub._id} value={sub._id}>&nbsp;&nbsp;&nbsp;{sub.icon} {sub.name}</option>
-              ))}
-            </React.Fragment>
-          ))}
-        </select>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,0.75fr)]">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالاسم أو الهاتف..."
+              className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">كل الفئات</option>
+            {categories.map((cat) => (
+              <React.Fragment key={cat._id}>
+                <option value={cat._id}>{cat.icon} {cat.name}</option>
+                {(cat.children || []).map(sub => (
+                  <option key={sub._id} value={sub._id}>&nbsp;&nbsp;&nbsp;{sub.icon} {sub.name}</option>
+                ))}
+              </React.Fragment>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ── List ── */}
@@ -239,7 +276,7 @@ export default function SuppliersPage() {
               <div key={s._id} className={idx !== 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''}>
 
                 {/* ── Row ── */}
-                <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+                <div className="group flex flex-wrap items-start gap-3 px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 sm:flex-nowrap sm:items-center">
 
                   {/* Expand chevron */}
                   <button
@@ -257,7 +294,7 @@ export default function SuppliersPage() {
                   </div>
 
                   {/* Main info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-sm text-gray-900 dark:text-white truncate">{s.name}</span>
                       <Badge variant={s.isActive !== false ? 'success' : 'danger'} className="text-[10px]">
@@ -283,6 +320,20 @@ export default function SuppliersPage() {
                         <Package className="w-3 h-3" /> {s.productsCount || 0} منتج
                       </span>
                     </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 sm:hidden">
+                      <div className="rounded-xl bg-gray-50 px-2 py-2 text-center dark:bg-gray-800/60">
+                        <p className="text-[10px] text-gray-400">المشتريات</p>
+                        <p className="mt-1 text-xs font-black text-gray-700 dark:text-gray-200">{fmt(s.financials?.totalPurchases)}</p>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 px-2 py-2 text-center dark:bg-gray-800/60">
+                        <p className="text-[10px] text-gray-400">المستحق</p>
+                        <p className="mt-1 text-xs font-black text-red-500">{fmt(s.financials?.outstandingBalance)}</p>
+                      </div>
+                      <div className="rounded-xl bg-gray-50 px-2 py-2 text-center dark:bg-gray-800/60">
+                        <p className="text-[10px] text-gray-400">المنتجات</p>
+                        <p className="mt-1 text-xs font-black text-primary-600">{fmt(s.productsCount)}</p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Stats */}
@@ -294,10 +345,10 @@ export default function SuppliersPage() {
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex w-full flex-wrap items-center justify-end gap-1 pt-1 sm:w-auto sm:flex-nowrap sm:pt-0 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                     <button
                       onClick={() => handleStatement(s._id)}
-                      className="p-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/20 text-gray-400 hover:text-blue-600 transition-colors"
+                      className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/20"
                       title="كشف حساب"
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -305,7 +356,7 @@ export default function SuppliersPage() {
                     {canEdit && (
                       <button
                         onClick={() => openEdit(s)}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-primary-500 transition-colors"
+                        className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-primary-500 dark:hover:bg-gray-700"
                         title="تعديل"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -313,7 +364,7 @@ export default function SuppliersPage() {
                     )}
                     <button
                       onClick={() => handleReminder(s._id)}
-                      className="p-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/20 text-gray-400 hover:text-green-600 transition-colors"
+                      className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/20"
                       title="تذكير WhatsApp"
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
@@ -321,7 +372,7 @@ export default function SuppliersPage() {
                     {canEdit && (s.financials?.outstandingBalance || 0) > 0 && (
                       <button
                         onClick={() => handlePayAll(s._id)}
-                        className="p-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/20 text-gray-400 hover:text-amber-600 transition-colors"
+                        className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-900/20"
                         title="سداد كامل"
                       >
                         <CreditCard className="w-3.5 h-3.5" />

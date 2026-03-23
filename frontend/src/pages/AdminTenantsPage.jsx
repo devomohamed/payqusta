@@ -343,6 +343,7 @@ export default function AdminTenantsPage() {
                     value={form.ownerPassword}
                     onChange={(e) => setForm({ ...form, ownerPassword: e.target.value })}
                     required
+                    autoComplete="new-password"
                   />
                   <p className="text-xs text-gray-400 mt-1">مطلوب · 8 أحرف على الأقل</p>
                 </div>

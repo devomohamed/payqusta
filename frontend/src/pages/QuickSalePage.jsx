@@ -447,17 +447,17 @@ export default function QuickSalePage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="app-shell-bg app-text-soft relative flex h-[calc(100vh-100px)] flex-col gap-4 overflow-hidden rounded-2xl p-2 text-right animate-fade-in font-cairo" dir="rtl">
+    <div className="app-shell-bg app-text-soft relative flex min-h-[calc(100vh-100px)] flex-col gap-3 overflow-hidden rounded-[1.75rem] p-2 text-right animate-fade-in font-cairo sm:gap-4 sm:rounded-[2rem] sm:p-3 xl:h-[calc(100vh-100px)]" dir="rtl">
       {/* Background Dotted Pattern */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none dark:opacity-20 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at center, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
       
       {/* HEADER SECTION: Cart Tabs, Mode Switch, Sync */}
-      <div className="relative z-10 flex items-center justify-between gap-4 border-b border-gray-200 pb-3 p-2 dark:border-slate-800">
+      <div className="relative z-10 flex flex-col gap-3 border-b border-gray-200 p-2 pb-3 dark:border-slate-800 xl:flex-row xl:items-center xl:justify-between xl:gap-4">
         {/* RIGHT: Carts Tabs */}
-        <div className="flex items-center gap-1.5 max-w-[30%] py-1">
+        <div className="flex w-full items-center gap-1.5 py-1 xl:max-w-[30%]">
           <button onClick={() => cartsRef.current?.scrollBy({ left: 200, behavior: 'smooth' })} className="app-surface rounded-full p-1.5 text-gray-400 shadow-sm transition-colors hover:text-primary-500 shrink-0"><ChevronRight className="w-4 h-4"/></button>
           
-          <div ref={cartsRef} className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1">
+          <div ref={cartsRef} className="flex flex-1 items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
             {carts.map(c => (
               <div key={c.id} className="relative group shrink-0">
                 <button
@@ -486,7 +486,7 @@ export default function QuickSalePage() {
 
         {/* MIDDLE: Search Bar */}
         {mode === 'sale' ? (
-          <div className="flex items-center gap-2 flex-1 max-w-2xl mx-auto">
+          <div className="flex w-full items-center gap-2 xl:max-w-2xl xl:flex-1 xl:mx-auto">
              <div className="relative flex-1">
                <input
                  ref={searchRef}
@@ -508,8 +508,8 @@ export default function QuickSalePage() {
          ) : <div className="flex-1" />}
 
         {/* LEFT: Mode Switch & Sync Status */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="app-surface flex rounded-full p-1 shadow-sm">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 xl:w-auto xl:flex-nowrap xl:justify-start xl:gap-4 xl:shrink-0">
+          <div className="app-surface flex flex-1 rounded-full p-1 shadow-sm xl:flex-none">
             <button onClick={() => setMode('sale')} className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${mode === 'sale' ? 'bg-primary-500 shadow-md text-white' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}>
               <Zap className="w-4 h-4" /> بيع مباشر
             </button>
@@ -606,9 +606,9 @@ export default function QuickSalePage() {
       )}
 
       {mode === 'sale' ? (
-        <div className="flex flex-1 gap-4 overflow-hidden relative z-10 pb-2">
+        <div className="relative z-10 flex flex-1 flex-col gap-4 overflow-hidden pb-2 xl:flex-row">
           {/* MAIN COLUMN */}
-          <div className="flex-[3] flex flex-col gap-4 overflow-hidden min-w-0">
+          <div className="order-2 flex min-w-0 flex-1 flex-col gap-4 overflow-hidden xl:order-1 xl:flex-[3]">
             
             {/* Categories */}
             <div className="flex flex-col gap-3">
@@ -728,7 +728,7 @@ export default function QuickSalePage() {
           </div>
           
           {/* CART COLUMN */}
-          <div className="app-surface flex min-w-[320px] flex-1 flex-col overflow-hidden rounded-[2rem] shadow-xl">
+          <div className="app-surface order-1 flex min-w-0 flex-col overflow-hidden rounded-[1.75rem] shadow-xl xl:order-2 xl:min-w-[320px] xl:max-w-[380px] xl:flex-1 xl:rounded-[2rem]">
              {/* Customer Picker */}
              <div className="app-surface-muted border-b p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -792,7 +792,7 @@ export default function QuickSalePage() {
              </div>
 
              {/* Cart Items */}
-             <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4">
+             <div className="max-h-[45vh] flex-1 overflow-y-auto no-scrollbar p-4 space-y-4 xl:max-h-none">
                {cart.length === 0 ? (
                  <div className="flex h-full flex-col items-center justify-center opacity-30">
                     <div className="app-surface-muted mb-4 flex h-20 w-20 items-center justify-center rounded-3xl">
@@ -824,7 +824,7 @@ export default function QuickSalePage() {
              </div>
 
              {/* Payment Footer */}
-             <div className="app-surface-muted border-t p-5 space-y-4">
+              <div className="app-surface-muted border-t p-4 space-y-4 sm:p-5">
                 <div className="flex items-center justify-between px-1">
                    <span className="text-xs font-black text-gray-500 dark:text-gray-400">الإجمالي</span>
                    <span className="text-xl font-black text-primary-500">{fmt(total)} ج.&</span>
@@ -857,7 +857,7 @@ export default function QuickSalePage() {
         </div>
       ) : (
         /* RETURN MODE LAYOUT */
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden relative z-10 p-4">
+         <div className="relative z-10 flex flex-1 flex-col gap-4 overflow-hidden p-2 sm:p-4">
            {/* Return search and details (omitted for brevity in part2, but including fixed version back) */}
            <div className="app-surface rounded-2xl p-6 max-w-2xl mx-auto w-full shadow-lg">
               <h2 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
@@ -901,7 +901,9 @@ export default function QuickSalePage() {
         )}
       </AnimatePresence>
 
-      <BarcodeScanner show={showScanner} onClose={() => setShowScanner(false)} onScan={handleBarcodeScan} />
+      {showScanner ? (
+        <BarcodeScanner onClose={() => setShowScanner(false)} onScan={handleBarcodeScan} />
+      ) : null}
     </div>
   );
 }

@@ -14,8 +14,12 @@ import {
   User,
   Globe,
   Image as ImageIcon,
+  Layers,
+  LayoutGrid,
+  ChevronDown,
 } from 'lucide-react';
-import { Button, Modal } from '../UI';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button, Modal, Card, Badge } from '../UI';
 import RichTextEditor from '../RichTextEditor';
 import BarcodeScanner from '../BarcodeScanner';
 import BarcodeLabel from '../BarcodeLabel';
@@ -47,6 +51,7 @@ export default function ProductBasicsStep({
     parent: '',
     icon: DEFAULT_CATEGORY_ICON,
   });
+  const [iconSearchQuery, setIconSearchQuery] = useState('');
 
   const tenant = useAuthStore((state) => state.tenant);
   const barcodeSettings = tenant?.settings?.barcode || {};
@@ -84,7 +89,7 @@ export default function ProductBasicsStep({
   const level3Subcats = selectedLevel2?.children || [];
   const level2Value = selectedLevel2?._id || '';
   const level3Value = level3Subcats.some((c) => c._id === form.subcategory) ? form.subcategory : '';
-  const iconSuggestions = getCategoryIconSuggestions(categoryForm.name, 10);
+  const iconSuggestions = getCategoryIconSuggestions(categoryForm.name || iconSearchQuery, 12);
 
   const handleBarcodeScan = (payload) => {
     if (scannerTarget === 'international') {
@@ -174,6 +179,7 @@ export default function ProductBasicsStep({
       parent: '',
       icon: DEFAULT_CATEGORY_ICON,
     });
+    setIconSearchQuery('');
     setShowCategoryModal(true);
   };
 
@@ -677,131 +683,215 @@ export default function ProductBasicsStep({
         onClose={() => !savingCategory && setShowCategoryModal(false)}
         title="إضافة قسم جديد"
         size="2xl"
+        bodyClassName="!p-0 overflow-hidden"
+        contentClassName="rounded-[2.5rem]"
       >
-        <div className="space-y-5 pb-28">
-          <div className="rounded-3xl border border-primary-500/15 bg-gradient-to-br from-primary-950 via-slate-900 to-slate-950 px-4 py-4 text-white shadow-2xl">
-            <div className="flex items-start gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl text-slate-900 shadow-xl">
-                {categoryForm.icon || DEFAULT_CATEGORY_ICON}
-              </div>
-              <div className="flex-1 text-right">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-primary-100">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  اقتراح ذكي للأيقونة
+        <div className="flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50">
+          {/* Main Form Content */}
+          <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8 pb-32">
+            {/* Live Preview Section */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <Card className="relative overflow-hidden border-none shadow-2xl bg-slate-900 text-white p-6">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <div className="flex items-center gap-6">
+                  <div className="relative">
+                    <div className="absolute -inset-2 bg-white/10 blur-lg rounded-full animate-pulse" />
+                    <div className="relative h-20 w-20 flex items-center justify-center rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-4xl shadow-inner">
+                      {categoryForm.icon || DEFAULT_CATEGORY_ICON}
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="primary" className="bg-primary-500/20 text-primary-200 border border-primary-500/30">
+                        {categoryMode === 'root' ? 'قسم رئيسي' : 'قسم فرعي'}
+                      </Badge>
+                      {categoryMode === 'child' && (
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-white/50 uppercase tracking-widest">
+                          <Layers className="w-3 h-3" />
+                          <span>منتسب</span>
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="text-2xl font-black tracking-tight truncate max-w-[300px]">
+                      {categoryForm.name || 'اسم القسم الجديد'}
+                    </h4>
+                    <p className="text-sm text-white/60 line-clamp-1 italic font-medium">
+                      {categoryForm.description || 'سيظهر وصف القسم هنا بشكل مختصر وجذاب...'}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-2 text-sm font-bold leading-6 text-white">
-                  سيتم اقتراح أيقونة تلقائيًا حسب اسم القسم، ويمكنك تعديلها يدويًا قبل الحفظ.
-                </p>
+              </Card>
+            </div>
+
+            {/* Input Fields Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              <div className="md:col-span-3">
+                <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">الأيقونة</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    value={categoryForm.icon}
+                    onChange={(event) => setCategoryForm((prev) => ({ ...prev, icon: event.target.value }))}
+                    className="w-full rounded-2xl border-2 border-gray-100 bg-white px-4 py-4 text-center text-3xl shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none dark:border-white/5 dark:bg-white/5 dark:text-white"
+                  />
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary-500 rounded-full opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                </div>
+              </div>
+              <div className="md:col-span-9">
+                <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">اسم القسم</label>
+                <input
+                  type="text"
+                  placeholder="مثلاً: ملابس رجالي، أحذية رياضية..."
+                  value={categoryForm.name}
+                  onChange={(event) => handleCategoryNameChange(event.target.value)}
+                  className="w-full rounded-2xl border-2 border-gray-100 bg-white px-5 py-4 text-lg font-bold shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none dark:border-white/5 dark:bg-white/5 dark:text-white"
+                  dir="rtl"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-1">
-              <label className="mb-1.5 block text-sm font-bold text-gray-700 dark:text-gray-300">الأيقونة</label>
-              <input
-                type="text"
-                value={categoryForm.icon}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, icon: event.target.value }))}
-                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-center text-2xl transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800"
-              />
+            {/* Segmented Mode Selector */}
+            <div className="space-y-4">
+              <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">نوع القسم</label>
+              <div className="relative p-1.5 flex bg-gray-200/50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
+                <div 
+                  className="absolute inset-y-1.5 transition-all duration-300 ease-out bg-white dark:bg-slate-800 rounded-xl shadow-lg ring-1 ring-black/5"
+                  style={{ 
+                    width: 'calc(50% - 6px)', 
+                    right: categoryMode === 'root' ? '6px' : '50%'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryMode('root');
+                    setCategoryForm((prev) => ({ ...prev, parent: '' }));
+                  }}
+                  className={`relative z-10 flex-1 py-3 text-sm font-black transition-colors ${categoryMode === 'root' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}
+                >
+                  قسم رئيسي
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCategoryMode('child')}
+                  className={`relative z-10 flex-1 py-3 text-sm font-black transition-colors ${categoryMode === 'child' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}
+                >
+                  قسم فرعي
+                </button>
+              </div>
             </div>
-            <div className="col-span-3">
-              <label className="mb-1.5 block text-sm font-bold text-gray-700 dark:text-gray-300">اسم القسم</label>
-              <input
-                type="text"
-                value={categoryForm.name}
-                onChange={(event) => handleCategoryNameChange(event.target.value)}
-                className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+
+            <AnimatePresence mode="wait">
+              {categoryMode === 'child' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  className="space-y-2 overflow-hidden"
+                >
+                  <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">القسم الرئيسي المرتبط</label>
+                  <CategorySelector
+                    categories={rootCategories}
+                    value={categoryForm.parent}
+                    onChange={(value) => setCategoryForm((prev) => ({ ...prev, parent: value }))}
+                    placeholder="اختر القسم الأب..."
+                    className="!rounded-2xl"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Icon Suggestions Gallery */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <h5 className="text-sm font-black text-gray-800 dark:text-white uppercase tracking-wide">أيقونات مقترحة</h5>
+                </div>
+                
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="ابحث عن أيقونة..."
+                    value={iconSearchQuery}
+                    onChange={(e) => setIconSearchQuery(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pr-9 pl-4 py-2 text-sm transition-all focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:focus:bg-slate-900"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+                {iconSuggestions.map((icon) => {
+                  const isSelected = categoryForm.icon === icon;
+                  return (
+                    <motion.button
+                      key={`${categoryForm.name}-${icon}-${iconSearchQuery}`}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      onClick={() => setCategoryForm((prev) => ({ ...prev, icon }))}
+                      className={`relative flex aspect-square items-center justify-center rounded-2xl border-2 text-2xl transition-all duration-300 ${
+                        isSelected
+                          ? 'border-primary-500 bg-primary-50 shadow-xl shadow-primary-500/20 dark:bg-primary-500/20'
+                          : 'border-gray-100 bg-white hover:border-primary-200 dark:border-white/5 dark:bg-white/5'
+                      }`}
+                    >
+                      {icon}
+                      {isSelected && (
+                        <motion.div 
+                          layoutId="activeIcon"
+                          className="absolute inset-0 rounded-2xl ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-slate-900" 
+                        />
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Description Field */}
+            <div className="space-y-2">
+              <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">وصف القسم</label>
+              <textarea
+                value={categoryForm.description}
+                onChange={(event) => setCategoryForm((prev) => ({ ...prev, description: event.target.value }))}
+                rows={3}
+                placeholder="اكتب وصفاً جذاباً يساعد العملاء في العثور على ما يبحثون عنه..."
+                className="w-full resize-none rounded-2xl border-2 border-gray-100 bg-white px-5 py-4 text-sm font-medium shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none dark:border-white/5 dark:bg-white/5 dark:text-white"
                 dir="rtl"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setCategoryMode('root');
-                setCategoryForm((prev) => ({ ...prev, parent: '' }));
-              }}
-              className={`rounded-2xl border px-4 py-3 text-right transition-all ${categoryMode === 'root'
-                ? 'border-primary-500 bg-primary-50 text-primary-700'
-                : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'
-                }`}
-            >
-              <p className="text-sm font-black">قسم رئيسي</p>
-              <p className="mt-1 text-[11px]">يظهر كقسم أساسي في المتجر.</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCategoryMode('child')}
-              className={`rounded-2xl border px-4 py-3 text-right transition-all ${categoryMode === 'child'
-                ? 'border-primary-500 bg-primary-50 text-primary-700'
-                : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'
-                }`}
-            >
-              <p className="text-sm font-black">قسم فرعي</p>
-              <p className="mt-1 text-[11px]">يرتبط بقسم رئيسي موجود.</p>
-            </button>
-          </div>
-
-          {categoryMode === 'child' ? (
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">القسم الرئيسي</label>
-              <CategorySelector
-                categories={rootCategories}
-                value={categoryForm.parent}
-                onChange={(value) => setCategoryForm((prev) => ({ ...prev, parent: value }))}
-                placeholder="اختر القسم الرئيسي"
-              />
-            </div>
-          ) : null}
-
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-900/40">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="text-right">
-                <p className="text-sm font-black text-gray-800 dark:text-white">أيقونات مقترحة</p>
-                <p className="text-[11px] text-gray-500">اختيارات مناسبة حسب اسم القسم.</p>
-              </div>
-              <Sparkles className="h-4 w-4 text-primary-500" />
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {iconSuggestions.map((icon) => (
-                <button
-                  key={`${categoryForm.name || 'default'}-${icon}`}
-                  type="button"
-                  onClick={() => setCategoryForm((prev) => ({ ...prev, icon }))}
-                  className={`flex h-12 items-center justify-center rounded-2xl border text-2xl transition-all ${categoryForm.icon === icon
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/40'
-                    }`}
-                >
-                  {icon}
-                </button>
-              ))}
+          {/* Fixed Footer */}
+          <div className="absolute bottom-0 left-0 right-0 z-30 p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-gray-100 dark:border-white/5">
+            <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
+              <Button 
+                variant="ghost" 
+                size="lg"
+                onClick={() => setShowCategoryModal(false)} 
+                disabled={savingCategory}
+                className="px-8 rounded-2xl"
+              >
+                إلغاء
+              </Button>
+              <Button 
+                variant="primary"
+                size="lg"
+                icon={<Check className="w-5 h-5" />} 
+                onClick={handleCreateCategory} 
+                loading={savingCategory}
+                className="px-10 rounded-2xl shadow-xl shadow-primary-500/20"
+              >
+                حفظ القسم الجديد
+              </Button>
             </div>
           </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">وصف مختصر</label>
-            <textarea
-              value={categoryForm.description}
-              onChange={(event) => setCategoryForm((prev) => ({ ...prev, description: event.target.value }))}
-              rows={3}
-              className="w-full resize-none rounded-xl border-2 border-gray-200 bg-white px-4 py-3 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              dir="rtl"
-            />
-          </div>
-        </div>
-
-        <div className="sticky bottom-20 z-30 mt-6 flex justify-end gap-3 rounded-2xl border border-gray-100 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-          <Button variant="ghost" onClick={() => setShowCategoryModal(false)} disabled={savingCategory}>
-            إلغاء
-          </Button>
-          <Button icon={<Check className="w-4 h-4" />} onClick={handleCreateCategory} loading={savingCategory}>
-            حفظ
-          </Button>
         </div>
       </Modal>
 

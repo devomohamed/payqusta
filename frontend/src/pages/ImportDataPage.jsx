@@ -136,26 +136,40 @@ export default function ImportDataPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        {selectedType && (
-          <button onClick={resetState} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        )}
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center">
-          <Upload className="w-5 h-5 text-white" />
+      <section className="app-surface-muted overflow-hidden rounded-[2rem] border border-white/60 p-5 shadow-[0_24px_80px_-48px_rgba(15,23,42,0.5)] dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex items-start gap-3">
+            {selectedType && (
+              <button onClick={resetState} className="mt-1 rounded-xl p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-500/80">Import Studio</p>
+                <h1 className="text-2xl font-bold">استيراد البيانات</h1>
+                <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                  {selectedType ? `استيراد ${selectedType.label} من ملف Excel أو CSV` : 'اختر نوع البيانات المراد استيرادها'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <ResultCard label="الأنواع" value={IMPORT_TYPES.length} color="blue" dark={dark} />
+            <ResultCard label="الملف" value={file ? 1 : 0} color="emerald" dark={dark} />
+            <ResultCard label="المعاينة" value={preview?.totalRows || 0} color="amber" dark={dark} />
+            <ResultCard label="النتيجة" value={result?.imported || result?.created || 0} color="gray" dark={dark} />
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">استيراد البيانات</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {selectedType ? `استيراد ${selectedType.label} من ملف Excel أو CSV` : 'اختر نوع البيانات المراد استيرادها'}
-          </p>
-        </div>
-      </div>
+      </section>
 
       {/* Step 1: Choose type */}
       {!selectedType && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {IMPORT_TYPES.map((type) => (
             <button
               key={type.id}
@@ -186,7 +200,7 @@ export default function ImportDataPage() {
         <>
           {/* Download Template */}
           <div className={`rounded-2xl border p-5 ${dark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl ${selectedType.bgColor} flex items-center justify-center`}>
                   <FileSpreadsheet className={`w-5 h-5 ${selectedType.textColor}`} />
@@ -295,7 +309,20 @@ export default function ImportDataPage() {
                 <Eye className="w-4 h-4 text-purple-500" />
                 معاينة البيانات ({preview.totalRows} صف)
               </h3>
-              <div className="overflow-x-auto">
+              <div className="space-y-3 md:hidden">
+                {preview.rows?.slice(0, 5).map((row, i) => (
+                  <div key={i} className={`rounded-2xl border p-4 ${dark ? 'border-gray-800 bg-gray-800/40' : 'border-gray-100 bg-gray-50'}`}>
+                    {preview.headers?.map((header, j) => (
+                      <div key={`${i}-${j}`} className="flex items-start justify-between gap-4 py-1.5 text-sm">
+                        <span className="text-gray-400">{header}</span>
+                        <span className="text-right text-gray-700 dark:text-gray-300">{row[j] || '-'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className={dark ? 'border-b border-gray-700' : 'border-b border-gray-200'}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     RefreshCcw, Plus, Search, Truck, Calendar, DollarSign,
     ChevronRight, X, Eye, FileText, ArrowLeft, Trash2, Printer,
@@ -131,22 +131,45 @@ export default function PurchaseReturnsPage() {
     };
 
     const fmt = (n) => (n || 0).toLocaleString('ar-EG');
+    const summary = useMemo(() => ({
+        total: returns.length,
+        items: returns.reduce((count, item) => count + Number(item.items?.length || 0), 0),
+        amount: returns.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0),
+    }), [returns]);
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
-                        <RefreshCcw className="w-6 h-6 text-primary-600" />
-                        مرتجعات الشراء (Debit Notes)
-                    </h1>
-                    <p className="text-sm text-gray-400 mt-1">إدارة مرتجعات السلع للموردين وتسوية المديونيات</p>
+            <section className="overflow-hidden rounded-[1.75rem] border border-white/40 bg-gradient-to-br from-amber-600 via-orange-600 to-slate-950 px-5 py-6 text-white shadow-[0_30px_80px_-46px_rgba(217,119,6,0.9)] sm:px-6">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
+                            <RefreshCcw className="h-3.5 w-3.5" />
+                            Debit Notes والمردودات
+                        </div>
+                        <h1 className="mt-4 text-2xl font-black sm:text-3xl">مرتجعات الشراء</h1>
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">إدارة مرتجعات السلع للموردين وتسوية المديونيات من واجهة أوضح وأنظف على الهاتف.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
+                        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                            <p className="text-xs font-bold text-white/65">العمليات الظاهرة</p>
+                            <p className="mt-2 text-2xl font-black">{summary.total}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                            <p className="text-xs font-bold text-white/65">الأصناف المرتجعة</p>
+                            <p className="mt-2 text-2xl font-black">{summary.items}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                            <p className="text-xs font-bold text-white/65">قيمة المرتجعات</p>
+                            <p className="mt-2 text-lg font-black">{fmt(summary.amount)} ج.م</p>
+                        </div>
+                    </div>
                 </div>
-                <Button onClick={() => setShowModal(true)}>
-                    <Plus className="w-4 h-4" /> تسجيل مرتجع جديد
-                </Button>
-            </div>
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <Button onClick={() => setShowModal(true)} className="justify-center bg-white text-amber-700 hover:bg-white/90">
+                        <Plus className="w-4 h-4" /> تسجيل مرتجع جديد
+                    </Button>
+                </div>
+            </section>
 
             {/* List */}
             <Card className="overflow-hidden">
@@ -159,7 +182,33 @@ export default function PurchaseReturnsPage() {
                         description="ابدأ بتسجيل أول عملية إرجاع للمورد لخصمها من المديونية"
                     />
                 ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    <div className="space-y-3 p-4 md:hidden">
+                        {returns.map(r => (
+                            <div key={r._id} className="app-surface-muted rounded-2xl p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white">{r.supplier?.name}</p>
+                                        <p className="mt-1 text-[11px] text-gray-400">{r.returnNumber} · {new Date(r.date).toLocaleDateString('ar-EG')}</p>
+                                    </div>
+                                    <button className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                        <Eye className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="mt-3 grid grid-cols-2 gap-2">
+                                    <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                                        <p className="text-[10px] text-gray-400">المبلغ</p>
+                                        <p className="mt-1 text-xs font-black text-red-500">{fmt(r.totalAmount)} ج.م</p>
+                                    </div>
+                                    <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
+                                        <p className="text-[10px] text-gray-400">المنتجات</p>
+                                        <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{r.items?.length} صنف</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="hidden overflow-x-auto md:block">
                         <table className="w-full text-right">
                             <thead>
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800">
@@ -191,6 +240,7 @@ export default function PurchaseReturnsPage() {
                             </tbody>
                         </table>
                     </div>
+                    </>
                 )}
 
                 {!loading && pagination.totalPages > 1 && (
@@ -283,6 +333,41 @@ export default function PurchaseReturnsPage() {
                     {/* Items Table */}
                     {form.items.length > 0 && (
                         <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm bg-gray-50/30 dark:bg-gray-800/20">
+                            <div className="space-y-3 p-3 md:hidden">
+                                {form.items.map((item, idx) => (
+                                    <div key={idx} className="rounded-2xl bg-white p-4 dark:bg-gray-900/70">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white">{item.name}</p>
+                                                <p className="mt-1 text-[11px] text-gray-400">#{item.sku}</p>
+                                            </div>
+                                            <button onClick={() => removeItem(idx)} className="rounded-lg p-1 text-red-500 hover:bg-red-50 transition-colors">
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                            <input
+                                                type="number"
+                                                className="w-full rounded border border-gray-200 bg-white p-2 text-center dark:border-gray-700 dark:bg-gray-900"
+                                                value={item.quantity}
+                                                min="1"
+                                                onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
+                                            />
+                                            <input
+                                                type="number"
+                                                className="w-full rounded border border-gray-200 bg-white p-2 text-center dark:border-gray-700 dark:bg-gray-900"
+                                                value={item.unitCost}
+                                                onChange={(e) => updateItem(idx, 'unitCost', e.target.value)}
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-xs font-black text-primary-600 dark:text-primary-400">{fmt(item.quantity * item.unitCost)} ج.م</p>
+                                    </div>
+                                ))}
+                                <div className="rounded-2xl bg-primary-500/5 px-4 py-3 text-sm font-black text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+                                    إجمالي قيمة المرتجع: {fmt(form.items.reduce((acc, i) => acc + (i.quantity * i.unitCost), 0))} ج.م
+                                </div>
+                            </div>
+                            <div className="hidden md:block">
                             <table className="w-full text-right text-xs">
                                 <thead className="bg-gray-100/50 dark:bg-gray-800/80 font-bold text-gray-400">
                                     <tr>
@@ -333,6 +418,7 @@ export default function PurchaseReturnsPage() {
                                     </tr>
                                 </tfoot>
                             </table>
+                            </div>
                         </div>
                     )}
 
