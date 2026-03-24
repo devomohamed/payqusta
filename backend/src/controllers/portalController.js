@@ -27,6 +27,7 @@ const {
   cancelInvoiceOrder,
 } = require('../utils/orderLifecycle');
 const refundService = require('../services/RefundService');
+const emailService = require('../services/EmailService');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -272,6 +273,98 @@ class PortalController {
       },
       tenant: { _id: tenant._id, name: tenant.name, slug: tenant.slug, branding: tenant.branding }
     }, 'تم تفعيل حسابك بنجاح');
+  });
+
+  /**
+   * POST /api/v1/portal/forgot-password
+   */
+  forgotPassword = catchAsync(async (req, res, next) => {
+    const { email } = req.body;
+    if (!email) {
+      return next(AppError.badRequest('البريد الإلكتروني مطلوب'));
+    }
+
+    const searchEmail = String(email).trim().toLowerCase();
+    logger.info(`[PORTAL_FORGOT_PASSWORD] Attempt for: ${searchEmail} (Original: ${email})`);
+
+    const { tenant } = await resolveTenantContext(req);
+    
+    // Scoped lookup if tenant context available, otherwise find by email
+    const query = { email: searchEmail };
+    if (tenant) query.tenant = tenant._id;
+
+    const customer = await Customer.findOne(query).populate('tenant', 'name slug');
+
+    if (!customer) {
+      logger.warn(`[PORTAL_FORGOT_PASSWORD] Customer not found: ${searchEmail}`);
+      // Return success even if not found to prevent user enumeration
+      return ApiResponse.success(res, null, 'إذا كان البريد الإلكتروني مسجلاً، ستتلقى رسالة لإعادة تعيين كلمة المرور');
+    }
+
+    if (!customer.isActive) {
+      return next(AppError.badRequest('هذا الحساب معطل'));
+    }
+
+    const resetToken = customer.createPasswordResetToken();
+    await customer.save({ validateBeforeSave: false });
+
+    try {
+      // Use the sender tenant or the customer's own tenant
+      const targetTenant = customer.tenant || tenant;
+      
+      const emailResult = await emailService.sendCustomerPasswordResetEmail({
+        customer,
+        resetToken,
+        tenant: targetTenant
+      });
+      if (!emailResult?.success) {
+        throw new Error(emailResult?.error || 'Email service reported an unsuccessful send');
+      }
+    } catch (emailError) {
+      customer.passwordResetToken = undefined;
+      customer.passwordResetExpires = undefined;
+      await customer.save({ validateBeforeSave: false });
+      logger.error('Failed to send customer password reset email:', emailError);
+      return next(AppError.internal('حدث خطأ في إرسال البريد الإلكتروني'));
+    }
+
+    ApiResponse.success(res, null, 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+  });
+
+  /**
+   * POST /api/v1/portal/reset-password/:token
+   */
+  resetPassword = catchAsync(async (req, res, next) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return next(AppError.badRequest('كلمة المرور الجديدة مطلوبة'));
+    }
+
+    if (password.length < 6) {
+      return next(AppError.badRequest('كلمة المرور لا تقل عن 6 أحرف'));
+    }
+
+    const hashedToken = require('crypto').createHash('sha256').update(token).digest('hex');
+    const customer = await Customer.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!customer) {
+      return next(AppError.badRequest('الرابط غير صالح أو منتهي الصلاحية'));
+    }
+
+    customer.password = password;
+    customer.passwordResetToken = undefined;
+    customer.passwordResetExpires = undefined;
+    await customer.save();
+
+    const authToken = generateToken(customer._id);
+    logger.info(`Customer password reset successful for ${customer.phone}`);
+
+    ApiResponse.success(res, { token: authToken }, 'تم إعادة تعيين كلمة المرور بنجاح');
   });
 
   // ═══════════════════════════════════════════

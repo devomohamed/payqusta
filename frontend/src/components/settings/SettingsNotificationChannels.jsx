@@ -69,7 +69,7 @@ export default function SettingsNotificationChannels() {
 
   const fetchStatus = async () => {
     try {
-      const res = await api.get('/settings/notification-channels/status');
+      const res = await api.get('/settings/notification-channels');
       setPlatformStatus(res.data.data.platform);
     } catch (err) {
       console.error('Failed to fetch platform status', err);

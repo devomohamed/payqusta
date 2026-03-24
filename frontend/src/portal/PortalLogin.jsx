@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
@@ -177,6 +177,15 @@ export default function PortalLogin() {
                   <input id="portal-login-password" name="password" autoComplete="current-password" type={showPass ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.password_placeholder')} required minLength={6} />
                   <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
                     {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                <div className="flex justify-end mt-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/portal/forgot-password')}
+                    className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                  >
+                    {t('login.form.forgot_password', 'نسيت كلمة المرور؟')}
                   </button>
                 </div>
               </div>

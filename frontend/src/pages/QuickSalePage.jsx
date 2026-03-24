@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle, ChevronDown, ChevronRight, ChevronLeft, FolderTree, UserPlus, History, Wallet, Banknote, Store, Play } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -483,7 +483,6 @@ export default function QuickSalePage() {
 
           <button onClick={() => cartsRef.current?.scrollBy({ left: -200, behavior: 'smooth' })} className="app-surface rounded-full p-1.5 text-gray-400 shadow-sm transition-colors hover:text-primary-500 shrink-0"><ChevronLeft className="w-4 h-4"/></button>
         </div>
-
         {/* MIDDLE: Search Bar */}
         {mode === 'sale' ? (
           <div className="flex w-full items-center gap-2 xl:max-w-2xl xl:flex-1 xl:mx-auto">

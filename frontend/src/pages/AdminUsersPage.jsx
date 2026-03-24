@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
       name: userItem.name || '',
       email: userItem.email || '',
       phone: userItem.phone || '',
-      invitationChannel: userItem.phone && userItem.email ? 'auto' : userItem.phone ? 'sms' : 'email',
+      invitationChannel: userItem.invitation?.channel || 'auto',
       role: userItem.role || 'vendor',
       customRole: userItem.customRole?._id || '',
       branch: userItem.branch?._id || '',
@@ -281,7 +281,10 @@ export default function AdminUsersPage() {
       }
 
       if (editId) {
-        await adminApi.updateUser(editId, payload);
+        await adminApi.updateUser(editId, {
+          ...payload,
+          invitationChannel: form.invitationChannel,
+        });
         toast.success('تم تحديث المستخدم بنجاح');
       } else {
         await adminApi.createUser({
@@ -326,7 +329,10 @@ export default function AdminUsersPage() {
       };
 
       if (editId) {
-        await adminApi.updateUser(editId, payload);
+        await adminApi.updateUser(editId, {
+          ...payload,
+          invitationChannel: form.invitationChannel,
+        });
         toast.success('User updated successfully');
       } else {
         await adminApi.createUser({

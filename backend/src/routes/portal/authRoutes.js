@@ -8,6 +8,8 @@ const { portalAuthLimiter, portalEnrollmentLimiter } = require('../../middleware
 router.post('/login', portalAuthLimiter, portalController.login);
 router.post('/register', portalEnrollmentLimiter, portalController.register);
 router.post('/activate', portalEnrollmentLimiter, portalController.activate);
+router.post('/forgot-password', portalAuthLimiter, portalController.forgotPassword);
+router.post('/reset-password/:token', portalAuthLimiter, portalController.resetPassword);
 
 // ═══════════════ Protected Routes ═══════════════
 router.use(protectCustomer);

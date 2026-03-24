@@ -7,6 +7,8 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const logger = require('../utils/logger');
 const { ensureSystemConfig, getPlatformNotificationSettings } = require('./notificationConfigService');
+const { buildStoreUrl } = require('../utils/tenantDomainHelpers');
+
 
 const normalizeEmailHost = (value = '') => String(value || '').trim().toLowerCase();
 
@@ -132,16 +134,39 @@ class EmailService {
     `;
   }
 
-  async sendPasswordResetEmailModern(user, resetToken) {
+  async sendPasswordResetEmailModern({ user, resetToken, tenant }) {
+    logger.info(`[SERVICE_DEBUG] sendPasswordResetEmailModern called with: user=${!!user}, resetToken=${!!resetToken}, tenant=${!!tenant}`);
+    if (user) logger.info(`[SERVICE_DEBUG] User email: ${user.email}, name: ${user.name}`);
+    
+    const targetTenant = tenant || user?.tenant;
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
     const subject = 'إعادة تعيين كلمة المرور - PayQusta';
-    const plainText = `مرحبًا ${user.name}\n\nتلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بحسابك.\n\nاستخدم الرابط التالي لإكمال العملية:\n${resetUrl}\n\nملاحظة: الرابط صالح لمدة ساعة واحدة فقط.`;
+    const plainText = `مرحبًا ${user?.name || 'مستخدم'}\n\nتلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بحسابك.\n\nاستخدم الرابط التالي لإكمال العملية:\n${resetUrl}\n\nملاحظة: الرابط صالح لمدة ساعة واحدة فقط.`;
 
-    return this.sendEmail({
+    return this.sendTenantAwareEmail({
+      tenant: targetTenant,
       to: user.email,
       subject,
       text: plainText,
       html: this.buildPasswordResetEmailHtml(user, resetUrl),
+    });
+  }
+
+  async sendCustomerPasswordResetEmail({ customer, tenant, resetToken }) {
+    logger.info(`[SERVICE_DEBUG] sendCustomerPasswordResetEmail called with: customer=${!!customer}, tenant=${!!tenant}, resetToken=${!!resetToken}`);
+    if (customer) logger.info(`[SERVICE_DEBUG] Customer email: ${customer.email}, name: ${customer.name}`);
+    
+    const storeUrl = buildStoreUrl(tenant?.slug) || process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${storeUrl}/reset-password/${resetToken}`;
+    const subject = 'إعادة تعيين كلمة المرور - PayQusta Portal';
+    const plainText = `مرحبًا ${customer.name}\n\nتلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بحسابك في متجر ${tenant.name}.\n\nاستخدم الرابط التالي لإكمال العملية:\n${resetUrl}\n\nملاحظة: الرابط صالح لمدة ساعة واحدة فقط.`;
+
+    return this.sendTenantAwareEmail({
+      tenant,
+      to: customer.email,
+      subject,
+      text: plainText,
+      html: this.buildPasswordResetEmailHtml(customer, resetUrl),
     });
   }
 
@@ -289,7 +314,8 @@ class EmailService {
       </html>
     `;
 
-    return this.sendEmail({
+    return this.sendTenantAwareEmail({
+      tenant,
       to: user.email,
       subject,
       text: `مرحباً ${user.name}! مرحباً بك في PayQusta. حسابك جاهز للاستخدام.`,
@@ -364,7 +390,8 @@ class EmailService {
       </html>
     `;
 
-    return this.sendEmail({
+    return this.sendTenantAwareEmail({
+      tenant: user.tenant,
       to: user.email,
       subject,
       text: `مرحباً ${user.name}, لإعادة تعيين كلمة المرور، اضغط على الرابط: ${resetUrl}`,
@@ -429,7 +456,8 @@ class EmailService {
       path: pdfPath,
     }] : [];
 
-    return this.sendEmail({
+    return this.sendTenantAwareEmail({
+      tenant: invoice.tenant,
       to: customer.email,
       subject,
       text: `فاتورة رقم ${invoice.invoiceNumber}. الإجمالي: ${invoice.totalAmount} ج.م`,
@@ -486,7 +514,8 @@ class EmailService {
       </html>
     `;
 
-    return this.sendEmail({
+    return this.sendTenantAwareEmail({
+      tenant: invoice.tenant,
       to: customer.email,
       subject,
       text: `تذكير: لديك مبلغ مستحق ${invoice.remainingAmount} ج.م للفاتورة رقم ${invoice.invoiceNumber}`,
@@ -495,18 +524,21 @@ class EmailService {
   }
 
   async resolveTenantEmailConfig(tenant = null) {
+    logger.info(`[EMAIL_RESOLVE] TenantID: ${tenant?._id || tenant || 'NULL'}`);
     const systemConfig = await ensureSystemConfig();
     const notifications = getPlatformNotificationSettings(systemConfig);
     const tenantEmail = tenant?.notificationChannels?.email || {};
     const tenantBranding = tenant?.notificationBranding || {};
     const platformEmail = notifications?.platformEmail || {};
 
+    const hasEnvConfig = Boolean(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    
+
     if (
       tenantEmail.enabled
       && tenantEmail.mode === 'custom_smtp'
       && tenantEmail.host
       && tenantEmail.user
-      && tenantEmail.pass
     ) {
       return {
         source: 'tenant_custom',
@@ -521,19 +553,12 @@ class EmailService {
       };
     }
 
-    const hasEnvConfig = Boolean(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
-
     if (
-      (platformEmail.enabled || hasEnvConfig)
-      && (
-        (platformEmail.host && platformEmail.user && platformEmail.pass)
-        || hasEnvConfig
-        || process.env.NODE_ENV !== 'production'
-      )
+      platformEmail?.enabled !== false
+      && (platformEmail.enabled || hasEnvConfig)
     ) {
-      // If we are here because of hasEnvConfig but platform doesn't have it, we use env
       return {
-        source: 'platform_default',
+        source: platformEmail.enabled ? 'platform_db' : 'platform_env',
         host: platformEmail.host || process.env.EMAIL_HOST || '',
         port: Number(platformEmail.port || process.env.EMAIL_PORT || 587),
         secure: platformEmail.secure ?? process.env.EMAIL_SECURE === 'true',
@@ -545,7 +570,7 @@ class EmailService {
       };
     }
 
-    return {
+    const res = {
       source: 'mock',
       host: '',
       port: 0,
@@ -556,10 +581,14 @@ class EmailService {
       fromName: tenantBranding.senderName || tenant?.name || 'PayQusta',
       systemConfig,
     };
+
+    return res;
   }
 
   async sendTenantAwareEmail({ tenant, to, subject, text, html, attachments = [] }) {
+    logger.info(`[EMAIL_ATTEMPT] To: ${to}, TenantID: ${tenant?._id || tenant || 'NULL'}`);
     const config = await this.resolveTenantEmailConfig(tenant);
+    logger.info(`[EMAIL_CONFIG] Source: ${config.source}, Host: ${config.host}, User: ${config.user}`);
 
     if (config.source === 'mock') {
       logger.warn(`[EMAIL:MOCK] ${to} | ${subject}`);
@@ -585,20 +614,30 @@ class EmailService {
       ? config.fromEmail
       : `"${config.fromName}" <${config.fromEmail}>`;
 
-    const info = await transporter.sendMail({
-      from: fromHeader,
-      to,
-      subject,
-      text,
-      html,
-      attachments,
-    });
+    try {
+      const info = await transporter.sendMail({
+        from: fromHeader,
+        to,
+        subject,
+        text,
+        html,
+        attachments,
+      });
 
-    return {
-      success: true,
-      provider: config.source,
-      messageId: info.messageId,
-    };
+      logger.info(`[EMAIL_SUCCESS] MsgID: ${info.messageId}`);
+      return {
+        success: true,
+        provider: config.source,
+        messageId: info.messageId,
+      };
+    } catch (error) {
+      logger.error(`[EMAIL_ERROR] ${error.message}`, { stack: error.stack });
+      return {
+        success: false,
+        provider: config.source,
+        error: error.message,
+      };
+    }
   }
 
   buildActivationEmailHtml({ recipientName, activationUrl, tenant, systemConfig, actorType = 'customer' }) {

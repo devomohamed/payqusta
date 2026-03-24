@@ -34,7 +34,6 @@ const commonValidations = {
   email: (fieldName = 'email') =>
     body(fieldName)
       .isEmail()
-      .normalizeEmail()
       .withMessage('البريد الإلكتروني غير صحيح'),
 
   // Phone (Egyptian format)
@@ -130,7 +129,7 @@ const authValidations = {
 
   resetPassword: [
     param('token').notEmpty().withMessage('Token مطلوب'),
-    commonValidations.password('newPassword'),
+    commonValidations.password('password'),
     handleValidationErrors,
   ],
 

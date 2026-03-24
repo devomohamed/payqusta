@@ -392,6 +392,10 @@ class AdminController {
       if (req.body.email !== undefined) user.email = req.body.email;
       if (req.body.phone !== undefined) user.phone = req.body.phone;
       if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
+      if (req.body.invitationChannel !== undefined) {
+        if (!user.invitation) user.invitation = {};
+        user.invitation.channel = req.body.invitationChannel;
+      }
 
       if (req.body.role !== undefined || req.body.customRole !== undefined) {
         const roleAssignment = await resolveUserRoleAssignment({

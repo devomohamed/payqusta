@@ -97,7 +97,7 @@ const userSchema = new mongoose.Schema(
       },
       channel: {
         type: String,
-        enum: ['sms', 'email', 'auto', 'none'],
+        enum: ['sms', 'email', 'whatsapp', 'auto', 'none'],
         default: 'auto',
       },
       fallbackChannel: {

@@ -328,6 +328,8 @@ export default function App() {
           <Route path="/portal/login" element={
             <LazyRoute component={PortalLogin} message="جاري تحميل تسجيل الدخول..." />
           } />
+          <Route path="/portal/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message="جاري تحميل استعادة كلمة المرور..." />} />
+          <Route path="/portal/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message="جاري تحميل إعادة التعيين..." />} />
 
           <Route path="/portal" element={<LazyRoute component={PortalLayout} message="جاري تحميل البوابة..." />}>
             <Route index element={<Navigate to="dashboard" replace />} />

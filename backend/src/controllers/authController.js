@@ -96,7 +96,7 @@ class AuthController {
 
     const user = await User.findOne({ email })
       .select('+password')
-      .populate('tenant', 'name slug branding subscription customDomain customDomainStatus customDomainLastCheckedAt');
+      .populate('tenant', 'name slug branding settings notificationChannels notificationBranding whatsapp subscription customDomain customDomainStatus customDomainLastCheckedAt');
 
     if (!user) {
       return next(AppError.unauthorized('بيانات الدخول غير صحيحة'));
@@ -142,7 +142,7 @@ class AuthController {
 
   getMe = catchAsync(async (req, res) => {
     const user = await User.findById(req.user._id)
-      .populate('tenant', 'name slug branding settings subscription customDomain customDomainStatus customDomainLastCheckedAt')
+      .populate('tenant', 'name slug branding settings notificationChannels notificationBranding whatsapp subscription customDomain customDomainStatus customDomainLastCheckedAt')
       .populate('branch', 'name')
       .populate('primaryBranch', 'name')
       .populate('assignedBranches', 'name')
@@ -174,13 +174,16 @@ class AuthController {
 
   forgotPassword = catchAsync(async (req, res, next) => {
     const { email } = req.body;
-
     if (!email) {
       return next(AppError.badRequest('البريد الإلكتروني مطلوب'));
     }
 
-    const user = await User.findOne({ email });
+    const searchEmail = String(email).trim().toLowerCase();
+    logger.info(`[FORGOT_PASSWORD] Attempt for: ${searchEmail} (Original: ${email})`);
+
+    const user = await User.findOne({ email: searchEmail }).populate('tenant');
     if (!user) {
+      logger.warn(`[FORGOT_PASSWORD] User not found: ${searchEmail}`);
       return ApiResponse.success(res, null, 'إذا كان البريد الإلكتروني مسجلاً، ستتلقى رسالة لإعادة تعيين كلمة المرور');
     }
 
@@ -192,7 +195,11 @@ class AuthController {
     await user.save({ validateBeforeSave: false });
 
     try {
-      const emailResult = await emailService.sendPasswordResetEmailModern(user, resetToken);
+      const emailResult = await emailService.sendPasswordResetEmailModern({
+        user,
+        resetToken,
+        tenant: user.tenant
+      });
       if (!emailResult?.success) {
         throw new Error(emailResult?.error || 'Email service reported an unsuccessful send');
       }
@@ -418,7 +425,7 @@ class AuthController {
 
   updateTenantUser = catchAsync(async (req, res, next) => {
     const { id } = req.params;
-    const { name, phone, role, customRole, password, isActive, branch, primaryBranch, assignedBranches, branchAccessMode } = req.body;
+    const { name, phone, role, customRole, password, isActive, branch, primaryBranch, assignedBranches, branchAccessMode, invitationChannel } = req.body;
 
     const user = await User.findOne({ _id: id, tenant: req.tenantId });
     if (!user) return next(AppError.notFound('المستخدم غير موجود'));
@@ -427,6 +434,11 @@ class AuthController {
     if (phone !== undefined) user.phone = phone;
     if (typeof isActive === 'boolean') user.isActive = isActive;
     if (password) user.password = password;
+    
+    if (invitationChannel) {
+      if (!user.invitation) user.invitation = {};
+      user.invitation.channel = invitationChannel;
+    }
 
     if (role !== undefined || customRole !== undefined) {
       const roleAssignment = await resolveUserRoleAssignment({

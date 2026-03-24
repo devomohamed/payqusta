@@ -139,6 +139,8 @@ const customerSchema = new mongoose.Schema(
     firstPurchaseDate: { type: Date },
     lastPurchaseDate: { type: Date },
     lastPaymentDate: { type: Date },
+    passwordResetToken: { type: String },
+    passwordResetExpires: { type: Date },
     tier: {
       type: String,
       enum: Object.values(CUSTOMER_TIERS),
@@ -443,6 +445,14 @@ customerSchema.statics.getAgingReport = async function (tenantId) {
       totalOutstanding: customers.reduce((sum, customer) => sum + customer.financials.outstandingBalance, 0),
     },
   };
+};
+
+customerSchema.methods.createPasswordResetToken = function () {
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  return resetToken;
 };
 
 module.exports = mongoose.model('Customer', customerSchema);

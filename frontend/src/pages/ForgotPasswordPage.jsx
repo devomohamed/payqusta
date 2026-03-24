@@ -20,9 +20,11 @@ export default function ForgotPasswordPage() {
       return toast.error('البريد الإلكتروني مطلوب');
     }
 
+    const isPortal = window.location.pathname.startsWith('/portal');
     setLoading(true);
     try {
-      const res = await api.post('/auth/forgot-password', { email: normalizedEmail });
+      const endpoint = isPortal ? '/portal/auth/forgot-password' : '/auth/forgot-password';
+      const res = await api.post(endpoint, { email: normalizedEmail });
       toast.success(res.data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور');
       setEmail(normalizedEmail);
       setSent(true);

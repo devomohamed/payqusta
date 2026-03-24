@@ -9,7 +9,9 @@ const { RESOURCES, ACTIONS, DEFAULT_ROLES } = require('../config/permissions');
 const { ROLES } = require('../config/constants');
 
 function isTenantAdminFullAccess(user = null) {
-  return Boolean(user && user.role === ROLES.ADMIN);
+  if (!user || !user.role) return false;
+  const role = user.role.toLowerCase();
+  return role === 'admin' || role === (ROLES.ADMIN || 'admin').toLowerCase();
 }
 
 function getPermissionDeniedError() {
@@ -51,14 +53,22 @@ const checkPermission = (resource, action) => {
     try {
       const user = req.user;
 
-      if (isTenantAdminFullAccess(user)) {
+      const logger = require('../utils/logger');
+      const isAdmin = isTenantAdminFullAccess(user);
+      
+      if (isAdmin) {
+        // logger.debug(`[DEBUG_PERM] Admin bypass for ${user?.email}`);
         return next();
       }
 
+      logger.info(`[DEBUG_PERM] Manual check: User: ${user?.email}, Role: ${user?.role}, ROLES.ADMIN: ${ROLES.ADMIN}, Resource: ${resource}, Action: ${action}`);
+
       const roleDoc = await resolveRoleDocument(user);
       if (roleDoc) {
+        logger.info(`[DEBUG_PERM] Found Custom Role Doc: ${roleDoc.name}`);
         const permission = roleDoc.permissions.find((entry) => entry.resource === resource);
         if (!permission || !permission.actions.includes(action)) {
+          logger.warn(`[DEBUG_PERM] Custom Role Permission Denied: ${resource}.${action}`);
           return next(getPermissionDeniedError());
         }
         return next();
@@ -66,11 +76,15 @@ const checkPermission = (resource, action) => {
 
       const defaultRole = resolveDefaultRole(user);
       if (!defaultRole) {
+        logger.error(`[DEBUG_PERM] No Role/Default Role found for: ${user?.role}`);
         return next(getUnknownRoleError());
       }
 
+      logger.info(`[DEBUG_PERM] Found Default Role: ${user?.role}`);
       const permission = defaultRole.permissions.find((entry) => entry.resource === resource);
+
       if (!permission || !permission.actions.includes(action)) {
+        logger.warn(`[DEBUG_PERM] Default Role Permission Denied: ${resource}.${action}`);
         return next(getPermissionDeniedError());
       }
 

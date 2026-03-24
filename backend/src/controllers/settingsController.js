@@ -344,7 +344,7 @@ class SettingsController {
     // Save template name mappings if provided
     if (templateNames) {
       for (const [purpose, name] of Object.entries(templateNames)) {
-        if (['invoice', 'statement', 'reminder', 'payment', 'restock'].includes(purpose)) {
+        if (['invoice', 'statement', 'reminder', 'payment', 'restock', 'activation'].includes(purpose)) {
           updateData[`whatsapp.templateNames.${purpose}`] = name;
         }
       }
@@ -353,7 +353,7 @@ class SettingsController {
     // Save template language mappings if provided
     if (templateLanguages) {
       for (const [purpose, lang] of Object.entries(templateLanguages)) {
-        if (['invoice', 'statement', 'reminder', 'payment', 'restock'].includes(purpose)) {
+        if (['invoice', 'statement', 'reminder', 'payment', 'restock', 'activation'].includes(purpose)) {
           updateData[`whatsapp.templateLanguages.${purpose}`] = lang;
         }
       }
@@ -460,7 +460,7 @@ class SettingsController {
     const nextChannels = req.body?.notificationChannels || {};
     const nextBranding = req.body?.notificationBranding || {};
 
-    tenant.notificationChannels = {
+    tenant.set('notificationChannels', {
       ...(tenant.notificationChannels?.toObject?.() || tenant.notificationChannels || {}),
       ...nextChannels,
       email: {
@@ -475,7 +475,7 @@ class SettingsController {
         ...(tenant.notificationChannels?.routing?.toObject?.() || tenant.notificationChannels?.routing || {}),
         ...(nextChannels.routing || {}),
       },
-    };
+    });
 
     tenant.notificationBranding = {
       ...(tenant.notificationBranding?.toObject?.() || tenant.notificationBranding || {}),

@@ -45,6 +45,10 @@ async function ensureSystemConfig() {
   let config = await SystemConfig.findOne({ key: 'default' });
   if (!config) {
     config = await SystemConfig.create(defaultSystemConfigPayload);
+  } else if (!config.notifications) {
+    // Structural fix for legacy databases missing the notifications object
+    config.notifications = defaultSystemConfigPayload.notifications;
+    await config.save();
   }
   return config;
 }

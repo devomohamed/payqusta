@@ -30,9 +30,11 @@ export default function ResetPasswordPage() {
       return toast.error('كلمتا المرور غير متطابقتين');
     }
 
+    const isPortal = window.location.pathname.startsWith('/portal');
     setLoading(true);
     try {
-      const res = await api.post(`/auth/reset-password/${token}`, { password });
+      const endpoint = isPortal ? `/portal/auth/reset-password/${token}` : `/auth/reset-password/${token}`;
+      const res = await api.post(endpoint, { password });
       toast.success('تم إعادة تعيين كلمة المرور بنجاح! ✅');
 
       // Auto login if token is returned

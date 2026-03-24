@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   User, Mail, Phone, Building2, Clock, Edit3, Save, Lock, Eye, EyeOff,
-  Camera, Loader2, Trash2, Shield, Calendar, CheckCircle, LogOut
+  Camera, Loader2, Trash2, Shield, Calendar, CheckCircle, LogOut, Send
 } from 'lucide-react';
 import { useAuthStore, useThemeStore, api } from '../../store';
 import { Button, Input } from '../UI';
@@ -32,8 +32,6 @@ export default function SettingsProfile() {
   const { dark } = useThemeStore();
 
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '' });
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState({});
   const fileInputRef = useRef(null);
@@ -43,6 +41,7 @@ export default function SettingsProfile() {
       setUserForm({ name: user.name || '', email: user.email || '', phone: user.phone || '' });
     }
   }, [user]);
+
   const handleSaveUser = async () => {
     if (!userForm.name) return notify.warning('الاسم مطلوب');
     setSaving({ ...saving, user: true });
@@ -60,28 +59,17 @@ export default function SettingsProfile() {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-      return notify.warning('أدخل كلمة المرور الحالية والجديدة');
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      return notify.warning('كلمة المرور الجديدة غير متطابقة');
-    }
-    if (passwordForm.newPassword.length < 6) {
-      return notify.warning('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-    }
-    setSaving({ ...saving, password: true });
+  const handleRequestResetEmail = async () => {
+    if (!user?.email) return notify.warning('البريد الإلكتروني غير متوفر');
+    
+    setSaving({ ...saving, resetEmail: true });
     try {
-      await api.put('/auth/update-password', {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
-      notify.success('تم تغيير كلمة المرور');
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      await api.post('/auth/forgot-password', { email: user.email });
+      notify.success('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني بنجاح');
     } catch (err) {
-      notify.error(err.response?.data?.message || 'كلمة المرور الحالية غير صحيحة');
+      notify.error(err.response?.data?.message || 'تعذر إرسال الإيميل. تأكد من إعدادات البريد الإلكتروني للمنصة.');
     } finally {
-      setSaving({ ...saving, password: false });
+      setSaving({ ...saving, resetEmail: false });
     }
   };
 
@@ -244,53 +232,46 @@ export default function SettingsProfile() {
         </div>
       </div>
 
-      {/* Password Change with Eye/EyeOff */}
+      {/* Redesigned Password Section */}
       <div className="pt-6 border-t border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
             <Lock className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white">تغيير كلمة المرور</h3>
-            <p className="text-sm text-subtle">تأمين حسابك</p>
+            <h3 className="font-bold text-gray-900 dark:text-white">أمان كلمة المرور</h3>
+            <p className="text-sm text-subtle">إدارة تأمين حسابك</p>
           </div>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); handleChangePassword(); }}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { key: 'currentPassword', label: 'كلمة المرور الحالية', show: 'current' },
-              { key: 'newPassword', label: 'كلمة المرور الجديدة', show: 'new' },
-              { key: 'confirmPassword', label: 'تأكيد كلمة المرور', show: 'confirm' },
-            ].map(({ key, label, show }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{label}</label>
-                <div className="relative">
-                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type={showPasswords[show] ? 'text' : 'password'}
-                    value={passwordForm[key]}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, [key]: e.target.value })}
-                    placeholder={t('profile.new_password')}
-                    className={`w-full pr-10 pl-10 py-2.5 rounded-xl border text-sm ${dark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900 dark:text-gray-100'} focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none`}
-                    dir="ltr"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, [show]: !showPasswords[show] })}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPasswords[show] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            ))}
+        <div className="relative overflow-hidden rounded-2xl border border-gray-100 dark:border-white/5 bg-gradient-to-br from-white to-gray-50/50 dark:from-slate-900 dark:to-slate-950 p-6 shadow-sm">
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1 text-center md:text-right">
+              <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">تحديث كلمة المرور عبر البريد الإلكتروني</h4>
+              <p className="text-sm text-subtle leading-relaxed mb-4">
+                لحمايتك، قمنا بتغيير طريقة تحديث كلمة المرور. سيتم إرسال رابط آمن ومباشر إلى بريدك الإلكتروني المسجل لدينا 
+                <span className="font-bold text-gray-900 dark:text-white mx-1">({user?.email})</span> 
+                لتتمكن من إعادة تعيين كلمة المرور بكل سهولة وأمان.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <Button 
+                onClick={handleRequestResetEmail}
+                variant="warning" 
+                size="lg"
+                loading={saving.resetEmail} 
+                className="shadow-lg shadow-amber-500/20 px-8 h-12 text-base font-bold"
+                icon={<Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />}
+              >
+                إرسال الرابط للميل
+              </Button>
+            </div>
           </div>
-
-          <div className="flex justify-end mt-4">
-            <Button type="submit" variant="warning" loading={saving.password} icon={<Lock className="w-4 h-4" />}>تغيير كلمة المرور</Button>
-          </div>
-        </form>
+          
+          {/* Decorative Background Element */}
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
+        </div>
       </div>
 
       {/* Account Info Cards */}

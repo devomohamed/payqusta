@@ -1,11 +1,16 @@
 const { ensureSystemConfig, getPlatformNotificationSettings } = require('./notificationConfigService');
 
 function hasPlatformEmail(platformEmail = {}) {
+  // If explicitly disabled by super admin, respect the kill switch.
+  if (platformEmail?.enabled === false) return false;
+
+  const hasEnvConfig = Boolean(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
+
   return Boolean(
-    platformEmail?.enabled
+    (platformEmail?.enabled || hasEnvConfig || platformEmail.enabled === undefined)
     && (
       (platformEmail.host && platformEmail.user && platformEmail.pass)
-      || (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS)
+      || hasEnvConfig
       || process.env.NODE_ENV !== 'production'
     )
   );

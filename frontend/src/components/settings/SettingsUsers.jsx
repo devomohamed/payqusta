@@ -62,7 +62,7 @@ export default function SettingsUsers() {
       phone: user.phone || '',
       role: user.role,
       isActive: user.isActive,
-      invitationChannel: user.phone && user.email ? 'auto' : user.phone ? 'sms' : 'email'
+      invitationChannel: user.invitation?.channel || 'auto'
     });
     setShowModal(true);
   };
@@ -86,6 +86,7 @@ export default function SettingsUsers() {
           phone: form.phone,
           role: form.role,
           isActive: form.isActive,
+          invitationChannel: form.invitationChannel,
         });
         notify.success('تم تحديث المستخدم');
       } else {
@@ -145,10 +146,10 @@ export default function SettingsUsers() {
       await api.post(`/auth/users/${user._id}/resend-invitation`, {
         invitationChannel: user.phone ? 'auto' : 'email',
       });
-      notify.success('ØªÙ… Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¯Ø¹ÙˆØ©');
+      notify.success('تم إعادة إرسال الدعوة');
       loadUsers();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'ÙØ´Ù„ Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¯Ø¹ÙˆØ©');
+      notify.error(error.response?.data?.message || 'فشل إعادة إرسال الدعوة');
     }
   };
 
@@ -298,6 +299,23 @@ export default function SettingsUsers() {
                 <option value="auto">Smart / Auto</option>
                 <option value="email">Email</option>
                 <option value="sms">SMS</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+          )}
+
+          {editId && (
+            <div>
+              <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">Invitation Channel</label>
+              <select
+                value={form.invitationChannel}
+                onChange={(event) => setForm({ ...form, invitationChannel: event.target.value })}
+                className="app-surface-muted w-full rounded-xl border-2 border-gray-100/80 px-4 py-2.5 text-gray-900 outline-none transition-all focus:border-primary-500 dark:border-white/10 dark:text-white dark:focus:border-primary-400"
+              >
+                <option value="auto">Smart / Auto</option>
+                <option value="email">Email</option>
+                <option value="sms">SMS</option>
+                <option value="whatsapp">WhatsApp</option>
               </select>
             </div>
           )}
