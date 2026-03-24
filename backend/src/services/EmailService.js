@@ -157,7 +157,7 @@ class EmailService {
     if (customer) logger.info(`[SERVICE_DEBUG] Customer email: ${customer.email}, name: ${customer.name}`);
     
     const storeUrl = buildStoreUrl(tenant?.slug) || process.env.CLIENT_URL || 'http://localhost:5173';
-    const resetUrl = `${storeUrl}/reset-password/${resetToken}`;
+    const resetUrl = `${storeUrl}/portal/reset-password/${resetToken}`;
     const subject = 'إعادة تعيين كلمة المرور - PayQusta Portal';
     const plainText = `مرحبًا ${customer.name}\n\nتلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بحسابك في متجر ${tenant.name}.\n\nاستخدم الرابط التالي لإكمال العملية:\n${resetUrl}\n\nملاحظة: الرابط صالح لمدة ساعة واحدة فقط.`;
 

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const categorySchema = new mongoose.Schema(
     {
@@ -42,6 +43,14 @@ const categorySchema = new mongoose.Schema(
         toObject: { virtuals: true },
     }
 );
+
+// Pre-save: Generate slug from name if missing
+categorySchema.pre('save', function (next) {
+    if (this.isModified('name') || !this.slug) {
+        this.slug = slugify(this.name, { lower: true, strict: true });
+    }
+    next();
+});
 
 // Indexes
 categorySchema.index({ tenant: 1, name: 1, parent: 1 }, { unique: true });

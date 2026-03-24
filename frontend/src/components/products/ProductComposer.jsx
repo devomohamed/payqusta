@@ -46,11 +46,41 @@ export default function ProductComposer({
     onUpdateVariant,
     onRemoveVariant,
     stepErrors = {},
+    fieldErrors = {},
     pricingErrors = {},
     isDirty = false,
 }) {
     const [activeStep, setActiveStep] = useState('basics');
     const [visitedSteps, setVisitedSteps] = useState(['basics']);
+
+    const scrollToError = () => {
+        const errorFields = Object.keys(fieldErrors);
+        if (errorFields.length === 0) return;
+
+        // Give React a moment to switch steps and render the fields
+        requestAnimationFrame(() => {
+            const firstErrorField = errorFields[0];
+            const element = document.getElementsByName(firstErrorField)[0] 
+                || document.getElementById(firstErrorField)
+                || document.querySelector(`[data-field="${firstErrorField}"]`);
+
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.focus?.();
+                // Add a temporary highlight effect
+                element.classList.add('ring-2', 'ring-red-500', 'ring-offset-2');
+                setTimeout(() => {
+                    element.classList.remove('ring-2', 'ring-red-500', 'ring-offset-2');
+                }, 3000);
+            }
+        });
+    };
+
+    useEffect(() => {
+        if (Object.keys(fieldErrors).length > 0) {
+            scrollToError();
+        }
+    }, [fieldErrors]);
 
     const handleCloseRequest = async () => {
         if (loading) return;
@@ -150,6 +180,7 @@ export default function ProductComposer({
                                     user={user}
                                     can={can}
                                     onCategoriesReload={onCategoriesReload}
+                                    fieldErrors={fieldErrors}
                                 />
                             )}
 
@@ -163,6 +194,7 @@ export default function ProductComposer({
                                     branchScopeId={branchScopeId}
                                     mainBranchOption={mainBranchOption}
                                     pricingErrors={pricingErrors}
+                                    fieldErrors={fieldErrors}
                                 />
                             )}
 
@@ -181,6 +213,7 @@ export default function ProductComposer({
                                     onAddVariant={onAddVariant}
                                     onUpdateVariant={onUpdateVariant}
                                     onRemoveVariant={onRemoveVariant}
+                                    fieldErrors={fieldErrors}
                                 />
                             )}
 

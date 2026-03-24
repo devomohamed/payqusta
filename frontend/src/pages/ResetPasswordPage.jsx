@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
       }
 
       setTimeout(() => {
-        navigate('/login');
+        navigate(isPortal ? '/portal/login' : '/login');
       }, 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || 'الرابط غير صالح أو منتهي الصلاحية');

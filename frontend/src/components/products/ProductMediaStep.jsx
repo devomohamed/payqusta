@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card } from '../UI';
 import ImageEditorModal from './ImageEditorModal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -185,8 +186,11 @@ export default function ProductMediaStep({
     onRemoveImage,
     onAddVariant,
     onUpdateVariant,
-    onRemoveVariant
+    onRemoveVariant,
+    fieldErrors = {}
 }) {
+    const { t } = useTranslation('admin');
+    const getErrorText = (errKey) => errKey ? t(`products.validation.${errKey}`, errKey) : undefined;
     const fileInputRef = useRef(null);
     const [allExpanded, setAllExpanded] = useState(true);
     const [cropFiles, setCropFiles] = useState([]);
@@ -702,12 +706,28 @@ export default function ProductMediaStep({
                                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-gray-100 dark:border-white/10 pt-8">
                                                             <div className="space-y-2">
                                                                 <label className="text-xs font-black text-gray-500 dark:text-gray-400 mb-1">سعر البيع</label>
-                                                                <div className="relative group">
-                                                                    <input type="number" placeholder="0.00" value={v.price || ''}
-                                                                        onChange={e => onUpdateVariant(idx, 'price', e.target.value)}
-                                                                        className="app-surface w-full rounded-xl border-2 border-gray-100 dark:border-white/10 pl-12 pr-4 py-3 text-[17px] font-black transition-all focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 text-emerald-600" dir="ltr" />
-                                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-black">ج.م</span>
-                                                                </div>
+                                                                    <div className="relative group">
+                                                                        <input
+                                                                            id={`variants.${idx}.price`}
+                                                                            name={`variants.${idx}.price`}
+                                                                            type="number"
+                                                                            placeholder="0.00"
+                                                                            value={v.price || ''}
+                                                                            onChange={e => onUpdateVariant(idx, 'price', e.target.value)}
+                                                                            className={`app-surface w-full rounded-xl border-2 pl-12 pr-4 py-3 text-[17px] font-black transition-all focus:outline-none focus:ring-4 text-emerald-600 ${
+                                                                                fieldErrors[`variants.${idx}.price`] 
+                                                                                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10' 
+                                                                                    : 'border-gray-100 dark:border-white/10 focus:border-emerald-500 focus:ring-emerald-500/10'
+                                                                            }`}
+                                                                            dir="ltr"
+                                                                        />
+                                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-black">ج.م</span>
+                                                                    </div>
+                                                                    {fieldErrors[`variants.${idx}.price`] && (
+                                                                        <p className="mt-1 text-xs font-bold text-red-500">
+                                                                            {getErrorText(fieldErrors[`variants.${idx}.price`])}
+                                                                        </p>
+                                                                    )}
                                                             </div>
 
                                                             <div className="space-y-2">

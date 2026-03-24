@@ -244,6 +244,49 @@ class ImportService {
         const barcode = row.barcode ? String(row.barcode).trim() : '';
         const internationalBarcode = row.internationalBarcode ? String(row.internationalBarcode).trim() : '';
 
+        // ── Step 1: Resolve Category / Subcategory (Moved earlier to support updates) ──
+        let categoryId = null;
+        let subcategoryId = null;
+        let categoryName = '';
+
+        if (row.category) {
+          const catName = String(row.category).trim();
+          const catKey = catName.toLowerCase();
+
+          if (categoryMap[catKey]) {
+            categoryId = categoryMap[catKey]._id;
+            categoryName = categoryMap[catKey].name;
+          } else {
+            // Auto-create category
+            const newCat = await Category.create({ tenant: tenantId, name: catName });
+            categoryMap[catKey] = newCat;
+            allCategories.push(newCat); // Sync the cache for subcategory lookup
+            categoryId = newCat._id;
+            categoryName = catName;
+            results.warnings.push(`صف ${rowNum}: تم إنشاء فئة جديدة "${catName}"`);
+          }
+
+          // Subcategory
+          if (row.subcategory) {
+            const subName = String(row.subcategory).trim();
+            const subKey = subName.toLowerCase();
+            // Look for subcategory under this parent
+            const existingSub = allCategories.find(
+              c => c.name.trim().toLowerCase() === subKey && c.parent && c.parent.toString() === categoryId.toString()
+            ) || categoryMap[`${catKey}__${subKey}`];
+
+            if (existingSub) {
+              subcategoryId = existingSub._id;
+            } else {
+              const newSub = await Category.create({ tenant: tenantId, name: subName, parent: categoryId });
+              categoryMap[`${catKey}__${subKey}`] = newSub;
+              allCategories.push(newSub); // Sync the cache
+              subcategoryId = newSub._id;
+              results.warnings.push(`صف ${rowNum}: تم إنشاء فئة فرعية "${subName}" تحت "${catName}"`);
+            }
+          }
+        }
+
         // ── Scenario 2 & 3: Check duplicates (SKU / Barcode) ──
         const duplicateOr = [];
         if (sku) duplicateOr.push({ sku: sku.toUpperCase() });
@@ -265,7 +308,7 @@ class ImportService {
 
         if (existing) {
           if (updateExisting) {
-            const updateData = this._buildUpdateData(row);
+            const updateData = this._buildUpdateData(row, categoryId, subcategoryId, categoryName);
             await Product.findByIdAndUpdate(existing._id, { $set: updateData });
             results.updated++;
             results.details.push({ row: rowNum, status: 'updated', name });
@@ -276,46 +319,7 @@ class ImportService {
           continue;
         }
 
-        // ── Scenario 4 & 5: Category / Subcategory ──
-        let categoryId = null;
-        let subcategoryId = null;
-        let categoryName = '';
-
-        if (row.category) {
-          const catName = String(row.category).trim();
-          const catKey = catName.toLowerCase();
-
-          if (categoryMap[catKey]) {
-            categoryId = categoryMap[catKey]._id;
-            categoryName = categoryMap[catKey].name;
-          } else {
-            // Auto-create category
-            const newCat = await Category.create({ tenant: tenantId, name: catName });
-            categoryMap[catKey] = newCat;
-            categoryId = newCat._id;
-            categoryName = catName;
-            results.warnings.push(`صف ${rowNum}: تم إنشاء فئة جديدة "${catName}"`);
-          }
-
-          // Subcategory
-          if (row.subcategory) {
-            const subName = String(row.subcategory).trim();
-            const subKey = subName.toLowerCase();
-            // Look for subcategory under this parent
-            const existingSub = allCategories.find(
-              c => c.name.trim().toLowerCase() === subKey && c.parent && c.parent.toString() === categoryId.toString()
-            ) || categoryMap[`${catKey}__${subKey}`];
-
-            if (existingSub) {
-              subcategoryId = existingSub._id;
-            } else {
-              const newSub = await Category.create({ tenant: tenantId, name: subName, parent: categoryId });
-              categoryMap[`${catKey}__${subKey}`] = newSub;
-              subcategoryId = newSub._id;
-              results.warnings.push(`صف ${rowNum}: تم إنشاء فئة فرعية "${subName}" تحت "${catName}"`);
-            }
-          }
-        }
+        // ── Step 2: Resolve Rest (Supplier, etc) ──
 
         // ── Scenario 6: Supplier ──
         let supplierId = null;
@@ -412,7 +416,7 @@ class ImportService {
   }
 
   // ── Build Update Data ────────────────────────────────────────────────────
-  _buildUpdateData(row) {
+  _buildUpdateData(row, categoryId = null, subcategoryId = null, categoryName = '') {
     const data = {};
     if (row.price !== undefined && row.price !== '') data.price = Number(row.price);
     if (row.cost !== undefined && row.cost !== '') data.cost = Number(row.cost);
@@ -426,8 +430,16 @@ class ImportService {
     if (row.taxable !== undefined) data.taxable = this._parseBoolean(row.taxable, true);
     if (row.priceIncludesTax !== undefined) data.priceIncludesTax = this._parseBoolean(row.priceIncludesTax, false);
     if (row.tags) data.tags = String(row.tags).split(/[,،]/).map(t => t.trim()).filter(Boolean);
+    
+    // Update Category/Subcategory if resolved
+    if (categoryId) data.category = categoryId;
+    if (subcategoryId) data.subcategory = subcategoryId;
+    if (categoryName) data.categoryName = categoryName;
+
     return data;
   }
+
+
 
   // ── Parse Boolean ────────────────────────────────────────────────────────
   _parseBoolean(val, defaultVal) {

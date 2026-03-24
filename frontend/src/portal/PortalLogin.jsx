@@ -10,27 +10,24 @@ import { transliterateArabicToEnglish } from '../utils/textUtils';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 
 export default function PortalLogin() {
-  const [activeTab, setActiveTab] = useState('login'); // login | register | activate
+  const [activeTab, setActiveTab] = useState('login'); // login | register
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // Login fields
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [storeCode, setStoreCode] = useState('');
 
   // Register fields
   const [regName, setRegName] = useState('');
   const [regPhone, setRegPhone] = useState('');
+  const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regStoreCode, setRegStoreCode] = useState('');
 
-  // Activate fields
-  const [actPhone, setActPhone] = useState('');
-  const [actPassword, setActPassword] = useState('');
-  const [actConfirmPassword, setActConfirmPassword] = useState('');
-  const [actStoreCode, setActStoreCode] = useState('');
+
 
   const { login, register, activate, loading } = usePortalStore();
   const { dark } = useThemeStore();
@@ -46,7 +43,7 @@ export default function PortalLogin() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const result = await login(phone, password, storeCode);
+    const result = await login(identifier, password, storeCode);
     if (result.success) {
       notify.success(result.message || t('login.messages.login_success'));
       navigate(nextPath);
@@ -68,6 +65,7 @@ export default function PortalLogin() {
     const result = await register({
       name: regName,
       phone: regPhone,
+      email: regEmail,
       password: regPassword,
       confirmPassword: regConfirmPassword,
       storeCode: regStoreCode,
@@ -80,34 +78,11 @@ export default function PortalLogin() {
     }
   };
 
-  const handleActivate = async (e) => {
-    e.preventDefault();
-    if (actPassword !== actConfirmPassword) {
-      notify.error(t('login.messages.password_mismatch'));
-      return;
-    }
-    if (actPassword.length < 6) {
-      notify.error(t('login.messages.password_length'));
-      return;
-    }
-    const result = await activate({
-      phone: actPhone,
-      newPassword: actPassword,
-      confirmPassword: actConfirmPassword,
-      storeCode: actStoreCode,
-    });
-    if (result.success) {
-      notify.success(result.message || t('login.messages.activate_success'));
-      navigate(nextPath);
-    } else {
-      notify.error(result.message);
-    }
-  };
+
 
   const tabs = [
     { id: 'login', label: t('login.tabs.login'), icon: LogIn },
     { id: 'register', label: t('login.tabs.register'), icon: UserPlus },
-    { id: 'activate', label: t('login.tabs.activate'), icon: ShieldCheck },
   ];
 
   const inputClass = `app-surface w-full rounded-xl border border-transparent px-4 py-3 pr-11 text-gray-900 transition-all focus:ring-2 focus:ring-primary-500/20 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 font-['Cairo']`;
@@ -163,10 +138,10 @@ export default function PortalLogin() {
           {activeTab === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label htmlFor="portal-login-phone" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.phone')}</label>
+                <label htmlFor="portal-login-identifier" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.email_or_phone', 'البريد الإلكتروني أو رقم الهاتف')}</label>
                 <div className="relative">
-                  <Phone className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="portal-login-phone" name="phone" autoComplete="tel" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} placeholder={t('login.form.phone_placeholder')} required />
+                  <User className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input id="portal-login-identifier" name="identifier" autoComplete="username" type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className={inputClass} placeholder={t('login.form.identifier_placeholder', 'example@email.com أو 01XXXXXXXXX')} required />
                 </div>
               </div>
 
@@ -231,6 +206,14 @@ export default function PortalLogin() {
               </div>
 
               <div>
+                <label htmlFor="portal-register-email" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.email', 'البريد الإلكتروني')}</label>
+                <div className="relative">
+                  <User className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input id="portal-register-email" name="email" autoComplete="email" type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} className={inputClass} placeholder="example@email.com" />
+                </div>
+              </div>
+
+              <div>
                 <label htmlFor="portal-register-password" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.password')}</label>
                 <div className="relative">
                   <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -273,65 +256,7 @@ export default function PortalLogin() {
             </form>
           )}
 
-          {/* Activate Form */}
-          {activeTab === 'activate' && (
-            <form onSubmit={handleActivate} className="space-y-4">
-              <div className="app-surface-muted mb-2 rounded-xl border border-blue-200/70 p-3 dark:border-blue-500/20">
-                <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                  {t('login.messages.activate_hint')}
-                </p>
-              </div>
 
-              <div>
-                <label htmlFor="portal-activate-phone" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.phone_registered')}</label>
-                <div className="relative">
-                  <Phone className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="portal-activate-phone" name="phone" autoComplete="tel" type="text" value={actPhone} onChange={(e) => setActPhone(e.target.value)} className={inputClass} placeholder={t('login.form.phone_registered_placeholder')} required />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="portal-activate-password" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.password_new')}</label>
-                <div className="relative">
-                  <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="portal-activate-password" name="newPassword" autoComplete="new-password" type={showPass ? 'text' : 'password'} value={actPassword} onChange={(e) => setActPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.password_min')} required minLength={6} />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
-                    {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="portal-activate-confirm-password" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.confirm_password')}</label>
-                <div className="relative">
-                  <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="portal-activate-confirm-password" name="confirmPassword" autoComplete="new-password" type={showConfirmPass ? 'text' : 'password'} value={actConfirmPassword} onChange={(e) => setActConfirmPassword(e.target.value)} className={`${inputClass} ltr:pl-11 rtl:pr-11`} placeholder={t('login.form.confirm_password_placeholder')} required minLength={6} />
-                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200">
-                    {showConfirmPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {requiresStoreCode && (
-                <div>
-                  <label htmlFor="portal-activate-store-code" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login.form.store_code')}</label>
-                  <div className="relative">
-                    <Store className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input id="portal-activate-store-code" name="storeCode" autoComplete="organization" type="text" value={actStoreCode} onChange={(e) => setActStoreCode(transliterateArabicToEnglish(e.target.value).replace(/[^a-z0-9-]/g, '-'))} className={inputClass} placeholder={t('login.form.store_code_ask')} required={requiresStoreCode} />
-                  </div>
-                </div>
-              )}
-
-              <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold text-base shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait mt-2">
-                {loading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    {t('login.buttons.activating')}
-                  </span>
-                ) : t('login.buttons.activate')}
-              </button>
-            </form>
-          )}
         </div>
 
         {/* Theme toggle */}

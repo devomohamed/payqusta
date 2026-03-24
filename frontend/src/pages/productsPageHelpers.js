@@ -1,6 +1,6 @@
 export const MAX_PRODUCT_IMAGES = 10;
 
-const hasValue = (value) => value !== '' && value !== null && value !== undefined;
+export const hasValue = (value) => value !== '' && value !== null && value !== undefined;
 
 const toFiniteNumber = (value) => {
   if (!hasValue(value)) return null;

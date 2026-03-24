@@ -44,6 +44,7 @@ export default function ProductPricingStep({
   branchScopeId = '',
   mainBranchOption = null,
   pricingErrors = {},
+  fieldErrors = {},
 }) {
   const { t } = useTranslation('admin');
   const getErrorText = (errKey) => errKey ? t(`products.validation.${errKey}`, errKey) : undefined;
@@ -203,45 +204,53 @@ export default function ProductPricingStep({
 
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
           <Input
+            id="price"
+            name="price"
             type="number"
             min="0"
             label="سعر البيع *"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             placeholder="0.00"
-            error={getErrorText(pricingErrors.price)}
+            error={getErrorText(fieldErrors.price || pricingErrors.price)}
           />
           <Input
+            id="compareAtPrice"
+            name="compareAtPrice"
             type="number"
             min="0"
             label="السعر قبل الخصم"
             value={form.compareAtPrice}
             onChange={(e) => setForm({ ...form, compareAtPrice: e.target.value })}
             placeholder="0.00"
-            error={getErrorText(pricingErrors.compareAtPrice)}
+            error={getErrorText(fieldErrors.compareAtPrice || pricingErrors.compareAtPrice)}
             tooltip="سيظهر كسعر مشطوب لإبراز الخصم أمام العميل."
           />
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <Input
+            id="costPrice"
+            name="costPrice"
             type="number"
             min="0"
             label="سعر التكلفة"
             value={form.costPrice}
             onChange={(e) => setForm({ ...form, costPrice: e.target.value })}
             placeholder="0.00"
-            error={getErrorText(pricingErrors.costPrice)}
+            error={getErrorText(fieldErrors.costPrice || pricingErrors.costPrice)}
             tooltip="يستخدم لحساب الربحية داخليًا، ولا يظهر للعميل."
           />
           <Input
+            id="wholesalePrice"
+            name="wholesalePrice"
             type="number"
             min="0"
             label="سعر الجملة"
             value={form.wholesalePrice}
             onChange={(e) => setForm({ ...form, wholesalePrice: e.target.value })}
             placeholder="0.00"
-            error={getErrorText(pricingErrors.wholesalePrice)}
+            error={getErrorText(fieldErrors.wholesalePrice || pricingErrors.wholesalePrice)}
           />
         </div>
 

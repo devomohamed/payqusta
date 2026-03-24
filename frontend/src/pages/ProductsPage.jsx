@@ -24,6 +24,7 @@ import {
   createDraftId,
   createEmptyProductForm,
   getPricingValidationErrors,
+  hasValue,
   normalizeBranchAvailabilityPayload,
   normalizeDraftEntries,
   normalizeInventoryPayload,
@@ -69,6 +70,7 @@ export default function ProductsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingImages, setPendingImages] = useState([]);
   const [stepErrors, setStepErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [recoveryDraftChecked, setRecoveryDraftChecked] = useState(false);
   const LIMIT = 8;
   const isIncompleteTab = productTab === 'incomplete';
@@ -458,16 +460,34 @@ export default function ProductsPage() {
   };
 
   const validateProductComposer = () => {
-    const errors = { basics: false, pricing: false, media: false };
-    const pricingErrors = getPricingValidationErrors(form, { requireSalePrice: true });
-    if (!form.name) errors.basics = true;
-    if (Object.keys(pricingErrors).length > 0) errors.pricing = true;
-    if (form.variants && form.variants.length > 0) {
-      const invalid = form.variants.some(v => !v.price);
-      if (invalid) errors.pricing = true;
+    const nextFieldErrors = {};
+    const currentPricingErrors = getPricingValidationErrors(form, { requireSalePrice: true });
+
+    if (!form.name?.trim()) {
+      nextFieldErrors.name = 'name_required';
     }
-    setStepErrors(errors);
-    return !Object.values(errors).some(Boolean);
+
+    if (Object.keys(currentPricingErrors).length > 0) {
+      Object.assign(nextFieldErrors, currentPricingErrors);
+    }
+
+    if (form.variants && form.variants.length > 0) {
+      const invalidVariantIndex = form.variants.findIndex((v) => !v.price);
+      if (invalidVariantIndex >= 0) {
+        nextFieldErrors[`variants.${invalidVariantIndex}.price`] = 'variant_price_required';
+      }
+    }
+
+    const nextStepErrors = {
+      basics: !!nextFieldErrors.name,
+      pricing: !!(nextFieldErrors.price || nextFieldErrors.costPrice || nextFieldErrors.wholesalePrice || nextFieldErrors.compareAtPrice),
+      media: Object.keys(nextFieldErrors).some((key) => key.startsWith('variants')),
+    };
+
+    setStepErrors(nextStepErrors);
+    setFieldErrors(nextFieldErrors);
+
+    return Object.keys(nextFieldErrors).length === 0;
   };
 
   const persistIncompleteDraft = useCallback((draftPayload) => {
@@ -502,7 +522,7 @@ export default function ProductsPage() {
 
   const handleSave = async ({ suspendAfterCreate = false } = {}) => {
     if (!validateProductComposer()) {
-      notify({ title: t('products.field_errors'), description: t('products.review_steps'), type: 'error' });
+      notify.error(t('products.review_steps'), t('products.field_errors'));
       return;
     }
 
@@ -1433,6 +1453,7 @@ export default function ProductsPage() {
         onUpdateVariant={handleComposerUpdateVariant}
         onRemoveVariant={handleComposerRemoveVariant}
         stepErrors={stepErrors}
+        fieldErrors={fieldErrors}
         pricingErrors={pricingValidationErrors}
         isDirty={isFormDirty}
       />

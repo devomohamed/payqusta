@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
-import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Save, Award, Star, ShoppingBag, Crown, Shield, FileText, ChevronLeft, Bell } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Save, Award, Star, ShoppingBag, Crown, Shield, FileText, ChevronLeft, Bell, CheckCircle } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 import { Input } from '../components/UI';
 
@@ -14,7 +14,7 @@ const tierConfig = {
 };
 
 export default function PortalProfile() {
-  const { customer, updateProfile, changePassword, fetchPoints, loading } = usePortalStore();
+  const { customer, updateProfile, changePassword, forgotPassword, fetchPoints, loading } = usePortalStore();
   const { t, i18n } = useTranslation('portal');
 
   const [activeSection, setActiveSection] = useState('info'); // info | password | points
@@ -27,14 +27,10 @@ export default function PortalProfile() {
   const [bio, setBio] = useState(customer?.bio || '');
   const [profilePhoto, setProfilePhoto] = useState(customer?.profilePhoto || null);
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPass, setShowCurrentPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-
   const [pointsData, setPointsData] = useState(null);
   const [pointsLoading, setPointsLoading] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   useEffect(() => {
     if (activeSection === 'points') {
@@ -73,23 +69,18 @@ export default function PortalProfile() {
       notify.error(result.message);
     }
   };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      notify.error(t('profile.password.mismatch'));
-      return;
-    }
-    if (newPassword.length < 6) {
-      notify.error(t('profile.password.length_error'));
-      return;
-    }
-    const result = await changePassword(currentPassword, newPassword, confirmPassword);
+  
+  const handleForgotCurrentPassword = async () => {
+    const identifier = customer?.email || customer?.phone;
+    if (!identifier) return notify.error('لا يوجد بريد إلكتروني أو رقم هاتف مسجل');
+    
+    setSendingReset(true);
+    const result = await forgotPassword(identifier);
+    setSendingReset(false);
+    
     if (result.success) {
-      notify.success(result.message || t('profile.password.success'));
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setResetEmailSent(true);
+      notify.success(result.message || 'تم إرسال رابط إعادة التعيين لبريدك');
     } else {
       notify.error(result.message);
     }
@@ -262,88 +253,46 @@ export default function PortalProfile() {
         </form>
       )}
 
-      {/* Password Section */}
+      {/* Password Section - Simplified Email-only flow as requested */}
       {activeSection === 'password' && (
-        <form onSubmit={handleChangePassword} className="app-surface rounded-2xl p-5 border border-gray-100/80 dark:border-white/10 shadow-sm space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.current')}</label>
-            <div className="relative">
-              <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type={showCurrentPass ? 'text' : 'password'}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className={`${inputClass} ltr:pl-11 rtl:pr-11`}
-                placeholder="••••••"
-                required
-                autoComplete="current-password"
-              />
-              <button type="button" onClick={() => setShowCurrentPass(!showCurrentPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                {showCurrentPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+        <div className="app-surface rounded-2xl p-8 border border-gray-100/80 dark:border-white/10 shadow-sm text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+             <Shield className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.new')}</label>
-            <div className="relative">
-              <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type={showNewPass ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className={`${inputClass} ltr:pl-11 rtl:pr-11`}
-                placeholder={t('profile.password.min_chars')}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-              <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                {showNewPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {/* Fake Password Strength for better UX affordance */}
-            {newPassword && (
-              <div className="mt-2 flex items-center gap-1">
-                <div className={`h-1 flex-1 rounded-full ${newPassword.length > 0 ? 'bg-red-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                <div className={`h-1 flex-1 rounded-full ${newPassword.length >= 6 ? 'bg-yellow-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                <div className={`h-1 flex-1 rounded-full ${newPassword.length >= 8 && /[A-Za-z]/.test(newPassword) && /[0-9]/.test(newPassword) ? 'bg-green-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('profile.password.confirm')}</label>
-            <div className="relative">
-              <Lock className="absolute rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={inputClass}
-                placeholder={t('profile.password.confirm_placeholder')}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </div>
-          </div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">إعدادات الأمان</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto leading-relaxed">
+            لتغيير كلمة المرور الخاصة بك، سنقوم بإرسال رابط آمن إلى بريدك الإلكتروني أو رقم هاتفك المسجل:
+            <br />
+            <span className="font-bold text-gray-800 dark:text-gray-200 mt-2 block">{customer?.email || customer?.phone}</span>
+          </p>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-xl shadow-red-500/30 hover:shadow-red-500/50 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+            type="button"
+            onClick={handleForgotCurrentPassword}
+            disabled={sendingReset || resetEmailSent}
+            className="w-full sm:w-auto px-10 py-3.5 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-xl shadow-red-500/30 hover:shadow-red-500/50 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 mx-auto"
           >
-            {loading ? (
+            {sendingReset ? (
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : resetEmailSent ? (
+               <>
+                 <CheckCircle className="w-5 h-5 text-white" />
+                 تم إرسال الرابط
+               </>
             ) : (
               <>
-                <Lock className="w-5 h-5" />
-                {t('profile.password.change')}
+                <Mail className="w-5 h-5 text-white" />
+                إرسال رابط إعادة التعيين
               </>
             )}
           </button>
-        </form>
+          
+          {resetEmailSent && (
+            <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 font-medium animate-pulse">
+              تحقق من صندوق الوارد الخاص بك الآن
+            </p>
+          )}
+        </div>
       )}
 
       {/* Points Section */}

@@ -114,6 +114,12 @@ const normalizeSubdomain = (value) => {
 const buildStoreUrl = (slug) => {
   const platformRootDomain = getPlatformRootDomain();
   if (!slug || !platformRootDomain) return null;
+
+  // In development, we usually want to point to localhost or whatever CLIENT_URL is set
+  if (process.env.NODE_ENV === 'development') {
+    return (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+  }
+
   return `https://${slug}.${platformRootDomain}`;
 };
 

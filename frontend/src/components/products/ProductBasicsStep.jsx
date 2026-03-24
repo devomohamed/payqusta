@@ -17,6 +17,7 @@ import {
   Layers,
   LayoutGrid,
   ChevronDown,
+  AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Modal, Card, Badge } from '../UI';
@@ -39,6 +40,7 @@ export default function ProductBasicsStep({
   categories = [],
   suppliers = [],
   onCategoriesReload,
+  fieldErrors = {},
 }) {
   const [scannerTarget, setScannerTarget] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -247,12 +249,22 @@ export default function ProductBasicsStep({
             </label>
             <input
               type="text"
+              name="name"
+              id="name"
               value={form.name}
               onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
               placeholder="مثال: تيشيرت قطن"
-              className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-base font-medium text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className={`w-full rounded-xl border-2 bg-white px-4 py-3 text-base font-medium text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:bg-gray-800 dark:text-white ${
+                fieldErrors.name ? 'border-red-500 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'
+              }`}
               dir="rtl"
             />
+            {fieldErrors.name && (
+              <p className="flex items-center gap-1 text-xs font-bold text-red-500 animate-shake">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {fieldErrors.name === 'name_required' ? 'يرجى إدخال اسم المنتج.' : fieldErrors.name}
+              </p>
+            )}
             {form.name ? <p className="text-xs text-gray-400">{form.name.length}/200 حرف</p> : null}
           </div>
 

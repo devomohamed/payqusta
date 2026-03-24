@@ -14,7 +14,7 @@ function formatPlanPrice(plan) {
 }
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [registerData, setRegisterData] = useState({ name: '', storeName: '', phone: '' });
@@ -88,7 +88,7 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(identifier, password);
       toast.success('تم تسجيل الدخول بنجاح!');
 
       const { user } = useAuthStore.getState();
@@ -107,7 +107,7 @@ export default function LoginPage() {
     try {
       await register({
         name: registerData.name,
-        email,
+        email: identifier,
         phone: registerData.phone,
         password,
         storeName: registerData.storeName,
@@ -218,16 +218,18 @@ export default function LoginPage() {
             )}
 
             <div className="mb-4">
-              <label htmlFor="auth-email" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">البريد الإلكتروني</label>
+              <label htmlFor="auth-identifier" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
+                {isRegister ? 'البريد الإلكتروني' : 'البريد الإلكتروني أو رقم الهاتف'}
+              </label>
               <input
-                id="auth-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="auth-identifier"
+                name="identifier"
+                type={isRegister ? 'email' : 'text'}
+                autoComplete={isRegister ? 'email' : 'username'}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className={authInputClass}
-                placeholder="example@email.com"
+                placeholder={isRegister ? 'example@email.com' : 'example@email.com أو 01XXXXXXXXX'}
                 required
               />
             </div>

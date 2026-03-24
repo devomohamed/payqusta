@@ -101,10 +101,10 @@ export const useAuthStore = create((set, get) => ({
   loadingUser: false,
   loggingOut: false,
 
-  login: async (email, password) => {
+  login: async (identifier, password) => {
     set({ loading: true });
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { identifier, password });
       localStorage.setItem('payqusta_token', data.data.token);
       set({
         user: data.data.user,

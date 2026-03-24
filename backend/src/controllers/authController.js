@@ -88,13 +88,19 @@ class AuthController {
   });
 
   login = catchAsync(async (req, res, next) => {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!email || !password) {
-      return next(AppError.badRequest('البريد الإلكتروني وكلمة المرور مطلوبان'));
+    if (!identifier || !password) {
+      return next(AppError.badRequest('يرجى إدخال (البريد الإلكتروني أو رقم الهاتف) وكلمة المرور'));
     }
 
-    const user = await User.findOne({ email })
+    const searchIdentifier = String(identifier).trim().toLowerCase();
+    const user = await User.findOne({
+      $or: [
+        { email: searchIdentifier },
+        { phone: identifier.trim() }
+      ]
+    })
       .select('+password')
       .populate('tenant', 'name slug branding settings notificationChannels notificationBranding whatsapp subscription customDomain customDomainStatus customDomainLastCheckedAt');
 

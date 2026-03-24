@@ -127,10 +127,10 @@ export const usePortalStore = create((set, get) => ({
     }
   },
 
-  login: async (phone, password, storeCode) => {
+  login: async (identifier, password, storeCode) => {
     set({ loading: true, error: null });
     try {
-      const res = await portalApi.post('/portal/login', { phone, password, tenantSlug: storeCode });
+      const res = await portalApi.post('/portal/login', { identifier, password, tenantSlug: storeCode });
       const { token, customer, tenant } = res.data.data;
 
       localStorage.setItem('portal_token', token);
@@ -151,6 +151,7 @@ export const usePortalStore = create((set, get) => ({
       const res = await portalApi.post('/portal/register', {
         name: data.name,
         phone: data.phone,
+        email: data.email,
         password: data.password,
         confirmPassword: data.confirmPassword,
         storeCode: data.storeCode,
@@ -166,6 +167,19 @@ export const usePortalStore = create((set, get) => ({
     } catch (err) {
       const msg = err.response?.data?.message || 'فشل إنشاء الحساب';
       set({ error: msg, loading: false });
+      return { success: false, message: msg };
+    }
+  },
+
+  forgotPassword: async (identifier) => {
+    set({ loading: true });
+    try {
+      const res = await portalApi.post('/portal/forgot-password', { email: identifier });
+      set({ loading: false });
+      return { success: true, message: res.data.message };
+    } catch (err) {
+      const msg = err.response?.data?.message || 'فشل إرسال طلب إعادة التعيين';
+      set({ loading: false });
       return { success: false, message: msg };
     }
   },

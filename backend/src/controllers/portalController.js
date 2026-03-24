@@ -89,10 +89,10 @@ class PortalController {
    * POST /api/v1/portal/login
    */
   login = catchAsync(async (req, res, next) => {
-    const { phone, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!phone || !password) {
-      return next(AppError.badRequest('رقم الهاتف وكلمة المرور مطلوبين'));
+    if (!identifier || !password) {
+      return next(AppError.badRequest('يرجى إدخال (البريد الإلكتروني أو رقم الهاتف) وكلمة المرور'));
     }
 
     const { tenant, attemptedScopedLookup } = await resolveTenantContext(req);
@@ -100,7 +100,13 @@ class PortalController {
       return next(AppError.notFound('Store not found'));
     }
 
-    const query = { phone };
+    const searchIdentifier = String(identifier).trim().toLowerCase();
+    const query = {
+      $or: [
+        { phone: String(identifier).trim() },
+        { email: searchIdentifier }
+      ]
+    };
     if (tenant) query.tenant = tenant._id;
 
     const customer = await Customer.findOne(query).select('+password').populate('tenant', 'name slug branding');
@@ -109,8 +115,10 @@ class PortalController {
       return next(AppError.unauthorized('بيانات الدخول غير صحيحة'));
     }
 
-    if (!customer.password) {
-      return next(AppError.unauthorized('لم يتم تفعيل حسابك بعد. استخدم "تفعيل حساب" لإنشاء كلمة مرور'));
+    // Per user request, activation check is removed. 
+    // If no password exists, matchPassword will fail with unauthorized.
+    if (!customer.isActive || !customer.isPortalActive) {
+      return next(AppError.unauthorized('تم تعطيل هذا الحساب'));
     }
 
     if (!(await customer.matchPassword(password))) {
@@ -152,7 +160,7 @@ class PortalController {
    * Register a brand new customer
    */
   register = catchAsync(async (req, res, next) => {
-    const { name, phone, password, confirmPassword } = req.body;
+    const { name, phone, email, password, confirmPassword } = req.body;
 
     if (!name || !phone || !password) {
       return next(AppError.badRequest('الاسم ورقم الهاتف وكلمة المرور مطلوبين'));
@@ -171,14 +179,18 @@ class PortalController {
       return next(AppError.notFound('كود المتجر غير صحيح'));
     }
 
-    // Check if phone already registered for this tenant
-    const existing = await Customer.findOne({ tenant: tenant._id, phone });
+    // Check if phone or email already registered for this tenant
+    const searchEmail = email ? String(email).trim().toLowerCase() : undefined;
+    const existing = await Customer.findOne({ 
+      tenant: tenant._id,
+      $or: [
+        { phone: phone.trim() },
+        ...(searchEmail ? [{ email: searchEmail }] : [])
+      ]
+    });
+    
     if (existing) {
-      if (existing.password) {
-        return next(AppError.badRequest('رقم الهاتف مسجل بالفعل. استخدم تسجيل الدخول'));
-      } else {
-        return next(AppError.badRequest('رقم الهاتف مسجل بالفعل. استخدم "تفعيل حساب" لإنشاء كلمة مرور'));
-      }
+      return next(AppError.badRequest('بيانات العميل (الهاتف أو البريد) مسجلة بالفعل في هذا المتجر'));
     }
 
     // Create new customer
@@ -186,6 +198,7 @@ class PortalController {
       tenant: tenant._id,
       name: name.trim(),
       phone: phone.trim(),
+      email: searchEmail,
       password,
       isPortalActive: true,
       isActive: true,
