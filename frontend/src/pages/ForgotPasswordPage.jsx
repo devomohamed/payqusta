@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
     const isPortal = window.location.pathname.startsWith('/portal');
     setLoading(true);
     try {
-      const endpoint = isPortal ? '/portal/auth/forgot-password' : '/auth/forgot-password';
+      const endpoint = isPortal ? '/portal/forgot-password' : '/auth/forgot-password';
       const res = await api.post(endpoint, { email: normalizedEmail });
       toast.success(res.data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور');
       setEmail(normalizedEmail);

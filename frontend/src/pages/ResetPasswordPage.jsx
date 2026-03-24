@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
     const isPortal = window.location.pathname.startsWith('/portal');
     setLoading(true);
     try {
-      const endpoint = isPortal ? `/portal/auth/reset-password/${token}` : `/auth/reset-password/${token}`;
+      const endpoint = isPortal ? `/portal/reset-password/${token}` : `/auth/reset-password/${token}`;
       const res = await api.post(endpoint, { password });
       toast.success('تم إعادة تعيين كلمة المرور بنجاح! ✅');
 
