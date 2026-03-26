@@ -3,6 +3,7 @@
  * Save store info, WhatsApp settings, notification preferences
  */
 
+const axios = require('axios');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Branch = require('../models/Branch');
@@ -967,6 +968,44 @@ class SettingsController {
     ApiResponse.success(res, { processed, failed, totalProducts: products.length },
       `تم تطبيق العلامة المائية على ${processed} صورة${failed > 0 ? ` (${failed} فشلت)` : ''}`
     );
+  });
+
+  /**
+   * GET /api/v1/settings/cameras/proxy?url=...
+   * Proxy MJPEG stream to bypass Mixed Content & CORS
+   */
+  proxyCamera = catchAsync(async (req, res, next) => {
+    const { url } = req.query;
+    if (!url) return next(AppError.badRequest('Camera URL is required'));
+
+    try {
+      const response = await axios({
+        method: 'get',
+        url,
+        responseType: 'stream',
+        timeout: 10000,
+        headers: {
+          'Accept': 'multipart/x-mixed-replace, */*'
+        }
+      });
+
+      // Pass through headers
+      if (response.headers['content-type']) {
+        res.set('Content-Type', response.headers['content-type']);
+      }
+      if (response.headers['boundary']) {
+        res.set('Boundary', response.headers['boundary']);
+      }
+
+      response.data.pipe(res);
+
+      req.on('close', () => {
+        if (response.data.destroy) response.data.destroy();
+      });
+    } catch (error) {
+      logger.error(`[CAMERA_PROXY_ERROR] ${error.message} for URL: ${url}`);
+      return next(AppError.badRequest(`تعذر الاتصال بالكاميرا: ${error.message}`));
+    }
   });
 }
 

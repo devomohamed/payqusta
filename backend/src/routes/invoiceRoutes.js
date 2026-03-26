@@ -6,11 +6,11 @@ const { authorize, auditLog } = require('../middleware/auth');
 const { checkPermission } = require('../middleware/checkPermission');
 
 // --- Invoices --- (coordinator can view and create)
-router.get('/', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'read'), invoiceController.getAll);
-router.get('/overdue', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'read'), invoiceController.getOverdue);
-router.get('/upcoming-installments', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'read'), invoiceController.getUpcomingInstallments);
-router.get('/sales-summary', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'read'), invoiceController.getSalesSummary);
-router.get('/:id', authorize('vendor', 'admin', 'coordinator'), checkPermission('invoices', 'read'), invoiceController.getById);
+router.get('/', authorize('vendor', 'admin', 'coordinator', 'cashier'), checkPermission('invoices', 'read'), invoiceController.getAll);
+router.get('/overdue', authorize('vendor', 'admin', 'coordinator', 'cashier'), checkPermission('invoices', 'read'), invoiceController.getOverdue);
+router.get('/upcoming-installments', authorize('vendor', 'admin', 'coordinator', 'cashier'), checkPermission('invoices', 'read'), invoiceController.getUpcomingInstallments);
+router.get('/sales-summary', authorize('vendor', 'admin', 'coordinator', 'cashier'), checkPermission('invoices', 'read'), invoiceController.getSalesSummary);
+router.get('/:id', authorize('vendor', 'admin', 'coordinator', 'cashier'), checkPermission('invoices', 'read'), invoiceController.getById);
 
 // Public/Conditional creation handled in index.js middleware wrapper or here if moved entirely
 // For now, keeping the protected create here if it's direct API usage

@@ -118,6 +118,7 @@ export default function CamerasPage() {
                 ) : (
                   <LazyStreamPlayer
                     url={cam.url}
+                    type={cam.type === 'mjpeg' ? 'mjpeg' : 'auto'}
                     width="100%"
                     height="100%"
                     playing={playing}
@@ -158,19 +159,32 @@ export default function CamerasPage() {
             <label className="block text-sm font-bold mb-1">نوع الرابط</label>
             <div className="flex gap-2">
               <button
-                className={`flex-1 py-2 rounded-lg border-2 ${form.type === 'stream' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200'}`}
+                type="button"
+                className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-all ${form.type === 'stream' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800'}`}
                 onClick={() => setForm({ ...form, type: 'stream' })}
               >
-                مباشر (HLS/MP4)
+                HLS / MP4
               </button>
               <button
-                className={`flex-1 py-2 rounded-lg border-2 ${form.type === 'embed' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200'}`}
+                type="button"
+                className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-all ${form.type === 'mjpeg' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800'}`}
+                onClick={() => setForm({ ...form, type: 'mjpeg' })}
+              >
+                IP Camera (MJPEG)
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-all ${form.type === 'embed' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800'}`}
                 onClick={() => setForm({ ...form, type: 'embed' })}
               >
                 تضمين (Embed)
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">استخدم "مباشر" لروابط .m3u8 أو .mp4، واستخدم "تضمين" لروابط YouTube Live أو المشغلات الخارجية.</p>
+            <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">
+              * <b>HLS / MP4</b>: للروابط التي تنتهي بـ .m3u8 أو .mp4<br />
+              * <b>MJPEG</b>: لكاميرات الـ IP المباشرة (مثل TRENDnet, DLink)<br />
+              * <b>تضمين</b>: لروابط YouTube Live أو الصفحات الخارجية.
+            </p>
           </div>
 
           <Input label="رابط البث (URL)" value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://..." dir="ltr" />

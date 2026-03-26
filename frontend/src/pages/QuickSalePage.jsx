@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle, ChevronDown, ChevronRight, ChevronLeft, FolderTree, UserPlus, History, Wallet, Banknote, Store, Play } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -118,6 +118,9 @@ export default function QuickSalePage() {
   const [custPage, setCustPage] = useState(0);
   const PRODUCTS_PER_PAGE = 18;
   const CUSTOMERS_PER_PAGE = 6;
+  const [cameras, setCameras] = useState([]);
+  const [showMonitor, setShowMonitor] = useState(false);
+  const [activeCamIdx, setActiveCamIdx] = useState(0);
   const categoriesRef = useRef(null);
   const cartsRef = useRef(null);
 
@@ -311,10 +314,12 @@ export default function QuickSalePage() {
       Promise.all([
         productsApi.getAll({ limit: 500 }),
         customersApi.getAll({ limit: 500 }),
-        categoriesApi.getTree().catch(() => ({ data: { data: [] } }))
-      ]).then(([p, c, cat]) => {
+        categoriesApi.getTree().catch(() => ({ data: { data: [] } })),
+        api.get('/auth/me')
+      ]).then(([p, c, cat, me]) => {
         const pr = p.data.data || []; const cu = c.data.data || []; const ca = cat?.data?.data || [];
-        setProducts(pr); setCustomers(cu);
+        const cams = me?.data?.data?.tenant?.cameras || [];
+        setProducts(pr); setCustomers(cu); setCameras(cams);
         setCategories(ca.length > 0 ? ca : buildCategoryTreeFromProducts(pr));
         syncProductsToLocal(pr); syncCustomersToLocal(cu);
       }).catch(() => toast.error('تعذر تحميل البيانات. حاول مرة أخرى.'))
@@ -517,8 +522,18 @@ export default function QuickSalePage() {
             </button>
           </div>
           <Badge variant={syncStatus === 'online' ? 'success' : 'danger'} className="text-[10px] py-1.5 px-3">
-             {syncStatus === 'online' ? 'متصل' : 'غير متصل'}
+              {syncStatus === 'online' ? 'متصل' : 'غير متصل'}
            </Badge>
+
+           {cameras.length > 0 && (
+             <button
+               onClick={() => setShowMonitor(!showMonitor)}
+               className={`flex items-center gap-2 p-2.5 rounded-2xl transition-all shadow-sm border-2 ${showMonitor ? 'bg-primary-500 border-primary-500 text-white animate-pulse shadow-primary-500/20' : 'app-surface border-gray-100 dark:border-gray-800 text-primary-500'}`}
+               title="المراقبة الحية"
+             >
+               <Camera className={`w-5 h-5 ${showMonitor ? 'fill-current' : ''}`} />
+             </button>
+           )}
         </div>
       </div>
 
@@ -834,7 +849,7 @@ export default function QuickSalePage() {
                      <button onClick={() => setPaymentMethod('cash')} className={`flex-1 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${payments[0]?.method === 'cash' ? 'bg-primary-500 border-primary-500 text-white shadow-lg' : 'app-surface border-gray-100 dark:border-gray-700 text-gray-500'}`}>
                         <Banknote className="w-4 h-4"/> نقدا
                      </button>
-                     <button onClick={() => setPaymentMethod('credit')} className={`flex-1 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${payments[0]?.method === 'credit' ? 'bg-[#5C67E6] border-[#5C67E6] text-white shadow-lg' : 'app-surface border-gray-100 dark:border-gray-700 text-gray-500'}`}>
+                     <button onClick={() => setPaymentMethod('visa')} className={`flex-1 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${payments[0]?.method === 'visa' ? 'bg-[#5C67E6] border-[#5C67E6] text-white shadow-lg' : 'app-surface border-gray-100 dark:border-gray-700 text-gray-500'}`}>
                         <CreditCard className="w-4 h-4"/> بطاقة
                      </button>
                    </div>
@@ -903,6 +918,70 @@ export default function QuickSalePage() {
       {showScanner ? (
         <BarcodeScanner onClose={() => setShowScanner(false)} onScan={handleBarcodeScan} />
       ) : null}
+
+      {/* Floating Camera Monitor */}
+      <AnimatePresence>
+        {showMonitor && cameras.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.9 }}
+            className="fixed bottom-6 left-6 z-[80] w-72 overflow-hidden rounded-3xl bg-black shadow-2xl ring-4 ring-white/10 dark:ring-slate-900/50"
+          >
+            <div className="group relative aspect-video bg-black">
+              {cameras[activeCamIdx].type === 'embed' ? (
+                <iframe
+                  src={cameras[activeCamIdx].url}
+                  className="h-full w-full border-0"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                />
+              ) : (
+                <LazyStreamPlayer
+                  url={cameras[activeCamIdx].url}
+                  type={cameras[activeCamIdx].type === 'mjpeg' ? 'mjpeg' : 'auto'}
+                  width="100%"
+                  height="100%"
+                  playing={true}
+                  controls={false}
+                  volume={0}
+                />
+              )}
+
+              {/* Monitor Controls Overlay */}
+              <div className="absolute inset-0 flex flex-col justify-between p-3 opacity-0 transition-opacity group-hover:opacity-100 bg-gradient-to-b from-black/60 via-transparent to-black/60">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{cameras[activeCamIdx].name}</span>
+                  </div>
+                  <button onClick={() => setShowMonitor(false)} className="rounded-full bg-white/10 p-1 text-white hover:bg-red-500 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {cameras.length > 1 && (
+                  <div className="flex items-center justify-center gap-4">
+                    <button
+                      onClick={() => setActiveCamIdx((activeCamIdx - 1 + cameras.length) % cameras.length)}
+                      className="rounded-full bg-white/20 p-1.5 text-white hover:bg-primary-500 transition-all"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[10px] font-bold text-white/80">{activeCamIdx + 1} / {cameras.length}</span>
+                    <button
+                      onClick={() => setActiveCamIdx((activeCamIdx + 1) % cameras.length)}
+                      className="rounded-full bg-white/20 p-1.5 text-white hover:bg-primary-500 transition-all"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
