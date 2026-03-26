@@ -13,7 +13,7 @@ export default function PortalCartDrawer({
     const navigate = useNavigate();
     const { t, i18n } = useTranslation('portal');
 
-    const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+    const currency = i18n.language === 'ar' ? t('portal_cart_drawer.ui.kwlxf') : 'EGP';
 
     return (
         <>

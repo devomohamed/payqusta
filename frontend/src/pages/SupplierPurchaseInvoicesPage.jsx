@@ -4,28 +4,29 @@ import { supplierPurchaseInvoicesApi, suppliersApi, useAuthStore } from '../stor
 import { Badge, Button, Card, EmptyState, Input, LoadingSpinner, Modal, Select } from '../components/UI';
 import Pagination from '../components/Pagination';
 import { notify } from '../components/AnimatedNotification';
+import { useTranslation } from 'react-i18next';
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'كل الحالات' },
-  { value: 'open', label: 'مفتوحة' },
-  { value: 'partial_paid', label: 'مدفوع جزئي' },
-  { value: 'paid', label: 'مدفوعة' },
-  { value: 'cancelled', label: 'ملغية' },
+const getStatusOptions = (t) => [
+  { value: '', label: t('supplier_purchase_invoices_page.ui.k8ylak1') },
+  { value: 'open', label: t('supplier_purchase_invoices_page.ui.k3ub7rq') },
+  { value: 'partial_paid', label: t('supplier_purchase_invoices_page.ui.k3c1c7y') },
+  { value: 'paid', label: t('supplier_purchase_invoices_page.ui.k3ktm2p') },
+  { value: 'cancelled', label: t('supplier_purchase_invoices_page.ui.kpbvx0a') },
 ];
 
-const DUE_SCOPE_OPTIONS = [
-  { value: '', label: 'كل المواعيد' },
-  { value: 'today', label: 'مستحق اليوم' },
-  { value: 'tomorrow', label: 'مستحق غدا' },
-  { value: 'upcoming', label: 'مواعيد قادمة' },
-  { value: 'overdue', label: 'متأخرة' },
+const getDueScopeOptions = (t) => [
+  { value: '', label: t('supplier_purchase_invoices_page.ui.k5ilx3q') },
+  { value: 'today', label: t('supplier_purchase_invoices_page.ui.k405rtx') },
+  { value: 'tomorrow', label: t('supplier_purchase_invoices_page.ui.kzbritf') },
+  { value: 'upcoming', label: t('supplier_purchase_invoices_page.ui.ko8b0o') },
+  { value: 'overdue', label: t('supplier_purchase_invoices_page.ui.k3hiy14') },
 ];
 
-const PAYMENT_METHOD_OPTIONS = [
-  { value: 'cash', label: 'نقدي' },
-  { value: 'bank_transfer', label: 'تحويل بنكي' },
-  { value: 'wallet', label: 'محفظة' },
-  { value: 'other', label: 'طريقة أخرى' },
+const getPaymentMethodOptions = (t) => [
+  { value: 'cash', label: t('supplier_purchase_invoices_page.ui.ktfjxz') },
+  { value: 'bank_transfer', label: t('supplier_purchase_invoices_page.ui.kpd74me') },
+  { value: 'wallet', label: t('supplier_purchase_invoices_page.ui.kpbhd2i') },
+  { value: 'other', label: t('supplier_purchase_invoices_page.ui.k42utn0') },
 ];
 
 function formatMoney(value) {
@@ -58,6 +59,10 @@ function installmentStatusBadge(status) {
 }
 
 export default function SupplierPurchaseInvoicesPage() {
+  const { t } = useTranslation('admin');
+  const statusOptions = useMemo(() => getStatusOptions(t), [t]);
+  const dueScopeOptions = useMemo(() => getDueScopeOptions(t), [t]);
+  const paymentMethodOptions = useMemo(() => getPaymentMethodOptions(t), [t]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -135,7 +140,7 @@ export default function SupplierPurchaseInvoicesPage() {
       setInvoices(res.data?.data || []);
       setPagination(res.data?.pagination || { totalPages: 1, totalItems: 0 });
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل تحميل فواتير المورد');
+      notify.error(error.response?.data?.message || t('supplier_purchase_invoices_page.toasts.kx57zba'));
       setInvoices([]);
       setPagination({ totalPages: 1, totalItems: 0 });
     } finally {
@@ -147,10 +152,10 @@ export default function SupplierPurchaseInvoicesPage() {
     setSyncing(true);
     try {
       const res = await supplierPurchaseInvoicesApi.syncFromPurchaseOrders();
-      notify.success(res.data?.message || 'تمت المزامنة بنجاح');
+      notify.success(res.data?.message || t('supplier_purchase_invoices_page.toasts.kqwaes0'));
       await loadInvoices();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل مزامنة الفواتير من أوامر الشراء');
+      notify.error(error.response?.data?.message || t('supplier_purchase_invoices_page.toasts.klj6juy'));
     } finally {
       setSyncing(false);
     }
@@ -169,7 +174,7 @@ export default function SupplierPurchaseInvoicesPage() {
         installmentId: '',
       }));
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل تحميل تفاصيل الفاتورة');
+      notify.error(error.response?.data?.message || t('supplier_purchase_invoices_page.toasts.khvje6x'));
       setShowDetails(false);
       setSelectedInvoice(null);
     } finally {
@@ -181,7 +186,7 @@ export default function SupplierPurchaseInvoicesPage() {
     if (!selectedInvoice?._id) return;
     const amount = Number(paymentForm.amount || 0);
     if (!Number.isFinite(amount) || amount <= 0) {
-      return notify.warning('ادخل مبلغ سداد صحيح');
+      return notify.warning(t('supplier_purchase_invoices_page.toasts.kpafzhq'));
     }
 
     setPaying(true);
@@ -193,11 +198,11 @@ export default function SupplierPurchaseInvoicesPage() {
         reference: paymentForm.reference || undefined,
         notes: paymentForm.notes || undefined,
       });
-      notify.success('تم تسجيل دفعة المورد بنجاح');
+      notify.success(t('supplier_purchase_invoices_page.toasts.krfo6yw'));
       await openDetails(selectedInvoice._id);
       await loadInvoices();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل تسجيل الدفعة');
+      notify.error(error.response?.data?.message || t('supplier_purchase_invoices_page.toasts.k3nygxd'));
     } finally {
       setPaying(false);
     }
@@ -213,7 +218,7 @@ export default function SupplierPurchaseInvoicesPage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Supplier Finance Desk</p>
-              <h1 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">فواتير مشتريات المورد</h1>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">{t('supplier_purchase_invoices_page.ui.k2kled2')}</h1>
               <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
                 متابعة التزامات المورد، القسط القادم، وسجل السداد من واجهة أخف على الهاتف وأكثر وضوحًا على الشاشات الصغيرة.
               </p>
@@ -221,11 +226,11 @@ export default function SupplierPurchaseInvoicesPage() {
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button variant="outline" icon={<RefreshCw className="w-4 h-4" />} onClick={loadInvoices} className="w-full sm:w-auto">
-              تحديث
+              {t('supplier_purchase_invoices_page.ui.update')}
             </Button>
             {canEdit && (
               <Button variant="outline" loading={syncing} onClick={handleSyncFromPurchaseOrders} className="w-full sm:w-auto">
-                مزامنة من أوامر الشراء
+                {t('supplier_purchase_invoices_page.ui.k550sod')}
               </Button>
             )}
           </div>
@@ -233,15 +238,15 @@ export default function SupplierPurchaseInvoicesPage() {
 
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Card className="app-surface-muted p-4 transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
-            <p className="text-xs text-gray-400 mb-1">إجمالي الفواتير المعروضة</p>
+            <p className="text-xs text-gray-400 mb-1">{t('supplier_purchase_invoices_page.ui.kii918k')}</p>
             <p className="text-lg font-extrabold">{formatMoney(summary.total)} ج.م</p>
           </Card>
           <Card className="app-surface-muted p-4 transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
-            <p className="text-xs text-gray-400 mb-1">إجمالي المسدد</p>
+            <p className="text-xs text-gray-400 mb-1">{t('supplier_purchase_invoices_page.ui.kfgprss')}</p>
             <p className="text-lg font-extrabold text-emerald-600">{formatMoney(summary.paid)} ج.م</p>
           </Card>
           <Card className="app-surface-muted p-4 transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
-            <p className="text-xs text-gray-400 mb-1">إجمالي المتبقي</p>
+            <p className="text-xs text-gray-400 mb-1">{t('supplier_purchase_invoices_page.ui.khtraf7')}</p>
             <p className="text-lg font-extrabold text-amber-600">{formatMoney(summary.outstanding)} ج.م</p>
           </Card>
         </div>
@@ -250,36 +255,36 @@ export default function SupplierPurchaseInvoicesPage() {
       <Card className="app-surface-muted rounded-[2rem] p-4">
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Filters</p>
-          <h2 className="mt-2 text-lg font-extrabold text-gray-900 dark:text-white">بحث وتصفية الفواتير</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">حدد المورد أو حالة الفاتورة أو موعد الاستحقاق لعرض أسرع على الهاتف.</p>
+          <h2 className="mt-2 text-lg font-extrabold text-gray-900 dark:text-white">{t('supplier_purchase_invoices_page.ui.ktyexuv')}</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('supplier_purchase_invoices_page.ui.kjhlcon')}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Input
-            label="بحث"
-            placeholder="رقم الفاتورة..."
+            label={t('supplier_purchase_invoices_page.form.search')}
+            placeholder={t('supplier_purchase_invoices_page.placeholders.kh4ptwp')}
             value={filters.search}
             onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           />
           <Select
-            label="المورد"
+            label={t('supplier_purchase_invoices_page.form.kaawtj6')}
             value={filters.supplier}
             onChange={(e) => setFilters((prev) => ({ ...prev, supplier: e.target.value }))}
             options={[
-              { value: '', label: 'كل الموردين' },
+              { value: '', label: t('supplier_purchase_invoices_page.ui.k5is3kp') },
               ...suppliers.map((supplier) => ({ value: supplier._id, label: supplier.name })),
             ]}
           />
           <Select
-            label="حالة الفاتورة"
+            label={t('supplier_purchase_invoices_page.form.kdqmf22')}
             value={filters.status}
             onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-            options={STATUS_OPTIONS}
+            options={statusOptions}
           />
           <Select
-            label="الاستحقاق"
+            label={t('supplier_purchase_invoices_page.form.kvoy8wh')}
             value={filters.dueScope}
             onChange={(e) => setFilters((prev) => ({ ...prev, dueScope: e.target.value }))}
-            options={DUE_SCOPE_OPTIONS}
+            options={dueScopeOptions}
           />
         </div>
       </Card>
@@ -290,13 +295,13 @@ export default function SupplierPurchaseInvoicesPage() {
         <div className="space-y-3">
           <EmptyState
             icon={Truck}
-            title="لا توجد فواتير مشتريات"
+            title={t('supplier_purchase_invoices_page.titles.krqyf4a')}
             description="لو عندك أوامر شراء مستلمة قديمة اضغط مزامنة من أوامر الشراء."
           />
           {canEdit && (
             <div className="flex justify-center">
               <Button loading={syncing} onClick={handleSyncFromPurchaseOrders}>
-                مزامنة الآن
+                {t('supplier_purchase_invoices_page.ui.kfd1k4t')}
               </Button>
             </div>
           )}
@@ -324,32 +329,32 @@ export default function SupplierPurchaseInvoicesPage() {
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">المورد</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kaawtj6')}</p>
                       <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{invoice.supplier?.name || '-'}</p>
                     </div>
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">الفرع</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kove7t8')}</p>
                       <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{invoice.branch?.name || '-'}</p>
                     </div>
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">الإجمالي</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.krh6w30')}</p>
                       <p className="mt-1 font-black text-gray-900 dark:text-white">{formatMoney(invoice.totalAmount)} ج.م</p>
                     </div>
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">المتبقي</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kzaci6q')}</p>
                       <p className="mt-1 font-black text-amber-600">{formatMoney(invoice.outstandingAmount)} ج.م</p>
                     </div>
                   </div>
 
                   <div className="mt-3 rounded-2xl bg-black/[0.03] p-3 text-sm dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">القسط القادم</p>
+                    <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kar7mmn')}</p>
                     {nextInstallment ? (
                       <div className="mt-1 flex items-center justify-between gap-3">
                         <span className="font-semibold text-gray-700 dark:text-gray-200">{formatDate(nextInstallment.dueDate)}</span>
                         <span className="font-black text-primary-600">{formatMoney(nextAmount)} ج.م</span>
                       </div>
                     ) : (
-                      <p className="mt-1 text-xs text-gray-400">لا يوجد قسط قادم</p>
+                      <p className="mt-1 text-xs text-gray-400">{t('supplier_purchase_invoices_page.ui.ktl2ro7')}</p>
                     )}
                   </div>
 
@@ -367,14 +372,14 @@ export default function SupplierPurchaseInvoicesPage() {
             <table className="w-full text-sm">
               <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                 <tr>
-                  <th className="p-3 text-right">رقم الفاتورة</th>
-                  <th className="p-3 text-right">المورد</th>
-                  <th className="p-3 text-right">الفرع</th>
-                  <th className="p-3 text-right">الحالة</th>
-                  <th className="p-3 text-right">الإجمالي</th>
-                  <th className="p-3 text-right">المتبقي</th>
-                  <th className="p-3 text-right">القسط القادم</th>
-                  <th className="p-3 text-right">إجراءات</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.k3r1ew5')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.kaawtj6')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.kove7t8')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.kabct8k')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.krh6w30')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.kzaci6q')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.kar7mmn')}</th>
+                  <th className="p-3 text-right">{t('supplier_purchase_invoices_page.ui.k5a5wt5')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100/80 dark:divide-white/5">
@@ -406,7 +411,7 @@ export default function SupplierPurchaseInvoicesPage() {
                             <p className="text-gray-500">{formatMoney(nextAmount)} ج.م</p>
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400">لا يوجد</span>
+                          <span className="text-xs text-gray-400">{t('supplier_purchase_invoices_page.ui.k2j0vmq')}</span>
                         )}
                       </td>
                       <td className="p-3">
@@ -434,28 +439,28 @@ export default function SupplierPurchaseInvoicesPage() {
           setShowDetails(false);
           setSelectedInvoice(null);
         }}
-        title="تفاصيل فاتورة مشتريات المورد"
+        title={t('supplier_purchase_invoices_page.titles.km9ue')}
         size="xl"
       >
         {detailsLoading ? (
           <LoadingSpinner />
         ) : !selectedInvoice ? (
-          <EmptyState icon={Receipt} title="لا توجد بيانات" description="تعذر تحميل تفاصيل الفاتورة" />
+          <EmptyState icon={Receipt} title={t('supplier_purchase_invoices_page.titles.km3iafu')} description="تعذر تحميل تفاصيل الفاتورة" />
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="app-surface-muted rounded-2xl p-3">
-                <p className="text-xs text-gray-400">المورد</p>
+                <p className="text-xs text-gray-400">{t('supplier_purchase_invoices_page.ui.kaawtj6')}</p>
                 <p className="font-bold mt-1">{selectedInvoice.supplier?.name || '-'}</p>
                 <p className="text-xs text-gray-500 mt-1">{selectedInvoice.invoiceNumber}</p>
               </div>
               <div className="app-surface-muted rounded-2xl p-3">
-                <p className="text-xs text-gray-400">الفرع</p>
+                <p className="text-xs text-gray-400">{t('supplier_purchase_invoices_page.ui.kove7t8')}</p>
                 <p className="font-bold mt-1">{selectedInvoice.branch?.name || '-'}</p>
                 <p className="text-xs text-gray-500 mt-1">PO: {selectedInvoice.purchaseOrder?.orderNumber || '-'}</p>
               </div>
               <div className="app-surface-muted rounded-2xl p-3">
-                <p className="text-xs text-gray-400">المتبقي</p>
+                <p className="text-xs text-gray-400">{t('supplier_purchase_invoices_page.ui.kzaci6q')}</p>
                 <p className="font-bold mt-1 text-amber-600">{formatMoney(selectedInvoice.outstandingAmount)} ج.م</p>
                 <p className="text-xs text-gray-500 mt-1">المسدد: {formatMoney(selectedInvoice.paidAmount)} ج.م</p>
               </div>
@@ -478,15 +483,15 @@ export default function SupplierPurchaseInvoicesPage() {
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm">
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">المبلغ</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kaaxgsq')}</p>
                       <p className="mt-1 font-black text-gray-900 dark:text-white">{formatMoney(item.amount)}</p>
                     </div>
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">المدفوع</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kza8sl1')}</p>
                       <p className="mt-1 font-black text-emerald-600">{formatMoney(item.paidAmount)}</p>
                     </div>
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-[11px] text-gray-400">المتبقي</p>
+                      <p className="text-[11px] text-gray-400">{t('supplier_purchase_invoices_page.ui.kzaci6q')}</p>
                       <p className="mt-1 font-black text-amber-600">{formatMoney(item.remainingAmount)}</p>
                     </div>
                   </div>
@@ -499,11 +504,11 @@ export default function SupplierPurchaseInvoicesPage() {
                 <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                   <tr>
                     <th className="p-2 text-right">#</th>
-                    <th className="p-2 text-right">موعد الاستحقاق</th>
-                    <th className="p-2 text-right">المبلغ</th>
-                    <th className="p-2 text-right">المدفوع</th>
-                    <th className="p-2 text-right">المتبقي</th>
-                    <th className="p-2 text-right">الحالة</th>
+                    <th className="p-2 text-right">{t('supplier_purchase_invoices_page.ui.kfe6qqe')}</th>
+                    <th className="p-2 text-right">{t('supplier_purchase_invoices_page.ui.kaaxgsq')}</th>
+                    <th className="p-2 text-right">{t('supplier_purchase_invoices_page.ui.kza8sl1')}</th>
+                    <th className="p-2 text-right">{t('supplier_purchase_invoices_page.ui.kzaci6q')}</th>
+                    <th className="p-2 text-right">{t('supplier_purchase_invoices_page.ui.kabct8k')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100/80 dark:divide-white/5">
@@ -532,22 +537,22 @@ export default function SupplierPurchaseInvoicesPage() {
               <Card className="app-surface-muted rounded-3xl p-4">
                 <h3 className="font-bold mb-3 flex items-center gap-2">
                   <CalendarClock className="w-4 h-4 text-primary-500" />
-                  تسجيل دفعة جديدة
+                  {t('supplier_purchase_invoices_page.ui.k14xaai')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
-                    label="المبلغ"
+                    label={t('supplier_purchase_invoices_page.form.kaaxgsq')}
                     type="number"
                     min="0"
                     value={paymentForm.amount}
                     onChange={(e) => setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))}
                   />
                   <Select
-                    label="توجيه السداد"
+                    label={t('supplier_purchase_invoices_page.form.krjx83a')}
                     value={paymentForm.installmentId}
                     onChange={(e) => setPaymentForm((prev) => ({ ...prev, installmentId: e.target.value }))}
                     options={[
-                      { value: '', label: 'توزيع تلقائي على الأقساط الأقدم' },
+                      { value: '', label: t('supplier_purchase_invoices_page.ui.kl5m0tp') },
                       ...openInstallments.map((item) => ({
                         value: item._id,
                         label: `قسط #${item.installmentNumber} - ${formatDate(item.dueDate)} - ${formatMoney(item.remainingAmount)} ج.م`,
@@ -555,19 +560,19 @@ export default function SupplierPurchaseInvoicesPage() {
                     ]}
                   />
                   <Select
-                    label="طريقة الدفع"
+                    label={t('supplier_purchase_invoices_page.form.kfj3di7')}
                     value={paymentForm.method}
                     onChange={(e) => setPaymentForm((prev) => ({ ...prev, method: e.target.value }))}
-                    options={PAYMENT_METHOD_OPTIONS}
+                    options={paymentMethodOptions}
                   />
                   <Input
-                    label="مرجع العملية (اختياري)"
+                    label={t('supplier_purchase_invoices_page.form.kfalr2t')}
                     value={paymentForm.reference}
                     onChange={(e) => setPaymentForm((prev) => ({ ...prev, reference: e.target.value }))}
                   />
                   <div className="md:col-span-2">
                     <Input
-                      label="ملاحظات (اختياري)"
+                      label={t('supplier_purchase_invoices_page.form.ki8iche')}
                       value={paymentForm.notes}
                       onChange={(e) => setPaymentForm((prev) => ({ ...prev, notes: e.target.value }))}
                     />
@@ -575,10 +580,10 @@ export default function SupplierPurchaseInvoicesPage() {
                 </div>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                   <Button icon={<CreditCard className="w-4 h-4" />} loading={paying} onClick={handlePay} className="w-full sm:w-auto">
-                    تسجيل الدفعة
+                    {t('supplier_purchase_invoices_page.ui.k32vtoe')}
                   </Button>
                   <Button variant="ghost" onClick={() => setShowDetails(false)} className="w-full sm:w-auto">
-                    اغلاق
+                    {t('supplier_purchase_invoices_page.ui.kov7vxo')}
                   </Button>
                 </div>
               </Card>
@@ -586,7 +591,7 @@ export default function SupplierPurchaseInvoicesPage() {
 
             {!!selectedInvoice.paymentRecords?.length && (
               <Card className="app-surface-muted rounded-3xl p-4">
-                <h3 className="font-bold mb-3">سجل الدفعات</h3>
+                <h3 className="font-bold mb-3">{t('supplier_purchase_invoices_page.ui.kebga7s')}</h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto">
                   {selectedInvoice.paymentRecords.map((record) => (
                     <div
@@ -599,7 +604,7 @@ export default function SupplierPurchaseInvoicesPage() {
                           {formatDate(record.date)} - {record.method || 'cash'} {record.reference ? `- ${record.reference}` : ''}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-400">{record.recordedBy?.name || 'مستخدم النظام'}</span>
+                      <span className="text-xs text-gray-400">{record.recordedBy?.name || t('supplier_purchase_invoices_page.toasts.k1wekg5')}</span>
                     </div>
                   ))}
                 </div>

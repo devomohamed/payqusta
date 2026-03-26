@@ -21,20 +21,20 @@ const trackingStepKeys = ['pending', 'confirmed', 'processing', 'shipped', 'deli
 const trackingLabelKeys = ['receive', 'confirm', 'prepare', 'ship', 'deliver'];
 
 const refundStatusLabels = {
-    none: 'لا يوجد استرداد',
-    pending: 'استرداد قيد المعالجة',
-    partially_refunded: 'تم رد جزء من المبلغ',
-    refunded: 'تم رد المبلغ',
-    failed: 'فشل الاسترداد',
+    none: t('portal_orders.ui.k2yltdq'),
+    pending: t('portal_orders.ui.kx56vls'),
+    partially_refunded: t('portal_orders.ui.kful99v'),
+    refunded: t('portal_orders.ui.khyyhdf'),
+    failed: t('portal_orders.ui.khokel4'),
 };
 
 const returnStatusLabels = {
-    none: 'لا يوجد مرتجع',
-    requested: 'تم طلب مرتجع',
-    approved: 'تمت الموافقة على المرتجع',
-    received: 'تم استلام المرتجع',
-    rejected: 'تم رفض المرتجع',
-    refunded: 'تم رد قيمة المرتجع',
+    none: t('portal_orders.ui.kcmmmc7'),
+    requested: t('portal_orders.ui.ky7odd'),
+    approved: t('portal_orders.ui.ktcbz6'),
+    received: t('portal_orders.ui.kd7k0gn'),
+    rejected: t('portal_orders.ui.kw60x01'),
+    refunded: t('portal_orders.ui.kpg8gs7'),
 };
 
 export default function PortalOrders() {
@@ -75,7 +75,7 @@ export default function PortalOrders() {
     };
 
     const handleCancel = async (id) => {
-        const ok = await confirm.show({ title: 'إلغاء الطلب', message: t('orders.cancel_confirm'), confirmLabel: 'إلغاء الطلب', type: 'warning' });
+        const ok = await confirm.show({ title: t('portal_orders.ui.kuqz2jx'), message: t('orders.cancel_confirm'), confirmLabel: t('portal_orders.ui.kuqz2jx'), type: 'warning' });
         if (!ok) return;
         setCancelling(id);
         const res = await cancelOrder(id);
@@ -327,7 +327,7 @@ export default function PortalOrders() {
                                                         <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{item.product?.name || item.productName}</p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400">{t('orders.qty', { qty: item.quantity, price: item.price?.toLocaleString() })}</p>
                                                     </div>
-                                                    <p className="font-bold text-sm text-primary-600">{item.total?.toLocaleString()} {i18n.language === 'ar' ? 'ج.م' : 'EGP'}</p>
+                                                    <p className="font-bold text-sm text-primary-600">{item.total?.toLocaleString()} {i18n.language === 'ar' ? t('portal_orders.ui.kwlxf') : 'EGP'}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -335,16 +335,16 @@ export default function PortalOrders() {
 
                                     {(selectedOrder.returnStatus && selectedOrder.returnStatus !== 'none') || (selectedOrder.refundStatus && selectedOrder.refundStatus !== 'none') || selectedOrder.cancelReason ? (
                                         <div className="app-surface-muted rounded-2xl p-4 space-y-2">
-                                            <h4 className="font-bold text-sm text-gray-900 dark:text-white">الاسترداد والمرتجعات</h4>
+                                            <h4 className="font-bold text-sm text-gray-900 dark:text-white">{t('portal_orders.ui.keqv6gy')}</h4>
                                             {selectedOrder.returnStatus && selectedOrder.returnStatus !== 'none' ? (
                                                 <div className="flex justify-between gap-4 text-sm">
-                                                    <span className="text-gray-500 dark:text-gray-400">حالة المرتجع</span>
+                                                    <span className="text-gray-500 dark:text-gray-400">{t('portal_orders.ui.kibxyl')}</span>
                                                     <span className="font-bold text-orange-600 dark:text-orange-300">{returnStatusLabels[selectedOrder.returnStatus] || selectedOrder.returnStatus}</span>
                                                 </div>
                                             ) : null}
                                             {selectedOrder.refundStatus && selectedOrder.refundStatus !== 'none' ? (
                                                 <div className="flex justify-between gap-4 text-sm">
-                                                    <span className="text-gray-500 dark:text-gray-400">حالة الاسترداد</span>
+                                                    <span className="text-gray-500 dark:text-gray-400">{t('portal_orders.ui.kl1zpa2')}</span>
                                                     <span className="font-bold text-emerald-600 dark:text-emerald-300">
                                                         {refundStatusLabels[selectedOrder.refundStatus] || selectedOrder.refundStatus}
                                                         {Number(selectedOrder.refundAmount || 0) > 0 ? ` • ${Number(selectedOrder.refundAmount).toLocaleString()} ج.م` : ''}
@@ -353,7 +353,7 @@ export default function PortalOrders() {
                                             ) : null}
                                             {selectedOrder.cancelReason ? (
                                                 <div className="text-sm">
-                                                    <span className="text-gray-500 dark:text-gray-400">سبب الإلغاء</span>
+                                                    <span className="text-gray-500 dark:text-gray-400">{t('portal_orders.ui.kbrs3jf')}</span>
                                                     <p className="mt-1 font-bold text-gray-800 dark:text-gray-100">{selectedOrder.cancelReason}</p>
                                                 </div>
                                             ) : null}

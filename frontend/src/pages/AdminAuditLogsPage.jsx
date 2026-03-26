@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Activity,
   AlertCircle,
@@ -34,28 +35,28 @@ const ACTION_OPTIONS = [
   { value: 'update', label: 'تحديث' },
   { value: 'delete', label: 'حذف' },
   { value: 'bulk_delete', label: 'حذف جماعي' },
-  { value: 'payment', label: 'تسجيل دفعة' },
+  { value: 'payment', label: 'دفع' },
   { value: 'stock_change', label: 'تغيير مخزون' },
   { value: 'import', label: 'استيراد' },
   { value: 'restore', label: 'استعادة' },
   { value: 'login', label: 'تسجيل دخول' },
   { value: 'logout', label: 'تسجيل خروج' },
-  { value: 'logout_all', label: 'تسجيل خروج من جميع الأجهزة' },
+  { value: 'logout_all', label: 'تسجيل خروج من كل الأجهزة' },
 ];
 
 const RESOURCE_OPTIONS = [
   { value: '', label: 'كل الموارد' },
   { value: 'tenant', label: 'المتجر' },
-  { value: 'user', label: 'الموظفون' },
-  { value: 'branch', label: 'الفروع' },
-  { value: 'role', label: 'الأدوار' },
-  { value: 'product', label: 'المنتجات' },
-  { value: 'customer', label: 'العملاء' },
-  { value: 'invoice', label: 'الفواتير' },
-  { value: 'supplier', label: 'الموردون' },
-  { value: 'expense', label: 'المصروفات' },
+  { value: 'user', label: 'المستخدم' },
+  { value: 'branch', label: 'الفرع' },
+  { value: 'role', label: 'الدور' },
+  { value: 'product', label: 'المنتج' },
+  { value: 'customer', label: 'العميل' },
+  { value: 'invoice', label: 'الفاتورة' },
+  { value: 'supplier', label: 'المورد' },
+  { value: 'expense', label: 'المصروف' },
   { value: 'settings', label: 'الإعدادات' },
-  { value: 'auth', label: 'الجلسات' },
+  { value: 'auth', label: 'المصادقة' },
 ];
 
 const ACTION_LABELS = Object.fromEntries(ACTION_OPTIONS.map((option) => [option.value, option.label]));
@@ -114,6 +115,7 @@ function getActionIcon(action) {
 }
 
 export default function AdminAuditLogsPage() {
+  const { t } = useTranslation('admin');
   const [searchParams, setSearchParams] = useSearchParams();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ export default function AdminAuditLogsPage() {
         total: res.data.pagination?.total || 0,
       });
     } catch (error) {
-      toast.error('تعذر تحميل سجلات التدقيق');
+      toast.error(t('admin_audit_logs_page.toasts.k2ir4e'));
     } finally {
       setLoading(false);
     }
@@ -171,7 +173,7 @@ export default function AdminAuditLogsPage() {
   const summary = useMemo(() => ({
     scoped: Boolean(resourceFilter || resourceIdFilter),
     hasQuery: Boolean(search || actionFilter || resourceFilter || resourceIdFilter),
-    focusLabel: resourceFilter ? getResourceLabel(resourceFilter) : 'السجلات',
+    focusLabel: resourceFilter ? getResourceLabel(resourceFilter) : t('admin_audit_logs_page.ui.kzgx369'),
   }), [actionFilter, resourceFilter, resourceIdFilter, search]);
 
   const resetFilters = () => {
@@ -191,7 +193,7 @@ export default function AdminAuditLogsPage() {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black app-text-strong">سجل التدقيق والأثر</h1>
+              <h1 className="text-2xl font-black app-text-strong">{t('admin_audit_logs_page.ui.k3o6kjl')}</h1>
               <Badge variant="info">Audit Trail</Badge>
             </div>
             <p className="mt-2 text-sm leading-7 app-text-muted">
@@ -202,11 +204,11 @@ export default function AdminAuditLogsPage() {
 
         <div className="grid grid-cols-2 gap-3 sm:w-auto">
           <Card className="min-w-[140px] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">إجمالي السجلات</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">{t('admin_audit_logs_page.ui.ki3lr1c')}</p>
             <p className="mt-2 text-2xl font-black app-text-strong">{pagination.total}</p>
           </Card>
           <Card className="min-w-[140px] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">النطاق الحالي</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">{t('admin_audit_logs_page.ui.krq8ij0')}</p>
             <p className="mt-2 text-base font-black app-text-strong">{summary.focusLabel}</p>
           </Card>
         </div>
@@ -216,14 +218,14 @@ export default function AdminAuditLogsPage() {
         <Card className="border border-primary-200/60 bg-primary-50/70 p-4 dark:border-primary-500/20 dark:bg-primary-500/10">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-bold app-text-strong">أنت تعرض سجلًا موجهًا</p>
+              <p className="text-sm font-bold app-text-strong">{t('admin_audit_logs_page.ui.kng4sfu')}</p>
               <p className="mt-1 text-sm app-text-muted">
                 {resourceFilter ? `تم تضييق النتائج إلى ${getResourceLabel(resourceFilter)}.` : 'تم تضييق النتائج بحسب السجل المطلوب.'}
                 {resourceIdFilter ? ' الرابط الحالي يحتفظ بمعرّف السجل المحدد لسهولة المتابعة.' : ''}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={resetFilters}>
-              عرض كل السجلات
+              {t('admin_audit_logs_page.ui.kim5c8c')}
             </Button>
           </div>
         </Card>
@@ -237,7 +239,7 @@ export default function AdminAuditLogsPage() {
               setSearch(event.target.value);
               setPage(1);
             }}
-            placeholder="ابحث باسم المستخدم أو البريد أو الوصف أو عنوان العملية..."
+            placeholder={t('admin_audit_logs_page.placeholders.kjf3el4')}
           />
 
           <select
@@ -278,7 +280,7 @@ export default function AdminAuditLogsPage() {
             {resourceFilter && <Badge variant="gray">مورد: {getResourceLabel(resourceFilter)}</Badge>}
             {resourceIdFilter && <Badge variant="gray">معرّف السجل: {resourceIdFilter.slice(-8)}</Badge>}
             <Button variant="ghost" size="sm" icon={<Filter className="h-4 w-4" />} onClick={resetFilters}>
-              إعادة ضبط الفلاتر
+              {t('admin_audit_logs_page.ui.kr8yv4w')}
             </Button>
           </div>
         )}
@@ -291,9 +293,9 @@ export default function AdminAuditLogsPage() {
       ) : logs.length === 0 ? (
         <EmptyState
           icon={FileSearch}
-          title="لا توجد سجلات مطابقة"
+          title={t('admin_audit_logs_page.titles.ker3p1u')}
           description="جرّب توسيع الفلاتر أو إعادة ضبطها لعرض سجل النظام بالكامل."
-          action={summary.hasQuery ? { label: 'إعادة ضبط الفلاتر', onClick: resetFilters } : null}
+          action={summary.hasQuery ? { label: t('admin_audit_logs_page.ui.kr8yv4w'), onClick: resetFilters } : null}
         />
       ) : (
         <Card className="overflow-hidden rounded-[1.75rem]">
@@ -305,13 +307,13 @@ export default function AdminAuditLogsPage() {
               >
                 <div className="flex items-start gap-4">
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/20">
-                    {log.user?.name?.charAt(0) || 'م'}
+                    {log.user?.name?.charAt(0) || t('admin_audit_logs_page.toasts.k18l')}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-black app-text-strong">
-                        {log.user?.name || 'مستخدم محذوف'}
+                        {log.user?.name || t('admin_audit_logs_page.toasts.k8no2bb')}
                       </h3>
                       <Badge variant={getActionColor(log.action)}>
                         <span className="inline-flex items-center gap-1">
@@ -350,7 +352,7 @@ export default function AdminAuditLogsPage() {
                     {log.details && Object.keys(log.details).length > 0 && (
                       <details className="mt-3 rounded-2xl app-surface-muted p-4">
                         <summary className="cursor-pointer text-sm font-semibold text-primary-500">
-                          عرض التفاصيل الكاملة
+                          {t('admin_audit_logs_page.ui.kl3a861')}
                         </summary>
                         <pre className="mt-3 overflow-x-auto rounded-2xl bg-black/5 p-3 text-xs leading-6 text-slate-700 dark:bg-white/5 dark:text-slate-200">
                           {JSON.stringify(log.details, null, 2)}

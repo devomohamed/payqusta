@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import { api, useThemeStore } from '../store';
 import { Button, Input } from '../components/UI';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
+import { useTranslation } from 'react-i18next';
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation('admin');
   const { token } = useParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
@@ -19,15 +21,15 @@ export default function ResetPasswordPage() {
     e.preventDefault();
 
     if (!password || !confirmPassword) {
-      return toast.error('جميع الحقول مطلوبة');
+      return toast.error(t('reset_password_page.toasts.kqz3qq7'));
     }
 
     if (password.length < 6) {
-      return toast.error('كلمة المرور لا تقل عن 6 أحرف');
+      return toast.error(t('reset_password_page.toasts.knt7mxl'));
     }
 
     if (password !== confirmPassword) {
-      return toast.error('كلمتا المرور غير متطابقتين');
+      return toast.error(t('reset_password_page.toasts.knikobb'));
     }
 
     const isPortal = window.location.pathname.startsWith('/portal');
@@ -35,7 +37,7 @@ export default function ResetPasswordPage() {
     try {
       const endpoint = isPortal ? `/portal/reset-password/${token}` : `/auth/reset-password/${token}`;
       const res = await api.post(endpoint, { password });
-      toast.success('تم إعادة تعيين كلمة المرور بنجاح! ✅');
+      toast.success(t('reset_password_page.toasts.k4ti3ba'));
 
       // Auto login if token is returned
       if (res.data.data?.token) {
@@ -46,7 +48,7 @@ export default function ResetPasswordPage() {
         navigate(isPortal ? '/portal/login' : '/login');
       }, 1500);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'الرابط غير صالح أو منتهي الصلاحية');
+      toast.error(err.response?.data?.message || t('reset_password_page.toasts.k8099dk'));
     } finally {
       setLoading(false);
     }
@@ -61,10 +63,10 @@ export default function ResetPasswordPage() {
             <Lock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-            إعادة تعيين كلمة المرور
+            {t('reset_password_page.ui.k75ko9b')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            أدخل كلمة المرور الجديدة
+            {t('reset_password_page.ui.kvcl837')}
           </p>
         </div>
 
@@ -74,7 +76,7 @@ export default function ResetPasswordPage() {
             {/* New Password */}
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                كلمة المرور الجديدة
+                {t('reset_password_page.ui.k1qts6n')}
               </label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -98,14 +100,14 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                الحد الأدنى 6 أحرف
+                {t('reset_password_page.ui.konzn7t')}
               </p>
             </div>
 
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                تأكيد كلمة المرور
+                {t('reset_password_page.ui.knexxbw')}
               </label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -127,7 +129,7 @@ export default function ResetPasswordPage() {
             )}
 
             <Button type="submit" loading={loading} className="w-full">
-              إعادة تعيين كلمة المرور
+              {t('reset_password_page.ui.k75ko9b')}
             </Button>
 
             <div className="text-center">
@@ -136,7 +138,7 @@ export default function ResetPasswordPage() {
                 className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 <ArrowRight className="w-4 h-4" />
-                <span>العودة لتسجيل الدخول</span>
+                <span>{t('reset_password_page.ui.kwowikb')}</span>
               </Link>
             </div>
           </form>

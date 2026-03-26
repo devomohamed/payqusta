@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   CheckCircle,
@@ -47,19 +48,23 @@ const INITIAL_FORM = {
   isActive: true,
 };
 
-const STANDARD_ROLE_OPTIONS = [
-  { value: 'admin', label: 'مدير البراند' },
-  { value: 'vendor', label: 'موظف مبيعات' },
-  { value: 'coordinator', label: 'منسق' },
-  { value: 'cashier', label: 'كاشير' },
-  { value: 'supplier', label: 'مورد' },
-];
+function getStandardRoleOptions(t) {
+  return [
+    { value: 'admin', label: t('admin_users_page.ui.kiw8fol') },
+    { value: 'vendor', label: t('admin_users_page.ui.kj7m77t') },
+    { value: 'coordinator', label: t('admin_users_page.ui.ktf00g') },
+    { value: 'cashier', label: t('admin_users_page.ui.kpa9orb') },
+    { value: 'supplier', label: t('admin_users_page.ui.ktf1fl') },
+  ];
+}
 
-const BRANCH_SCOPE_OPTIONS = [
-  { value: 'all_branches', label: 'جميع الفروع' },
-  { value: 'assigned_branches', label: 'فروع محددة' },
-  { value: 'single_branch', label: 'فرع واحد' },
-];
+function getBranchScopeOptions(t) {
+  return [
+    { value: 'all_branches', label: t('admin_users_page.ui.kai1sru') },
+    { value: 'assigned_branches', label: t('admin_users_page.ui.k290xzy') },
+    { value: 'single_branch', label: t('admin_users_page.ui.kde3qnc') },
+  ];
+}
 
 function SummaryCard({ title, value, caption, icon: Icon, tone = 'primary' }) {
   const tones = {
@@ -92,19 +97,19 @@ function getRoleBadgeVariant(userItem) {
   return 'gray';
 }
 
-function getRoleLabel(userItem) {
+function getRoleLabel(userItem, standardRoleOptions) {
   return userItem.customRole?.name
-    || STANDARD_ROLE_OPTIONS.find((option) => option.value === userItem.role)?.label
+    || standardRoleOptions.find((option) => option.value === userItem.role)?.label
     || userItem.role;
 }
 
-function getBranchScopeLabel(userItem) {
-  if (!userItem.branchAccessMode) return 'غير محدد';
-  if (userItem.branchAccessMode === 'all_branches') return 'جميع الفروع';
+function getBranchScopeLabel(userItem, t) {
+  if (!userItem.branchAccessMode) return t('admin_users_page.ui.k5xt5xj');
+  if (userItem.branchAccessMode === 'all_branches') return t('admin_users_page.ui.kai1sru');
   if (userItem.branchAccessMode === 'assigned_branches') {
     return `فروع محددة (${userItem.assignedBranches?.length || 0})`;
   }
-  return 'فرع واحد';
+  return t('admin_users_page.ui.kde3qnc');
 }
 
 function buildAuditTrailLink(userItem) {
@@ -121,6 +126,9 @@ function buildAuditTrailLink(userItem) {
 }
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation('admin');
+  const standardRoleOptions = useMemo(() => getStandardRoleOptions(t), [t]);
+  const branchScopeOptions = useMemo(() => getBranchScopeOptions(t), [t]);
   const { user } = useAuthStore();
   const isSuperAdmin = user?.isSuperAdmin;
 
@@ -154,7 +162,7 @@ export default function AdminUsersPage() {
         total: res.data.pagination?.total || 0,
       });
     } catch (error) {
-      toast.error('تعذر تحميل المستخدمين');
+      toast.error(t('admin_users_page.toasts.k1aodt7'));
     } finally {
       setLoading(false);
     }
@@ -254,11 +262,11 @@ export default function AdminUsersPage() {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) {
-      return toast.error('الاسم والبريد الإلكتروني مطلوبان');
+      return toast.error(t('admin_users_page.toasts.kpxpt9c'));
     }
 
     if (!editId && isSuperAdmin && !form.tenantId) {
-      return toast.error('أكمل الحقول الأساسية قبل الحفظ');
+      return toast.error(t('admin_users_page.toasts.kb4sb5a'));
     }
 
     setSaving(true);
@@ -285,20 +293,20 @@ export default function AdminUsersPage() {
           ...payload,
           invitationChannel: form.invitationChannel,
         });
-        toast.success('تم تحديث المستخدم بنجاح');
+        toast.success(t('admin_users_page.toasts.kz1qbyp'));
       } else {
         await adminApi.createUser({
           ...payload,
           tenantId: isSuperAdmin ? form.tenantId : user?.tenant?._id,
           invitationChannel: form.invitationChannel,
         });
-        toast.success('تم إنشاء المستخدم بنجاح');
+        toast.success(t('admin_users_page.toasts.k3t1yhd'));
       }
 
       closeModal();
       load();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'حدث خطأ أثناء حفظ المستخدم');
+      toast.error(error.response?.data?.message || t('admin_users_page.toasts.k5xkrhi'));
     } finally {
       setSaving(false);
     }
@@ -355,30 +363,30 @@ export default function AdminUsersPage() {
   const handleDelete = async (userId) => {
     notify.custom({
       type: 'error',
-      title: 'تأكيد الحذف أو التعطيل',
-      message: 'هل تريد تعطيل حساب المستخدم فقط (مؤقتاً) أم حذفه نهائياً من النظام؟',
+      title: t('admin_users_page.ui.k5yeb8a'),
+      message: t('admin_users_page.ui.kvken9p'),
       duration: 10000,
       action: {
-        label: 'حذف نهائي',
+        label: t('admin_users_page.ui.kcuf6ig'),
         onClick: async () => {
           try {
             await adminApi.deleteUser(userId, { hardDelete: true });
-            notify.success('تم حذف المستخدم نهائياً', 'تم الحفظ');
+            notify.success(t('admin_users_page.ui.kcogsva'), t('admin_users_page.ui.kwtu1we'));
             load();
           } catch (error) {
-            notify.error(error.response?.data?.message || 'تعذر حذف المستخدم', 'حدث خطأ');
+            notify.error(error.response?.data?.message || t('admin_users_page.toasts.kgdyvm1'), t('admin_users_page.ui.ktcqm3h'));
           }
         },
       },
       secondaryAction: {
-        label: 'تعطيل فقط',
+        label: t('admin_users_page.ui.kce6i3c'),
         onClick: async () => {
           try {
             await adminApi.deleteUser(userId);
-            notify.success('تم تعطيل المستخدم بنجاح', 'تم الحفظ');
+            notify.success(t('admin_users_page.ui.klo6evw'), t('admin_users_page.ui.kwtu1we'));
             load();
           } catch (error) {
-            notify.error(error.response?.data?.message || 'تعذر تعطيل المستخدم', 'حدث خطأ');
+            notify.error(error.response?.data?.message || t('admin_users_page.toasts.khi7j03'), t('admin_users_page.ui.ktcqm3h'));
           }
         },
       },
@@ -391,13 +399,13 @@ export default function AdminUsersPage() {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-bold app-text-strong">نطاق الفروع</label>
+          <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.kar6fi')}</label>
           <select
             value={form.branchAccessMode}
             onChange={(event) => setForm((current) => ({ ...current, branchAccessMode: event.target.value }))}
             className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
           >
-            {BRANCH_SCOPE_OPTIONS.map((option) => (
+            {branchScopeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -406,7 +414,7 @@ export default function AdminUsersPage() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold app-text-strong">الفرع الرئيسي</label>
+          <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.kphehwb')}</label>
           <select
             value={form.primaryBranch}
             onChange={(event) => setForm((current) => ({
@@ -416,7 +424,7 @@ export default function AdminUsersPage() {
             }))}
             className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
           >
-            <option value="">اختر الفرع الرئيسي</option>
+            <option value="">{t('admin_users_page.ui.ke9scfd')}</option>
             {branches.map((branchItem) => (
               <option key={branchItem._id} value={branchItem._id}>
                 {branchItem.name}
@@ -426,7 +434,7 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-bold app-text-strong">الفروع المسموح بها</label>
+          <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.ku9lvob')}</label>
           <select
             multiple
             value={form.assignedBranches}
@@ -439,7 +447,7 @@ export default function AdminUsersPage() {
               </option>
             ))}
           </select>
-          <p className="mt-2 text-xs app-text-muted">استخدم Ctrl أو Command لاختيار أكثر من فرع.</p>
+          <p className="mt-2 text-xs app-text-muted">{t('admin_users_page.ui.kywrwga')}</p>
         </div>
       </div>
     );
@@ -459,9 +467,9 @@ export default function AdminUsersPage() {
                 <Users className="h-7 w-7" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white">إدارة الموظفين والصلاحيات</h1>
+                <h1 className="text-3xl font-black text-white">{t('admin_users_page.ui.k7ikm77')}</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-white/80">
-                  أدر الأدوار المخصصة، نطاق الفروع، وتاريخ التعديلات من شاشة واحدة أوضح وأكثر راحة على الهاتف.
+                  {t('admin_users_page.ui.k80lp8g')}
                 </p>
               </div>
             </div>
@@ -469,19 +477,19 @@ export default function AdminUsersPage() {
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:min-w-[560px]">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">إجمالي المستخدمين</p>
+              <p className="text-xs font-bold text-white/65">{t('admin_users_page.ui.kg69frm')}</p>
               <p className="mt-2 text-2xl font-black">{summary.total}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">الحسابات النشطة</p>
+              <p className="text-xs font-bold text-white/65">{t('admin_users_page.ui.kq4mwmi')}</p>
               <p className="mt-2 text-2xl font-black">{summary.active}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">أدوار مخصصة</p>
+              <p className="text-xs font-bold text-white/65">{t('admin_users_page.ui.kf89y4a')}</p>
               <p className="mt-2 text-2xl font-black">{summary.customRoles}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">نطاق فرعي</p>
+              <p className="text-xs font-bold text-white/65">{t('admin_users_page.ui.k7lmrnv')}</p>
               <p className="mt-2 text-2xl font-black">{summary.scopedUsers}</p>
             </div>
           </div>
@@ -493,25 +501,25 @@ export default function AdminUsersPage() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15 lg:w-auto"
           >
             <FileSearch className="h-4 w-4 text-white" />
-            سجل تعديلات الموظفين
+            {t('admin_users_page.ui.kvih2yl')}
           </Link>
           <Button onClick={openAdd} size="lg" icon={<Plus className="h-4 w-4" />} className="w-full bg-white text-emerald-700 hover:bg-white/90 lg:w-auto">
-            إضافة مستخدم جديد
+            {t('admin_users_page.ui.kcbc91e')}
           </Button>
         </div>
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="إجمالي المستخدمين" value={summary.total} caption="بعد الفلاتر الحالية" icon={Users} tone="primary" />
-        <SummaryCard title="الحسابات النشطة" value={summary.active} caption="يمكنها تسجيل الدخول حاليًا" icon={CheckCircle} tone="emerald" />
-        <SummaryCard title="أدوار مخصصة" value={summary.customRoles} caption="حسابات مرتبطة بدور تفصيلي" icon={Shield} tone="amber" />
-        <SummaryCard title="نطاق فرعي" value={summary.scopedUsers} caption="حسابات ليست على جميع الفروع" icon={Building2} tone="cyan" />
+        <SummaryCard title={t('admin_users_page.titles.kg69frm')} value={summary.total} caption="بعد الفلاتر الحالية" icon={Users} tone="primary" />
+        <SummaryCard title={t('admin_users_page.titles.kq4mwmi')} value={summary.active} caption="يمكنها تسجيل الدخول حاليًا" icon={CheckCircle} tone="emerald" />
+        <SummaryCard title={t('admin_users_page.titles.kf89y4a')} value={summary.customRoles} caption="حسابات مرتبطة بدور تفصيلي" icon={Shield} tone="amber" />
+        <SummaryCard title={t('admin_users_page.titles.k7lmrnv')} value={summary.scopedUsers} caption="حسابات ليست على جميع الفروع" icon={Building2} tone="cyan" />
       </div>
 
       <Card className="app-surface-muted p-4 sm:p-5">
         <div className="mb-4">
-          <p className="text-sm font-black app-text-strong">البحث والتصفية</p>
-          <p className="mt-1 text-xs app-text-muted">ابحث بالاسم أو البريد أو الهاتف، وفلتر حسب الدور أو المتجر للوصول الأسرع للحسابات.</p>
+          <p className="text-sm font-black app-text-strong">{t('admin_users_page.ui.kex4i93')}</p>
+          <p className="mt-1 text-xs app-text-muted">{t('admin_users_page.ui.ke06noj')}</p>
         </div>
         <div className={`grid gap-4 ${isSuperAdmin ? 'lg:grid-cols-[1.4fr_repeat(2,minmax(0,0.8fr))]' : 'lg:grid-cols-[1.6fr_0.9fr]'}`}>
           <div className="relative">
@@ -519,7 +527,7 @@ export default function AdminUsersPage() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="ابحث بالاسم أو البريد الإلكتروني أو الهاتف..."
+              placeholder={t('admin_users_page.placeholders.ka3dcnw')}
               className="pr-10"
             />
           </div>
@@ -529,8 +537,8 @@ export default function AdminUsersPage() {
             onChange={(event) => setRoleFilter(event.target.value)}
             className="app-surface rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
           >
-            <option value="">كل الأدوار</option>
-            {STANDARD_ROLE_OPTIONS.map((option) => (
+            <option value="">{t('admin_users_page.ui.k8t8jhm')}</option>
+            {standardRoleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -543,7 +551,7 @@ export default function AdminUsersPage() {
               onChange={(event) => setTenantFilter(event.target.value)}
               className="app-surface rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
             >
-              <option value="">كل المتاجر</option>
+              <option value="">{t('admin_users_page.ui.k9btodn')}</option>
               {tenants.map((tenant) => (
                 <option key={tenant._id} value={tenant._id}>
                   {tenant.name}
@@ -561,9 +569,9 @@ export default function AdminUsersPage() {
       ) : users.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="لا توجد حسابات مطابقة"
+          title={t('admin_users_page.titles.k5jeaaa')}
           description="جرّب توسيع الفلاتر أو ابدأ بإضافة مستخدم جديد."
-          action={{ label: 'إضافة مستخدم', onClick: openAdd }}
+          action={{ label: t('admin_users_page.ui.kdnrqwm'), onClick: openAdd }}
         />
       ) : (
         <Card className="overflow-hidden rounded-[1.75rem]">
@@ -572,22 +580,22 @@ export default function AdminUsersPage() {
               <div key={userItem._id} className="app-surface-muted rounded-2xl p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20">
-                    {userItem.name?.charAt(0) || 'م'}
+                    {userItem.name?.charAt(0) || t('admin_users_page.toasts.k18l')}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-black app-text-strong">{userItem.name}</p>
-                      <Badge variant={getRoleBadgeVariant(userItem)}>{getRoleLabel(userItem)}</Badge>
-                      <Badge variant={userItem.isActive ? 'success' : 'danger'}>{userItem.isActive ? 'نشط' : 'معطل'}</Badge>
+                      <Badge variant={getRoleBadgeVariant(userItem)}>{getRoleLabel(userItem, standardRoleOptions)}</Badge>
+                      <Badge variant={userItem.isActive ? 'success' : 'danger'}>{userItem.isActive ? t('admin_users_page.ui.ky62x') : 'معطل'}</Badge>
                     </div>
                     <p className="mt-1 truncate text-[11px] app-text-muted">{userItem.email}</p>
                     {userItem.phone ? <p className="mt-1 text-[11px] app-text-muted">{userItem.phone}</p> : null}
                     <p className="mt-2 text-[11px] app-text-muted">
                       {isSuperAdmin
-                        ? (userItem.tenant?.name || 'مدير نظام')
-                        : (userItem.primaryBranch?.name || userItem.branch?.name || 'بدون ربط فرعي')}
+                        ? (userItem.tenant?.name || t('admin_users_page.toasts.kd98xj3'))
+                        : (userItem.primaryBranch?.name || userItem.branch?.name || t('admin_users_page.toasts.koyf0h0'))}
                     </p>
-                    {!isSuperAdmin ? <p className="mt-1 text-[11px] app-text-muted">{getBranchScopeLabel(userItem)}</p> : null}
+                    {!isSuperAdmin ? <p className="mt-1 text-[11px] app-text-muted">{getBranchScopeLabel(userItem, t)}</p> : null}
                     <p className="mt-1 text-[11px] app-text-muted">{format(new Date(userItem.createdAt), 'dd MMM yyyy', { locale: ar })}</p>
                   </div>
                 </div>
@@ -596,7 +604,7 @@ export default function AdminUsersPage() {
                   <Link
                     to={buildAuditTrailLink(userItem)}
                     className="inline-flex items-center justify-center rounded-xl p-2.5 app-surface app-text-body transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
-                    title="عرض سجل التدقيق"
+                    title={t('admin_users_page.titles.k8tscyp')}
                   >
                     <FileSearch className="h-4 w-4" />
                   </Link>
@@ -604,7 +612,7 @@ export default function AdminUsersPage() {
                     type="button"
                     onClick={() => openEdit(userItem)}
                     className="rounded-xl p-2.5 text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10"
-                    title="تعديل"
+                    title={t('admin_users_page.titles.edit')}
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
@@ -613,7 +621,7 @@ export default function AdminUsersPage() {
                       type="button"
                       onClick={() => handleDelete(userItem._id)}
                       className="rounded-xl p-2.5 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
-                      title="تعطيل"
+                      title={t('admin_users_page.titles.kowudxe')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -626,12 +634,12 @@ export default function AdminUsersPage() {
             <table className="w-full min-w-[980px]">
               <thead>
                 <tr className="app-surface-muted border-b border-black/5 dark:border-white/10">
-                  <th className="p-4 text-right text-sm font-bold app-text-muted">المستخدم</th>
-                  <th className="p-4 text-right text-sm font-bold app-text-muted">{isSuperAdmin ? 'المتجر' : 'الفرع والنطاق'}</th>
-                  <th className="p-4 text-right text-sm font-bold app-text-muted">الدور</th>
-                  <th className="p-4 text-right text-sm font-bold app-text-muted">الحالة</th>
-                  <th className="p-4 text-right text-sm font-bold app-text-muted">تاريخ الإنشاء</th>
-                  <th className="p-4 text-center text-sm font-bold app-text-muted">الإجراءات</th>
+                  <th className="p-4 text-right text-sm font-bold app-text-muted">{t('admin_users_page.ui.ksb3t2z')}</th>
+                  <th className="p-4 text-right text-sm font-bold app-text-muted">{isSuperAdmin ? t('admin_users_page.ui.kaaxfw9') : 'الفرع والنطاق'}</th>
+                  <th className="p-4 text-right text-sm font-bold app-text-muted">{t('admin_users_page.ui.kovdv0b')}</th>
+                  <th className="p-4 text-right text-sm font-bold app-text-muted">{t('admin_users_page.ui.kabct8k')}</th>
+                  <th className="p-4 text-right text-sm font-bold app-text-muted">{t('admin_users_page.ui.kwmk0vc')}</th>
+                  <th className="p-4 text-center text-sm font-bold app-text-muted">{t('admin_users_page.ui.kvfmk6')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -643,7 +651,7 @@ export default function AdminUsersPage() {
                     <td className="p-4 align-top">
                       <div className="flex items-start gap-3">
                         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20">
-                          {userItem.name?.charAt(0) || 'م'}
+                          {userItem.name?.charAt(0) || t('admin_users_page.toasts.k18l')}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-black app-text-strong">{userItem.name}</p>
@@ -669,17 +677,17 @@ export default function AdminUsersPage() {
                             <span className="font-semibold app-text-strong">{userItem.tenant.name}</span>
                           </div>
                         ) : (
-                          <Badge variant="warning">مدير نظام</Badge>
+                          <Badge variant="warning">{t('admin_users_page.ui.kd98xj3')}</Badge>
                         )
                       ) : userItem.primaryBranch || userItem.branch ? (
                         <div className="space-y-1">
                           <p className="text-sm font-semibold app-text-strong">
                             {userItem.primaryBranch?.name || userItem.branch?.name}
                           </p>
-                          <p className="text-xs app-text-muted">{getBranchScopeLabel(userItem)}</p>
+                          <p className="text-xs app-text-muted">{getBranchScopeLabel(userItem, t)}</p>
                         </div>
                       ) : (
-                        <span className="text-xs app-text-muted">بدون ربط فرعي</span>
+                        <span className="text-xs app-text-muted">{t('admin_users_page.ui.koyf0h0')}</span>
                       )}
                     </td>
 
@@ -687,9 +695,9 @@ export default function AdminUsersPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={getRoleBadgeVariant(userItem)}>
                           <Shield className="mr-1 h-3 w-3" />
-                          {getRoleLabel(userItem)}
+                          {getRoleLabel(userItem, standardRoleOptions)}
                         </Badge>
-                        {userItem.customRole && <Badge variant="gray">مخصص</Badge>}
+                        {userItem.customRole && <Badge variant="gray">{t('admin_users_page.ui.ktei95')}</Badge>}
                       </div>
                     </td>
 
@@ -698,12 +706,12 @@ export default function AdminUsersPage() {
                         {userItem.isActive ? (
                           <>
                             <CheckCircle className="mr-1 h-3 w-3" />
-                            نشط
+                            {t('admin_users_page.ui.ky62x')}
                           </>
                         ) : (
                           <>
                             <XCircle className="mr-1 h-3 w-3" />
-                            معطل
+                            {t('admin_users_page.ui.kteqgx')}
                           </>
                         )}
                       </Badge>
@@ -720,7 +728,7 @@ export default function AdminUsersPage() {
                         <Link
                           to={buildAuditTrailLink(userItem)}
                           className="rounded-xl p-2.5 app-surface-muted app-text-body transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
-                          title="عرض سجل التدقيق"
+                          title={t('admin_users_page.titles.k8tscyp')}
                         >
                           <FileSearch className="h-4 w-4" />
                         </Link>
@@ -728,7 +736,7 @@ export default function AdminUsersPage() {
                           type="button"
                           onClick={() => openEdit(userItem)}
                           className="rounded-xl p-2.5 text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10"
-                          title="تعديل"
+                          title={t('admin_users_page.titles.edit')}
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
@@ -737,7 +745,7 @@ export default function AdminUsersPage() {
                             type="button"
                             onClick={() => handleDelete(userItem._id)}
                             className="rounded-xl p-2.5 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
-                            title="تعطيل"
+                            title={t('admin_users_page.titles.kowudxe')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -760,7 +768,7 @@ export default function AdminUsersPage() {
 
       {showModal && (
         <Modal
-          title={editId ? 'تعديل المستخدم' : 'إضافة مستخدم جديد'}
+          title={editId ? t('admin_users_page.ui.kaspgmj') : 'إضافة مستخدم جديد'}
           onClose={closeModal}
           size="lg"
           bodyClassName="space-y-6"
@@ -768,20 +776,20 @@ export default function AdminUsersPage() {
           <div className="space-y-6">
             <Card className="p-5">
               <div className="mb-4">
-                <h3 className="text-base font-black app-text-strong">البيانات الأساسية</h3>
-                <p className="mt-1 text-sm app-text-muted">اسم الموظف وبيانات التواصل والدور الأساسي للحساب.</p>
+                <h3 className="text-base font-black app-text-strong">{t('admin_users_page.ui.kl8rjwp')}</h3>
+                <p className="mt-1 text-sm app-text-muted">{t('admin_users_page.ui.k825udw')}</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 {isSuperAdmin && !editId && (
                   <div className="md:col-span-2">
-                    <label className="mb-2 block text-sm font-bold app-text-strong">المتجر</label>
+                    <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.kaaxfw9')}</label>
                     <select
                       value={form.tenantId}
                       onChange={(event) => setForm((current) => ({ ...current, tenantId: event.target.value }))}
                       className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
                     >
-                      <option value="">اختر المتجر</option>
+                      <option value="">{t('admin_users_page.ui.kfeejax')}</option>
                       {tenants.map((tenant) => (
                         <option key={tenant._id} value={tenant._id}>
                           {tenant.name}
@@ -792,29 +800,29 @@ export default function AdminUsersPage() {
                 )}
 
                 <Input
-                  label="الاسم"
+                  label={t('admin_users_page.form.kovdol8')}
                   value={form.name}
                   onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="محمد أحمد"
+                  placeholder={t('admin_users_page.placeholders.knbivgi')}
                 />
                 <Input
                   type="email"
-                  label="البريد الإلكتروني"
+                  label={t('admin_users_page.form.k8lvosz')}
                   value={form.email}
                   onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
                   placeholder="user@example.com"
                 />
                 <Input
-                  label="رقم الهاتف"
+                  label={t('admin_users_page.form.k3pahhc')}
                   value={form.phone}
                   onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                   placeholder="01012345678"
                 />
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="block text-sm font-bold app-text-strong">الدور القياسي</label>
+                    <label className="block text-sm font-bold app-text-strong">{t('admin_users_page.ui.kerlxp0')}</label>
                     <Link to="/roles" className="text-xs font-semibold text-primary-500 hover:text-primary-600">
-                      إدارة الأدوار
+                      {t('admin_users_page.ui.kxkis4e')}
                     </Link>
                   </div>
                   <select
@@ -822,7 +830,7 @@ export default function AdminUsersPage() {
                     onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
                     className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
                   >
-                    {STANDARD_ROLE_OPTIONS.map((option) => (
+                    {standardRoleOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
@@ -831,13 +839,13 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-bold app-text-strong">الدور المخصص</label>
+                  <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.khupp91')}</label>
                   <select
                     value={form.customRole}
                     onChange={(event) => setForm((current) => ({ ...current, customRole: event.target.value }))}
                     className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
                   >
-                    <option value="">بدون دور مخصص</option>
+                    <option value="">{t('admin_users_page.ui.kt39lws')}</option>
                     {roles.map((roleItem) => (
                       <option key={roleItem._id} value={roleItem._id}>
                         {roleItem.name}
@@ -851,8 +859,8 @@ export default function AdminUsersPage() {
             {!isSuperAdmin && (
               <Card className="p-5">
                 <div className="mb-4">
-                  <h3 className="text-base font-black app-text-strong">نطاق الفروع</h3>
-                  <p className="mt-1 text-sm app-text-muted">حدد ما إذا كان المستخدم يعمل على فرع واحد أو مجموعة فروع أو كل الفروع.</p>
+                  <h3 className="text-base font-black app-text-strong">{t('admin_users_page.ui.kar6fi')}</h3>
+                  <p className="mt-1 text-sm app-text-muted">{t('admin_users_page.ui.kq3tfve')}</p>
                 </div>
                 {renderBranchScopeFields()}
               </Card>
@@ -860,46 +868,46 @@ export default function AdminUsersPage() {
 
             <Card className="p-5">
               <div className="mb-4">
-                <h3 className="text-base font-black app-text-strong">الحالة وكلمة المرور</h3>
+                <h3 className="text-base font-black app-text-strong">{t('admin_users_page.ui.km7df6x')}</h3>
                 <p className="mt-1 text-sm app-text-muted">
-                  {editId ? 'يمكنك إبقاء كلمة المرور فارغة إذا لم تكن تريد تغييرها.' : 'اترك الحقل فارغاً لإرسال دعوة للمستخدم عبر إحدى القنوات لتفعيل حسابه وتعيين كلمة السر بنفسه.'}
+                  {editId ? t('admin_users_page.ui.k48b6z6') : 'اترك الحقل فارغاً لإرسال دعوة للمستخدم عبر إحدى القنوات لتفعيل حسابه وتعيين كلمة السر بنفسه.'}
                 </p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
                   type="password"
-                  label={editId ? 'كلمة مرور جديدة' : 'كلمة المرور (اختياري)'}
+                  label={editId ? t('admin_users_page.ui.koj20j5') : 'كلمة المرور (اختياري)'}
                   value={form.password}
                   onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                  placeholder={editId ? 'اتركها فارغة إذا لم تتغير' : 'اتركها فارغة لإرسال دعوة للمستخدم'}
+                  placeholder={editId ? t('admin_users_page.ui.kfdpxkn') : 'اتركها فارغة لإرسال دعوة للمستخدم'}
                   autoComplete="new-password"
                 />
 
                 {editId ? (
                   <div>
-                    <label className="mb-2 block text-sm font-bold app-text-strong">الحالة</label>
+                    <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.kabct8k')}</label>
                     <select
                       value={form.isActive ? 'active' : 'inactive'}
                       onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.value === 'active' }))}
                       className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
                     >
-                      <option value="active">نشط</option>
-                      <option value="inactive">معطل</option>
+                      <option value="active">{t('admin_users_page.ui.ky62x')}</option>
+                      <option value="inactive">{t('admin_users_page.ui.kteqgx')}</option>
                     </select>
                   </div>
                 ) : !form.password ? (
                   <div>
-                    <label className="mb-2 block text-sm font-bold app-text-strong">طريقة إرسال رابط الدعوة</label>
+                    <label className="mb-2 block text-sm font-bold app-text-strong">{t('admin_users_page.ui.k91yx1a')}</label>
                     <select
                       value={form.invitationChannel || 'auto'}
                       onChange={(event) => setForm((current) => ({ ...current, invitationChannel: event.target.value }))}
                       className="app-surface w-full rounded-xl border border-transparent px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary-500/20"
                     >
-                      <option value="auto">تلقائي (رسالة ثم بريد إلكتروني)</option>
-                      <option value="whatsapp">عبر واتساب (WhatsApp)</option>
-                      <option value="email">عبر البريد الإلكتروني فقط</option>
-                      <option value="sms">عبر رسالة نصية (SMS) فقط</option>
+                      <option value="auto">{t('admin_users_page.ui.krqns79')}</option>
+                      <option value="whatsapp">{t('admin_users_page.ui.kcp41q0')}</option>
+                      <option value="email">{t('admin_users_page.ui.kdu6fud')}</option>
+                      <option value="sms">{t('admin_users_page.ui.k9oz2i8')}</option>
                     </select>
                   </div>
                 ) : null}
@@ -908,10 +916,10 @@ export default function AdminUsersPage() {
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Button variant="ghost" onClick={closeModal} className="sm:min-w-[140px]">
-                إلغاء
+                {t('admin_users_page.ui.cancel')}
               </Button>
               <Button onClick={handleSave} loading={saving} className="sm:min-w-[180px]">
-                {editId ? 'حفظ التعديلات' : 'إنشاء المستخدم'}
+                {editId ? t('admin_users_page.ui.km6ld24') : 'إنشاء المستخدم'}
               </Button>
             </div>
           </div>

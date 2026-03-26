@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { superAdminApi } from '../store';
 import { Badge, Button, Card, Input, LoadingSpinner, Modal, Select, TextArea } from '../components/UI';
 import { confirm } from '../components/ConfirmDialog';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_FORM = {
   name: '',
@@ -75,6 +76,7 @@ function formToPayload(form) {
 }
 
 export default function SuperAdminPlansPage() {
+  const { t } = useTranslation('admin');
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -100,7 +102,7 @@ export default function SuperAdminPlansPage() {
       setPlans(plansRes.data?.data || []);
       setPayments(paymentsRes.data?.data?.payments || null);
     } catch (err) {
-      toast.error('فشل تحميل بعض البيانات');
+      toast.error(t('super_admin_plans_page.toasts.kkp70r5'));
     } finally {
       setLoading(false);
       setLoadingPayments(false);
@@ -126,7 +128,7 @@ export default function SuperAdminPlansPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      toast.error('اسم الباقة مطلوب');
+      toast.error(t('super_admin_plans_page.toasts.kwiwd38'));
       return;
     }
 
@@ -135,29 +137,29 @@ export default function SuperAdminPlansPage() {
       const payload = formToPayload(form);
       if (editingPlan?._id) {
         await superAdminApi.updatePlan(editingPlan._id, payload);
-        toast.success('تم تحديث الباقة');
+        toast.success(t('super_admin_plans_page.toasts.k2u7xwl'));
       } else {
         await superAdminApi.createPlan(payload);
-        toast.success('تم إنشاء الباقة');
+        toast.success(t('super_admin_plans_page.toasts.keq9spx'));
       }
       setIsModalOpen(false);
       await loadAllData();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'فشل حفظ الباقة');
+      toast.error(err?.response?.data?.message || t('super_admin_plans_page.toasts.kiu6wdq'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDisable = async (plan) => {
-    const ok = await confirm.warn(`هل تريد إيقاف الباقة "${plan.name}"؟ ثها لن تظهر للعملاء.`, 'إيقاف الباقة');
+    const ok = await confirm.warn(`هل تريد إيقاف الباقة "${plan.name}"؟ ثها لن تظهر للعملاء.`, t('super_admin_plans_page.ui.km4b5bo'));
     if (!ok) return;
     try {
       await superAdminApi.deletePlan(plan._id);
-      toast.success('تم إيقاف الباقة');
+      toast.success(t('super_admin_plans_page.toasts.kwx5o8h'));
       await loadAllData();
     } catch (err) {
-      toast.error('فشل إيقاف الباقة');
+      toast.error(t('super_admin_plans_page.toasts.kfdgupx'));
     }
   };
 
@@ -165,9 +167,9 @@ export default function SuperAdminPlansPage() {
     setSavingPayments(true);
     try {
       await superAdminApi.updatePaymentMethods({ payments });
-      toast.success('تم حفظ إعدادات بوابات الدفع');
+      toast.success(t('super_admin_plans_page.toasts.kyy52gn'));
     } catch (error) {
-      toast.error('فشل حفظ إعدادات الدفع');
+      toast.error(t('super_admin_plans_page.toasts.kn3j7l1'));
     } finally {
       setSavingPayments(false);
     }
@@ -195,33 +197,33 @@ export default function SuperAdminPlansPage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/80">Plans Control</p>
-              <h1 className="text-2xl font-extrabold">إدارة الباقات والأسعار</h1>
+              <h1 className="text-2xl font-extrabold">{t('super_admin_plans_page.ui.k77uu6o')}</h1>
               <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
-                إدارة باقات الاشتراك وحدود الاستخدام مع عرض أوضح على الهاتف ومساحة عمل أسرع لفريق السوبر أدمن.
+                {t('super_admin_plans_page.ui.k4vxduc')}
               </p>
             </div>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button variant="ghost" icon={<RefreshCw className="w-4 h-4" />} onClick={loadAllData} className="w-full sm:w-auto">
-              تحديث
+              {t('super_admin_plans_page.ui.update')}
             </Button>
             <Button icon={<Plus className="w-4 h-4" />} onClick={openCreate} className="w-full sm:w-auto">
-              باقة جديدة
+              {t('super_admin_plans_page.ui.ku8pz3t')}
             </Button>
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
           <Card className="app-surface rounded-2xl p-4 text-center">
-            <p className="text-[11px] text-gray-400">إجمالي الباقات</p>
+            <p className="text-[11px] text-gray-400">{t('super_admin_plans_page.ui.ki9qpzc')}</p>
             <p className="mt-1 text-xl font-black text-gray-900 dark:text-white">{plans.length}</p>
           </Card>
           <Card className="app-surface rounded-2xl p-4 text-center">
-            <p className="text-[11px] text-gray-400">النشطة</p>
+            <p className="text-[11px] text-gray-400">{t('super_admin_plans_page.ui.kaawl8j')}</p>
             <p className="mt-1 text-xl font-black text-emerald-600">{activeCount}</p>
           </Card>
           <Card className="app-surface rounded-2xl p-4 text-center">
-            <p className="text-[11px] text-gray-400">الشائعة</p>
+            <p className="text-[11px] text-gray-400">{t('super_admin_plans_page.ui.kzhd30m')}</p>
             <p className="mt-1 text-xl font-black text-amber-600">{plans.filter((plan) => plan.isPopular).length}</p>
           </Card>
         </div>
@@ -237,22 +239,22 @@ export default function SuperAdminPlansPage() {
                   <p className="mt-1 text-xs text-gray-500">{plan.description || '-'}</p>
                 </div>
                 <Badge variant={plan.isActive ? 'success' : 'gray'}>
-                  {plan.isActive ? 'نشطة' : 'متوقفة'}
+                  {plan.isActive ? t('super_admin_plans_page.ui.ktf9q8') : 'متوقفة'}
                 </Badge>
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                {plan.isPopular && <Badge>الأكثر شيوعًا</Badge>}
-                <Badge variant="info">{plan.billingCycle === 'yearly' ? 'سنوي' : 'شهري'}</Badge>
+                {plan.isPopular && <Badge>{t('super_admin_plans_page.ui.keykkps')}</Badge>}
+                <Badge variant="info">{plan.billingCycle === 'yearly' ? t('super_admin_plans_page.ui.kt3ir9') : 'شهري'}</Badge>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                  <p className="text-[11px] text-gray-400">السعر</p>
+                  <p className="text-[11px] text-gray-400">{t('super_admin_plans_page.ui.kovdxm6')}</p>
                   <p className="mt-1 font-black text-gray-900 dark:text-white">{(plan.price || 0).toLocaleString('ar-EG')} {plan.currency || 'EGP'}</p>
                 </div>
                 <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                  <p className="text-[11px] text-gray-400">الحدود</p>
+                  <p className="text-[11px] text-gray-400">{t('super_admin_plans_page.ui.kabcn7e')}</p>
                   <p className="mt-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
                     منتجات {plan?.limits?.maxProducts ?? 0} • عملاء {plan?.limits?.maxCustomers ?? 0}
                   </p>
@@ -262,11 +264,11 @@ export default function SuperAdminPlansPage() {
 
               <div className="mt-4 flex gap-2">
                 <Button size="sm" variant="ghost" icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(plan)} className="flex-1">
-                  تعديل
+                  {t('super_admin_plans_page.ui.edit')}
                 </Button>
                 {plan.isActive && (
                   <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDisable(plan)} className="flex-1">
-                    إيقاف
+                    {t('super_admin_plans_page.ui.koueh1z')}
                   </Button>
                 )}
               </div>
@@ -278,12 +280,12 @@ export default function SuperAdminPlansPage() {
         <table className="w-full min-w-[980px]">
           <thead>
             <tr className="text-right text-xs text-gray-500 border-b border-gray-100/80 dark:border-white/10">
-              <th className="px-4 py-3">الاسم</th>
-              <th className="px-4 py-3">السعر</th>
-              <th className="px-4 py-3">الفوترة</th>
-              <th className="px-4 py-3">الحدود</th>
-              <th className="px-4 py-3">الحالة</th>
-              <th className="px-4 py-3">الأكشن</th>
+              <th className="px-4 py-3">{t('super_admin_plans_page.ui.kovdol8')}</th>
+              <th className="px-4 py-3">{t('super_admin_plans_page.ui.kovdxm6')}</th>
+              <th className="px-4 py-3">{t('super_admin_plans_page.ui.kzc0hwi')}</th>
+              <th className="px-4 py-3">{t('super_admin_plans_page.ui.kabcn7e')}</th>
+              <th className="px-4 py-3">{t('super_admin_plans_page.ui.kabct8k')}</th>
+              <th className="px-4 py-3">{t('super_admin_plans_page.ui.kabimpd')}</th>
             </tr>
           </thead>
           <tbody>
@@ -292,12 +294,12 @@ export default function SuperAdminPlansPage() {
                 <td className="px-4 py-3">
                   <div className="font-bold">{plan.name}</div>
                   <div className="text-xs text-gray-500">{plan.description || '-'}</div>
-                  {plan.isPopular && <Badge className="mt-1">الأكثر شيوعًا</Badge>}
+                  {plan.isPopular && <Badge className="mt-1">{t('super_admin_plans_page.ui.keykkps')}</Badge>}
                 </td>
                 <td className="px-4 py-3 font-semibold">
                   {(plan.price || 0).toLocaleString('ar-EG')} {plan.currency || 'EGP'}
                 </td>
-                <td className="px-4 py-3">{plan.billingCycle === 'yearly' ? 'سنوي' : 'شهري'}</td>
+                <td className="px-4 py-3">{plan.billingCycle === 'yearly' ? t('super_admin_plans_page.ui.kt3ir9') : 'شهري'}</td>
                 <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                   منتجات: {plan?.limits?.maxProducts ?? 0} | عملاء: {plan?.limits?.maxCustomers ?? 0}
                   <br />
@@ -305,17 +307,17 @@ export default function SuperAdminPlansPage() {
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant={plan.isActive ? 'success' : 'gray'}>
-                    {plan.isActive ? 'نشطة' : 'متوقفة'}
+                    {plan.isActive ? t('super_admin_plans_page.ui.ktf9q8') : 'متوقفة'}
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost" icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(plan)}>
-                      تعديل
+                      {t('super_admin_plans_page.ui.edit')}
                     </Button>
                     {plan.isActive && (
                       <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDisable(plan)}>
-                        إيقاف
+                        {t('super_admin_plans_page.ui.koueh1z')}
                       </Button>
                     )}
                   </div>
@@ -333,8 +335,8 @@ export default function SuperAdminPlansPage() {
           <CreditCard className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">إعدادات بوابات الدفع للحسابات</h2>
-          <p className="text-sm text-gray-500">قم بتفعيل وضبط بيانات حساباتك التي سيدفع عليها العملاء (أصحاب المتاجر)</p>
+          <h2 className="text-xl font-bold">{t('super_admin_plans_page.ui.koxpxa6')}</h2>
+          <p className="text-sm text-gray-500">{t('super_admin_plans_page.ui.kbpd7mt')}</p>
         </div>
       </div>
 
@@ -354,18 +356,18 @@ export default function SuperAdminPlansPage() {
                     checked={payments.instapay?.enabled}
                     onChange={(e) => handlePaymentChange('instapay', 'enabled', e.target.checked)}
                   />
-                  <h3 className="font-bold text-lg text-blue-800 dark:text-blue-400">إنستاباي (InstaPay)</h3>
+                  <h3 className="font-bold text-lg text-blue-800 dark:text-blue-400">{t('super_admin_plans_page.ui.kiu5ovc')}</h3>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="عنوان الدفع (IPA) أو رقم الموبايل"
+                  label={t('super_admin_plans_page.form.kksslph')}
                   value={payments.instapay?.account || ''}
                   onChange={(e) => handlePaymentChange('instapay', 'account', e.target.value)}
                   placeholder="name@instapay"
                 />
                 <Input
-                  label="اسم الطريقة المعروض للعميل"
+                  label={t('super_admin_plans_page.form.kgufbmj')}
                   value={payments.instapay?.label || ''}
                   onChange={(e) => handlePaymentChange('instapay', 'label', e.target.value)}
                   placeholder="InstaPay"
@@ -383,18 +385,18 @@ export default function SuperAdminPlansPage() {
                     checked={payments.vodafone_cash?.enabled}
                     onChange={(e) => handlePaymentChange('vodafone_cash', 'enabled', e.target.checked)}
                   />
-                  <h3 className="font-bold text-lg text-red-600 dark:text-red-400">فودافون كاش</h3>
+                  <h3 className="font-bold text-lg text-red-600 dark:text-red-400">{t('super_admin_plans_page.ui.kt931rk')}</h3>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="رقم المحفظة (فودافون كاش)"
+                  label={t('super_admin_plans_page.form.knstpcu')}
                   value={payments.vodafone_cash?.number || ''}
                   onChange={(e) => handlePaymentChange('vodafone_cash', 'number', e.target.value)}
                   placeholder="010XXXXXXXX"
                 />
                 <Input
-                  label="اسم الطريقة المعروض للعميل"
+                  label={t('super_admin_plans_page.form.kgufbmj')}
                   value={payments.vodafone_cash?.label || ''}
                   onChange={(e) => handlePaymentChange('vodafone_cash', 'label', e.target.value)}
                   placeholder="Vodafone Cash"
@@ -404,7 +406,7 @@ export default function SuperAdminPlansPage() {
 
             <div className="flex justify-end pt-4">
               <Button onClick={handleSavePayments} loading={savingPayments} icon={<Save className="w-4 h-4" />}>
-                حفظ إعدادات الدفع
+                {t('super_admin_plans_page.ui.kz8tong')}
               </Button>
             </div>
           </div>
@@ -415,21 +417,21 @@ export default function SuperAdminPlansPage() {
       <Modal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingPlan ? 'تعديل الباقة' : 'إنشاء باقة جديدة'}
+        title={editingPlan ? t('super_admin_plans_page.ui.kly60nd') : 'إنشاء باقة جديدة'}
         size="lg"
       >
         <form className="space-y-4" onSubmit={handleSave}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="اسم الباقة" value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} />
+            <Input label={t('super_admin_plans_page.form.kcndomu')} value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} />
             <Input
-              label="السعر"
+              label={t('super_admin_plans_page.form.kovdxm6')}
               type="number"
               min="0"
               value={form.price}
               onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
             />
             <Select
-              label="العملة"
+              label={t('super_admin_plans_page.form.kab4j5e')}
               value={form.currency}
               onChange={(e) => setForm((s) => ({ ...s, currency: e.target.value }))}
               options={[
@@ -439,25 +441,25 @@ export default function SuperAdminPlansPage() {
               ]}
             />
             <Select
-              label="دورة الفوترة"
+              label={t('super_admin_plans_page.form.k96d2xb')}
               value={form.billingCycle}
               onChange={(e) => setForm((s) => ({ ...s, billingCycle: e.target.value }))}
               options={[
-                { label: 'شهري', value: 'monthly' },
-                { label: 'سنوي', value: 'yearly' },
+                { label: t('super_admin_plans_page.ui.kt45xo'), value: 'monthly' },
+                { label: t('super_admin_plans_page.ui.kt3ir9'), value: 'yearly' },
               ]}
             />
           </div>
 
           <TextArea
-            label="الوصف"
+            label={t('super_admin_plans_page.form.koved3r')}
             rows={2}
             value={form.description}
             onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
           />
 
           <Input
-            label="المزايا (مفصولة بفاصلة)"
+            label={t('super_admin_plans_page.form.ki28oa5')}
             value={form.featuresText}
             onChange={(e) => setForm((s) => ({ ...s, featuresText: e.target.value }))}
           />
@@ -479,20 +481,20 @@ export default function SuperAdminPlansPage() {
           <div className="flex items-center gap-6">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.isPopular} onChange={(e) => setForm((s) => ({ ...s, isPopular: e.target.checked }))} />
-              باقة شائعة
+              {t('super_admin_plans_page.ui.ku4hgpj')}
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm((s) => ({ ...s, isActive: e.target.checked }))} />
-              نشطة
+              {t('super_admin_plans_page.ui.ktf9q8')}
             </label>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              إلغاء
+              {t('super_admin_plans_page.ui.cancel')}
             </Button>
             <Button type="submit" loading={saving}>
-              {editingPlan ? 'حفظ التعديلات' : 'إنشاء الباقة'}
+              {editingPlan ? t('super_admin_plans_page.ui.km6ld24') : 'إنشاء الباقة'}
             </Button>
           </div>
         </form>

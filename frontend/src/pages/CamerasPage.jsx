@@ -5,8 +5,10 @@ import LazyStreamPlayer from '../components/LazyStreamPlayer';
 import toast from 'react-hot-toast';
 import { api } from '../store';
 import { confirm } from '../components/ConfirmDialog';
+import { useTranslation } from 'react-i18next';
 
 export default function CamerasPage() {
+  const { t } = useTranslation('admin');
   const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -22,7 +24,7 @@ export default function CamerasPage() {
       setCameras(res.data.data.tenant.cameras || []);
     } catch (err) {
       console.error(err);
-      toast.error('فشل تحميل الكاميرات');
+      toast.error(t('cameras_page.toasts.kl8bsbf'));
     } finally {
       setLoading(false);
     }
@@ -33,7 +35,7 @@ export default function CamerasPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!form.name || !form.url) return toast.error('الاسم والرابط مطلوبين');
+    if (!form.name || !form.url) return toast.error(t('cameras_page.toasts.kjih1jg'));
 
     try {
       // Sanitize cameras for backend (Mongoose will fail if _id is not a valid ObjectId)
@@ -55,26 +57,26 @@ export default function CamerasPage() {
       // Update local state with returned cameras (which now have real IDs from DB)
       setCameras(res.data.data.tenant.cameras || sanitizedCameras);
       
-      toast.success(editingId ? 'تم تعديل الكاميرا' : 'تم إضافة الكاميرا');
+      toast.success(editingId ? t('cameras_page.ui.ke6daux') : t('cameras_page.ui.kp5zfvn'));
       setShowModal(false);
       setForm({ name: '', url: '', type: 'stream' });
       setEditingId(null);
     } catch (err) {
       console.error('Save error:', err);
-      toast.error(err.response?.data?.message || 'حدث خطأ في الحفظ');
+      toast.error(err.response?.data?.message || t('cameras_page.toasts.k7z5udp'));
     }
   };
 
   const handleDelete = async (id) => {
-    const ok = await confirm.delete('هل أنت متأكد من حذف هذه الكاميرا؟');
+    const ok = await confirm.delete(t('cameras_page.ui.k6691ce'));
     if (!ok) return;
     try {
       const newCameras = cameras.filter(c => c._id !== id);
       const res = await api.put('/settings/store', { cameras: newCameras });
       setCameras(res.data.data.tenant.cameras || newCameras);
-      toast.success('تم الحذف');
+      toast.success(t('cameras_page.toasts.kwtu2as'));
     } catch (err) {
-      toast.error('حدث خطأ');
+      toast.error(t('cameras_page.toasts.ktcqm3h'));
     }
   };
 
@@ -84,12 +86,12 @@ export default function CamerasPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Camera className="w-8 h-8 text-primary-500" />
-            المراقبة الحية (CCTV)
+            {t('cameras_page.ui.kmbc2l1')}
           </h1>
-          <p className="text-gray-500">متابعة الفروع والكاشير مباشرة</p>
+          <p className="text-gray-500">{t('cameras_page.ui.kn67f3y')}</p>
         </div>
         <Button icon={<Plus className="w-4 h-4" />} onClick={() => { setEditingId(null); setForm({ name: '', url: '', type: 'stream' }); setShowModal(true); }}>
-          إضافة كاميرا
+          {t('cameras_page.ui.kerypdr')}
         </Button>
       </div>
 
@@ -100,7 +102,7 @@ export default function CamerasPage() {
       ) : cameras.length === 0 ? (
         <EmptyState
           icon={<Video className="w-12 h-12" />}
-          title="لا توجد كاميرات مضافة"
+          title={t('cameras_page.titles.kz3bzi1')}
           description="أضف روابط الكاميرات لمتابعة العمل مباشرة"
         />
       ) : (
@@ -118,6 +120,7 @@ export default function CamerasPage() {
                 ) : (
                   <LazyStreamPlayer
                     url={cam.url}
+                    type={cam.type === 'mjpeg' ? 'mjpeg' : 'auto'}
                     width="100%"
                     height="100%"
                     playing={playing}
@@ -150,34 +153,43 @@ export default function CamerasPage() {
       )}
 
       {/* Add/Edit Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={editingId ? 'تعديل كاميرا' : 'إضافة كاميرا جديدة'} size="sm">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editingId ? t('cameras_page.ui.kys0mn9') : 'إضافة كاميرا جديدة'} size="sm">
         <div className="space-y-4">
-          <Input label="اسم الكاميرا / الفرع" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="مثال: الكاشير - فرع القاهرة" />
+          <Input label={t('cameras_page.form.krnw06a')} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t('cameras_page.placeholders.kbvrnh8')} />
 
           <div>
-            <label className="block text-sm font-bold mb-1">نوع الرابط</label>
+            <label className="block text-sm font-bold mb-1">{t('cameras_page.ui.kljc8k5')}</label>
             <div className="flex gap-2">
               <button
-                className={`flex-1 py-2 rounded-lg border-2 ${form.type === 'stream' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200'}`}
+                type="button"
+                className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-all ${form.type === 'stream' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800'}`}
                 onClick={() => setForm({ ...form, type: 'stream' })}
               >
-                مباشر (HLS/MP4)
+                {t('cameras_page.ui.k27j9wh')}
               </button>
               <button
-                className={`flex-1 py-2 rounded-lg border-2 ${form.type === 'embed' ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200'}`}
+                type="button"
+                className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-all ${form.type === 'mjpeg' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800'}`}
+                onClick={() => setForm({ ...form, type: 'mjpeg' })}
+              >
+                IP Camera (MJPEG)
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-all ${form.type === 'embed' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800'}`}
                 onClick={() => setForm({ ...form, type: 'embed' })}
               >
-                تضمين (Embed)
+                {t('cameras_page.ui.klmge0j')}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">استخدم "مباشر" لروابط .m3u8 أو .mp4، واستخدم "تضمين" لروابط YouTube Live أو المشغلات الخارجية.</p>
+            <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">{t('cameras_page.ui.krbpvlq')}</p>
           </div>
 
-          <Input label="رابط البث (URL)" value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://..." dir="ltr" />
+          <Input label={t('cameras_page.form.konnqxv')} value={form.url} onChange={e => setForm({ ...form, url: e.target.value })} placeholder="https://..." dir="ltr" />
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
-            <Button onClick={handleSave}>حفظ</Button>
+            <Button variant="ghost" onClick={() => setShowModal(false)}>{t('cameras_page.ui.cancel')}</Button>
+            <Button onClick={handleSave}>{t('cameras_page.ui.save')}</Button>
           </div>
         </div>
       </Modal>

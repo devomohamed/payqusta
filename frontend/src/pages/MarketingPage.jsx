@@ -37,14 +37,14 @@ const MarketingPage = () => {
             setStats(response.data.stats);
         } catch (error) {
             console.error('Error fetching segments:', error);
-            toast.error('حدث خطأ أثناء تحميل بيانات التسويق');
+            toast.error(t('marketing_page.toasts.kfa1gd5'));
         } finally {
             setLoading(false);
         }
     };
 
     const handleSendBroadcast = async () => {
-        if (!broadcastForm.message) return toast.error('يرجى كتابة نص الرسالة');
+        if (!broadcastForm.message) return toast.error(t('marketing_page.toasts.katqvt5'));
         setSending(true);
         try {
             const res = await api.post('/customers/broadcast', broadcastForm);
@@ -52,7 +52,7 @@ const MarketingPage = () => {
             setShowBroadcastModal(false);
             setBroadcastForm({ ...broadcastForm, message: '' });
         } catch (error) {
-            toast.error(error.response?.data?.message || 'فشل إرسال الحملة');
+            toast.error(error.response?.data?.message || t('marketing_page.toasts.kafltet'));
         } finally {
             setSending(false);
         }
@@ -69,38 +69,38 @@ const MarketingPage = () => {
     const segmentCards = [
         {
             id: 'vip',
-            title: 'العملاء VIP',
+            title: t('marketing_page.ui.kc3s0su'),
             count: stats?.vip || 0,
             icon: Crown,
             color: 'bg-amber-100 text-amber-700',
-            description: 'أهم العملاء وأكثرهم شراءً برصيد نقاط مرتفع',
+            description: t('marketing_page.ui.kduixr9'),
             list: segments?.vip || []
         },
         {
             id: 'loyal',
-            title: 'العملاء الملتزمون',
+            title: t('marketing_page.ui.kvb642c'),
             count: stats?.loyal || 0,
             icon: TrendingUp,
             color: 'bg-green-100 text-green-700',
-            description: 'عملاء ملتزمون بالسداد وفي تقدم مستمر',
+            description: t('marketing_page.ui.kkgcofm'),
             list: segments?.loyal || []
         },
         {
             id: 'debtors',
-            title: 'العملاء المدينون',
+            title: t('marketing_page.ui.kgqszl8'),
             count: stats?.debtors || 0,
             icon: Wallet,
             color: 'bg-red-100 text-red-700',
-            description: 'عملاء لديهم مديونيات مرتفعة (أكثر من 5,000 ج.م)',
+            description: t('marketing_page.ui.kf0oqsz'),
             list: segments?.debtors || []
         },
         {
             id: 'inactive',
-            title: 'عملاء غير نشطين',
+            title: t('marketing_page.ui.knitlns'),
             count: stats?.inactive || 0,
             icon: UserX,
             color: 'bg-gray-100 text-gray-700',
-            description: 'عملاء لم يفعلوا أي عملية شراء منذ 30 يوماً',
+            description: t('marketing_page.ui.kwbvwtu'),
             list: segments?.inactive || []
         }
     ];
@@ -111,10 +111,10 @@ const MarketingPage = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <TrendingUp className="w-8 h-8 text-indigo-600" />
-                        التسويق وبرامج الولاء
+                        {t('marketing_page.ui.kw3lyb4')}
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400">
-                        حلل سلوك العملاء واستهدفهم بحملات ترويجية ذكية
+                        {t('marketing_page.ui.k7fms5a')}
                     </p>
                 </div>
 
@@ -123,7 +123,7 @@ const MarketingPage = () => {
                     onClick={() => setShowBroadcastModal(true)}
                 >
                     <MessageSquare className="w-5 h-5" />
-                    بدء حملة WhatsApp
+                    {t('marketing_page.ui.kpvdhu7')}
                 </button>
             </div>
 
@@ -134,31 +134,31 @@ const MarketingPage = () => {
                     <div className="app-surface relative rounded-3xl p-8 max-w-lg w-full shadow-2xl animate-slide-up">
                         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                             <MessageSquare className="w-6 h-6 text-indigo-600" />
-                            إرسال حملة واتساب جماعية
+                            {t('marketing_page.ui.k3fdg5i')}
                         </h2>
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">استهداف شريحة:</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('marketing_page.ui.kh35jch')}</label>
                                 <select
                                     value={broadcastForm.segment}
                                     onChange={(e) => setBroadcastForm({ ...broadcastForm, segment: e.target.value })}
                                     className="app-surface w-full p-3 rounded-xl border border-transparent focus:ring-2 focus:ring-primary-500/20"
                                 >
-                                    <option value="vip">العملاء VIP</option>
-                                    <option value="loyal">العملاء الملتزمون</option>
-                                    <option value="debtors">العملاء المدينون</option>
-                                    <option value="inactive">العملاء غير النشطين</option>
+                                    <option value="vip">{t('marketing_page.ui.kc3s0su')}</option>
+                                    <option value="loyal">{t('marketing_page.ui.kvb642c')}</option>
+                                    <option value="debtors">{t('marketing_page.ui.kgqszl8')}</option>
+                                    <option value="inactive">{t('marketing_page.ui.ktesxsu')}</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">نص الرسالة:</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('marketing_page.ui.kqcot5q')}</label>
                                 <textarea
                                     value={broadcastForm.message}
                                     onChange={(e) => setBroadcastForm({ ...broadcastForm, message: e.target.value })}
                                     rows={4}
-                                    placeholder="اكتب رسالتك هنا... سيتم إرسالها لجميع العملاء في الشريحة المختارة"
+                                    placeholder={t('marketing_page.placeholders.kri022d')}
                                     className="app-surface w-full p-4 rounded-xl border border-transparent resize-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
                                 />
                                 <p className="text-[10px] text-gray-400 mt-2">
@@ -177,13 +177,13 @@ const MarketingPage = () => {
                                     ) : (
                                         <Send className="w-5 h-5" />
                                     )}
-                                    إرسال الآن
+                                    {t('marketing_page.ui.kakn7nh')}
                                 </button>
                                 <button
                                     onClick={() => setShowBroadcastModal(false)}
                                     className="app-surface px-6 py-3 rounded-xl font-bold transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                                 >
-                                    إلغاء
+                                    {t('marketing_page.ui.cancel')}
                                 </button>
                             </div>
                         </div>
@@ -225,10 +225,10 @@ const MarketingPage = () => {
                     <div className="app-surface-muted p-6 border-b border-gray-100/80 dark:border-white/10 flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <Crown className="w-5 h-5 text-amber-500" />
-                            أفضل العملاء (VIP)
+                            {t('marketing_page.ui.kfisrbp')}
                         </h3>
                         <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-                            عرض الكل
+                            {t('marketing_page.ui.kwbgoww')}
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -257,7 +257,7 @@ const MarketingPage = () => {
                         ) : (
                             <EmptyState
                                 icon={Users}
-                                title="لا يوجد عملاء في هذه الفئة حاليًا"
+                                title={t('marketing_page.titles.k1duvry')}
                                 description="ستظهر نتائج هذه الشريحة هنا بمجرد توفر عملاء مطابقين."
                                 className="py-6"
                             />
@@ -270,10 +270,10 @@ const MarketingPage = () => {
                     <div className="app-surface-muted p-6 border-b border-gray-100/80 dark:border-white/10 flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <UserX className="w-5 h-5 text-gray-500" />
-                            عملاء بحاجة لتواصل
+                            {t('marketing_page.ui.kljelp9')}
                         </h3>
                         <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-                            عرض الكل
+                            {t('marketing_page.ui.kwbgoww')}
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -294,7 +294,7 @@ const MarketingPage = () => {
                                         </div>
                                         <button
                                             className="p-2 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 transition-colors"
-                                            title="إرسال رسالة تذكير"
+                                            title={t('marketing_page.titles.kz8236')}
                                         >
                                             <MessageSquare className="w-5 h-5" />
                                         </button>
@@ -304,7 +304,7 @@ const MarketingPage = () => {
                         ) : (
                             <EmptyState
                                 icon={UserX}
-                                title="جميع عملائك نشطون"
+                                title={t('marketing_page.titles.kbbm6uj')}
                                 description="لا توجد حاليًا أي حسابات خاملة تحتاج إلى إعادة تنشيط."
                                 className="py-6"
                             />
@@ -318,17 +318,17 @@ const MarketingPage = () => {
                 <div className="max-w-2xl">
                     <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                         <ArrowRightLeft className="w-8 h-8" />
-                        تفعيل نظام النقاط والاستبدال
+                        {t('marketing_page.ui.khmjmu0')}
                     </h2>
                     <p className="text-indigo-100 mb-6">
                         النظام يدفع العملاء للشراء المتكرر والسداد في الموعد عن طريق منحهم نقاطاً يمكن استبدالها برصيد حقيقي في متجرك.
                     </p>
                     <div className="flex gap-4">
                         <button className="px-6 py-2 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors">
-                            إعدادات الولاء
+                            {t('marketing_page.ui.kdfswvh')}
                         </button>
                         <button className="px-6 py-2 bg-indigo-500/30 border border-white/20 rounded-xl font-bold hover:bg-indigo-500/50 transition-colors">
-                            دليل الاستخدام
+                            {t('marketing_page.ui.kqcmfu7')}
                         </button>
                     </div>
                 </div>

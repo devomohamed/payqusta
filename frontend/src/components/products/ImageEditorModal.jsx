@@ -4,6 +4,7 @@ import Cropper from 'react-easy-crop';
 import { Crop, Image as ImageIcon, Sparkles, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { getCroppedImg } from '../../utils/canvasUtils';
 import { Button } from '../UI';
+import { useTranslation } from 'react-i18next';
 
 export default function ImageEditorModal({ isOpen, onClose, files, onComplete }) {
     const safeFiles = Array.isArray(files) ? files : [];
@@ -14,6 +15,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
     const [saving, setSaving] = useState(false);
 
     const imageUrl = useMemo(() => {
+  const { t } = useTranslation('admin');
         if (!currentFile) return '';
         return URL.createObjectURL(currentFile);
     }, [currentFile]);
@@ -70,13 +72,13 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                         </div>
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="app-text-strong text-xl font-bold">تعديل صورة المنتج</h3>
+                                <h3 className="app-text-strong text-xl font-bold">{t('image_editor_modal.ui.kox93fz')}</h3>
                                 <span className="rounded-full border border-primary-500/15 bg-primary-500/10 px-2.5 py-1 text-[11px] font-bold text-primary-700 dark:text-primary-300">
-                                    قص 1:1
+                                    {t('image_editor_modal.ui.k1g8i4b')}
                                 </span>
                             </div>
                             <p className="app-text-body mt-1 text-sm">
-                                حرّك الصورة داخل الإطار حتى تصل لنتيجة أنيقة وواضحة في بطاقة المنتج والغلاف الرئيسي.
+                                {t('image_editor_modal.ui.k629dnm')}
                             </p>
                         </div>
                     </div>
@@ -85,7 +87,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                         type="button"
                         onClick={onClose}
                         className="app-surface-muted shrink-0 rounded-2xl p-2.5 app-text-muted transition-colors hover:bg-red-500/10 hover:text-red-500"
-                        aria-label="إغلاق محرر الصورة"
+                        aria-label={t('image_editor_modal.form.k52o4lm')}
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -95,9 +97,9 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                     <div className="order-1 flex min-h-[420px] flex-col p-5 lg:p-6">
                         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <div className="app-text-strong text-sm font-bold">معاينة القص</div>
+                                <div className="app-text-strong text-sm font-bold">{t('image_editor_modal.ui.kyyz0eu')}</div>
                                 <div className="app-text-soft mt-1 text-xs">
-                                    سيتم حفظ هذه النتيجة فقط عند الضغط على زر حفظ التعديل.
+                                    {t('image_editor_modal.ui.kt5h8lo')}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -113,7 +115,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                         <div className="app-surface-muted relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.75rem] border border-[color:var(--surface-border)] p-5">
                             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(180deg,rgba(15,23,42,0.035)_1px,transparent_1px)] bg-[size:28px_28px] dark:bg-[linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.045)_1px,transparent_1px)]" />
                             <div className="absolute left-5 top-5 z-10 rounded-full border border-[color:var(--surface-border)] bg-white/80 px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm backdrop-blur-md dark:bg-slate-900/70 dark:text-slate-100">
-                                إطار الغلاف
+                                {t('image_editor_modal.ui.k6sxvzv')}
                             </div>
                             <div className="relative h-full min-h-[420px] w-full overflow-hidden rounded-[1.5rem] border border-[color:var(--surface-border)] bg-white/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] dark:bg-slate-950/65">
                                 <Cropper
@@ -138,14 +140,14 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                                     <ImageIcon className="h-4 w-4" />
                                 </div>
                                 <div>
-                                    <div className="app-text-strong text-sm font-bold">الصورة الأصلية</div>
-                                    <div className="app-text-soft text-xs">مرجع سريع قبل الحفظ</div>
+                                    <div className="app-text-strong text-sm font-bold">{t('image_editor_modal.ui.knv9ef0')}</div>
+                                    <div className="app-text-soft text-xs">{t('image_editor_modal.ui.k7j00uf')}</div>
                                 </div>
                             </div>
                             <div className="overflow-hidden rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-1)]">
                                 <img
                                     src={imageUrl}
-                                    alt={currentFile.name || 'معاينة الصورة'}
+                                    alt={currentFile.name || t('image_editor_modal.toasts.k9y581a')}
                                     className="h-52 w-full object-cover"
                                     loading="lazy"
                                     decoding="async"
@@ -155,7 +157,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
 
                         <div className="app-surface mt-4 rounded-3xl p-4">
                             <div className="mb-3 flex items-center justify-between text-[11px]">
-                                <span className="app-text-soft font-semibold">مستوى التكبير</span>
+                                <span className="app-text-soft font-semibold">{t('image_editor_modal.ui.kpz03m2')}</span>
                                 <span className="app-text-strong font-bold">{Math.round(zoom * 100)}%</span>
                             </div>
                             <div className="flex items-center gap-3">
@@ -163,7 +165,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                                     type="button"
                                     onClick={() => setZoom((prev) => Math.max(1, Number((prev - 0.1).toFixed(2))))}
                                     className="app-surface flex h-10 w-10 items-center justify-center rounded-2xl transition-colors hover:text-primary-500"
-                                    aria-label="تقليل التكبير"
+                                    aria-label={t('image_editor_modal.form.k4kaq2n')}
                                 >
                                     <ZoomOut className="h-4 w-4" />
                                 </button>
@@ -173,7 +175,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                                     min={1}
                                     max={3}
                                     step={0.1}
-                                    aria-label="تكبير الصورة"
+                                    aria-label={t('image_editor_modal.form.kirsory')}
                                     onChange={(event) => setZoom(Number(event.target.value))}
                                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-primary-500 dark:bg-white/10"
                                 />
@@ -181,7 +183,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                                     type="button"
                                     onClick={() => setZoom((prev) => Math.min(3, Number((prev + 0.1).toFixed(2))))}
                                     className="app-surface flex h-10 w-10 items-center justify-center rounded-2xl transition-colors hover:text-primary-500"
-                                    aria-label="زيادة التكبير"
+                                    aria-label={t('image_editor_modal.form.kyqtoaq')}
                                 >
                                     <ZoomIn className="h-4 w-4" />
                                 </button>
@@ -193,12 +195,12 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                                 <div className="rounded-xl bg-amber-500/15 p-2 text-amber-500">
                                     <Sparkles className="h-4 w-4" />
                                 </div>
-                                <div className="app-text-strong text-sm font-bold">ملاحظات سريعة</div>
+                                <div className="app-text-strong text-sm font-bold">{t('image_editor_modal.ui.k3mp176')}</div>
                             </div>
                             <ul className="app-text-body space-y-2 text-xs leading-6">
-                                <li>ضع المنتج في الوسط مع أقل قدر من الفراغات غير المهمة.</li>
-                                <li>حافظ على وضوح العنصر الأساسي لأن هذه الصورة ستظهر في الكروت والقوائم.</li>
-                                <li>في الـ light mode ستبدو الحدود أنعم، وفي الـ dark mode ستبقى القراءة واضحة.</li>
+                                <li>{t('image_editor_modal.ui.kpsqjhs')}</li>
+                                <li>{t('image_editor_modal.ui.kz2f5hu')}</li>
+                                <li>{t('image_editor_modal.ui.k2owjy1')}</li>
                             </ul>
                         </div>
                     </aside>
@@ -206,11 +208,11 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
 
                 <div className="relative flex flex-col-reverse gap-3 border-t border-[color:var(--surface-border)] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                     <p className="app-text-soft text-xs">
-                        الضغط على إلغاء سيغلق النافذة بدون استبدال الصورة الحالية.
+                        {t('image_editor_modal.ui.k4325yz')}
                     </p>
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
                         <Button variant="ghost" onClick={onClose} className="justify-center sm:min-w-[130px]">
-                            إلغاء
+                            {t('image_editor_modal.ui.cancel')}
                         </Button>
                         <Button
                             variant="primary"
@@ -218,7 +220,7 @@ export default function ImageEditorModal({ isOpen, onClose, files, onComplete })
                             loading={saving}
                             className="justify-center px-6 shadow-[0_18px_40px_rgba(79,70,229,0.22)] sm:min-w-[180px]"
                         >
-                            حفظ التعديل
+                            {t('image_editor_modal.ui.ke7pywv')}
                         </Button>
                     </div>
                 </div>

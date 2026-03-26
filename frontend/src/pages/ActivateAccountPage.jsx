@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle2, 
   KeyRound, 
@@ -16,64 +17,10 @@ import {
 import { activationApi } from '../store';
 import { Button, Input, LoadingSpinner } from '../components/UI';
 
-const TRANSLATIONS = {
-  en: {
-    welcome: 'Welcome to {brand}',
-    subtitle: 'Set your password to activate your branded workspace managed via PayQusta.',
-    stepTitle: 'Secure Access',
-    stepHeading: 'Create your password',
-    passLabel: 'New Password',
-    passPlaceholder: 'At least 8 characters',
-    confirmLabel: 'Confirm Password',
-    confirmPlaceholder: 'Repeat your password',
-    activateBtn: 'Activate Account',
-    activating: 'Activating...',
-    doneTitle: 'Activation Complete',
-    doneSub: 'Your account is now active. Redirecting you...',
-    fallbackTitle: 'Smart fallback active',
-    fallbackDesc: 'Your account is secured with enterprise-grade encryption and branded specifically for this store.',
-    invalidTitle: 'Activation link is no longer valid',
-    invalidSub: 'Please request a new invitation from the store team.',
-    backHome: 'Back to home',
-    poweredBy: 'Powered by',
-    support: 'Support',
-    teamInvite: 'Team invitation',
-    customerPortal: 'Customer portal access',
-    brand: 'Brand',
-    account: 'Account',
-    redirecting: 'Redirecting'
-  },
-  ar: {
-    welcome: 'مرحباً بك في {brand}',
-    subtitle: 'قم بتعيين كلمة المرور الخاصة بك لتفعيل مساحة العمل الخاصة بك والمدارة عبر PayQusta.',
-    stepTitle: 'دخول آمن',
-    stepHeading: 'إنشاء كلمة المرور',
-    passLabel: 'كلمة المرور الجديدة',
-    passPlaceholder: '8 أحرف على الأقل',
-    confirmLabel: 'تأكيد كلمة المرور',
-    confirmPlaceholder: 'أعد كتابة كلمة المرور',
-    activateBtn: 'تفعيل الحساب',
-    activating: 'جاري التفعيل...',
-    doneTitle: 'تم التفعيل بنجاح',
-    doneSub: 'حسابك الآن نشط. جاري تحويلك...',
-    fallbackTitle: 'نظام الحماية الذكي نشط',
-    fallbackDesc: 'حسابك مؤمن بتشفير عالي المستوى ومخصص تماماً لهذه العلامة التجارية.',
-    invalidTitle: 'رابط التفعيل لم يعد صالحاً',
-    invalidSub: 'يرجى طلب دعوة جديدة من فريق المتجر.',
-    backHome: 'العودة للرئيسية',
-    poweredBy: 'مشغل بواسطة',
-    support: 'الدعم',
-    teamInvite: 'دعوة فريق عمل',
-    customerPortal: 'دخول بوابة العملاء',
-    brand: 'المتجر',
-    account: 'الحساب',
-    redirecting: 'جاري التحويل'
-  }
-};
-
 export default function ActivateAccountPage() {
   const { token } = useParams();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('common');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [details, setDetails] = useState(null);
@@ -82,15 +29,6 @@ export default function ActivateAccountPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [done, setDone] = useState(false);
-  const [lang, setLang] = useState('ar');
-
-  const t = (key, params = {}) => {
-    let str = TRANSLATIONS[lang][key] || key;
-    Object.entries(params).forEach(([k, v]) => {
-      str = str.replace(`{${k}}`, v);
-    });
-    return str;
-  };
 
   useEffect(() => {
     const load = async () => {
@@ -99,7 +37,7 @@ export default function ActivateAccountPage() {
         const response = await activationApi.getDetails(token);
         setDetails(response.data?.data || null);
       } catch (error) {
-        toast.error(error.response?.data?.message || t('invalidTitle'));
+        toast.error(error.response?.data?.message || t('activation.invalid_title'));
       } finally {
         setLoading(false);
       }
@@ -112,11 +50,11 @@ export default function ActivateAccountPage() {
   const brandName = details?.tenant?.name || 'PayQusta';
   const primaryColor = brand.primaryColor || '#102542';
   const secondaryColor = brand.secondaryColor || '#2bb3a3';
-  const isRtl = lang === 'ar';
+  const isRtl = i18n.dir() === 'rtl';
 
   const submit = async () => {
-    if (!password || password.length < 8) return toast.error(lang === 'ar' ? 'يجب أن تكون كلمة المرور 8 أحرف على الأقل' : 'Password must be at least 8 characters');
-    if (password !== confirmPassword) return toast.error(lang === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
+    if (!password || password.length < 8) return toast.error(t('activation.validation.password_min'));
+    if (password !== confirmPassword) return toast.error(t('activation.validation.password_mismatch'));
 
     setSaving(true);
     try {
@@ -124,7 +62,7 @@ export default function ActivateAccountPage() {
       const actorType = response.data?.data?.actorType;
       const authToken = response.data?.data?.token;
       setDone(true);
-      toast.success(t('doneTitle'));
+      toast.success(t('activation.done_title'));
 
       if (actorType === 'user' && authToken) {
         localStorage.setItem('payqusta_token', authToken);
@@ -134,14 +72,14 @@ export default function ActivateAccountPage() {
 
       setTimeout(() => navigate('/portal/login', { replace: true }), 1500);
     } catch (error) {
-      toast.error(error.response?.data?.message || t('activating'));
+      toast.error(error.response?.data?.message || t('activation.activating'));
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return <LoadingSpinner text={lang === 'ar' ? 'جاري تحميل صفحة التفعيل...' : 'Loading activation page...'} />;
+    return <LoadingSpinner text={t('activation.loading')} />;
   }
 
   if (!details) {
@@ -151,10 +89,10 @@ export default function ActivateAccountPage() {
           <div className="mx-auto w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
             <ShieldCheck className="h-10 w-10 text-red-400" />
           </div>
-          <h1 className="text-3xl font-black">{t('invalidTitle')}</h1>
-          <p className="mt-4 text-white/60 leading-relaxed text-lg">{t('invalidSub')}</p>
+          <h1 className="text-3xl font-black">{t('activation.invalid_title')}</h1>
+          <p className="mt-4 text-white/60 leading-relaxed text-lg">{t('activation.invalid_sub')}</p>
           <Link to="/" className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-base font-black text-slate-950 hover:bg-slate-100 transition-colors">
-            {t('backHome')}
+            {t('activation.back_home')}
             <ChevronRight className={`h-5 w-5 ${isRtl ? 'rotate-180' : ''}`} />
           </Link>
         </div>
@@ -171,11 +109,11 @@ export default function ActivateAccountPage() {
           <span className="font-black text-white text-lg tracking-tight">{brandName}</span>
         </div>
         <button 
-          onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+          onClick={() => i18n.changeLanguage(i18n.language === 'ar' ? 'en' : 'ar')}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all font-bold text-sm border border-white/10"
         >
           <Languages className="h-4 w-4" />
-          {lang === 'ar' ? 'English' : 'عربي'}
+          {i18n.language === 'ar' ? t('activation.lang.english') : t('activation.lang.arabic')}
         </button>
       </nav>
 
@@ -189,19 +127,19 @@ export default function ActivateAccountPage() {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary-400/30 bg-primary-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-300">
                 <Sparkles className="h-3 w-3" />
-                {t('brand')}
+                {t('activation.brand')}
               </div>
               
               <h1 className="mt-6 text-4xl font-black leading-[1.2] tracking-tight">
-                {t('welcome', { brand: brandName })}
+                {t('activation.welcome', { brand: brandName })}
               </h1>
               <p className="mt-4 max-w-xl text-base leading-relaxed text-white/70 font-medium">
-                {t('subtitle')}
+                {t('activation.subtitle')}
               </p>
 
               <div className="mt-10 grid gap-4 sm:grid-cols-2">
                 <div className="group rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition-all">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">{t('account')}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">{t('activation.account')}</div>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-400/20 to-secondary-400/20 flex items-center justify-center font-black text-lg">
                       {details.name?.charAt(0)}
@@ -214,7 +152,7 @@ export default function ActivateAccountPage() {
                 </div>
 
                 <div className="group rounded-2xl border border-white/10 bg-white/5 p-5 hover:bg-white/10 transition-all">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">{t('brand')}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">{t('activation.brand')}</div>
                   <div className="flex items-center gap-3">
                     {brand.logo ? (
                       <img src={brand.logo} alt={brandName} className="h-10 w-10 rounded-xl object-cover bg-white/10" />
@@ -225,7 +163,7 @@ export default function ActivateAccountPage() {
                     )}
                     <div>
                       <div className="text-lg font-black">{brandName}</div>
-                      <div className="text-xs text-white/50">{details.actorType === 'user' ? t('teamInvite') : t('customerPortal')}</div>
+                      <div className="text-xs text-white/50">{details.actorType === 'user' ? t('activation.team_invite') : t('activation.customer_portal')}</div>
                     </div>
                   </div>
                 </div>
@@ -236,9 +174,9 @@ export default function ActivateAccountPage() {
                   <ShieldCheck className="h-6 w-6 text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-lg font-black mb-1">{t('fallbackTitle')}</div>
+                  <div className="text-lg font-black mb-1">{t('activation.fallback_title')}</div>
                   <p className="text-xs leading-relaxed text-white/60 font-medium">
-                    {t('fallbackDesc')}
+                    {t('activation.fallback_desc')}
                   </p>
                 </div>
               </div>
@@ -255,13 +193,13 @@ export default function ActivateAccountPage() {
                     <CheckCircle2 className="h-12 w-12" />
                   </div>
                 </div>
-                <h2 className="mt-8 text-2xl font-black text-slate-900 dark:text-white leading-tight">{t('doneTitle')}</h2>
+                <h2 className="mt-8 text-2xl font-black text-slate-900 dark:text-white leading-tight">{t('activation.done_title')}</h2>
                 <p className="mt-3 max-w-sm text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-                  {t('doneSub')}
+                  {t('activation.done_sub')}
                 </p>
                 <div className="mt-8 flex items-center gap-3 text-primary-600 font-bold px-5 py-2.5 rounded-xl bg-primary-50">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('redirecting')}...
+                  {t('activation.redirecting')}...
                 </div>
               </div>
             ) : (
@@ -271,30 +209,30 @@ export default function ActivateAccountPage() {
                     <KeyRound className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-600 mb-0.5">{t('stepTitle')}</p>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t('stepHeading')}</h2>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-600 mb-0.5">{t('activation.step_title')}</p>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t('activation.step_heading')}</h2>
                   </div>
                 </div>
 
                 <div className="space-y-5 flex-1">
                   <div className="relative">
                     <Input
-                      label={t('passLabel')}
+                      label={t('activation.pass_label')}
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t('passPlaceholder')}
+                      placeholder={t('activation.pass_placeholder')}
                       className="text-base py-3"
                     />
                   </div>
 
                   <div className="relative">
                     <Input
-                      label={t('confirmLabel')}
+                      label={t('activation.confirm_label')}
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder={t('confirmPlaceholder')}
+                      placeholder={t('activation.confirm_placeholder')}
                       className="text-base py-3"
                     />
                   </div>
@@ -302,11 +240,11 @@ export default function ActivateAccountPage() {
 
                 <div className="mt-8 mb-6 p-5 rounded-2xl bg-slate-50 border border-slate-100 dark:bg-white/5 dark:border-white/5">
                   <p className="text-xs leading-relaxed text-slate-500 font-medium">
-                    {lang === 'ar' ? 'أنت بصدد تفعيل صلاحية الدخول لمتجر' : 'You are activating access for'} <span className="font-extrabold text-slate-900 dark:text-white underline decoration-primary-500/30 decoration-2 underline-offset-4">{brandName}</span>.
+                    {t('activation.form.access_for', { brand: brandName })}
                   </p>
                   {notificationBranding.supportEmail || notificationBranding.supportPhone ? (
                     <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      <span>{t('support')}</span>
+                      <span>{t('activation.support')}</span>
                       <span className="text-slate-900 dark:text-white">{notificationBranding.supportEmail || notificationBranding.supportPhone}</span>
                     </div>
                   ) : null}
@@ -317,16 +255,16 @@ export default function ActivateAccountPage() {
                   onClick={submit} 
                   loading={saving}
                 >
-                  {saving ? t('activating') : t('activateBtn')}
+                  {saving ? t('activation.activating') : t('activation.activate_btn')}
                 </Button>
 
                 <div className="mt-6 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                   {notificationBranding.showPoweredByFooter !== false ? (
                     <span>
-                      {t('poweredBy')} <a className="text-primary-600 hover:underline" href="https://payqusta.com" target="_blank" rel="noreferrer">PayQusta</a>
+                      {t('activation.powered_by')} <a className="text-primary-600 hover:underline" href="https://payqusta.com" target="_blank" rel="noreferrer">PayQusta</a>
                     </span>
                   ) : (
-                    <span>{t('brand')} Space</span>
+                    <span>{t('activation.brand')} Space</span>
                   )}
                 </div>
               </div>

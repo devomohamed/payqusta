@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { buildBarcodeSvg } from '../utils/barcodeUtils';
+import { useTranslation } from 'react-i18next';
 
 export default function BarcodeLabel({
   value,
@@ -10,6 +11,7 @@ export default function BarcodeLabel({
   className = '',
   compact = false,
 }) {
+  const { t } = useTranslation('admin');
   const svgMarkup = useMemo(() => buildBarcodeSvg(value, format, {
     height: compact ? 54 : 72,
     moduleWidth: compact ? 1.8 : 2,
@@ -20,7 +22,7 @@ export default function BarcodeLabel({
   if (!value) {
     return (
       <div className={`rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center text-sm text-gray-400 ${className}`}>
-        لا يوجد باركود لعرضه
+        {t('barcode_label.ui.k6frnbt')}
       </div>
     );
   }

@@ -4,21 +4,24 @@ import { Archive, Plus, RefreshCw, Search } from 'lucide-react';
 import { api, productsApi, useAuthStore } from '../store';
 import { Badge, Button, Card, EmptyState, Input, LoadingSpinner, Modal, Select } from '../components/UI';
 import Pagination from '../components/Pagination';
+import { useTranslation } from 'react-i18next';
 
-const TYPES = {
-  damage: { label: 'تالف', color: 'danger' },
-  theft: { label: 'سرقة أو عجز', color: 'danger' },
-  loss: { label: 'فقد', color: 'warning' },
-  internal_use: { label: 'استخدام داخلي', color: 'info' },
-  correction_increase: { label: 'تسوية بزيادة', color: 'success' },
-  correction_decrease: { label: 'تسوية بنقص', color: 'danger' },
-};
+const getTypes = (t) => ({
+  damage: { label: t('stock_adjustments_page.ui.ksx4sa'), color: 'danger' },
+  theft: { label: t('stock_adjustments_page.ui.kn0exwh'), color: 'danger' },
+  loss: { label: t('stock_adjustments_page.ui.ky2pa'), color: 'warning' },
+  internal_use: { label: t('stock_adjustments_page.ui.kojmuyv'), color: 'info' },
+  correction_increase: { label: t('stock_adjustments_page.ui.kjpqzx9'), color: 'success' },
+  correction_decrease: { label: t('stock_adjustments_page.ui.kopgoul'), color: 'danger' },
+});
 
-function getProductCode(product) {
-  return product?.localBarcode || product?.internationalBarcode || product?.barcode || product?.sku || 'بدون كود';
+function getProductCode(product, t) {
+  return product?.localBarcode || product?.internationalBarcode || product?.barcode || product?.sku || t('stock_adjustments_page.toasts.kmn6twx');
 }
 
 export default function StockAdjustmentsPage() {
+  const { t } = useTranslation('admin');
+  const types = useMemo(() => getTypes(t), [t]);
   const user = useAuthStore((state) => state.user);
   const getBranches = useAuthStore((state) => state.getBranches);
   const userBranchId = user?.branch?._id || user?.branch || '';
@@ -63,7 +66,7 @@ export default function StockAdjustmentsPage() {
       setAdjustments(res.data?.data || []);
       setTotalPages(res.data?.pagination?.totalPages || 1);
     } catch (error) {
-      toast.error('فشل تحميل تسويات المخزون');
+      toast.error(t('stock_adjustments_page.toasts.kcalf9x'));
       setAdjustments([]);
       setTotalPages(1);
     } finally {
@@ -133,12 +136,12 @@ export default function StockAdjustmentsPage() {
 
   const handleSubmit = async () => {
     if (!form.productId || !form.branchId) {
-      toast.error('اختر المنتج والفرع أولاً');
+      toast.error(t('stock_adjustments_page.toasts.kl78siz'));
       return;
     }
 
     if (!Number.isFinite(Number(form.quantity)) || Number(form.quantity) <= 0) {
-      toast.error('أدخل كمية صحيحة أكبر من صفر');
+      toast.error(t('stock_adjustments_page.toasts.kbezkie'));
       return;
     }
 
@@ -149,11 +152,11 @@ export default function StockAdjustmentsPage() {
         quantity: Number(form.quantity),
         reason: form.reason.trim(),
       });
-      toast.success('تم تسجيل التسوية بنجاح');
+      toast.success(t('stock_adjustments_page.toasts.k8txv7'));
       closeModal();
       await fetchAdjustments();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'حدث خطأ أثناء حفظ التسوية');
+      toast.error(error?.response?.data?.message || t('stock_adjustments_page.toasts.ktked7k'));
     } finally {
       setSubmitting(false);
     }
@@ -166,47 +169,47 @@ export default function StockAdjustmentsPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
               <Archive className="h-3.5 w-3.5" />
-              ضبط المخزون والتسويات
+              {t('stock_adjustments_page.ui.k3bqrdu')}
             </div>
-            <h1 className="mt-4 text-2xl font-black sm:text-3xl">تسويات المخزون</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">سجل التالف والعجز والفقد والتسويات اليدوية لكل فرع من واجهة أوضح على الهاتف.</p>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">{t('stock_adjustments_page.ui.k5ia79k')}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">{t('stock_adjustments_page.ui.knwiz0l')}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[460px]">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">الإجمالي الظاهر</p>
+              <p className="text-xs font-bold text-white/65">{t('stock_adjustments_page.ui.kh9y97u')}</p>
               <p className="mt-2 text-2xl font-black">{summary.total}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">تسويات بزيادة</p>
+              <p className="text-xs font-bold text-white/65">{t('stock_adjustments_page.ui.kw3nt2r')}</p>
               <p className="mt-2 text-2xl font-black">{summary.increases}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">نقص أو فاقد</p>
+              <p className="text-xs font-bold text-white/65">{t('stock_adjustments_page.ui.ku62hxj')}</p>
               <p className="mt-2 text-2xl font-black">{summary.decreases}</p>
             </div>
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Button variant="outline" onClick={() => void fetchAdjustments()} icon={<RefreshCw className="h-4 w-4" />} className="justify-center border-white/20 bg-white/10 text-white hover:bg-white/15">
-            تحديث
+            {t('stock_adjustments_page.ui.update')}
           </Button>
           <Button icon={<Plus className="h-5 w-5" />} onClick={() => setShowModal(true)} className="justify-center bg-white text-blue-700 hover:bg-white/90">
-            تسوية جديدة
+            {t('stock_adjustments_page.ui.kfgnw2n')}
           </Button>
         </div>
       </section>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="border-l-4 border-blue-500 p-4">
-          <p className="text-xs font-bold text-gray-500">إجمالي العمليات المعروضة</p>
+          <p className="text-xs font-bold text-gray-500">{t('stock_adjustments_page.ui.kg9i9co')}</p>
           <p className="text-2xl font-black text-blue-600">{summary.total}</p>
         </Card>
         <Card className="border-l-4 border-emerald-500 p-4">
-          <p className="text-xs font-bold text-gray-500">تسويات بزيادة</p>
+          <p className="text-xs font-bold text-gray-500">{t('stock_adjustments_page.ui.kw3nt2r')}</p>
           <p className="text-2xl font-black text-emerald-600">{summary.increases}</p>
         </Card>
         <Card className="border-l-4 border-red-500 p-4">
-          <p className="text-xs font-bold text-gray-500">تسويات بنقص أو فاقد</p>
+          <p className="text-xs font-bold text-gray-500">{t('stock_adjustments_page.ui.kl0cgk1')}</p>
           <p className="text-2xl font-black text-red-600">{summary.decreases}</p>
         </Card>
       </div>
@@ -214,7 +217,7 @@ export default function StockAdjustmentsPage() {
       {loading ? <LoadingSpinner /> : adjustments.length === 0 ? (
         <EmptyState
           icon={<Archive className="h-12 w-12 text-gray-300" />}
-          title="لا توجد تسويات مسجلة"
+          title={t('stock_adjustments_page.titles.kvjc88j')}
           description="ابدأ بإضافة أول عملية تسوية للمخزون."
         />
       ) : (
@@ -224,24 +227,24 @@ export default function StockAdjustmentsPage() {
               <div key={adjustment._id} className="app-surface-muted rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-black text-gray-900 dark:text-white">{adjustment.product?.name || 'منتج غير معروف'}</p>
-                    <p className="mt-1 text-[11px] text-gray-400">{adjustment.branch?.name || 'الفرع الرئيسي'} · {new Date(adjustment.createdAt).toLocaleDateString('ar-EG')}</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-white">{adjustment.product?.name || t('stock_adjustments_page.toasts.k97znfq')}</p>
+                    <p className="mt-1 text-[11px] text-gray-400">{adjustment.branch?.name || t('stock_adjustments_page.toasts.kphehwb')} · {new Date(adjustment.createdAt).toLocaleDateString('ar-EG')}</p>
                   </div>
-                  <Badge variant={TYPES[adjustment.type]?.color || 'gray'}>
-                    {TYPES[adjustment.type]?.label || adjustment.type}
+                  <Badge variant={types[adjustment.type]?.color || 'gray'}>
+                    {types[adjustment.type]?.label || adjustment.type}
                   </Badge>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
-                    <p className="text-[10px] text-gray-400">الكمية</p>
+                    <p className="text-[10px] text-gray-400">{t('stock_adjustments_page.ui.kaay54y')}</p>
                     <p className="mt-1 text-xs font-black text-gray-900 dark:text-white" dir="ltr">{adjustment.quantity}</p>
                   </div>
                   <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
-                    <p className="text-[10px] text-gray-400">بواسطة</p>
-                    <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{adjustment.user?.name || 'غير محدد'}</p>
+                    <p className="text-[10px] text-gray-400">{t('stock_adjustments_page.ui.k9s7lsy')}</p>
+                    <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{adjustment.user?.name || t('stock_adjustments_page.toasts.k5xt5xj')}</p>
                   </div>
                 </div>
-                <p className="mt-3 text-xs text-gray-500">{getProductCode(adjustment.product)}</p>
+                <p className="mt-3 text-xs text-gray-500">{getProductCode(adjustment.product, t)}</p>
                 {adjustment.reason ? <p className="mt-2 text-xs text-gray-500">{adjustment.reason}</p> : null}
               </div>
             ))}
@@ -250,13 +253,13 @@ export default function StockAdjustmentsPage() {
             <table className="w-full text-right text-sm">
               <thead className="border-b border-gray-100 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-800/50">
                 <tr>
-                  <th className="px-6 py-4 font-bold">التاريخ</th>
-                  <th className="px-6 py-4 font-bold">الفرع</th>
-                  <th className="px-6 py-4 font-bold">المنتج</th>
-                  <th className="px-6 py-4 font-bold">النوع</th>
-                  <th className="px-6 py-4 font-bold">الكمية</th>
-                  <th className="px-6 py-4 font-bold">الملاحظات</th>
-                  <th className="px-6 py-4 font-bold">بواسطة</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.kzbvdnf')}</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.kove7t8')}</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.kaawv6o')}</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.kovec2i')}</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.kaay54y')}</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.kh6tmqv')}</th>
+                  <th className="px-6 py-4 font-bold">{t('stock_adjustments_page.ui.k9s7lsy')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -266,15 +269,15 @@ export default function StockAdjustmentsPage() {
                       {new Date(adjustment.createdAt).toLocaleDateString('ar-EG')}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200">
-                      {adjustment.branch?.name || 'الفرع الرئيسي'}
+                      {adjustment.branch?.name || t('stock_adjustments_page.toasts.kphehwb')}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200">
-                      {adjustment.product?.name || 'منتج غير معروف'}
-                      <div className="text-xs font-normal text-gray-400">{getProductCode(adjustment.product)}</div>
+                      {adjustment.product?.name || t('stock_adjustments_page.toasts.k97znfq')}
+                      <div className="text-xs font-normal text-gray-400">{getProductCode(adjustment.product, t)}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={TYPES[adjustment.type]?.color || 'gray'}>
-                        {TYPES[adjustment.type]?.label || adjustment.type}
+                      <Badge variant={types[adjustment.type]?.color || 'gray'}>
+                        {types[adjustment.type]?.label || adjustment.type}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 font-bold">
@@ -284,7 +287,7 @@ export default function StockAdjustmentsPage() {
                       {adjustment.reason || '—'}
                     </td>
                     <td className="px-6 py-4 text-xs text-gray-400">
-                      {adjustment.user?.name || 'غير محدد'}
+                      {adjustment.user?.name || t('stock_adjustments_page.toasts.k5xt5xj')}
                     </td>
                   </tr>
                 ))}
@@ -298,15 +301,15 @@ export default function StockAdjustmentsPage() {
         <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
       ) : null}
 
-      <Modal open={showModal} onClose={closeModal} title="تسوية مخزون جديدة">
+      <Modal open={showModal} onClose={closeModal} title={t('stock_adjustments_page.titles.kkytgp2')}>
         <div className="space-y-4">
           <div>
-            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">بحث عن منتج</label>
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">{t('stock_adjustments_page.ui.kmuxy90')}</label>
             <div className="relative">
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-2 pl-4 pr-10 outline-none focus:border-primary-500 dark:border-gray-700 dark:bg-gray-800"
-                placeholder="بحث بالاسم أو SKU أو الباركود..."
+                placeholder={t('stock_adjustments_page.placeholders.kcg81p2')}
                 value={productSearch}
                 onChange={(event) => setProductSearch(event.target.value)}
               />
@@ -325,14 +328,14 @@ export default function StockAdjustmentsPage() {
                   >
                     <div>
                       <p className="font-bold text-sm text-gray-800 dark:text-gray-200">{product.name}</p>
-                      <p className="text-xs text-gray-400">{getProductCode(product)}</p>
+                      <p className="text-xs text-gray-400">{getProductCode(product, t)}</p>
                     </div>
                     <span className="text-xs text-gray-400">متاح إجمالًا: {Number(product.stock?.quantity) || 0}</span>
                   </button>
                 ))}
               </div>
             ) : productSearch ? (
-              <p className="mt-2 text-xs text-gray-400">لا توجد منتجات مطابقة لهذا البحث.</p>
+              <p className="mt-2 text-xs text-gray-400">{t('stock_adjustments_page.ui.kuruqdf')}</p>
             ) : null}
           </div>
 
@@ -344,7 +347,7 @@ export default function StockAdjustmentsPage() {
 
           {!userBranchId && branches.length > 0 ? (
             <Select
-              label="الفرع"
+              label={t('stock_adjustments_page.form.kove7t8')}
               value={form.branchId}
               onChange={(event) => setForm((prev) => ({ ...prev, branchId: event.target.value }))}
               options={branches.map((branch) => ({ value: branch._id, label: branch.name }))}
@@ -352,14 +355,14 @@ export default function StockAdjustmentsPage() {
           ) : null}
 
           <Select
-            label="نوع التسوية"
+            label={t('stock_adjustments_page.form.ksh52h4')}
             value={form.type}
             onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}
-            options={Object.entries(TYPES).map(([key, value]) => ({ value: key, label: value.label }))}
+            options={Object.entries(types).map(([key, value]) => ({ value: key, label: value.label }))}
           />
 
           <Input
-            label="الكمية"
+            label={t('stock_adjustments_page.form.kaay54y')}
             type="number"
             min="1"
             value={form.quantity}
@@ -367,14 +370,14 @@ export default function StockAdjustmentsPage() {
           />
 
           <Input
-            label="ملاحظات أو سبب التسوية"
+            label={t('stock_adjustments_page.form.ki6a8sj')}
             value={form.reason}
             onChange={(event) => setForm((prev) => ({ ...prev, reason: event.target.value }))}
           />
 
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleSubmit} loading={submitting} className="flex-1">حفظ التسوية</Button>
-            <Button variant="ghost" onClick={closeModal}>إلغاء</Button>
+            <Button onClick={handleSubmit} loading={submitting} className="flex-1">{t('stock_adjustments_page.ui.ke7tabf')}</Button>
+            <Button variant="ghost" onClick={closeModal}>{t('stock_adjustments_page.ui.cancel')}</Button>
           </div>
         </div>
       </Modal>

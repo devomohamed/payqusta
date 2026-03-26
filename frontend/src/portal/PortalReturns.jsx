@@ -100,16 +100,16 @@ export default function PortalReturns() {
                                         </div>
                                         {req.refundStatus && req.refundStatus !== 'none' && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-500 dark:text-gray-400">حالة الاسترداد</span>
+                                                <span className="text-gray-500 dark:text-gray-400">{t('portal_returns.ui.kl1zpa2')}</span>
                                                 <span className="font-bold text-emerald-600 dark:text-emerald-300">
-                                                    {req.refundStatus === 'pending' ? 'قيد المعالجة' : req.refundStatus === 'refunded' ? 'تم رد المبلغ' : req.refundStatus}
+                                                    {req.refundStatus === 'pending' ? t('portal_returns.ui.ki0w2sk') : req.refundStatus === 'refunded' ? t('portal_returns.ui.khyyhdf') : req.refundStatus}
                                                     {Number(req.refundAmount || 0) > 0 ? ` • ${Number(req.refundAmount).toLocaleString(locale)} ج.م` : ''}
                                                 </span>
                                             </div>
                                         )}
                                         {req.restockedAt && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-500 dark:text-gray-400">إعادة للمخزون</span>
+                                                <span className="text-gray-500 dark:text-gray-400">{t('portal_returns.ui.k9mklcc')}</span>
                                                 <span className="font-bold text-blue-600 dark:text-blue-300">
                                                     {new Date(req.restockedAt).toLocaleDateString(locale)}
                                                 </span>
@@ -117,7 +117,7 @@ export default function PortalReturns() {
                                         )}
                                         {req.invoice?.returnStatus && req.invoice.returnStatus !== 'none' && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-500 dark:text-gray-400">حالة الطلب</span>
+                                                <span className="text-gray-500 dark:text-gray-400">{t('portal_returns.ui.kb3578d')}</span>
                                                 <span className="font-bold text-orange-600 dark:text-orange-300">{req.invoice.returnStatus}</span>
                                             </div>
                                         )}

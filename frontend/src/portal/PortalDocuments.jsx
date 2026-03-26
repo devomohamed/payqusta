@@ -3,16 +3,18 @@ import { usePortalStore } from '../store/portalStore';
 import { FileText, Upload, Trash2, CheckCircle, Clock, AlertCircle, Eye, Shield, Camera, Image as ImageIcon } from 'lucide-react';
 import { notify } from '../components/AnimatedNotification';
 import { confirm } from '../components/ConfirmDialog';
+import { useTranslation } from 'react-i18next';
 
 const docTypes = [
-    { id: 'national_id', label: 'بطاقة الهوية الوطنية', required: true, description: 'يرجى تقديم الوجهين الأمامي والخلفي بطريقة واضحة للتحقق.' },
-    { id: 'passport', label: 'جواز السفر', required: false, description: 'الصفحة الرئيسية التي تحتوي على بياناتك الشخصية.' },
-    { id: 'utility_bill', label: 'إيصال مرافق (كهرباء/مياه)', required: false, description: 'إثبات سكن حديث لا يمر عليه أكثر من 3 أشهر.' },
-    { id: 'contract', label: 'عقد إيجار/تمليك', required: false, description: 'دليل موثق يثبت ملكية أو إيجار مقر عملك/سكنك.' },
-    { id: 'other', label: 'مستندات أخرى', required: false, description: 'أي مستند إضافي لدعم ملفك.' },
+    { id: 'national_id', label: t('portal_documents.ui.kcd22vd'), required: true, description: t('portal_documents.ui.kdwjdfg') },
+    { id: 'passport', label: t('portal_documents.ui.ksvmhl9'), required: false, description: t('portal_documents.ui.kli6ccd') },
+    { id: 'utility_bill', label: t('portal_documents.ui.kx7yb17'), required: false, description: t('portal_documents.ui.klcr31k') },
+    { id: 'contract', label: t('portal_documents.ui.kk8tna'), required: false, description: t('portal_documents.ui.kk4a8vm') },
+    { id: 'other', label: t('portal_documents.ui.kw8zvs5'), required: false, description: t('portal_documents.ui.k86uouf') },
 ];
 
 export default function PortalDocuments() {
+  const { t } = useTranslation('admin');
     const { fetchDocuments, uploadDocument, deleteDocument, loading } = usePortalStore();
     const [documents, setDocuments] = useState([]);
     const [uploadingType, setUploadingType] = useState(null);
@@ -32,7 +34,7 @@ export default function PortalDocuments() {
     const handleFileSelect = (type, side, file) => {
         if (!file) return;
         if (file.size > 20 * 1024 * 1024) { // 20MB limit
-            notify.error('حجم الملف يجب أن يكون أقل من 20 ميجابايت');
+            notify.error(t('portal_documents.toasts.k7jzp4'));
             return;
         }
 
@@ -58,7 +60,7 @@ export default function PortalDocuments() {
         setUploadingType(type);
         const res = await uploadDocument(type, frontFile, backFile);
         if (res.success) {
-            notify.success('تم رفع المستند بنجاح');
+            notify.success(t('portal_documents.toasts.k4nb84g'));
             setDocuments(res.documents);
             // Clear dual upload state if any
             if (type === 'national_id') {
@@ -77,22 +79,22 @@ export default function PortalDocuments() {
     const submitDualUpload = (type) => {
         const data = dualUploads[type];
         if (!data || !data.front) {
-            notify.error('يجب رفع الصورة الأمامية للبطاقة');
+            notify.error(t('portal_documents.toasts.krafdku'));
             return;
         }
         if (!data.back) {
-            notify.error('يجب رفع الصورة الخلفية للبطاقة');
+            notify.error(t('portal_documents.toasts.kh4jgrp'));
             return;
         }
         processUpload(type, data.front, data.back);
     };
 
     const handleDelete = async (id) => {
-        const ok = await confirm.delete('هل أنت متأكد من حذف هذا المستند؟');
+        const ok = await confirm.delete(t('portal_documents.ui.kd9i9rc'));
         if (!ok) return;
         const res = await deleteDocument(id);
         if (res.success) {
-            notify.success('تم حذف المستند');
+            notify.success(t('portal_documents.toasts.kq8jcg1'));
             setDocuments(res.documents);
         } else {
             notify.error(res.message);
@@ -164,7 +166,7 @@ export default function PortalDocuments() {
                             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
                                 <Shield className="w-7 h-7" />
                             </div>
-                            توثيق الحساب والمستندات
+                            {t('portal_documents.ui.kwxmgos')}
                         </h2>
                         <p className="text-primary-100 max-w-lg text-sm leading-relaxed">
                             قم بتوثيق هويتك لرفع سقف معاملتك وتفعيل خيارات التقسيط. نحن نستخدم تقنيات الذكاء الاصطناعي (OCR) للتحقق من بياناتك في ثوانٍ بطريقة آمنة ومشفرة.
@@ -172,7 +174,7 @@ export default function PortalDocuments() {
                     </div>
                     {/* Status Global Card */}
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 min-w-[200px] text-center">
-                        <p className="text-primary-100 text-xs mb-1">حالة التوثيق</p>
+                        <p className="text-primary-100 text-xs mb-1">{t('portal_documents.ui.k3w83r')}</p>
                         {documents.some(d => d.type === 'national_id' && d.status === 'approved') ? (
                             <div className="text-green-300 font-bold text-lg flex items-center justify-center gap-2">
                                 <CheckCircle className="w-5 h-5" /> موثق بالكامل
@@ -224,7 +226,7 @@ export default function PortalDocuments() {
                                         : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800/50 dark:text-blue-400'
                                         }`}>
                                         {currentDoc.status === 'approved' ? <CheckCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                                        {currentDoc.status === 'approved' ? 'مقبول' : 'قيد المراجعة'}
+                                        {currentDoc.status === 'approved' ? t('portal_documents.ui.kpbu9nr') : 'قيد المراجعة'}
                                     </div>
                                 )}
                             </div>
@@ -236,8 +238,8 @@ export default function PortalDocuments() {
                                     <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-4 rounded-2xl mb-5 flex items-start gap-3 text-sm text-red-700 dark:text-red-400 animate-in slide-in-from-top-2">
                                         <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                                         <div>
-                                            <span className="font-bold block mb-1">تم رفض المستند</span>
-                                            {currentDoc.rejectionReason || 'الملف غير واضح أو المعرف الذكي (OCR) فشل في قراءة البيانات. يرجى التقاط صورة أوضح وإعادة المحاولة.'}
+                                            <span className="font-bold block mb-1">{t('portal_documents.ui.kw5zmev')}</span>
+                                            {currentDoc.rejectionReason || t('portal_documents.toasts.klwwve')}
                                         </div>
                                     </div>
                                 )}
@@ -252,7 +254,7 @@ export default function PortalDocuments() {
                                                 className="app-surface-muted flex-1 border border-gray-100/80 dark:border-white/10 text-gray-700 dark:text-gray-300 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                                             >
                                                 <Eye className="w-5 h-5" />
-                                                {type.id === 'national_id' ? 'الوجه الأمامي' : 'معاينة المستند'}
+                                                {type.id === 'national_id' ? t('portal_documents.ui.kgqfwfh') : 'معاينة المستند'}
                                             </a>
                                             {currentDoc.backUrl && (
                                                 <a
@@ -262,14 +264,14 @@ export default function PortalDocuments() {
                                                     className="app-surface-muted flex-1 border border-gray-100/80 dark:border-white/10 text-gray-700 dark:text-gray-300 py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                                                 >
                                                     <Eye className="w-5 h-5" />
-                                                    الوجه الخلفي
+                                                    {t('portal_documents.ui.kmdmwt2')}
                                                 </a>
                                             )}
                                             {currentDoc.status === 'pending' && (
                                                 <button
                                                     onClick={() => handleDelete(currentDoc._id)}
                                                     className="w-12 h-12 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 dark:hover:bg-red-500/20 border border-red-100 dark:border-red-500/20 rounded-2xl flex items-center justify-center transition-all shadow-sm"
-                                                    title="حذف المستند"
+                                                    title={t('portal_documents.titles.keho2d6')}
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
@@ -283,7 +285,7 @@ export default function PortalDocuments() {
                                                 <DropZone
                                                     typeName={type.id}
                                                     side="front"
-                                                    label="الوجه الأمامي"
+                                                    label={t('portal_documents.form.kgqfwfh')}
                                                     currentFile={dualUploads[type.id]?.front}
                                                     onFile={handleFileSelect}
                                                     disabled={isUploadingThis}
@@ -291,7 +293,7 @@ export default function PortalDocuments() {
                                                 <DropZone
                                                     typeName={type.id}
                                                     side="back"
-                                                    label="الوجه الخلفي"
+                                                    label={t('portal_documents.form.kmdmwt2')}
                                                     currentFile={dualUploads[type.id]?.back}
                                                     onFile={handleFileSelect}
                                                     disabled={isUploadingThis}
@@ -307,12 +309,12 @@ export default function PortalDocuments() {
                                                     {isUploadingThis ? (
                                                         <>
                                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                            جاري الفحص السحابي والرفع...
+                                                            {t('portal_documents.ui.k126pdo')}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <Upload className="w-5 h-5" />
-                                                            المصادقة ورفع البطاقة
+                                                            {t('portal_documents.ui.kbc4m1')}
                                                         </>
                                                     )}
                                                 </button>
@@ -323,13 +325,13 @@ export default function PortalDocuments() {
                                             {isUploadingThis ? (
                                                 <div className="h-[150px] border-2 border-dashed border-primary-200 dark:border-primary-800 rounded-3xl flex flex-col items-center justify-center gap-3 bg-primary-50/50 dark:bg-primary-900/10">
                                                     <div className="w-8 h-8 border-3 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                                                    <span className="text-sm text-primary-600 dark:text-primary-400 font-bold">جاري الرفع...</span>
+                                                    <span className="text-sm text-primary-600 dark:text-primary-400 font-bold">{t('portal_documents.ui.ksf7zo2')}</span>
                                                 </div>
                                             ) : (
                                                 <DropZone
                                                     typeName={type.id}
                                                     side="front"
-                                                    label="الملف"
+                                                    label={t('portal_documents.form.koveb8l')}
                                                     onFile={handleFileSelect}
                                                     disabled={false}
                                                 />

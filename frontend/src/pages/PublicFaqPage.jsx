@@ -2,18 +2,20 @@
 import { ChevronDown, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { faqItems } from '../publicSite/content';
+import { useTranslation } from 'react-i18next';
 
 export default function PublicFaqPage() {
+  const { t } = useTranslation('admin');
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="grid gap-6 lg:grid-cols-[0.95fr,1.05fr] lg:items-start">
         <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">الأسئلة الشائعة</p>
-          <h1 className="mt-3 text-4xl font-black leading-tight">إجابات يحتاجها الزائر قبل التسجيل أو التجربة الأولى</h1>
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">{t('public_faq_page.ui.kluu3hg')}</p>
+          <h1 className="mt-3 text-4xl font-black leading-tight">{t('public_faq_page.ui.k5ltttf')}</h1>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            هنا ستجد إجابات مباشرة على الأسئلة التي تتكرر قبل اتخاذ قرار البدء أو طلب تجربة عملية.
+            {t('public_faq_page.ui.kb9q4gm')}
           </p>
 
           <div className="mt-6 grid gap-3">
@@ -21,18 +23,18 @@ export default function PublicFaqPage() {
               {faqItems.length} أسئلة أساسية يحتاجها صاحب النشاط قبل القرار
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white/90">
-              توضيح للبراند، الاستخدام اليومي، والواجهة التي يراها العميل
+              {t('public_faq_page.ui.kd7tjay')}
             </div>
           </div>
         </div>
 
         <div className="text-right">
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.2em]">الوضوح قبل القرار</p>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.2em]">{t('public_faq_page.ui.k3dq9g8')}</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
-            كل إجابة هنا تمهد لخطوة أوضح في رحلة الزائر
+            {t('public_faq_page.ui.k5v9a1c')}
           </h2>
           <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">
-            عندما تكون الإجابات واضحة، يصبح تقييم المنصة أسهل ويقل التردد قبل الانتقال إلى التجربة أو التسجيل.
+            {t('public_faq_page.ui.kpe90lh')}
           </p>
         </div>
       </div>
@@ -63,9 +65,9 @@ export default function PublicFaqPage() {
       <div className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-amber-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-amber-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <h2 className="text-3xl font-black text-slate-950 dark:text-white">ما زال لديك سؤال قبل البدء؟</h2>
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white">{t('public_faq_page.ui.k3p0nc9')}</h2>
             <p className="app-text-soft mt-3 text-base leading-8">
-              إذا بقيت نقطة غير واضحة بعد المزايا وطريقة العمل، فهذه الإجابات تساعدك على تكوين صورة أدق قبل البدء.
+              {t('public_faq_page.ui.kgyxja9')}
             </p>
           </div>
 
@@ -74,13 +76,13 @@ export default function PublicFaqPage() {
               to="/features"
               className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
-              ارجع إلى المزايا
+              {t('public_faq_page.ui.ka7gwij')}
             </Link>
             <Link
               to="/login?mode=register"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
             >
-              ابدأ الآن
+              {t('public_faq_page.ui.kl6w4j0')}
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Building2, Users, Plus, Search, Edit2, Trash2, MapPin, Phone,
   Calendar, ChevronDown, ChevronUp, Store, Mail, Package, ShoppingCart, X, Key, Eye, EyeOff, Copy
@@ -8,6 +9,7 @@ import { adminApi, superAdminApi } from '../store';
 import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState } from '../components/UI';
 
 export default function TenantManagementPage() {
+  const { t } = useTranslation('admin');
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedTenant, setExpandedTenant] = useState(null);
@@ -37,7 +39,7 @@ export default function TenantManagementPage() {
       const res = await adminApi.getTenants({ limit: 1000 });
       setTenants(res.data.data || []);
     } catch (err) {
-      toast.error('خطأ في تحميل المتاجر');
+      toast.error(t('tenant_management_page.toasts.k2djy51'));
     } finally {
       setLoading(false);
     }
@@ -70,18 +72,18 @@ export default function TenantManagementPage() {
 
     try {
       await adminApi.deleteTenant(tenantToDelete.id);
-      toast.success('تم حذف المتجر بنجاح');
+      toast.success(t('tenant_management_page.toasts.ksobfmm'));
       setTenants(tenants.filter(t => t._id !== tenantToDelete.id));
       setShowDeleteConfirmModal(false);
       setTenantToDelete(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'حدث خطأ في الحذف');
+      toast.error(err.response?.data?.message || t('tenant_management_page.toasts.k7z5tzb'));
     }
   };
 
   const handleAddBranch = async () => {
     if (!branchForm.name) {
-      return toast.error('اسم الفرع مطلوب');
+      return toast.error(t('tenant_management_page.toasts.kax06lz'));
     }
 
     try {
@@ -89,13 +91,13 @@ export default function TenantManagementPage() {
         ...branchForm,
         tenantId: selectedTenantForBranch._id
       });
-      toast.success('تم إضافة الفرع بنجاح');
+      toast.success(t('tenant_management_page.toasts.kb0chgn'));
       setShowAddBranchModal(false);
       setBranchForm({ name: '', address: '', phone: '' });
       setSelectedTenantForBranch(null);
       fetchTenants();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'حدث خطأ');
+      toast.error(err.response?.data?.message || t('tenant_management_page.toasts.ktcqm3h'));
     }
   };
 
@@ -117,14 +119,14 @@ export default function TenantManagementPage() {
             <Building2 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold">إدارة المتاجر والفروع</h1>
+            <h1 className="text-2xl font-extrabold">{t('tenant_management_page.ui.kaui8or')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {filteredTenants.length} متجر إجمالاً
             </p>
           </div>
         </div>
         <Button onClick={() => setShowCreateTenantModal(true)} icon={<Plus className="w-4 h-4" />}>
-          إنشاء متجر جديد
+          {t('tenant_management_page.ui.kp4vud')}
         </Button>
       </div>
 
@@ -133,7 +135,7 @@ export default function TenantManagementPage() {
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="بحث عن متجر..."
+            placeholder={t('tenant_management_page.placeholders.kmu6lu3')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pr-10"
@@ -157,9 +159,9 @@ export default function TenantManagementPage() {
       ) : filteredTenants.length === 0 ? (
         <EmptyState
           icon={<Building2 />}
-          title={search ? 'لا توجد نتائج' : 'لا توجد متاجر'}
-          description={search ? 'جرب تغيير كلمة البحث' : 'ابدأ بإنشاء متجر جديد'}
-          action={<Button onClick={() => setShowCreateTenantModal(true)} icon={<Plus className="w-4 h-4" />}>إنشاء متجر</Button>}
+          title={search ? t('tenant_management_page.ui.kkcniav') : 'لا توجد متاجر'}
+          description={search ? t('tenant_management_page.ui.kevqiyy') : 'ابدأ بإنشاء متجر جديد'}
+          action={<Button onClick={() => setShowCreateTenantModal(true)} icon={<Plus className="w-4 h-4" />}>{t('tenant_management_page.ui.kydvknx')}</Button>}
         />
       ) : (
         <div className="space-y-4">
@@ -193,7 +195,7 @@ export default function TenantManagementPage() {
 
                   <div className="flex items-center gap-2">
                     <Badge variant={tenant.isActive ? 'success' : 'danger'}>
-                      {tenant.isActive ? 'نشط' : 'معطل'}
+                      {tenant.isActive ? t('tenant_management_page.ui.ky62x') : 'معطل'}
                     </Badge>
                     <Button
                       variant="ghost"
@@ -204,7 +206,7 @@ export default function TenantManagementPage() {
                       }}
                       icon={<Plus className="w-4 h-4" />}
                     >
-                      فرع
+                      {t('tenant_management_page.ui.ky2ax')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -222,7 +224,7 @@ export default function TenantManagementPage() {
                         setShowPassword(false);
                       }}
                       icon={<Key className="w-4 h-4 text-blue-500" />}
-                      title="تفاصيل المالك"
+                      title={t('tenant_management_page.titles.kwkr1rz')}
                     />
                     <Button
                       variant="ghost"
@@ -238,28 +240,28 @@ export default function TenantManagementPage() {
                   <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                       <Store className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs text-gray-500">الفروع</span>
+                      <span className="text-xs text-gray-500">{t('tenant_management_page.ui.kaaztz6')}</span>
                     </div>
                     <p className="text-lg font-bold mt-1">{tenant.branches?.length || 0}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-purple-500" />
-                      <span className="text-xs text-gray-500">العملاء</span>
+                      <span className="text-xs text-gray-500">{t('tenant_management_page.ui.kzgg8kr')}</span>
                     </div>
                     <p className="text-lg font-bold mt-1">{tenant.stats?.customers || 0}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-emerald-500" />
-                      <span className="text-xs text-gray-500">المنتجات</span>
+                      <span className="text-xs text-gray-500">{t('tenant_management_page.ui.ks0nri5')}</span>
                     </div>
                     <p className="text-lg font-bold mt-1">{tenant.stats?.products || 0}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
                       <ShoppingCart className="w-4 h-4 text-amber-500" />
-                      <span className="text-xs text-gray-500">الفواتير</span>
+                      <span className="text-xs text-gray-500">{t('tenant_management_page.ui.ktvslhu')}</span>
                     </div>
                     <p className="text-lg font-bold mt-1">{tenant.stats?.invoices || 0}</p>
                   </div>
@@ -273,23 +275,23 @@ export default function TenantManagementPage() {
                   <div>
                     <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
                       <Users className="w-4 h-4" />
-                      معلومات المالك
+                      {t('tenant_management_page.ui.kh2gsi6')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">الاسم</p>
-                        <p className="font-bold">{tenant.owner?.name || 'غير محدد'}</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.kovdol8')}</p>
+                        <p className="font-bold">{tenant.owner?.name || t('tenant_management_page.toasts.k5xt5xj')}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">البريد الإلكتروني</p>
-                        <p className="font-bold text-sm">{tenant.owner?.email || 'غير محدد'}</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.k8lvosz')}</p>
+                        <p className="font-bold text-sm">{tenant.owner?.email || t('tenant_management_page.toasts.k5xt5xj')}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">رقم الهاتف</p>
-                        <p className="font-bold">{tenant.owner?.phone || 'غير محدد'}</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.k3pahhc')}</p>
+                        <p className="font-bold">{tenant.owner?.phone || t('tenant_management_page.toasts.k5xt5xj')}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">الصلاحية</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.kzekvld')}</p>
                         <Badge variant="info">{tenant.owner?.role || 'admin'}</Badge>
                       </div>
                     </div>
@@ -300,7 +302,7 @@ export default function TenantManagementPage() {
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        معلومات الاشتراك
+                        {t('tenant_management_page.ui.kjbezk3')}
                       </h4>
                       <Button
                         size="sm"
@@ -318,30 +320,30 @@ export default function TenantManagementPage() {
                         }}
                         icon={<Edit2 className="w-3.5 h-3.5" />}
                       >
-                        تعديل وتفعيل
+                        {t('tenant_management_page.ui.kxuatie')}
                       </Button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">الخطة</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.kovdtur')}</p>
                         <Badge variant={
                           tenant.subscription?.plan === 'pro' ? 'success' :
                             tenant.subscription?.plan === 'basic' ? 'info' : 'default'
                         }>
-                          {tenant.subscription?.plan === 'free' ? 'مجاني' :
-                            tenant.subscription?.plan === 'basic' ? 'أساسي' :
-                              tenant.subscription?.plan === 'pro' ? 'احترافي' : 'مجاني'}
+                          {tenant.subscription?.plan === 'free' ? t('tenant_management_page.ui.kpbg75w') :
+                            tenant.subscription?.plan === 'basic' ? t('tenant_management_page.ui.kosvnfy') :
+                              tenant.subscription?.plan === 'pro' ? t('tenant_management_page.ui.kog08ub') : 'مجاني'}
                         </Badge>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">الحالة</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.kabct8k')}</p>
                         <Badge variant={tenant.subscription?.status === 'active' ? 'success' : 'warning'}>
-                          {tenant.subscription?.status === 'active' ? 'نشط' :
-                            tenant.subscription?.status === 'trial' ? 'تجريبي' : 'معلق'}
+                          {tenant.subscription?.status === 'active' ? t('tenant_management_page.ui.ky62x') :
+                            tenant.subscription?.status === 'trial' ? t('tenant_management_page.ui.k99br1f') : 'معلق'}
                         </Badge>
                       </div>
                       <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">تاريخ الانتهاء</p>
+                        <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.khxljbv')}</p>
                         <p className="font-bold text-sm">
                           {tenant.subscription?.trialEndsAt
                             ? new Date(tenant.subscription.trialEndsAt).toLocaleDateString('ar-EG')
@@ -380,7 +382,7 @@ export default function TenantManagementPage() {
                             )}
                             {branch.manager && (
                               <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                                <p className="text-xs text-gray-500">المدير</p>
+                                <p className="text-xs text-gray-500">{t('tenant_management_page.ui.kaaxbgy')}</p>
                                 <p className="text-xs font-medium">{branch.manager.name}</p>
                               </div>
                             )}
@@ -390,7 +392,7 @@ export default function TenantManagementPage() {
                     ) : (
                       <div className="text-center py-8 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                         <Store className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm mb-3">لا توجد فروع لهذا المتجر</p>
+                        <p className="text-sm mb-3">{t('tenant_management_page.ui.k2ehbjk')}</p>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -400,7 +402,7 @@ export default function TenantManagementPage() {
                           }}
                           icon={<Plus className="w-4 h-4" />}
                         >
-                          إضافة فرع
+                          {t('tenant_management_page.ui.km2iaqh')}
                         </Button>
                       </div>
                     )}
@@ -416,7 +418,7 @@ export default function TenantManagementPage() {
       <Modal
         open={showCreateTenantModal}
         onClose={() => setShowCreateTenantModal(false)}
-        title="إنشاء متجر جديد"
+        title={t('tenant_management_page.titles.kp4vud')}
       >
         <form
           onSubmit={async (e) => {
@@ -432,69 +434,69 @@ export default function TenantManagementPage() {
             };
 
             if (!data.name || !data.ownerName || !data.ownerEmail || !data.ownerPhone || !data.ownerPassword) {
-              toast.error('جميع الحقول مطلوبة');
+              toast.error(t('tenant_management_page.toasts.kqz3qq7'));
               return;
             }
 
             try {
               await adminApi.createTenant(data);
-              toast.success('تم إنشاء المتجر بنجاح');
+              toast.success(t('tenant_management_page.toasts.ks1jdrh'));
               setShowCreateTenantModal(false);
               fetchTenants(); // Auto-refresh
             } catch (err) {
-              toast.error(err.response?.data?.message || 'حدث خطأ');
+              toast.error(err.response?.data?.message || t('tenant_management_page.toasts.ktcqm3h'));
             }
           }}
           className="space-y-4"
         >
           <div>
-            <label className="block text-sm font-bold mb-2">اسم المتجر *</label>
-            <Input name="name" required placeholder="متجر الإلكترونيات" />
+            <label className="block text-sm font-bold mb-2">{t('tenant_management_page.ui.k3xjchk')}</label>
+            <Input name="name" required placeholder={t('tenant_management_page.placeholders.kl26749')} />
           </div>
 
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
             <h3 className="text-sm font-bold mb-3 text-gray-700 dark:text-gray-300">
-              بيانات المالك (Owner)
+              {t('tenant_management_page.ui.k9y5aqw')}
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">اسم المالك *</label>
-                <Input name="ownerName" required placeholder="أحمد محمد" />
+                <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.k3wbnqn')}</label>
+                <Input name="ownerName" required placeholder={t('tenant_management_page.placeholders.kpsrhs2')} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">البريد الإلكتروني *</label>
+                <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.kwhut25')}</label>
                 <Input name="ownerEmail" type="email" required placeholder="owner@store.com" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">رقم الهاتف *</label>
+                <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.k6l9xqi')}</label>
                 <Input name="ownerPhone" required placeholder="01234567890" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">كلمة المرور *</label>
+                <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.kc9pgnr')}</label>
                 <Input name="ownerPassword" type="password" required placeholder="********" />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">الخطة</label>
+            <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.kovdtur')}</label>
             <select name="plan" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-              <option value="free">مجاني</option>
-              <option value="basic">أساسي</option>
-              <option value="pro">احترافي</option>
+              <option value="free">{t('tenant_management_page.ui.kpbg75w')}</option>
+              <option value="basic">{t('tenant_management_page.ui.kosvnfy')}</option>
+              <option value="pro">{t('tenant_management_page.ui.kog08ub')}</option>
             </select>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="ghost" onClick={() => setShowCreateTenantModal(false)}>
-              إلغاء
+              {t('tenant_management_page.ui.cancel')}
             </Button>
             <Button type="submit">
-              إنشاء المتجر
+              {t('tenant_management_page.ui.k19w00q')}
             </Button>
           </div>
         </form>
@@ -511,25 +513,25 @@ export default function TenantManagementPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-bold mb-2">اسم الفرع *</label>
+            <label className="block text-sm font-bold mb-2">{t('tenant_management_page.ui.kyfs5an')}</label>
             <Input
               value={branchForm.name}
               onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
-              placeholder="فرع القاهرة"
+              placeholder={t('tenant_management_page.placeholders.khv84fu')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">العنوان</label>
+            <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.kzgfilf')}</label>
             <Input
               value={branchForm.address}
               onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
-              placeholder="شارع الهرم، الجيزة"
+              placeholder={t('tenant_management_page.placeholders.kxv175t')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">رقم الهاتف</label>
+            <label className="block text-sm font-medium mb-1">{t('tenant_management_page.ui.k3pahhc')}</label>
             <Input
               value={branchForm.phone}
               onChange={(e) => setBranchForm({ ...branchForm, phone: e.target.value })}
@@ -546,10 +548,10 @@ export default function TenantManagementPage() {
                 setBranchForm({ name: '', address: '', phone: '' });
               }}
             >
-              إلغاء
+              {t('tenant_management_page.ui.cancel')}
             </Button>
             <Button onClick={handleAddBranch}>
-              إضافة الفرع
+              {t('tenant_management_page.ui.kswakcq')}
             </Button>
           </div>
         </div>
@@ -562,7 +564,7 @@ export default function TenantManagementPage() {
           setShowDeleteConfirmModal(false);
           setTenantToDelete(null);
         }}
-        title="تأكيد حذف المتجر"
+        title={t('tenant_management_page.titles.kvj4ig6')}
       >
         <div className="space-y-4">
           {/* Warning Icon */}
@@ -574,7 +576,7 @@ export default function TenantManagementPage() {
 
           {/* Warning Message */}
           <div className="text-center">
-            <h3 className="text-lg font-bold mb-2">هل أنت متأكد من الحذف؟</h3>
+            <h3 className="text-lg font-bold mb-2">{t('tenant_management_page.ui.kvcctvv')}</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               سيتم حذف المتجر <span className="font-bold text-red-500">"{tenantToDelete?.name}"</span> نهائياً
             </p>
@@ -586,23 +588,23 @@ export default function TenantManagementPage() {
             <ul className="space-y-2 text-sm text-red-600 dark:text-red-400">
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                جميع الفروع والمواقع
+                {t('tenant_management_page.ui.ktp6b0g')}
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                جميع المنتجات والمخزون
+                {t('tenant_management_page.ui.kncy72f')}
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                جميع العملاء والحسابات
+                {t('tenant_management_page.ui.kgcemk4')}
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                جميع الفواتير والمعاملات
+                {t('tenant_management_page.ui.kracy5y')}
               </li>
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                جميع المستخدمين والصلاحيات
+                {t('tenant_management_page.ui.k2p0a7u')}
               </li>
             </ul>
           </div>
@@ -625,13 +627,13 @@ export default function TenantManagementPage() {
               }}
               className="flex-1"
             >
-              إلغاء
+              {t('tenant_management_page.ui.cancel')}
             </Button>
             <Button
               onClick={confirmDelete}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white"
             >
-              نعم، احذف المتجر
+              {t('tenant_management_page.ui.kgk1tpy')}
             </Button>
           </div>
         </div>
@@ -646,7 +648,7 @@ export default function TenantManagementPage() {
           setNewPassword('');
           setShowPassword(false);
         }}
-        title="تفاصيل المالك"
+        title={t('tenant_management_page.titles.kwkr1rz')}
         size="md"
       >
         {selectedOwner && (
@@ -654,31 +656,31 @@ export default function TenantManagementPage() {
             {/* Owner Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 mb-1">الاسم</p>
+                <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.kovdol8')}</p>
                 <p className="font-bold">{selectedOwner.name}</p>
               </div>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 mb-1">البريد الإلكتروني</p>
+                <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.k8lvosz')}</p>
                 <div className="flex items-center gap-2">
                   <p className="font-bold text-sm flex-1">{selectedOwner.email}</p>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(selectedOwner.email);
-                      toast.success('تم النسخ');
+                      toast.success(t('tenant_management_page.toasts.kwttjpd'));
                     }}
                     className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    title="نسخ"
+                    title={t('tenant_management_page.titles.ky61t')}
                   >
                     <Copy className="w-4 h-4 text-gray-500" />
                   </button>
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 mb-1">رقم الهاتف</p>
-                <p className="font-bold">{selectedOwner.phone || 'غير محدد'}</p>
+                <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.k3pahhc')}</p>
+                <p className="font-bold">{selectedOwner.phone || t('tenant_management_page.toasts.k5xt5xj')}</p>
               </div>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 mb-1">الصلاحية</p>
+                <p className="text-xs text-gray-500 mb-1">{t('tenant_management_page.ui.kzekvld')}</p>
                 <Badge variant="info">{selectedOwner.role || 'admin'}</Badge>
               </div>
             </div>
@@ -687,7 +689,7 @@ export default function TenantManagementPage() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
                 <Key className="w-4 h-4" />
-                إعادة تعيين كلمة المرور
+                {t('tenant_management_page.ui.k75ko9b')}
               </h3>
 
               <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3 border border-amber-200 dark:border-amber-500/20 mb-4">
@@ -699,11 +701,11 @@ export default function TenantManagementPage() {
               <div className="space-y-3">
                 <div className="relative">
                   <Input
-                    label="كلمة المرور الجديدة *"
+                    label={t('tenant_management_page.form.krlnyzf')}
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
+                    placeholder={t('tenant_management_page.placeholders.k46m4as')}
                   />
                   <button
                     type="button"
@@ -722,35 +724,35 @@ export default function TenantManagementPage() {
                   <Button
                     onClick={async () => {
                       if (!newPassword || newPassword.length < 6) {
-                        return toast.error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+                        return toast.error(t('tenant_management_page.toasts.k7t8uub'));
                       }
 
                       setResettingPassword(true);
                       try {
                         await adminApi.resetTenantPassword(selectedOwner.tenantId, { password: newPassword });
-                        toast.success('تم إعادة تعيين كلمة المرور بنجاح');
+                        toast.success(t('tenant_management_page.toasts.kuagd4w'));
 
                         // Show success message with credentials
                         toast((t) => (
                           <div className="space-y-2">
                             <p className="font-bold">✅ تم التحديث!</p>
                             <div className="text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                              <p><strong>البريد:</strong> {selectedOwner.email}</p>
-                              <p><strong>كلمة المرور:</strong> {newPassword}</p>
+                              <p><strong>{t('tenant_management_page.ui.kzayn1r')}</strong> {selectedOwner.email}</p>
+                              <p><strong>{t('tenant_management_page.ui.kyrk7bh')}</strong> {newPassword}</p>
                             </div>
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(`البريد: ${selectedOwner.email}\nكلمة المرور: ${newPassword}`);
-                                toast.success('تم نسخ البيانات');
+                                toast.success(t('tenant_management_page.toasts.kqfoomz'));
                               }}
                               className="text-xs text-blue-500 hover:underline"
                             >
-                              نسخ البيانات
+                              {t('tenant_management_page.ui.kag1g80')}
                             </button>
                           </div>
                         ), { duration: 10000 });
                       } catch (err) {
-                        toast.error(err.response?.data?.message || 'حدث خطأ');
+                        toast.error(err.response?.data?.message || t('tenant_management_page.toasts.ktcqm3h'));
                       } finally {
                         setResettingPassword(false);
                       }
@@ -760,7 +762,7 @@ export default function TenantManagementPage() {
                     icon={<Key className="w-4 h-4" />}
                     className="flex-1"
                   >
-                    {resettingPassword ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
+                    {resettingPassword ? t('tenant_management_page.ui.kgnvsl2') : 'تحديث كلمة المرور'}
                   </Button>
                 </div>
               </div>
@@ -777,7 +779,7 @@ export default function TenantManagementPage() {
                   setShowPassword(false);
                 }}
               >
-                إغلاق
+                {t('tenant_management_page.ui.close')}
               </Button>
             </div>
           </div>
@@ -791,11 +793,11 @@ export default function TenantManagementPage() {
       >
         <div className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-200">
-            يمكنك من هنا تأكيد التحويلات اليدوية (إنستاباي/فودافون كاش) وتفعيل الخطط يدوياً للمتاجر.
+            {t('tenant_management_page.ui.kt1t38m')}
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">خطة الاشتراك</label>
+            <label className="block text-sm font-bold mb-2">{t('tenant_management_page.ui.kn1tb8z')}</label>
             <select
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
               value={subForm.plan}
@@ -809,20 +811,20 @@ export default function TenantManagementPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">الحالة الفورية</label>
+            <label className="block text-sm font-bold mb-2">{t('tenant_management_page.ui.k2t5760')}</label>
             <select
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
               value={subForm.status}
               onChange={(e) => setSubForm({ ...subForm, status: e.target.value })}
             >
-              <option value="active">نشط (فعال)</option>
-              <option value="trial">تجريبي (Trial)</option>
-              <option value="cancelled">ملغى / منتهي</option>
+              <option value="active">{t('tenant_management_page.ui.k4xb9dv')}</option>
+              <option value="trial">{t('tenant_management_page.ui.kwcp0a0')}</option>
+              <option value="cancelled">{t('tenant_management_page.ui.kpx45rd')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">تاريخ انتهاء الاشتراك</label>
+            <label className="block text-sm font-bold mb-2">{t('tenant_management_page.ui.ky9evcf')}</label>
             <Input
               type="date"
               value={subForm.endDate}
@@ -836,7 +838,7 @@ export default function TenantManagementPage() {
               variant="ghost"
               onClick={() => setShowSubscriptionModal(false)}
             >
-              إلغاء
+              {t('tenant_management_page.ui.cancel')}
             </Button>
             <Button
               loading={updatingSub}
@@ -853,17 +855,17 @@ export default function TenantManagementPage() {
                   await superAdminApi.updateTenant(selectedTenantForSub._id, {
                     subscription: updatedSubscription
                   });
-                  toast.success('تم تفعيل وتحديث الاشتراك بنجاح!');
+                  toast.success(t('tenant_management_page.toasts.kpbnasy'));
                   setShowSubscriptionModal(false);
                   fetchTenants();
                 } catch (error) {
-                  toast.error(error.response?.data?.message || 'فشل تحديث الاشتراك');
+                  toast.error(error.response?.data?.message || t('tenant_management_page.toasts.kcqbilr'));
                 } finally {
                   setUpdatingSub(false);
                 }
               }}
             >
-              حفظ وتفعيل
+              {t('tenant_management_page.ui.ksr64og')}
             </Button>
           </div>
         </div>

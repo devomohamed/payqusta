@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Users, Building2, FileText, DollarSign,
   TrendingUp, Activity, CheckCircle, UserPlus, Store,
@@ -47,6 +48,7 @@ const DASHBOARD_COLOR_STYLES = {
 };
 
 export default function AdminDashboardPage() {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
 
   // States for System Overview (Old Admin Dashboard)
@@ -80,7 +82,7 @@ export default function AdminDashboardPage() {
       setCommandData(cmdRes.data?.data);
       setHealthData(healthRes.data?.data);
     } catch (err) {
-      toast.error('خطأ في تحميل لوحة القيادة المركزية');
+      toast.error(t('admin_dashboard_page.toasts.kqyo1ei'));
     } finally {
       setLoading(false);
     }
@@ -133,10 +135,10 @@ export default function AdminDashboardPage() {
             <Crown className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-1">القيادة المركزية العليا</h1>
+            <h1 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-1">{t('admin_dashboard_page.ui.kxbdo7e')}</h1>
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-500" />
-              التحكم الشامل والإحصائيات الحية
+              {t('admin_dashboard_page.ui.kj0bzb2')}
             </p>
           </div>
         </div>
@@ -146,19 +148,19 @@ export default function AdminDashboardPage() {
               onClick={() => setActiveTab('overview')}
               className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'overview' ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300' : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'}`}
             >
-              نظرة عامة
+              {t('admin_dashboard_page.ui.ke3gkrs')}
             </button>
             <button
               onClick={() => setActiveTab('operations')}
               className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${activeTab === 'operations' ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300' : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'}`}
             >
-              العمليات الحية
+              {t('admin_dashboard_page.ui.kf9q7c1')}
             </button>
           </div>
           <button
             onClick={loadAllData}
             className="app-surface flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-            title="تحديث البيانات"
+            title={t('admin_dashboard_page.titles.k560y7g')}
           >
             <Activity className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
@@ -172,7 +174,7 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               icon={Building2}
-              label="المتاجر المسجلة"
+              label={t('admin_dashboard_page.form.k288n8w')}
               value={stats.tenants?.total || 0}
               subtitle={`${stats.tenants?.active || 0} متجر نشط — ${stats.tenants?.total - (stats.tenants?.active || 0)} متوقف`}
               color="primary"
@@ -180,21 +182,21 @@ export default function AdminDashboardPage() {
             />
             <StatCard
               icon={Users}
-              label="المستخدمين والموظفين"
+              label={t('admin_dashboard_page.form.ke5jnoy')}
               value={stats.users?.total || 0}
               subtitle="عبر جميع الفروع والمتاجر"
               color="blue"
             />
             <StatCard
               icon={FileText}
-              label="الفواتير الصادرة"
+              label={t('admin_dashboard_page.form.ktuaacm')}
               value={stats.invoices?.total || 0}
               subtitle="إجمالي العمليات المكتملة"
               color="emerald"
             />
             <StatCard
               icon={Target}
-              label="قاعدة العملاء الكلية"
+              label={t('admin_dashboard_page.form.k51vc06')}
               value={stats.customers?.total || 0}
               subtitle="مستهدف النمو"
               color="purple"
@@ -208,36 +210,36 @@ export default function AdminDashboardPage() {
 
             <h2 className="text-xl font-black mb-6 flex items-center gap-2 relative z-10 text-emerald-400">
               <DollarSign className="w-6 h-6" />
-              المركز المالي الموحد للمنصة
+              {t('admin_dashboard_page.ui.k5ubtxc')}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
               <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                <p className="text-sm text-gray-400 mb-2 font-medium">إجمالي حجم التداولات (الإيرادات)</p>
+                <p className="text-sm text-gray-400 mb-2 font-medium">{t('admin_dashboard_page.ui.ktt57ww')}</p>
                 <div className="flex items-end gap-2">
                   <p className="text-4xl font-black text-white">
                     {stats.revenue?.totalRevenue?.toLocaleString('ar-EG') || '0'}
                   </p>
-                  <p className="text-sm text-emerald-400 mb-1 font-bold">ج.م</p>
+                  <p className="text-sm text-emerald-400 mb-1 font-bold">{t('admin_dashboard_page.ui.kwlxf')}</p>
                 </div>
               </div>
               <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                <p className="text-sm text-gray-400 mb-2 font-medium">السيولة المحصلة الفعالة</p>
+                <p className="text-sm text-gray-400 mb-2 font-medium">{t('admin_dashboard_page.ui.kjgkrk5')}</p>
                 <div className="flex items-end gap-2">
                   <p className="text-4xl font-black text-emerald-400">
                     {stats.revenue?.totalPaid?.toLocaleString('ar-EG') || '0'}
                   </p>
-                  <p className="text-sm text-emerald-500 mb-1 font-bold">ج.م</p>
+                  <p className="text-sm text-emerald-500 mb-1 font-bold">{t('admin_dashboard_page.ui.kwlxf')}</p>
                 </div>
               </div>
               <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm relative overflow-hidden">
                 <div className="absolute inset-0 bg-red-500/5" />
-                <p className="text-sm text-gray-400 mb-2 font-medium relative z-10">المتأخرات والأقساط المعلقة</p>
+                <p className="text-sm text-gray-400 mb-2 font-medium relative z-10">{t('admin_dashboard_page.ui.k83sr3m')}</p>
                 <div className="flex items-end gap-2 relative z-10">
                   <p className="text-4xl font-black text-red-400">
                     {stats.revenue?.totalOutstanding?.toLocaleString('ar-EG') || '0'}
                   </p>
-                  <p className="text-sm text-red-500 mb-1 font-bold">ج.م</p>
+                  <p className="text-sm text-red-500 mb-1 font-bold">{t('admin_dashboard_page.ui.kwlxf')}</p>
                 </div>
               </div>
             </div>
@@ -250,7 +252,7 @@ export default function AdminDashboardPage() {
               <div className="app-surface-muted p-5 border-b border-gray-100/80 dark:border-white/10">
                 <h2 className="text-lg font-black flex items-center gap-2 text-gray-800 dark:text-gray-100">
                   <Store className="w-5 h-5 text-primary-500" />
-                  المتاجر الحديثة الانضمام
+                  {t('admin_dashboard_page.ui.kt1ox6')}
                 </h2>
               </div>
               <div className="divide-y divide-gray-100/80 dark:divide-white/10 flex-1">
@@ -275,7 +277,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                         <Badge variant={tenant.isActive ? 'success' : 'danger'}>
-                          {tenant.isActive ? 'مُفعل' : 'مُعطل'}
+                          {tenant.isActive ? t('admin_dashboard_page.ui.kpc32o2') : 'مُعطل'}
                         </Badge>
                       </div>
                     </div>
@@ -283,7 +285,7 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div className="p-12 text-center text-gray-400 flex flex-col items-center justify-center h-full">
                     <Store className="w-12 h-12 mb-3 opacity-20" />
-                    <p className="font-medium">لا توجد متاجر حتى الآن</p>
+                    <p className="font-medium">{t('admin_dashboard_page.ui.krvsgog')}</p>
                   </div>
                 )}
               </div>
@@ -294,7 +296,7 @@ export default function AdminDashboardPage() {
               <div className="app-surface-muted p-5 border-b border-gray-100/80 dark:border-white/10">
                 <h2 className="text-lg font-black flex items-center gap-2 text-gray-800 dark:text-gray-100">
                   <UserPlus className="w-5 h-5 text-emerald-500" />
-                  أحدث تسجيلات الموظفين
+                  {t('admin_dashboard_page.ui.kfesr5t')}
                 </h2>
               </div>
               <div className="divide-y divide-gray-100/80 dark:divide-white/10 max-h-[400px] overflow-y-auto">
@@ -304,7 +306,7 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold flex-shrink-0 border border-gray-200 dark:border-gray-600">
-                            {user.name?.charAt(0) || 'م'}
+                            {user.name?.charAt(0) || t('admin_dashboard_page.toasts.k18l')}
                           </div>
                           <div className="min-w-0">
                             <h3 className="font-bold text-sm truncate text-gray-800 dark:text-gray-200 mb-0.5">{user.name}</h3>
@@ -327,7 +329,7 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div className="p-12 text-center text-gray-400 flex flex-col items-center justify-center h-full">
                     <Users className="w-12 h-12 mb-3 opacity-20" />
-                    <p className="font-medium">لا يوجد مستخدمين حتى الآن</p>
+                    <p className="font-medium">{t('admin_dashboard_page.ui.kn2rvsh')}</p>
                   </div>
                 )}
               </div>
@@ -335,10 +337,10 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <QuickLink to="/admin/tenants" icon={Building2} label="إدارة المتاجر والفروع" color="primary" desc="تعديل، تفعيل، أو إيقاف" />
-            <QuickLink to="/admin/users" icon={Users} label="إدارة طاقم العمل" color="emerald" desc="تسكين الصلاحيات" />
-            <QuickLink to="/admin/statistics" icon={TrendingUp} label="تحليلات الأداء" color="purple" desc="تقارير الرسوم البيانية" />
-            <QuickLink to="/admin/audit-logs" icon={Activity} label="مراقبة النظام" color="blue" desc="تتبع حركات المستخدمين" />
+            <QuickLink to="/admin/tenants" icon={Building2} label={t('admin_dashboard_page.form.kaui8or')} color="primary" desc="تعديل، تفعيل، أو إيقاف" />
+            <QuickLink to="/admin/users" icon={Users} label={t('admin_dashboard_page.form.knbe3qf')} color="emerald" desc="تسكين الصلاحيات" />
+            <QuickLink to="/admin/statistics" icon={TrendingUp} label={t('admin_dashboard_page.form.kvqxlt1')} color="purple" desc="تقارير الرسوم البيانية" />
+            <QuickLink to="/admin/audit-logs" icon={Activity} label={t('admin_dashboard_page.form.k7ri3uj')} color="blue" desc="تتبع حركات المستخدمين" />
           </div>
         </div>
       )}
@@ -353,7 +355,7 @@ export default function AdminDashboardPage() {
                 <div className="absolute -left-10 -top-10 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl" />
                 <div className="flex justify-between items-start mb-4 relative z-10">
                   <div>
-                    <h4 className="font-bold text-gray-500 mb-1">مؤشر الصحة العام</h4>
+                    <h4 className="font-bold text-gray-500 mb-1">{t('admin_dashboard_page.ui.kmpbvsm')}</h4>
                     <p className="text-3xl font-black" style={{ color: healthData.score >= 70 ? '#10b981' : healthData.score >= 50 ? '#f59e0b' : '#ef4444' }}>
                       {healthData.score}%
                     </p>
@@ -381,8 +383,8 @@ export default function AdminDashboardPage() {
                       <Calendar className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-500">تحصيلات اليوم</h4>
-                      <p className="text-3xl font-black text-primary-600">{fmt(commandData.summary?.collectionsTodayTotal)} <span className="text-sm">ج.م</span></p>
+                      <h4 className="font-bold text-gray-500">{t('admin_dashboard_page.ui.k2as69z')}</h4>
+                      <p className="text-3xl font-black text-primary-600">{fmt(commandData.summary?.collectionsTodayTotal)} <span className="text-sm">{t('admin_dashboard_page.ui.kwlxf')}</span></p>
                     </div>
                   </div>
                   <p className="app-surface-muted text-xs text-gray-400 font-bold inline-block px-3 py-1 rounded-full w-max">
@@ -396,8 +398,8 @@ export default function AdminDashboardPage() {
                       <AlertTriangle className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-500">حجم المتأخرات الفعال</h4>
-                      <p className="text-3xl font-black text-red-600">{fmt(commandData.summary?.overdueTotal)} <span className="text-sm">ج.م</span></p>
+                      <h4 className="font-bold text-gray-500">{t('admin_dashboard_page.ui.kdw2k6d')}</h4>
+                      <p className="text-3xl font-black text-red-600">{fmt(commandData.summary?.overdueTotal)} <span className="text-sm">{t('admin_dashboard_page.ui.kwlxf')}</span></p>
                     </div>
                   </div>
                   <p className="text-xs text-red-400 font-bold bg-red-50 dark:bg-red-500/10 inline-block px-3 py-1 rounded-full w-max">
@@ -413,7 +415,7 @@ export default function AdminDashboardPage() {
             <Card className="p-5 border border-amber-200 bg-gradient-to-l from-white to-amber-50 dark:from-gray-900 dark:to-gray-800">
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb className="w-6 h-6 text-amber-500 animate-pulse" />
-                <h3 className="font-black text-lg text-amber-700 dark:text-amber-500">توصيات الذكاء العملي</h3>
+                <h3 className="font-black text-lg text-amber-700 dark:text-amber-500">{t('admin_dashboard_page.ui.kcqpojp')}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {commandData.suggestions.map((s, i) => (
@@ -436,7 +438,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                 <h4 className="font-black flex items-center gap-2">
                   <Package className="w-5 h-5 text-amber-500" />
-                  إنذارات المخزون الحرج
+                  {t('admin_dashboard_page.ui.k1difv3')}
                 </h4>
                 <Badge variant="warning">{commandData?.lowStockProducts?.length || 0} منتج</Badge>
               </div>
@@ -444,7 +446,7 @@ export default function AdminDashboardPage() {
                 {(commandData?.lowStockProducts?.length || 0) === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <CheckCircle className="w-10 h-10 mb-2 text-emerald-500 opacity-50" />
-                    <p>المخزون آمن بالكامل</p>
+                    <p>{t('admin_dashboard_page.ui.kp8qf2j')}</p>
                   </div>
                 ) : (
                   commandData.lowStockProducts.map((p, i) => (
@@ -452,7 +454,7 @@ export default function AdminDashboardPage() {
                       <div className="flex justify-between items-start mb-2">
                         <p className="font-bold text-sm text-gray-800">{p.name}</p>
                         <Badge variant={p.status === 'out_of_stock' ? 'danger' : 'warning'} className="text-[10px]">
-                          {p.status === 'out_of_stock' ? 'رصيد صفري!' : `باقي ${p.quantity} حبة`}
+                          {p.status === 'out_of_stock' ? t('admin_dashboard_page.ui.kh4f9h7') : `باقي ${p.quantity} حبة`}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
@@ -469,7 +471,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
                 <h4 className="font-black flex items-center gap-2">
                   <Target className="w-5 h-5 text-primary-500" />
-                  متابعة التحصيلات المتأخرة
+                  {t('admin_dashboard_page.ui.k362ksd')}
                 </h4>
                 <Badge variant="danger">{commandData?.collectionsOverdue?.length || 0} متأخرة</Badge>
               </div>
@@ -477,14 +479,14 @@ export default function AdminDashboardPage() {
                 {(commandData?.collectionsOverdue?.length || 0) === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <CheckCircle className="w-10 h-10 mb-2 text-emerald-500 opacity-50" />
-                    <p>الدورة النقدية نقية</p>
+                    <p>{t('admin_dashboard_page.ui.kl2qurc')}</p>
                   </div>
                 ) : (
                   commandData.collectionsOverdue.map((c, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
                       <div className="w-12 text-center bg-red-100 text-red-700 font-black rounded-lg py-1 flex-shrink-0">
                         <span className="text-xl leading-none">{c.daysOverdue}</span>
-                        <span className="text-[9px] block">يوم تأخير</span>
+                        <span className="text-[9px] block">{t('admin_dashboard_page.ui.kcd3qsj')}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-gray-800 dark:text-gray-200 truncate">{c.customer?.name}</p>
@@ -492,7 +494,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="text-left">
                         <p className="font-black text-red-600 dark:text-red-400 text-base">{fmt(c.amount)}</p>
-                        <p className="text-[9px] font-bold text-red-500">جنيهاً</p>
+                        <p className="text-[9px] font-bold text-red-500">{t('admin_dashboard_page.ui.k7whyed')}</p>
                       </div>
                     </div>
                   ))

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,10 +21,10 @@ import { notify } from '../components/AnimatedNotification';
 import { Badge, Button, Card, EmptyState, Input, LoadingSpinner } from '../components/UI';
 import { getStorefrontDomainUrl } from '../utils/storefrontHost';
 
-function formatDateTime(value) {
-  if (!value) return 'لم يتم بعد';
+function formatDateTime(value, t) {
+  if (!value) return t('onboarding_page.ui.kkds258');
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'لم يتم بعد';
+  if (Number.isNaN(date.getTime())) return t('onboarding_page.ui.kkds258');
   return date.toLocaleString('ar-EG');
 }
 
@@ -41,7 +42,7 @@ function normalizeSubdomain(value = '') {
     .replace(/^-|-$/g, '');
 }
 
-function WizardStepItem({ step, isActive, onClick, index }) {
+function WizardStepItem({ step, isActive, onClick, index, t }) {
   const Icon = step.icon;
   const stateClass = step.complete
     ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200'
@@ -58,7 +59,7 @@ function WizardStepItem({ step, isActive, onClick, index }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="gray">الخطوة {index}</Badge>
-            {step.complete ? <Badge variant="success">مكتملة</Badge> : isActive ? <Badge>الحالية</Badge> : null}
+            {step.complete ? <Badge variant="success">{t('onboarding_page.ui.k3vera6')}</Badge> : isActive ? <Badge>{t('onboarding_page.ui.kzdj5ik')}</Badge> : null}
           </div>
           <p className="mt-3 text-sm font-black">{step.title}</p>
           <p className="mt-1 text-xs leading-6 opacity-80">{step.shortText}</p>
@@ -68,11 +69,11 @@ function WizardStepItem({ step, isActive, onClick, index }) {
   );
 }
 
-function EvidenceList({ items }) {
+function EvidenceList({ items, t }) {
   if (!items?.length) {
     return (
       <div className="rounded-2xl border border-dashed border-[color:var(--surface-border)] px-4 py-4 text-sm app-text-muted">
-        لم يتم تسجيل مؤشرات كافية لهذه الخطوة بعد.
+        {t('onboarding_page.ui.kcs8bh1')}
       </div>
     );
   }
@@ -110,6 +111,7 @@ function StepFrame({ icon: Icon, stepNumber, title, description, children }) {
 }
 
 export default function OnboardingPage() {
+  const { t } = useTranslation('admin');
   const { user, tenant, getMe } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -219,12 +221,12 @@ export default function OnboardingPage() {
     const storefrontComplete = Boolean(snapshot?.storefrontOk && settingsTenant.slug);
 
     const steps = [
-      { id: 'store-profile', icon: Building2, title: 'بيانات المتجر', shortText: 'الاسم، التواصل، والعنوان.', complete: profileComplete, evidence: buildEvidenceList([settingsTenant.name ? `الاسم: ${settingsTenant.name}` : null, store.phone ? `الهاتف: ${store.phone}` : null, store.email ? `البريد: ${store.email}` : null, store.address ? 'العنوان محفوظ' : null]) },
-      { id: 'branding-domain', icon: Palette, title: 'الهوية والرابط', shortText: 'الألوان، الرابط، والدومين.', complete: brandingComplete, evidence: buildEvidenceList([settingsTenant.slug ? `الرابط: ${settingsTenant.slug}` : null, branding.primaryColor ? `اللون الأساسي: ${branding.primaryColor}` : null, branding.secondaryColor ? `اللون الثانوي: ${branding.secondaryColor}` : null, settingsTenant.customDomain ? `الدومين المخصص: ${settingsTenant.customDomain}` : null]) },
-      { id: 'backup', icon: ShieldCheck, title: 'الحماية والنسخ', shortText: 'نسخة أولى أو نسخ تلقائي.', complete: backupComplete, evidence: buildEvidenceList([autoBackup.enabled ? `النسخ التلقائي: ${autoBackup.status || 'مفعل'}` : 'النسخ التلقائي غير مفعل', backupStats.lastBackup ? `آخر نسخة: ${formatDateTime(backupStats.lastBackup)}` : 'لا توجد نسخة مسجلة بعد']) },
-      { id: 'catalog', icon: Package, title: 'المنتجات', shortText: 'إضافة أو استيراد الكتالوج.', complete: catalogComplete, evidence: buildEvidenceList([`عدد المنتجات: ${catalogCount.toLocaleString('ar-EG')}`, products[0]?.name ? `أول منتج: ${products[0].name}` : null]) },
-      { id: 'operations', icon: Users, title: 'الفريق والفروع', shortText: 'المستخدمون، الأدوار، والفروع.', complete: operationsComplete, evidence: buildEvidenceList([`المستخدمون: ${usersCount.toLocaleString('ar-EG')}`, `الأدوار: ${rolesCount.toLocaleString('ar-EG')}`, `الفروع: ${branchesCount.toLocaleString('ar-EG')}`]) },
-      { id: 'launch', icon: Globe2, title: 'الإطلاق والتجربة', shortText: 'فحص المتجر العام والروابط.', complete: storefrontComplete, evidence: buildEvidenceList([snapshot?.storefrontOk ? 'إعدادات المتجر العام تستجيب بنجاح' : 'فحص المتجر العام لم يكتمل بعد', storefrontUrl || null]) },
+      { id: 'store-profile', icon: Building2, title: t('onboarding_page.ui.kiy1ear'), shortText: t('onboarding_page.ui.kun9pza'), complete: profileComplete, evidence: buildEvidenceList([settingsTenant.name ? `الاسم: ${settingsTenant.name}` : null, store.phone ? `الهاتف: ${store.phone}` : null, store.email ? `البريد: ${store.email}` : null, store.address ? t('onboarding_page.ui.ky8ujs6') : null]) },
+      { id: 'branding-domain', icon: Palette, title: t('onboarding_page.ui.kpzspl3'), shortText: t('onboarding_page.ui.k9qu26w'), complete: brandingComplete, evidence: buildEvidenceList([settingsTenant.slug ? `الرابط: ${settingsTenant.slug}` : null, branding.primaryColor ? `اللون الأساسي: ${branding.primaryColor}` : null, branding.secondaryColor ? `اللون الثانوي: ${branding.secondaryColor}` : null, settingsTenant.customDomain ? `الدومين المخصص: ${settingsTenant.customDomain}` : null]) },
+      { id: 'backup', icon: ShieldCheck, title: t('onboarding_page.ui.k2iwl3f'), shortText: t('onboarding_page.ui.k39cz9t'), complete: backupComplete, evidence: buildEvidenceList([autoBackup.enabled ? `النسخ التلقائي: ${autoBackup.status || t('onboarding_page.toasts.ktewg7')}` : t('onboarding_page.ui.kd156t2'), backupStats.lastBackup ? `آخر نسخة: ${formatDateTime(backupStats.lastBackup, t)}` : 'لا توجد نسخة مسجلة بعد']) },
+      { id: 'catalog', icon: Package, title: t('onboarding_page.ui.ks0nri5'), shortText: t('onboarding_page.ui.krocnul'), complete: catalogComplete, evidence: buildEvidenceList([`عدد المنتجات: ${catalogCount.toLocaleString('ar-EG')}`, products[0]?.name ? `أول منتج: ${products[0].name}` : null]) },
+      { id: 'operations', icon: Users, title: t('onboarding_page.ui.kkg1b3f'), shortText: t('onboarding_page.ui.kq5in8u'), complete: operationsComplete, evidence: buildEvidenceList([`المستخدمون: ${usersCount.toLocaleString('ar-EG')}`, `الأدوار: ${rolesCount.toLocaleString('ar-EG')}`, `الفروع: ${branchesCount.toLocaleString('ar-EG')}`]) },
+      { id: 'launch', icon: Globe2, title: t('onboarding_page.ui.kub3chn'), shortText: t('onboarding_page.ui.k70ucmk'), complete: storefrontComplete, evidence: buildEvidenceList([snapshot?.storefrontOk ? t('onboarding_page.ui.k5jtufy') : t('onboarding_page.ui.kelqtpz'), storefrontUrl || null]) },
     ];
 
     return {
@@ -237,7 +239,7 @@ export default function OnboardingPage() {
       completedSteps: steps.filter((step) => step.complete).length,
       progress: Math.round((steps.filter((step) => step.complete).length / steps.length) * 100),
       firstIncomplete: steps.find((step) => !step.complete)?.id || steps[0].id,
-      planName: settingsTenant.subscription?.planName || settingsTenant.subscription?.plan || 'الخطة الحالية',
+      planName: settingsTenant.subscription?.planName || settingsTenant.subscription?.plan || t('onboarding_page.toasts.kgmd8up'),
     };
   }, [snapshot, storefrontUrl]);
 
@@ -253,12 +255,12 @@ export default function OnboardingPage() {
     setSubdomainDraft(normalized);
 
     if (!normalized || normalized.length < 3) {
-      setSubdomainAvailability({ available: null, message: 'أدخل 3 أحرف على الأقل.', checking: false });
+      setSubdomainAvailability({ available: null, message: t('onboarding_page.ui.kw5tvy5'), checking: false });
       return;
     }
 
     if (normalized === derived.settingsTenant.slug) {
-      setSubdomainAvailability({ available: true, message: 'هذا هو الرابط الحالي لمتجرك.', checking: false });
+      setSubdomainAvailability({ available: true, message: t('onboarding_page.ui.ksfssfr'), checking: false });
       return;
     }
 
@@ -269,20 +271,20 @@ export default function OnboardingPage() {
       setSubdomainAvailability({
         available,
         checking: false,
-        message: available ? 'الرابط متاح ويمكن استخدامه.' : 'هذا الرابط محجوز لمتجر آخر.',
+        message: available ? t('onboarding_page.ui.klv71jn') : t('onboarding_page.ui.kw27j55'),
       });
     } catch (error) {
       setSubdomainAvailability({
         available: false,
         checking: false,
-        message: error?.response?.data?.message || 'تعذر التحقق من توفر الرابط.',
+        message: error?.response?.data?.message || t('onboarding_page.toasts.kadm3o7'),
       });
     }
   };
 
   const handleSaveProfile = async () => {
     if (!profileForm.name.trim()) {
-      notify.error('اسم المتجر مطلوب.');
+      notify.error(t('onboarding_page.toasts.k2s9nny'));
       return;
     }
     setSavingProfile(true);
@@ -295,10 +297,10 @@ export default function OnboardingPage() {
           address: profileForm.address,
         },
       });
-      notify.success('تم حفظ بيانات المتجر.');
+      notify.success(t('onboarding_page.toasts.kk2al4c'));
       await handleRefresh();
     } catch (error) {
-      notify.error(error?.response?.data?.message || 'تعذر حفظ بيانات المتجر.');
+      notify.error(error?.response?.data?.message || t('onboarding_page.toasts.k6wepk9'));
     } finally {
       setSavingProfile(false);
     }
@@ -306,7 +308,7 @@ export default function OnboardingPage() {
 
   const handleSaveBranding = async () => {
     if (subdomainDraft.trim().length < 3) {
-      notify.error('الرابط المختصر يجب أن يحتوي على 3 أحرف على الأقل.');
+      notify.error(t('onboarding_page.toasts.k73n5ib'));
       return;
     }
 
@@ -324,10 +326,10 @@ export default function OnboardingPage() {
         customDomain: brandingForm.customDomain.trim() || '',
       });
 
-      notify.success('تم حفظ الهوية والرابط.');
+      notify.success(t('onboarding_page.toasts.kfjvjyy'));
       await handleRefresh();
     } catch (error) {
-      notify.error(error?.response?.data?.message || 'تعذر حفظ إعدادات الهوية والرابط.');
+      notify.error(error?.response?.data?.message || t('onboarding_page.toasts.kvrhjwf'));
     } finally {
       setSavingBranding(false);
     }
@@ -336,7 +338,7 @@ export default function OnboardingPage() {
   const handleSaveBackup = async (enabled = true) => {
     const keepLast = Math.min(90, Math.max(1, Number(keepLastDraft || 14)));
     if (enabled && !consentChecked) {
-      notify.error('فعّل الموافقة أولًا قبل تشغيل النسخ التلقائي.');
+      notify.error(t('onboarding_page.toasts.k7r7m39'));
       return;
     }
     setSavingBackup(true);
@@ -345,10 +347,10 @@ export default function OnboardingPage() {
         enabled,
         retentionPolicy: { keepLast },
       });
-      notify.success('تم حفظ إعدادات النسخ الاحتياطي.');
+      notify.success(t('onboarding_page.toasts.k3dxfaq'));
       await handleRefresh();
     } catch (error) {
-      notify.error(error?.response?.data?.message || 'تعذر حفظ إعدادات النسخ الاحتياطي.');
+      notify.error(error?.response?.data?.message || t('onboarding_page.toasts.kw8oy4n'));
     } finally {
       setSavingBackup(false);
     }
@@ -370,9 +372,9 @@ export default function OnboardingPage() {
     return (
       <EmptyState
         icon={BadgeCheck}
-        title="هذه الصفحة مخصصة لمالك المتجر أو المدير"
+        title={t('onboarding_page.titles.kdljw3g')}
         description="يمكنك الرجوع إلى لوحة التحكم أو التواصل مع المسؤول الإداري لإكمال الإعداد الأولي."
-        action={{ label: 'العودة إلى اللوحة', onClick: () => window.history.back(), variant: 'outline' }}
+        action={{ label: t('onboarding_page.ui.kj9qdlf'), onClick: () => window.history.back(), variant: 'outline' }}
       />
     );
   }
@@ -385,9 +387,9 @@ export default function OnboardingPage() {
     return (
       <EmptyState
         icon={Sparkles}
-        title="تعذر تحميل بيانات الإعداد الأولي"
+        title={t('onboarding_page.titles.kd2t7me')}
         description="أعد المحاولة بعد لحظات. إذا استمرت المشكلة فراجع الاتصال أو صلاحيات الحساب."
-        action={{ label: 'إعادة المحاولة', onClick: handleRefresh }}
+        action={{ label: t('onboarding_page.ui.k267yxq'), onClick: handleRefresh }}
       />
     );
   }
@@ -403,28 +405,28 @@ export default function OnboardingPage() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold">
                 <Store className="h-3.5 w-3.5" />
-                معالج الإعداد الأولي
+                {t('onboarding_page.ui.ks3yljt')}
               </div>
-              <h1 className="mt-4 text-3xl font-black sm:text-4xl">ابدأ تشغيل متجرك بخطوات واضحة</h1>
+              <h1 className="mt-4 text-3xl font-black sm:text-4xl">{t('onboarding_page.ui.kxtetat')}</h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
                 أكمل أهم الإعدادات من هنا خطوة بخطوة، ثم انتقل إلى الصفحات التشغيلية عند الحاجة بدل التنقل العشوائي بين
-                الشاشات المختلفة.
+                {t('onboarding_page.ui.ks9xyj1')}
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[420px]">
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                <p className="text-xs font-bold text-white/65">نسبة الجاهزية</p>
+                <p className="text-xs font-bold text-white/65">{t('onboarding_page.ui.ktx7d90')}</p>
                 <p className="mt-2 text-3xl font-black">{derived.progress}%</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                <p className="text-xs font-bold text-white/65">الخطوات المكتملة</p>
+                <p className="text-xs font-bold text-white/65">{t('onboarding_page.ui.ke5z16e')}</p>
                 <p className="mt-2 text-3xl font-black">
                   {derived.completedSteps}/{derived.steps.length}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                <p className="text-xs font-bold text-white/65">الخطة الحالية</p>
+                <p className="text-xs font-bold text-white/65">{t('onboarding_page.ui.kgmd8up')}</p>
                 <p className="mt-2 text-lg font-black">{derived.planName}</p>
               </div>
             </div>
@@ -439,34 +441,34 @@ export default function OnboardingPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
         <div className="space-y-3">
           {derived.steps.map((step, index) => (
-            <WizardStepItem key={step.id} step={step} index={index + 1} isActive={step.id === currentStep?.id} onClick={() => setActiveStepId(step.id)} />
+            <WizardStepItem key={step.id} step={step} index={index + 1} isActive={step.id === currentStep?.id} onClick={() => setActiveStepId(step.id)} t={t} />
           ))}
         </div>
 
         <Card className="p-6">
           {currentStep?.id === 'store-profile' ? (
-            <StepFrame icon={Building2} stepNumber={1} title="بيانات المتجر الأساسية" description="أدخل الاسم والعنوان ووسيلة تواصل واحدة على الأقل حتى يظهر متجرك بشكل صحيح في الواجهة العامة والفواتير.">
+            <StepFrame icon={Building2} stepNumber={1} title={t('onboarding_page.titles.krd30iz')} description="أدخل الاسم والعنوان ووسيلة تواصل واحدة على الأقل حتى يظهر متجرك بشكل صحيح في الواجهة العامة والفواتير.">
               <div className="grid gap-4 md:grid-cols-2">
-                <Input label="اسم المتجر" value={profileForm.name} onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))} />
-                <Input label="البريد الإلكتروني" type="email" value={profileForm.email} onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))} />
-                <Input label="رقم الهاتف" value={profileForm.phone} onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))} />
-                <Input label="العنوان" value={profileForm.address} onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))} />
+                <Input label={t('onboarding_page.form.kcmv4b6')} value={profileForm.name} onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))} />
+                <Input label={t('onboarding_page.form.k8lvosz')} type="email" value={profileForm.email} onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))} />
+                <Input label={t('onboarding_page.form.k3pahhc')} value={profileForm.phone} onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))} />
+                <Input label={t('onboarding_page.form.kzgfilf')} value={profileForm.address} onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))} />
               </div>
 
-              <EvidenceList items={currentStep.evidence} />
+              <EvidenceList items={currentStep.evidence} t={t} />
 
               <div className="flex flex-wrap gap-2">
-                <Button loading={savingProfile} onClick={handleSaveProfile}>حفظ والمتابعة</Button>
-                <Button variant="outline" onClick={goNext} icon={<ArrowLeft className="h-4 w-4" />}>التالي</Button>
+                <Button loading={savingProfile} onClick={handleSaveProfile}>{t('onboarding_page.ui.kydgaan')}</Button>
+                <Button variant="outline" onClick={goNext} icon={<ArrowLeft className="h-4 w-4" />}>{t('onboarding_page.ui.kabeq68')}</Button>
               </div>
             </StepFrame>
           ) : null}
 
           {currentStep?.id === 'branding-domain' ? (
-            <StepFrame icon={Palette} stepNumber={2} title="الهوية والرابط" description="اضبط الرابط والألوان الأساسية من هنا. رفع الشعار والتخصيصات الأوسع يمكن إكمالها لاحقًا من صفحة الإعدادات.">
+            <StepFrame icon={Palette} stepNumber={2} title={t('onboarding_page.titles.kpzspl3')} description="اضبط الرابط والألوان الأساسية من هنا. رفع الشعار والتخصيصات الأوسع يمكن إكمالها لاحقًا من صفحة الإعدادات.">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <Input label="الرابط المختصر للمتجر" value={subdomainDraft} onChange={(e) => checkSubdomainAvailability(e.target.value)} placeholder="my-store" />
+                  <Input label={t('onboarding_page.form.kvs0n4o')} value={subdomainDraft} onChange={(e) => checkSubdomainAvailability(e.target.value)} placeholder="my-store" />
                   <p className={`mt-2 text-xs font-semibold ${
                     subdomainAvailability.available === true
                       ? 'text-emerald-600 dark:text-emerald-300'
@@ -474,35 +476,35 @@ export default function OnboardingPage() {
                         ? 'text-rose-600 dark:text-rose-300'
                         : 'app-text-muted'
                   }`}>
-                    {subdomainAvailability.checking ? 'جاري فحص توفر الرابط...' : subdomainAvailability.message || 'اكتب رابطًا قصيرًا بالأحرف الإنجليزية أو الأرقام.'}
+                    {subdomainAvailability.checking ? t('onboarding_page.ui.kdbp3z1') : subdomainAvailability.message || t('onboarding_page.toasts.kbd2kn7')}
                   </p>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold app-text-soft">اللون الأساسي</label>
+                  <label className="mb-1.5 block text-sm font-semibold app-text-soft">{t('onboarding_page.ui.ku0avsa')}</label>
                   <input type="color" value={brandingForm.primaryColor} onChange={(e) => setBrandingForm((prev) => ({ ...prev, primaryColor: e.target.value }))} className="h-12 w-full rounded-xl border border-[color:var(--surface-border)] app-surface" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold app-text-soft">اللون الثانوي</label>
+                  <label className="mb-1.5 block text-sm font-semibold app-text-soft">{t('onboarding_page.ui.ktw3je4')}</label>
                   <input type="color" value={brandingForm.secondaryColor} onChange={(e) => setBrandingForm((prev) => ({ ...prev, secondaryColor: e.target.value }))} className="h-12 w-full rounded-xl border border-[color:var(--surface-border)] app-surface" />
                 </div>
                 <div className="md:col-span-2">
-                  <Input label="دومين مخصص اختياري" value={brandingForm.customDomain} onChange={(e) => setBrandingForm((prev) => ({ ...prev, customDomain: e.target.value }))} placeholder="store.example.com" />
+                  <Input label={t('onboarding_page.form.kutp4hy')} value={brandingForm.customDomain} onChange={(e) => setBrandingForm((prev) => ({ ...prev, customDomain: e.target.value }))} placeholder="store.example.com" />
                 </div>
               </div>
 
               <div className="rounded-2xl border border-[color:var(--surface-border)] px-4 py-4 text-sm app-text-muted">
-                <p className="font-black app-text-strong">الرابط الحالي</p>
+                <p className="font-black app-text-strong">{t('onboarding_page.ui.khach5n')}</p>
                 <p className="mt-2 break-all">{getStorefrontDomainUrl(subdomainDraft || derived.settingsTenant.slug)}</p>
               </div>
 
-              <EvidenceList items={currentStep.evidence} />
+              <EvidenceList items={currentStep.evidence} t={t} />
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>السابق</Button>
-                <Button loading={savingBranding} onClick={handleSaveBranding}>حفظ والمتابعة</Button>
+                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>{t('onboarding_page.ui.kab8zyt')}</Button>
+                <Button loading={savingBranding} onClick={handleSaveBranding}>{t('onboarding_page.ui.kydgaan')}</Button>
                 {storefrontUrl ? (
                   <a href={storefrontUrl} target="_blank" rel="noreferrer">
-                    <Button variant="ghost" icon={<ArrowUpRight className="h-4 w-4" />}>فتح المتجر</Button>
+                    <Button variant="ghost" icon={<ArrowUpRight className="h-4 w-4" />}>{t('onboarding_page.ui.kmn11el')}</Button>
                   </a>
                 ) : null}
               </div>
@@ -510,112 +512,112 @@ export default function OnboardingPage() {
           ) : null}
 
           {currentStep?.id === 'backup' ? (
-            <StepFrame icon={ShieldCheck} stepNumber={3} title="الحماية والنسخ الاحتياطي" description="يمكنك تشغيل النسخ التلقائي مباشرة من هنا. وإذا احتجت تصديرًا أو استعادة يدوية فصفحة النسخ الكاملة ما زالت متاحة.">
+            <StepFrame icon={ShieldCheck} stepNumber={3} title={t('onboarding_page.titles.kz75hr6')} description="يمكنك تشغيل النسخ التلقائي مباشرة من هنا. وإذا احتجت تصديرًا أو استعادة يدوية فصفحة النسخ الكاملة ما زالت متاحة.">
               <label className="flex items-start gap-3 text-sm leading-7 app-text-muted">
                 <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                <span>أوافق على إنشاء نسخ JSON تلقائية لهذا المتجر داخل تخزين المنصة الداخلي.</span>
+                <span>{t('onboarding_page.ui.kf2pdbr')}</span>
               </label>
               <div className="max-w-xs">
-                <Input type="number" min="1" max="90" label="عدد النسخ المحتفَظ بها" value={keepLastDraft} onChange={(e) => setKeepLastDraft(e.target.value)} />
+                <Input type="number" min="1" max="90" label={t('onboarding_page.form.khpyrrl')} value={keepLastDraft} onChange={(e) => setKeepLastDraft(e.target.value)} />
               </div>
               <div className="rounded-2xl border border-[color:var(--surface-border)] px-4 py-4 text-sm app-text-muted">
-                <p>الحالة الحالية: <span className="font-black app-text-strong">{derived.autoBackup?.enabled ? 'مفعل' : 'غير مفعل'}</span></p>
-                <p className="mt-2">آخر نجاح: <span className="font-black app-text-strong">{formatDateTime(derived.autoBackup?.lastSuccessAt)}</span></p>
+                <p>{t('onboarding_page.ui.k63nliq')} <span className="font-black app-text-strong">{derived.autoBackup?.enabled ? t('onboarding_page.ui.ktewg7') : 'غير مفعل'}</span></p>
+                <p className="mt-2">{t('onboarding_page.ui.kngqasz')} <span className="font-black app-text-strong">{formatDateTime(derived.autoBackup?.lastSuccessAt, t)}</span></p>
               </div>
 
-              <EvidenceList items={currentStep.evidence} />
+              <EvidenceList items={currentStep.evidence} t={t} />
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>السابق</Button>
-                <Button loading={savingBackup} onClick={() => handleSaveBackup(true)}>تفعيل وحفظ</Button>
-                <Button variant="ghost" onClick={() => handleSaveBackup(false)} loading={savingBackup}>إيقاف</Button>
-                <Link to="/backup"><Button variant="outline">فتح شاشة النسخ الكاملة</Button></Link>
+                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>{t('onboarding_page.ui.kab8zyt')}</Button>
+                <Button loading={savingBackup} onClick={() => handleSaveBackup(true)}>{t('onboarding_page.ui.kad9qg0')}</Button>
+                <Button variant="ghost" onClick={() => handleSaveBackup(false)} loading={savingBackup}>{t('onboarding_page.ui.koueh1z')}</Button>
+                <Link to="/backup"><Button variant="outline">{t('onboarding_page.ui.kt407ov')}</Button></Link>
               </div>
             </StepFrame>
           ) : null}
 
           {currentStep?.id === 'catalog' ? (
-            <StepFrame icon={Package} stepNumber={4} title="بناء الكتالوج الأول" description="أضف أول منتج أو ابدأ بالاستيراد الجماعي. وجود منتج واحد على الأقل يجعل المتجر صالحًا للعرض والتجربة.">
+            <StepFrame icon={Package} stepNumber={4} title={t('onboarding_page.titles.kgtmgk1')} description="أضف أول منتج أو ابدأ بالاستيراد الجماعي. وجود منتج واحد على الأقل يجعل المتجر صالحًا للعرض والتجربة.">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="app-surface-muted rounded-2xl p-4">
-                  <p className="text-xs font-bold app-text-muted">عدد المنتجات الحالي</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.ksuz24z')}</p>
                   <p className="mt-2 text-3xl font-black app-text-strong">{Number(derived.backupStats?.products || derived.products?.length || 0).toLocaleString('ar-EG')}</p>
                 </div>
                 <div className="app-surface-muted rounded-2xl p-4">
-                  <p className="text-xs font-bold app-text-muted">أول منتج ظاهر</p>
-                  <p className="mt-2 text-sm font-black app-text-strong">{derived.products?.[0]?.name || 'لا يوجد بعد'}</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kn808np')}</p>
+                  <p className="mt-2 text-sm font-black app-text-strong">{derived.products?.[0]?.name || t('onboarding_page.toasts.kbww4jo')}</p>
                 </div>
                 <div className="app-surface-muted rounded-2xl p-4">
-                  <p className="text-xs font-bold app-text-muted">الحالة</p>
-                  <p className="mt-2 text-sm font-black text-emerald-500">{currentStep.complete ? 'جاهز للعرض' : 'يحتاج إضافة أول منتج'}</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kabct8k')}</p>
+                  <p className="mt-2 text-sm font-black text-emerald-500">{currentStep.complete ? t('onboarding_page.ui.kk971j8') : 'يحتاج إضافة أول منتج'}</p>
                 </div>
               </div>
 
-              <EvidenceList items={currentStep.evidence} />
+              <EvidenceList items={currentStep.evidence} t={t} />
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>السابق</Button>
-                <Link to="/products"><Button>إضافة المنتجات</Button></Link>
-                <Button variant="outline" onClick={goNext} icon={<ArrowLeft className="h-4 w-4" />}>التالي</Button>
+                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>{t('onboarding_page.ui.kab8zyt')}</Button>
+                <Link to="/products"><Button>{t('onboarding_page.ui.kkllt17')}</Button></Link>
+                <Button variant="outline" onClick={goNext} icon={<ArrowLeft className="h-4 w-4" />}>{t('onboarding_page.ui.kabeq68')}</Button>
               </div>
             </StepFrame>
           ) : null}
 
           {currentStep?.id === 'operations' ? (
-            <StepFrame icon={Users} stepNumber={5} title="الفريق والفروع" description="جهز التشغيل الداخلي بإضافة المستخدمين والفروع ومراجعة الأدوار. هذه الخطوة مهمة قبل بدء العمل الفعلي اليومي.">
+            <StepFrame icon={Users} stepNumber={5} title={t('onboarding_page.titles.kkg1b3f')} description="جهز التشغيل الداخلي بإضافة المستخدمين والفروع ومراجعة الأدوار. هذه الخطوة مهمة قبل بدء العمل الفعلي اليومي.">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="app-surface-muted rounded-2xl p-4">
-                  <p className="text-xs font-bold app-text-muted">المستخدمون</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kdirwj')}</p>
                   <p className="mt-2 text-3xl font-black app-text-strong">{Number(derived.backupStats?.users || 0).toLocaleString('ar-EG')}</p>
                 </div>
                 <div className="app-surface-muted rounded-2xl p-4">
-                  <p className="text-xs font-bold app-text-muted">الأدوار</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kz86dm1')}</p>
                   <p className="mt-2 text-3xl font-black app-text-strong">{Number(derived.backupStats?.roles || 0).toLocaleString('ar-EG')}</p>
                 </div>
                 <div className="app-surface-muted rounded-2xl p-4">
-                  <p className="text-xs font-bold app-text-muted">الفروع</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kaaztz6')}</p>
                   <p className="mt-2 text-3xl font-black app-text-strong">{Number(derived.backupStats?.branches || 0).toLocaleString('ar-EG')}</p>
                 </div>
               </div>
 
-              <EvidenceList items={currentStep.evidence} />
+              <EvidenceList items={currentStep.evidence} t={t} />
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>السابق</Button>
-                <Link to="/admin/users"><Button>إدارة المستخدمين</Button></Link>
-                <Link to="/branches"><Button variant="outline">إدارة الفروع</Button></Link>
-                <Button variant="ghost" onClick={goNext} icon={<ArrowLeft className="h-4 w-4" />}>متابعة الإطلاق</Button>
+                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>{t('onboarding_page.ui.kab8zyt')}</Button>
+                <Link to="/admin/users"><Button>{t('onboarding_page.ui.kaod4c')}</Button></Link>
+                <Link to="/branches"><Button variant="outline">{t('onboarding_page.ui.kjff1ih')}</Button></Link>
+                <Button variant="ghost" onClick={goNext} icon={<ArrowLeft className="h-4 w-4" />}>{t('onboarding_page.ui.kczlngm')}</Button>
               </div>
             </StepFrame>
           ) : null}
 
           {currentStep?.id === 'launch' ? (
-            <StepFrame icon={Globe2} stepNumber={6} title="مراجعة الإطلاق" description="هذه هي المراجعة النهائية قبل مشاركة الرابط مع العملاء. افحص الرابط العام، ثم حدّث الحالة للتأكد من أن كل شيء يعمل.">
+            <StepFrame icon={Globe2} stepNumber={6} title={t('onboarding_page.titles.k27lms1')} description="هذه هي المراجعة النهائية قبل مشاركة الرابط مع العملاء. افحص الرابط العام، ثم حدّث الحالة للتأكد من أن كل شيء يعمل.">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border border-[color:var(--surface-border)] px-4 py-4">
-                  <p className="text-xs font-bold app-text-muted">جاهزية المتجر العام</p>
-                  <p className="mt-2 text-lg font-black app-text-strong">{snapshot?.storefrontOk ? 'مستجيب بنجاح' : 'ما زال يحتاج مراجعة'}</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kemw36s')}</p>
+                  <p className="mt-2 text-lg font-black app-text-strong">{snapshot?.storefrontOk ? t('onboarding_page.ui.kmx9ypq') : 'ما زال يحتاج مراجعة'}</p>
                 </div>
                 <div className="rounded-2xl border border-[color:var(--surface-border)] px-4 py-4">
-                  <p className="text-xs font-bold app-text-muted">الرابط النهائي</p>
-                  <p className="mt-2 break-all text-sm font-black app-text-strong">{storefrontUrl || 'غير متاح بعد'}</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kvxuynl')}</p>
+                  <p className="mt-2 break-all text-sm font-black app-text-strong">{storefrontUrl || t('onboarding_page.toasts.kyumxnc')}</p>
                 </div>
                 <div className="rounded-2xl border border-[color:var(--surface-border)] px-4 py-4">
-                  <p className="text-xs font-bold app-text-muted">النتيجة</p>
-                  <p className="mt-2 text-lg font-black text-emerald-500">{currentStep.complete ? 'المتجر جاهز للمشاركة' : 'أكمل ما تبقى ثم أعد الفحص'}</p>
+                  <p className="text-xs font-bold app-text-muted">{t('onboarding_page.ui.kz9s0xm')}</p>
+                  <p className="mt-2 text-lg font-black text-emerald-500">{currentStep.complete ? t('onboarding_page.ui.kxrrbls') : 'أكمل ما تبقى ثم أعد الفحص'}</p>
                 </div>
               </div>
 
-              <EvidenceList items={currentStep.evidence} />
+              <EvidenceList items={currentStep.evidence} t={t} />
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>السابق</Button>
+                <Button variant="outline" onClick={goPrev} icon={<ArrowRight className="h-4 w-4" />}>{t('onboarding_page.ui.kab8zyt')}</Button>
                 {storefrontUrl ? (
                   <a href={storefrontUrl} target="_blank" rel="noreferrer">
-                    <Button icon={<ArrowUpRight className="h-4 w-4" />}>فتح المتجر الآن</Button>
+                    <Button icon={<ArrowUpRight className="h-4 w-4" />}>{t('onboarding_page.ui.kfgz6gy')}</Button>
                   </a>
                 ) : null}
-                <Button variant="ghost" onClick={handleRefresh} loading={refreshing}>تحديث الحالة</Button>
+                <Button variant="ghost" onClick={handleRefresh} loading={refreshing}>{t('onboarding_page.ui.kd5ihhr')}</Button>
               </div>
             </StepFrame>
           ) : null}

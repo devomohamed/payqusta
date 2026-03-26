@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Upload, Download, FileSpreadsheet, Package, Users, Eye,
   CheckCircle, AlertTriangle, Loader2, X, ArrowLeft,
@@ -8,32 +9,34 @@ import { useThemeStore, api } from '../store';
 import { Button } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 
-const IMPORT_TYPES = [
+const getImportTypes = (t) => [
   {
     id: 'products',
-    label: 'المنتجات',
+    label: t('import_data_page.ui.ks0nri5'),
     icon: Package,
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50 dark:bg-blue-500/10',
     textColor: 'text-blue-600 dark:text-blue-400',
-    description: 'استيراد المنتجات من ملف Excel أو CSV',
-    columns: ['اسم المنتج', 'SKU', 'السعر', 'سعر الشراء', 'الكمية', 'القسم', 'الباركود'],
+    description: t('import_data_page.ui.ks2te2h'),
+    columns: ['اسم المنتج', 'SKU', t('import_data_page.ui.kovdxm6'), t('import_data_page.ui.kq42fqv'), t('import_data_page.ui.kaay54y'), t('import_data_page.ui.kove8lz'), 'الباركود'],
   },
   {
     id: 'customers',
-    label: 'العملاء',
+    label: t('import_data_page.ui.kzgg8kr'),
     icon: Users,
     color: 'from-emerald-500 to-emerald-600',
     bgColor: 'bg-emerald-50 dark:bg-emerald-500/10',
     textColor: 'text-emerald-600 dark:text-emerald-400',
-    description: 'استيراد العملاء من ملف Excel أو CSV',
-    columns: ['اسم العميل', 'الهاتف', 'البريد', 'العنوان', 'الملاحظات'],
+    description: t('import_data_page.ui.kelwazx'),
+    columns: ['اسم العميل', t('import_data_page.ui.kaaw86k'), t('import_data_page.ui.kabfslx'), t('import_data_page.ui.kzgfilf'), 'الملاحظات'],
   },
 ];
 
 export default function ImportDataPage() {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const fileInputRef = useRef(null);
+  const importTypes = useMemo(() => getImportTypes(t), [t]);
 
   const [selectedType, setSelectedType] = useState(null);
   const [file, setFile] = useState(null);
@@ -50,12 +53,12 @@ export default function ImportDataPage() {
 
     const ext = selected.name.split('.').pop().toLowerCase();
     if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-      notify.warning('يرجى اختيار ملف Excel (.xlsx, .xls) أو CSV (.csv)');
+      notify.warning(t('import_data_page.toasts.kdo2wqx'));
       return;
     }
 
     if (selected.size > 10 * 1024 * 1024) {
-      notify.warning('حجم الملف لا يتجاوز 10MB');
+      notify.warning(t('import_data_page.toasts.kwigjaf'));
       return;
     }
 
@@ -65,7 +68,7 @@ export default function ImportDataPage() {
   };
 
   const handlePreview = async () => {
-    if (!file) return notify.warning('يرجى اختيار ملف أولاً');
+    if (!file) return notify.warning(t('import_data_page.toasts.katujxu'));
 
     setPreviewing(true);
     try {
@@ -76,7 +79,7 @@ export default function ImportDataPage() {
       });
       setPreview(data.data);
     } catch (err) {
-      notify.error(err.response?.data?.message || 'حدث خطأ في معاينة الملف');
+      notify.error(err.response?.data?.message || t('import_data_page.toasts.k1bj4nt'));
     } finally {
       setPreviewing(false);
     }
@@ -96,9 +99,9 @@ export default function ImportDataPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setResult(data.data);
-      notify.success(data.message || 'تم الاستيراد بنجاح');
+      notify.success(data.message || t('import_data_page.toasts.kskv2gx'));
     } catch (err) {
-      notify.error(err.response?.data?.message || 'حدث خطأ في الاستيراد');
+      notify.error(err.response?.data?.message || t('import_data_page.toasts.kufxwtm'));
     } finally {
       setImporting(false);
     }
@@ -118,9 +121,9 @@ export default function ImportDataPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      notify.success('تم تحميل القالب بنجاح');
+      notify.success(t('import_data_page.toasts.kofqyl'));
     } catch (err) {
-      notify.error('حدث خطأ في تحميل القالب');
+      notify.error(t('import_data_page.toasts.k5mkh9g'));
     } finally {
       setDownloadingTemplate(false);
     }
@@ -150,7 +153,7 @@ export default function ImportDataPage() {
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-500/80">Import Studio</p>
-                <h1 className="text-2xl font-bold">استيراد البيانات</h1>
+                <h1 className="text-2xl font-bold">{t('import_data_page.ui.kku9gz8')}</h1>
                 <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
                   {selectedType ? `استيراد ${selectedType.label} من ملف Excel أو CSV` : 'اختر نوع البيانات المراد استيرادها'}
                 </p>
@@ -159,10 +162,10 @@ export default function ImportDataPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <ResultCard label="الأنواع" value={IMPORT_TYPES.length} color="blue" dark={dark} />
-            <ResultCard label="الملف" value={file ? 1 : 0} color="emerald" dark={dark} />
-            <ResultCard label="المعاينة" value={preview?.totalRows || 0} color="amber" dark={dark} />
-            <ResultCard label="النتيجة" value={result?.imported || result?.created || 0} color="gray" dark={dark} />
+            <ResultCard label={t('import_data_page.form.kz8l2be')} value={importTypes.length} color="blue" dark={dark} />
+            <ResultCard label={t('import_data_page.form.koveb8l')} value={file ? 1 : 0} color="emerald" dark={dark} />
+            <ResultCard label={t('import_data_page.form.ks7ud6x')} value={preview?.totalRows || 0} color="amber" dark={dark} />
+            <ResultCard label={t('import_data_page.form.kz9s0xm')} value={result?.imported || result?.created || 0} color="gray" dark={dark} />
           </div>
         </div>
       </section>
@@ -170,7 +173,7 @@ export default function ImportDataPage() {
       {/* Step 1: Choose type */}
       {!selectedType && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {IMPORT_TYPES.map((type) => (
+          {importTypes.map((type) => (
             <button
               key={type.id}
               onClick={() => setSelectedType(type)}
@@ -207,7 +210,7 @@ export default function ImportDataPage() {
                 </div>
                 <div>
                   <h3 className="font-bold">تحميل قالب {selectedType.label}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">حمّل القالب واملأه ببياناتك ثم ارفعه</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('import_data_page.ui.ksag6tt')}</p>
                 </div>
               </div>
               <Button
@@ -216,7 +219,7 @@ export default function ImportDataPage() {
                 loading={downloadingTemplate}
                 onClick={() => handleDownloadTemplate(selectedType.id)}
               >
-                تحميل القالب
+                {t('import_data_page.ui.kmyhzka')}
               </Button>
             </div>
           </div>
@@ -252,7 +255,7 @@ export default function ImportDataPage() {
             ) : (
               <>
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="font-semibold text-gray-600 dark:text-gray-300">اسحب الملف هنا أو انقر للاختيار</p>
+                <p className="font-semibold text-gray-600 dark:text-gray-300">{t('import_data_page.ui.kd3pxec')}</p>
                 <p className="text-sm text-gray-400 mt-1">Excel (.xlsx, .xls) أو CSV (.csv) - الحد الأقصى 10MB</p>
               </>
             )}
@@ -263,7 +266,7 @@ export default function ImportDataPage() {
             <div className={`rounded-2xl border p-5 ${dark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'}`}>
               <h3 className="font-bold mb-3 flex items-center gap-2">
                 <Info className="w-4 h-4 text-blue-500" />
-                خيارات الاستيراد
+                {t('import_data_page.ui.kz6tm87')}
               </h3>
               <div className="flex gap-4 flex-wrap">
                 <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition ${
@@ -280,7 +283,7 @@ export default function ImportDataPage() {
                     className="hidden"
                   />
                   <AlertTriangle className="w-4 h-4" />
-                  <span className="text-sm font-medium">تخطي المكرر</span>
+                  <span className="text-sm font-medium">{t('import_data_page.ui.kpwgbb0')}</span>
                 </label>
                 <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition ${
                   duplicateMode === 'update'
@@ -296,7 +299,7 @@ export default function ImportDataPage() {
                     className="hidden"
                   />
                   <RefreshCw className="w-4 h-4" />
-                  <span className="text-sm font-medium">تحديث المكرر</span>
+                  <span className="text-sm font-medium">{t('import_data_page.ui.kd5ydhq')}</span>
                 </label>
               </div>
             </div>
@@ -357,14 +360,14 @@ export default function ImportDataPage() {
                 loading={previewing}
                 onClick={handlePreview}
               >
-                معاينة
+                {t('import_data_page.ui.k3pv056')}
               </Button>
               <Button
                 icon={<Upload className="w-4 h-4" />}
                 loading={importing}
                 onClick={handleImport}
               >
-                بدء الاستيراد
+                {t('import_data_page.ui.kvz3u16')}
               </Button>
             </div>
           )}
@@ -378,15 +381,15 @@ export default function ImportDataPage() {
             <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
               <CheckCircle className="w-8 h-8 text-emerald-500" />
             </div>
-            <h2 className="text-xl font-bold mb-1">تم الاستيراد بنجاح!</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">ملخص عملية الاستيراد</p>
+            <h2 className="text-xl font-bold mb-1">{t('import_data_page.ui.kxlegu6')}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('import_data_page.ui.klqz5tf')}</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <ResultCard label="إجمالي الصفوف" value={result.total || 0} color="blue" dark={dark} />
-            <ResultCard label="تم استيراده" value={result.imported || result.created || 0} color="emerald" dark={dark} />
-            <ResultCard label="تم تحديثه" value={result.updated || 0} color="amber" dark={dark} />
-            <ResultCard label="تم تخطيه" value={result.skipped || 0} color="gray" dark={dark} />
+            <ResultCard label={t('import_data_page.form.kfgfv03')} value={result.total || 0} color="blue" dark={dark} />
+            <ResultCard label={t('import_data_page.form.ke9evb5')} value={result.imported || result.created || 0} color="emerald" dark={dark} />
+            <ResultCard label={t('import_data_page.form.km6rs4h')} value={result.updated || 0} color="amber" dark={dark} />
+            <ResultCard label={t('import_data_page.form.kwski6t')} value={result.skipped || 0} color="gray" dark={dark} />
           </div>
 
           {result.errors && result.errors.length > 0 && (
@@ -407,7 +410,7 @@ export default function ImportDataPage() {
 
           <div className="flex gap-3 justify-center">
             <Button variant="ghost" onClick={resetState} icon={<ArrowLeft className="w-4 h-4" />}>
-              استيراد آخر
+              {t('import_data_page.ui.k1uh5n6')}
             </Button>
           </div>
         </div>

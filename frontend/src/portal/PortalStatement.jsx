@@ -69,7 +69,7 @@ export default function PortalStatement() {
   };
 
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
-  const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+  const currency = i18n.language === 'ar' ? t('portal_statement.ui.kwlxf') : 'EGP';
 
   const balance = data?.summary?.currentBalance || 0;
   const balanceLabel = balance > 0 ? t('statement.balance_owed') : balance < 0 ? t('statement.balance_credit') : t('statement.balance_clear');

@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { X, RotateCcw, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const SignatureCanvas = ({ onSave, onClose }) => {
+  const { t } = useTranslation('admin');
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
@@ -66,7 +68,7 @@ const SignatureCanvas = ({ onSave, onClose }) => {
         className="app-surface w-full rounded-t-3xl p-6 md:max-w-lg md:rounded-2xl"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">التوقيع الرقمي</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('signature_canvas.ui.kixjmgz')}</h3>
           <button
             onClick={onClose}
             className="app-surface-muted rounded-xl p-2 text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400"
@@ -76,7 +78,7 @@ const SignatureCanvas = ({ onSave, onClose }) => {
         </div>
 
         <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          وقّع بإصبعك أو بالقلم داخل المساحة التالية.
+          {t('signature_canvas.ui.k9ob2pc')}
         </p>
 
         <div className="app-surface-muted mb-4 rounded-2xl border-2 border-dashed border-gray-300/80 p-2 dark:border-white/10">
@@ -102,7 +104,7 @@ const SignatureCanvas = ({ onSave, onClose }) => {
             className="app-surface-muted flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-gray-700 transition-colors hover:border-primary-500/30 dark:text-gray-300"
           >
             <RotateCcw size={18} />
-            مسح
+            {t('signature_canvas.ui.ky5b3')}
           </button>
 
           <button
@@ -112,7 +114,7 @@ const SignatureCanvas = ({ onSave, onClose }) => {
           >
             <span className="flex items-center justify-center gap-2">
               <Check size={18} />
-              حفظ التوقيع
+              {t('signature_canvas.ui.ke7g012')}
             </span>
           </button>
         </div>

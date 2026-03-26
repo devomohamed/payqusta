@@ -8,6 +8,7 @@ import syncService from './services/SyncService';
 import AnimatedBrandLogo from './components/AnimatedBrandLogo';
 import { isStorefrontSubdomainHost } from './utils/storefrontHost';
 import { APP_VERSION } from './config/version';
+import { useTranslation } from 'react-i18next';
 
 console.log(`[PayQusta] Version: ${APP_VERSION}`);
 

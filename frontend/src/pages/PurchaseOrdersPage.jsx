@@ -6,6 +6,7 @@ import { api } from '../store';
 import { Card, Button, Modal, Input, Select, Badge, LoadingSpinner, EmptyState } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import Pagination from '../components/Pagination';
+import { useTranslation } from 'react-i18next';
 
 const STATUS_COLORS = {
   draft: 'gray',
@@ -16,27 +17,27 @@ const STATUS_COLORS = {
   cancelled: 'danger',
 };
 
-const STATUS_LABELS = {
-  draft: 'مسودة',
-  pending: 'قيد الاعتماد',
-  approved: 'معتمد',
-  partial: 'مستلم جزئي',
-  received: 'مستلم بالكامل',
-  cancelled: 'ملغي',
-};
+const getStatusLabels = (t) => ({
+  draft: t('purchase_orders_page.ui.kpblbys'),
+  pending: t('purchase_orders_page.ui.k3tlcjv'),
+  approved: t('purchase_orders_page.ui.kpbok68'),
+  partial: t('purchase_orders_page.ui.kdignrh'),
+  received: t('purchase_orders_page.ui.ky4edvf'),
+  cancelled: t('purchase_orders_page.ui.kteypb'),
+});
 
-const PAYMENT_TYPE_OPTIONS = [
-  { value: 'cash', label: 'نقدي (يُسدد فور الاستلام)' },
-  { value: 'deferred', label: 'آجل (يُسجل كمستحق على المورد)' },
+const getPaymentTypeOptions = (t) => [
+  { value: 'cash', label: t('purchase_orders_page.ui.k4qcoe7') },
+  { value: 'deferred', label: t('purchase_orders_page.ui.k489fpv') },
 ];
 
-const PAYMENT_FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'يومي' },
-  { value: 'weekly', label: 'أسبوعي' },
-  { value: 'biweekly', label: 'كل أسبوعين' },
-  { value: 'monthly', label: 'شهري' },
-  { value: 'bimonthly', label: 'كل شهرين' },
-  { value: 'custom', label: 'تواريخ مخصصة' },
+const getPaymentFrequencyOptions = (t) => [
+  { value: 'daily', label: t('purchase_orders_page.ui.kti8v7') },
+  { value: 'weekly', label: t('purchase_orders_page.ui.kcgyblr') },
+  { value: 'biweekly', label: t('purchase_orders_page.ui.kd66j8m') },
+  { value: 'monthly', label: t('purchase_orders_page.ui.kt45xo') },
+  { value: 'bimonthly', label: t('purchase_orders_page.ui.kxzkchn') },
+  { value: 'custom', label: t('purchase_orders_page.ui.kph9elo') },
 ];
 
 function normalizeProducts(payload) {
@@ -70,6 +71,10 @@ function parseCustomInstallmentDates(rawValue) {
 }
 
 export default function PurchaseOrdersPage() {
+  const { t } = useTranslation('admin');
+  const statusLabels = useMemo(() => getStatusLabels(t), [t]);
+  const paymentTypeOptions = useMemo(() => getPaymentTypeOptions(t), [t]);
+  const paymentFrequencyOptions = useMemo(() => getPaymentFrequencyOptions(t), [t]);
   const [orders, setOrders] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -146,7 +151,7 @@ export default function PurchaseOrdersPage() {
       setOrders(res.data?.data || []);
       setPagination(res.data?.pagination || { totalPages: 1, totalItems: 0 });
     } catch (_) {
-      notify.error('فشل تحميل أوامر الشراء');
+      notify.error(t('purchase_orders_page.toasts.kfep1y1'));
     } finally {
       setLoading(false);
     }
@@ -181,7 +186,7 @@ export default function PurchaseOrdersPage() {
 
   const handleOpenCreate = () => {
     if (!branches.length) {
-      notify.warning('أضف فرعًا نشطًا أولاً قبل إنشاء أمر شراء');
+      notify.warning(t('purchase_orders_page.toasts.kikxtnm'));
       return;
     }
 
@@ -259,10 +264,10 @@ export default function PurchaseOrdersPage() {
   };
 
   const handleCreateOrder = async () => {
-    if (!form.supplier) return notify.warning('اختر المورد أولاً');
-    if (form.items.length === 0) return notify.warning('أضف منتجات لأمر الشراء');
+    if (!form.supplier) return notify.warning(t('purchase_orders_page.toasts.kkyn5yr'));
+    if (form.items.length === 0) return notify.warning(t('purchase_orders_page.toasts.kxflf5r'));
 
-    if (!form.branch) return notify.warning('اختر الفرع أولاً');
+    if (!form.branch) return notify.warning(t('purchase_orders_page.toasts.kdcjj8j'));
 
     const cleanedItems = form.items
       .filter((item) => item.product && Number(item.quantity) > 0)
@@ -274,7 +279,7 @@ export default function PurchaseOrdersPage() {
       }));
 
     if (cleanedItems.length === 0) {
-      return notify.warning('أدخل بنود شراء صحيحة');
+      return notify.warning(t('purchase_orders_page.toasts.kho5rfm'));
     }
 
     setSaving(true);
@@ -294,11 +299,11 @@ export default function PurchaseOrdersPage() {
         expectedDeliveryDate: form.expectedDeliveryDate || undefined,
       });
 
-      notify.success('تم إنشاء أمر الشراء بنجاح');
+      notify.success(t('purchase_orders_page.toasts.kxccwf'));
       setShowCreateModal(false);
       loadOrders();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل إنشاء أمر الشراء');
+      notify.error(error.response?.data?.message || t('purchase_orders_page.toasts.krp4jqf'));
     } finally {
       setSaving(false);
     }
@@ -307,10 +312,10 @@ export default function PurchaseOrdersPage() {
   const handleUpdateStatus = async (orderId, status) => {
     try {
       await api.put(`/purchase-orders/${orderId}`, { status });
-      notify.success('تم تحديث حالة أمر الشراء');
+      notify.success(t('purchase_orders_page.toasts.kxf1k0i'));
       loadOrders();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل تحديث الحالة');
+      notify.error(error.response?.data?.message || t('purchase_orders_page.toasts.kjwcs3i'));
     }
   };
 
@@ -330,7 +335,7 @@ export default function PurchaseOrdersPage() {
       setSelectedOrder({ ...order, items: hydratedItems });
       setShowReceiveModal(true);
     } catch (_) {
-      notify.error('فشل تحميل تفاصيل أمر الشراء');
+      notify.error(t('purchase_orders_page.toasts.kvlfj3h'));
     }
   };
 
@@ -356,7 +361,7 @@ export default function PurchaseOrdersPage() {
       }));
 
     if (receivedItems.length === 0) {
-      return notify.warning('أدخل الكميات المستلمة أولاً');
+      return notify.warning(t('purchase_orders_page.toasts.ko417ic'));
     }
 
     setSaving(true);
@@ -365,12 +370,12 @@ export default function PurchaseOrdersPage() {
         receivedItems,
         branchId: selectedOrder.branch?._id,
       });
-      notify.success('تم الاستلام وتسجيل قيمة المشتريات على حساب المورد');
+      notify.success(t('purchase_orders_page.toasts.kf4c4oc'));
       setShowReceiveModal(false);
       setSelectedOrder(null);
       loadOrders();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل الاستلام');
+      notify.error(error.response?.data?.message || t('purchase_orders_page.toasts.kiwg0xc'));
     } finally {
       setSaving(false);
     }
@@ -386,11 +391,11 @@ export default function PurchaseOrdersPage() {
     try {
       const res = await api.get(`/purchase-orders/${orderId}`);
       const order = res.data?.data;
-      if (!order) return notify.error('فشل تحميل بيانات الأمر');
+      if (!order) return notify.error(t('purchase_orders_page.toasts.kftvckp'));
 
       const fmt = (n) => Number(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 });
-      const statusLabel = STATUS_LABELS[order.status] || order.status;
-      const payLabel = order.paymentType === 'cash' ? 'نقدي' : 'آجل';
+      const statusLabel = statusLabels[order.status] || order.status;
+      const payLabel = order.paymentType === 'cash' ? t('purchase_orders_page.ui.ktfjxz') : t('purchase_orders_page.ui.kxf7e');
       const dateStr = new Date(order.createdAt).toLocaleDateString('ar-EG', {
         year: 'numeric', month: 'long', day: 'numeric',
       });
@@ -472,7 +477,7 @@ export default function PurchaseOrdersPage() {
     <div class="header">
       <div>
         <div class="brand-name">${order.tenant?.name || 'PayQusta Store'}</div>
-        <div class="brand-sub">نظام إدارة المشتريات والموردين</div>
+        <div class="brand-sub">{t('purchase_orders_page.ui.kuhcdzz')}</div>
       </div>
       <div class="po-badge">
         <div class="po-badge-label">Purchase Order</div>
@@ -484,7 +489,7 @@ export default function PurchaseOrdersPage() {
     <!-- Info Cards -->
     <div class="body">
       <div class="info-card">
-        <div class="info-card-title">بيانات المورد</div>
+        <div class="info-card-title">{t('purchase_orders_page.ui.kiy20nu')}</div>
         <div class="supplier-name">${order.supplier?.name || '—'}</div>
         <div class="supplier-meta">
           ${order.supplier?.phone ? `📞 ${order.supplier.phone}<br/>` : ''}
@@ -493,13 +498,13 @@ export default function PurchaseOrdersPage() {
         </div>
       </div>
       <div class="info-card">
-        <div class="info-card-title">تفاصيل الأمر</div>
-        <div class="info-row"><span class="info-label">رقم الأمر</span><span class="info-value" style="font-family:monospace">${order.orderNumber}</span></div>
-        <div class="info-row"><span class="info-label">التاريخ</span><span class="info-value">${dateStr}</span></div>
-        <div class="info-row"><span class="info-label">الفرع</span><span class="info-value">${order.branch?.name || 'الفرع الرئيسي'}</span></div>
-        <div class="info-row"><span class="info-label">طريقة السداد</span><span class="info-value">${payLabel}</span></div>
-        ${order.paymentType === 'deferred' ? `<div class="info-row"><span class="info-label">عدد الأقساط</span><span class="info-value">${order.installments || 1}</span></div>` : ''}
-        <div class="info-row"><span class="info-label">تاريخ التسليم</span><span class="info-value">${deliveryStr}</span></div>
+        <div class="info-card-title">{t('purchase_orders_page.ui.ka7rf8x')}</div>
+        <div class="info-row"><span class="info-label">{t('purchase_orders_page.ui.kig6gva')}</span><span class="info-value" style="font-family:monospace">${order.orderNumber}</span></div>
+        <div class="info-row"><span class="info-label">{t('purchase_orders_page.ui.kzbvdnf')}</span><span class="info-value">${dateStr}</span></div>
+        <div class="info-row"><span class="info-label">{t('purchase_orders_page.ui.kove7t8')}</span><span class="info-value">${order.branch?.name || t('purchase_orders_page.toasts.kphehwb')}</span></div>
+        <div class="info-row"><span class="info-label">{t('purchase_orders_page.ui.kfrxyju')}</span><span class="info-value">${payLabel}</span></div>
+        ${order.paymentType === 'deferred' ? `<div class="info-row"><span class="info-label">{t('purchase_orders_page.ui.krme2qo')}</span><span class="info-value">${order.installments || 1}</span></div>` : ''}
+        <div class="info-row"><span class="info-label">{t('purchase_orders_page.ui.kwoz7td')}</span><span class="info-value">${deliveryStr}</span></div>
       </div>
     </div>
 
@@ -508,13 +513,13 @@ export default function PurchaseOrdersPage() {
       <table>
         <thead>
           <tr>
-            <th style="text-align:right;width:30%">المنتج</th>
-            <th style="text-align:right;width:12%">الكود</th>
-            <th>الكمية</th>
-            <th>المستلَم</th>
-            <th>المتبقي</th>
-            <th>سعر الوحدة (ج.م)</th>
-            <th>الإجمالي (ج.م)</th>
+            <th style="text-align:right;width:30%">{t('purchase_orders_page.ui.kaawv6o')}</th>
+            <th style="text-align:right;width:12%">{t('purchase_orders_page.ui.kove9u5')}</th>
+            <th>{t('purchase_orders_page.ui.kaay54y')}</th>
+            <th>{t('purchase_orders_page.ui.ksb3c10')}</th>
+            <th>{t('purchase_orders_page.ui.kzaci6q')}</th>
+            <th>{t('purchase_orders_page.ui.kwo7eo1')}</th>
+            <th>{t('purchase_orders_page.ui.kdrawli')}</th>
           </tr>
         </thead>
         <tbody>${itemsRows}</tbody>
@@ -524,10 +529,10 @@ export default function PurchaseOrdersPage() {
     <!-- Totals -->
     <div class="totals">
       <div class="totals-card">
-        <div class="total-row"><span>إجمالي الطلب</span><span>${fmt(order.totalAmount)} ج.م</span></div>
-        <div class="total-row"><span>قيمة المستلَم</span><span style="color:#16a34a">${fmt(order.receivedValue)} ج.م</span></div>
-        <div class="total-row"><span>المبلغ المسدَّد</span><span style="color:#16a34a">${fmt(order.paidAmount)} ج.م</span></div>
-        <div class="total-row main"><span>المتبقي (مستحق)</span><span>${fmt(order.outstandingAmount)} ج.م</span></div>
+        <div class="total-row"><span>{t('purchase_orders_page.ui.k7devpp')}</span><span>${fmt(order.totalAmount)} ج.م</span></div>
+        <div class="total-row"><span>{t('purchase_orders_page.ui.kty45rk')}</span><span style="color:#16a34a">${fmt(order.receivedValue)} ج.م</span></div>
+        <div class="total-row"><span>{t('purchase_orders_page.ui.k9vdb66')}</span><span style="color:#16a34a">${fmt(order.paidAmount)} ج.م</span></div>
+        <div class="total-row main"><span>{t('purchase_orders_page.ui.k76ecia')}</span><span>${fmt(order.outstandingAmount)} ج.م</span></div>
       </div>
     </div>
 
@@ -552,11 +557,11 @@ export default function PurchaseOrdersPage() {
 </html>`;
 
       const win = window.open('', '_blank', 'width=860,height=900');
-      if (!win) return notify.warning('يرجى السماح للنوافذ المنبثقة في المتصفح');
+      if (!win) return notify.warning(t('purchase_orders_page.toasts.km2016j'));
       win.document.write(html);
       win.document.close();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل فتح ملف أمر الشراء');
+      notify.error(error.response?.data?.message || t('purchase_orders_page.toasts.kactfn6'));
     }
   };
 
@@ -567,25 +572,25 @@ export default function PurchaseOrdersPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
               <ShoppingCart className="h-3.5 w-3.5" />
-              دورة شراء الموردين
+              {t('purchase_orders_page.ui.k640q38')}
             </div>
-            <h1 className="mt-4 text-2xl font-black sm:text-3xl">نظام مشتريات الموردين</h1>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">{t('purchase_orders_page.ui.kii1dub')}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
-              أنشئ واعتمد واستلم أوامر الشراء من واجهة أوضح على الهاتف مع قراءة أسرع للحالة والتكلفة والاستلام.
+              {t('purchase_orders_page.ui.km99i4')}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[500px]">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">الأوامر الظاهرة</p>
+              <p className="text-xs font-bold text-white/65">{t('purchase_orders_page.ui.k7qjkjo')}</p>
               <p className="mt-2 text-2xl font-black">{pagination.totalItems.toLocaleString('ar-EG')}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">تحتاج متابعة</p>
+              <p className="text-xs font-bold text-white/65">{t('purchase_orders_page.ui.ki8t4ie')}</p>
               <p className="mt-2 text-2xl font-black">{pendingOrdersCount.toLocaleString('ar-EG')}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">القيمة الظاهرة</p>
+              <p className="text-xs font-bold text-white/65">{t('purchase_orders_page.ui.k1gxx0k')}</p>
               <p className="mt-2 text-lg font-black">{visibleOrderValue.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م</p>
             </div>
           </div>
@@ -593,43 +598,43 @@ export default function PurchaseOrdersPage() {
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Button onClick={handleOpenCreate} icon={<Plus className="w-4 h-4" />} className="justify-center bg-white text-primary-700 hover:bg-white/90">
-            أمر شراء جديد
+            {t('purchase_orders_page.ui.k8wz8tc')}
           </Button>
           <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white/90">
             <Truck className="h-4 w-4" />
-            الاستلام يحدّث المخزون ويربط القيمة بالمورد تلقائيًا
+            {t('purchase_orders_page.ui.kz691ep')}
           </div>
         </div>
       </section>
 
       <Card className="p-4 sm:p-5">
         <div className="mb-4">
-          <p className="text-sm font-black text-gray-900 dark:text-white">فلاتر أوامر الشراء</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">حدّد الحالة أو المورد للوصول الأسرع للطلبات المفتوحة.</p>
+          <p className="text-sm font-black text-gray-900 dark:text-white">{t('purchase_orders_page.ui.kghw7p7')}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('purchase_orders_page.ui.kivq68q')}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Select
-            label="حالة الأمر"
+            label={t('purchase_orders_page.form.kb34sfl')}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
-              { value: '', label: 'كل الحالات' },
-              ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+              { value: '', label: t('purchase_orders_page.ui.k8ylak1') },
+              ...Object.entries(statusLabels).map(([value, label]) => ({ value, label })),
             ]}
           />
           <Select
-            label="المورد"
+            label={t('purchase_orders_page.form.kaawtj6')}
             value={supplierFilter}
             onChange={(e) => setSupplierFilter(e.target.value)}
             options={[
-              { value: '', label: 'كل الموردين' },
+              { value: '', label: t('purchase_orders_page.ui.k5is3kp') },
               ...suppliers.map((supplier) => ({ value: supplier._id, label: supplier.name })),
             ]}
           />
           <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-3 flex items-center gap-2 mt-6 md:mt-0">
             <Truck className="w-5 h-5 text-primary-500" />
             <p className="text-xs font-semibold text-primary-700">
-              عند الاستلام يتم تحديث المخزون + تسجيل مشتريات المورد تلقائيًا
+              {t('purchase_orders_page.ui.kxt106d')}
             </p>
           </div>
         </div>
@@ -640,7 +645,7 @@ export default function PurchaseOrdersPage() {
       ) : orders.length === 0 ? (
         <EmptyState
           icon={ShoppingCart}
-          title="لا توجد أوامر شراء"
+          title={t('purchase_orders_page.titles.kjl2iut')}
           description="ابدأ بإنشاء أمر شراء جديد وربطه بالمورد"
         />
       ) : (
@@ -658,24 +663,24 @@ export default function PurchaseOrdersPage() {
                     <div>
                       <p className="font-mono text-xs text-gray-500">{order.orderNumber}</p>
                       <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{order.supplier?.name || '—'}</p>
-                      <p className="mt-1 text-[11px] text-gray-400">{order.branch?.name || 'الفرع الرئيسي'} · {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: ar })}</p>
+                      <p className="mt-1 text-[11px] text-gray-400">{order.branch?.name || t('purchase_orders_page.toasts.kphehwb')} · {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: ar })}</p>
                     </div>
                     <Badge variant={STATUS_COLORS[order.status] || 'gray'}>
-                      {STATUS_LABELS[order.status] || order.status}
+                      {statusLabels[order.status] || order.status}
                     </Badge>
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/70">
-                      <p className="text-[10px] text-gray-400">الاستلام</p>
+                      <p className="text-[10px] text-gray-400">{t('purchase_orders_page.ui.ksio16p')}</p>
                       <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{progress.received}/{progress.total}</p>
                     </div>
                     <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/70">
-                      <p className="text-[10px] text-gray-400">السداد</p>
-                      <p className="mt-1 text-xs font-black text-primary-600">{order.paymentType === 'cash' ? 'نقدي' : 'آجل'}</p>
+                      <p className="text-[10px] text-gray-400">{t('purchase_orders_page.ui.kab8u2n')}</p>
+                      <p className="mt-1 text-xs font-black text-primary-600">{order.paymentType === 'cash' ? t('purchase_orders_page.ui.ktfjxz') : 'آجل'}</p>
                     </div>
                     <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/70">
-                      <p className="text-[10px] text-gray-400">الإجمالي</p>
+                      <p className="text-[10px] text-gray-400">{t('purchase_orders_page.ui.krh6w30')}</p>
                       <p className="mt-1 text-xs font-black text-emerald-600">{Number(order.totalAmount || 0).toFixed(2)}</p>
                     </div>
                   </div>
@@ -690,7 +695,7 @@ export default function PurchaseOrdersPage() {
                         onClick={() => handleUpdateStatus(order._id, 'approved')}
                         icon={<Check className="w-4 h-4" />}
                       >
-                        اعتماد
+                        {t('purchase_orders_page.ui.kahfv63')}
                       </Button>
                     )}
                     {canReceive && (
@@ -699,7 +704,7 @@ export default function PurchaseOrdersPage() {
                         onClick={() => handleOpenReceive(order._id)}
                         icon={<Package className="w-4 h-4" />}
                       >
-                        استلام
+                        {t('purchase_orders_page.ui.kakqngc')}
                       </Button>
                     )}
                     {canCancel && (
@@ -709,7 +714,7 @@ export default function PurchaseOrdersPage() {
                         onClick={() => handleUpdateStatus(order._id, 'cancelled')}
                         icon={<X className="w-4 h-4" />}
                       >
-                        إلغاء
+                        {t('purchase_orders_page.ui.cancel')}
                       </Button>
                     )}
                     <Button
@@ -728,15 +733,15 @@ export default function PurchaseOrdersPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="p-4 text-right">رقم الأمر</th>
-                  <th className="p-4 text-right">الفرع</th>
-                  <th className="p-4 text-right">المورد</th>
-                  <th className="p-4 text-right">التاريخ</th>
-                  <th className="p-4 text-right">الحالة</th>
-                  <th className="p-4 text-right">الاستلام</th>
-                  <th className="p-4 text-right">المالي</th>
-                  <th className="p-4 text-right">الإجمالي</th>
-                  <th className="p-4 text-right">إجراءات</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.kig6gva')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.kove7t8')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.kaawtj6')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.kzbvdnf')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.kabct8k')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.ksio16p')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.kaaxhiz')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.krh6w30')}</th>
+                  <th className="p-4 text-right">{t('purchase_orders_page.ui.k5a5wt5')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -749,21 +754,21 @@ export default function PurchaseOrdersPage() {
                   return (
                     <tr key={order._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="p-4 font-mono text-xs">{order.orderNumber}</td>
-                      <td className="p-4 text-xs text-gray-500">{order.branch?.name || 'الفرع الرئيسي'}</td>
+                      <td className="p-4 text-xs text-gray-500">{order.branch?.name || t('purchase_orders_page.toasts.kphehwb')}</td>
                       <td className="p-4 font-medium">{order.supplier?.name || '—'}</td>
                       <td className="p-4 text-xs text-gray-500">
                         {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: ar })}
                       </td>
                       <td className="p-4">
                         <Badge variant={STATUS_COLORS[order.status] || 'gray'}>
-                          {STATUS_LABELS[order.status] || order.status}
+                          {statusLabels[order.status] || order.status}
                         </Badge>
                       </td>
                       <td className="p-4 text-xs">
                         {progress.received}/{progress.total}
                       </td>
                       <td className="p-4 text-xs">
-                        <p>{order.paymentType === 'cash' ? 'نقدي' : 'آجل'}</p>
+                        <p>{order.paymentType === 'cash' ? t('purchase_orders_page.ui.ktfjxz') : 'آجل'}</p>
                         <p className="text-gray-500">مستحق: {(Number(order.outstandingAmount || 0)).toFixed(2)}</p>
                       </td>
                       <td className="p-4 font-bold">{Number(order.totalAmount || 0).toFixed(2)} ج.م</td>
@@ -776,7 +781,7 @@ export default function PurchaseOrdersPage() {
                               onClick={() => handleUpdateStatus(order._id, 'approved')}
                               icon={<Check className="w-4 h-4" />}
                             >
-                              اعتماد
+                              {t('purchase_orders_page.ui.kahfv63')}
                             </Button>
                           )}
                           {canReceive && (
@@ -785,7 +790,7 @@ export default function PurchaseOrdersPage() {
                               onClick={() => handleOpenReceive(order._id)}
                               icon={<Package className="w-4 h-4" />}
                             >
-                              استلام
+                              {t('purchase_orders_page.ui.kakqngc')}
                             </Button>
                           )}
                           {canCancel && (
@@ -795,7 +800,7 @@ export default function PurchaseOrdersPage() {
                               onClick={() => handleUpdateStatus(order._id, 'cancelled')}
                               icon={<X className="w-4 h-4" />}
                             >
-                              إلغاء
+                              {t('purchase_orders_page.ui.cancel')}
                             </Button>
                           )}
                           <Button
@@ -822,31 +827,31 @@ export default function PurchaseOrdersPage() {
         </Card>
       )}
 
-      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="أمر شراء جديد" size="lg">
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title={t('purchase_orders_page.titles.k8wz8tc')} size="lg">
         <div className="space-y-4">
           <Select
-            label="المورد"
+            label={t('purchase_orders_page.form.kaawtj6')}
             value={form.supplier}
             onChange={(e) => handleSupplierChange(e.target.value)}
             options={[
-              { value: '', label: 'اختر المورد' },
+              { value: '', label: t('purchase_orders_page.ui.kfef5o0') },
               ...suppliers.map((supplier) => ({ value: supplier._id, label: supplier.name })),
             ]}
           />
 
           <Select
-            label="الفرع"
+            label={t('purchase_orders_page.form.kove7t8')}
             value={form.branch}
             onChange={(e) => setForm((prev) => ({ ...prev, branch: e.target.value }))}
             options={[
-              { value: '', label: 'اختر الفرع' },
+              { value: '', label: t('purchase_orders_page.ui.ktagena') },
               ...branches.map((branch) => ({ value: branch._id, label: branch.name })),
             ]}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Select
-              label="طريقة السداد"
+              label={t('purchase_orders_page.form.kfrxyju')}
               value={form.paymentType}
               onChange={(e) => {
                 const nextType = e.target.value;
@@ -859,12 +864,12 @@ export default function PurchaseOrdersPage() {
                   customInstallmentDatesText: nextType === 'deferred' ? prev.customInstallmentDatesText : '',
                 }));
               }}
-              options={PAYMENT_TYPE_OPTIONS}
+              options={paymentTypeOptions}
             />
 
             {form.paymentType === 'deferred' ? (
               <Input
-                label="عدد الأقساط"
+                label={t('purchase_orders_page.form.krme2qo')}
                 type="number"
                 min="1"
                 value={form.installments}
@@ -872,7 +877,7 @@ export default function PurchaseOrdersPage() {
               />
             ) : (
               <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs font-semibold text-emerald-700 mt-6">
-                سيتم تسجيل المبلغ كمسدد فور الاستلام
+                {t('purchase_orders_page.ui.kui03zz')}
               </div>
             )}
           </div>
@@ -881,29 +886,29 @@ export default function PurchaseOrdersPage() {
             <div className="rounded-xl border border-primary-100 bg-primary-50/40 p-3 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Select
-                  label="تكرار الاستحقاق"
+                  label={t('purchase_orders_page.form.k6vpas3')}
                   value={form.paymentFrequency}
                   onChange={(e) => setForm((prev) => ({ ...prev, paymentFrequency: e.target.value }))}
-                  options={PAYMENT_FREQUENCY_OPTIONS}
+                  options={paymentFrequencyOptions}
                 />
                 <Input
-                  label="تاريخ أول قسط"
+                  label={t('purchase_orders_page.form.kohpqpv')}
                   type="date"
                   value={form.firstInstallmentDate}
                   onChange={(e) => setForm((prev) => ({ ...prev, firstInstallmentDate: e.target.value }))}
                 />
                 <div className="rounded-xl border border-primary-200 bg-white/80 p-3 text-xs text-primary-700 mt-6">
-                  الأقساط تُنشأ تلقائيًا على فاتورة مشتريات المورد عند الاستلام.
+                  {t('purchase_orders_page.ui.kpzdf8g')}
                 </div>
               </div>
               {form.paymentFrequency === 'custom' && (
                 <div>
-                  <label className="text-sm font-bold block mb-1">تواريخ الأقساط المخصصة</label>
+                  <label className="text-sm font-bold block mb-1">{t('purchase_orders_page.ui.kvfdn12')}</label>
                   <textarea
                     rows={3}
                     value={form.customInstallmentDatesText}
                     onChange={(e) => setForm((prev) => ({ ...prev, customInstallmentDatesText: e.target.value }))}
-                    placeholder="مثال: 2026-03-10, 2026-03-20, 2026-03-30"
+                    placeholder={t('purchase_orders_page.placeholders.k1wncxk')}
                     className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
                   />
                 </div>
@@ -913,15 +918,15 @@ export default function PurchaseOrdersPage() {
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-bold">بنود أمر الشراء</label>
+              <label className="text-sm font-bold">{t('purchase_orders_page.ui.kei3teo')}</label>
               <Button size="sm" variant="outline" onClick={handleAddItem} icon={<Plus className="w-4 h-4" />}>
-                إضافة منتج
+                {t('purchase_orders_page.ui.kq5gbc5')}
               </Button>
             </div>
 
             {form.items.length === 0 && (
               <div className="rounded-xl border border-dashed border-gray-300 p-3 text-xs text-gray-500 text-center">
-                أضف منتجًا واحدًا على الأقل
+                {t('purchase_orders_page.ui.kubeysy')}
               </div>
             )}
 
@@ -932,7 +937,7 @@ export default function PurchaseOrdersPage() {
                     value={item.product}
                     onChange={(e) => handleItemChange(index, 'product', e.target.value)}
                     options={[
-                      { value: '', label: 'اختر المنتج' },
+                      { value: '', label: t('purchase_orders_page.ui.kfef40i') },
                       ...products.map((product) => ({ value: product._id, label: product.name })),
                     ]}
                   />
@@ -941,7 +946,7 @@ export default function PurchaseOrdersPage() {
                   <Input
                     type="number"
                     min="1"
-                    placeholder="الكمية"
+                    placeholder={t('purchase_orders_page.placeholders.kaay54y')}
                     value={item.quantity}
                     onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value || 0))}
                   />
@@ -950,7 +955,7 @@ export default function PurchaseOrdersPage() {
                   <Input
                     type="number"
                     min="0"
-                    placeholder="سعر الشراء"
+                    placeholder={t('purchase_orders_page.placeholders.kq42fqv')}
                     value={item.unitCost}
                     onChange={(e) => handleItemChange(index, 'unitCost', Number(e.target.value || 0))}
                   />
@@ -972,13 +977,13 @@ export default function PurchaseOrdersPage() {
           </div>
 
           <Input
-            label="ملاحظات"
+            label={t('purchase_orders_page.form.notes')}
             value={form.notes}
             onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
           />
 
           <Input
-            label="تاريخ التسليم المتوقع"
+            label={t('purchase_orders_page.form.kg4zsq6')}
             type="date"
             value={form.expectedDeliveryDate}
             onChange={(e) => setForm((prev) => ({ ...prev, expectedDeliveryDate: e.target.value }))}
@@ -986,19 +991,19 @@ export default function PurchaseOrdersPage() {
 
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
             <div className="flex justify-between items-center">
-              <span className="font-bold">الإجمالي:</span>
+              <span className="font-bold">{t('purchase_orders_page.ui.kkf12q')}</span>
               <span className="text-2xl font-bold text-primary-500">{totalAmount.toFixed(2)} ج.م</span>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <Button className="flex-1" onClick={handleCreateOrder} loading={saving}>إنشاء الأمر</Button>
-            <Button className="flex-1" variant="ghost" onClick={() => setShowCreateModal(false)}>إلغاء</Button>
+            <Button className="flex-1" onClick={handleCreateOrder} loading={saving}>{t('purchase_orders_page.ui.k1glun')}</Button>
+            <Button className="flex-1" variant="ghost" onClick={() => setShowCreateModal(false)}>{t('purchase_orders_page.ui.cancel')}</Button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={showReceiveModal} onClose={() => setShowReceiveModal(false)} title="استلام بضاعة" size="lg">
+      <Modal open={showReceiveModal} onClose={() => setShowReceiveModal(false)} title={t('purchase_orders_page.titles.kx3387h')} size="lg">
         {selectedOrder && (
           <div className="space-y-4">
             <div className="bg-primary-50 dark:bg-primary-900/10 p-4 rounded-lg flex items-center gap-3">
@@ -1006,25 +1011,25 @@ export default function PurchaseOrdersPage() {
               <div>
                 <h3 className="font-bold">{selectedOrder.orderNumber}</h3>
                 <p className="text-sm text-gray-500">
-                  الفرع: {selectedOrder.branch?.name || 'الفرع الرئيسي'} • المورد: {selectedOrder.supplier?.name} • طريقة السداد: {selectedOrder.paymentType === 'cash' ? 'نقدي' : 'آجل'}
+                  الفرع: {selectedOrder.branch?.name || t('purchase_orders_page.toasts.kphehwb')} • المورد: {selectedOrder.supplier?.name} • طريقة السداد: {selectedOrder.paymentType === 'cash' ? t('purchase_orders_page.ui.ktfjxz') : 'آجل'}
                 </p>
               </div>
             </div>
 
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
-              كل استلام يتم إضافته للمخزون ويُسجل مباشرة في حساب المورد.
+              {t('purchase_orders_page.ui.kfphtnj')}
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b dark:border-gray-800">
-                    <th className="p-2 text-right">المنتج</th>
-                    <th className="p-2 text-center text-xs text-gray-400">المطلوب</th>
-                    <th className="p-2 text-center text-xs text-gray-400">مستلم سابقًا</th>
-                    <th className="p-2 text-right">استلام الآن</th>
+                    <th className="p-2 text-right">{t('purchase_orders_page.ui.kaawv6o')}</th>
+                    <th className="p-2 text-center text-xs text-gray-400">{t('purchase_orders_page.ui.kza3mh7')}</th>
+                    <th className="p-2 text-center text-xs text-gray-400">{t('purchase_orders_page.ui.k9njv3n')}</th>
+                    <th className="p-2 text-right">{t('purchase_orders_page.ui.ksk9g59')}</th>
                     <th className="p-2 text-right">Batch</th>
-                    <th className="p-2 text-right">الصلاحية</th>
+                    <th className="p-2 text-right">{t('purchase_orders_page.ui.kzekvld')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y dark:divide-gray-800">
@@ -1032,7 +1037,7 @@ export default function PurchaseOrdersPage() {
                     const remaining = Number(item.quantity || 0) - Number(item.receivedQuantity || 0);
                     return (
                       <tr key={item._id}>
-                        <td className="p-2 font-medium">{item.product?.name || 'منتج'}</td>
+                        <td className="p-2 font-medium">{item.product?.name || t('purchase_orders_page.toasts.ktezs3')}</td>
                         <td className="p-2 text-center">{item.quantity}</td>
                         <td className="p-2 text-center text-success-600 font-bold">{item.receivedQuantity}</td>
                         <td className="p-2">
@@ -1040,7 +1045,7 @@ export default function PurchaseOrdersPage() {
                             type="number"
                             min="0"
                             max={Math.max(0, remaining)}
-                            placeholder="الكمية"
+                            placeholder={t('purchase_orders_page.placeholders.kaay54y')}
                             value={item.currentReceipt || ''}
                             onChange={(e) => handleReceiveItemChange(index, 'currentReceipt', Number(e.target.value || 0))}
                           />
@@ -1068,10 +1073,10 @@ export default function PurchaseOrdersPage() {
 
             <div className="flex gap-3 pt-2">
               <Button className="flex-1" onClick={handleConfirmReceive} loading={saving} icon={<Check className="w-4 h-4" />}>
-                تأكيد الاستلام
+                {t('purchase_orders_page.ui.k174dgy')}
               </Button>
               <Button className="flex-1" variant="ghost" onClick={() => setShowReceiveModal(false)}>
-                إلغاء
+                {t('purchase_orders_page.ui.cancel')}
               </Button>
             </div>
           </div>

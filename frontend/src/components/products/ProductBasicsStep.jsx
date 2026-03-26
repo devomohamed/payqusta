@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
   Camera,
   Check,
@@ -42,6 +43,7 @@ export default function ProductBasicsStep({
   onCategoriesReload,
   fieldErrors = {},
 }) {
+  const { t } = useTranslation('admin');
   const [scannerTarget, setScannerTarget] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
@@ -116,7 +118,7 @@ export default function ProductBasicsStep({
 
   const handleGenerateLocalBarcode = async () => {
     if (!productId) {
-      toast.error('احفظ المنتج أولًا ثم أعد توليد الباركود المحلي.');
+      toast.error(t('product_basics_step.toasts.kfgpdug'));
       return;
     }
 
@@ -132,9 +134,9 @@ export default function ProductBasicsStep({
         localBarcodeType,
       }));
 
-      toast.success('تم توليد الباركود المحلي.');
+      toast.success(t('product_basics_step.toasts.k9mqz0y'));
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'تعذر توليد الباركود المحلي.');
+      toast.error(error?.response?.data?.message || t('product_basics_step.toasts.kp6ihod'));
     } finally {
       setGeneratingLocalBarcode(false);
     }
@@ -153,7 +155,7 @@ export default function ProductBasicsStep({
         `${activeBarcodePayload.source || 'barcode'}-${activeBarcodePayload.value}.png`
       );
     } catch {
-      toast.error('تعذر تنزيل صورة الباركود.');
+      toast.error(t('product_basics_step.toasts.kiuhjd0'));
     }
   };
 
@@ -167,8 +169,8 @@ export default function ProductBasicsStep({
 
     printBarcodeLabel({
       svgMarkup,
-      title: form.name || 'ملصق باركود',
-      subtitle: activeBarcodePayload.source === 'local' ? 'باركود محلي' : 'باركود دولي',
+      title: form.name || t('product_basics_step.toasts.k53y2ms'),
+      subtitle: activeBarcodePayload.source === 'local' ? t('product_basics_step.ui.kadubca') : t('product_basics_step.ui.kae7t15'),
       caption: activeBarcodePayload.value,
     });
   };
@@ -196,12 +198,12 @@ export default function ProductBasicsStep({
 
   const handleCreateCategory = async () => {
     if (!categoryForm.name.trim()) {
-      toast.error('يرجى إدخال اسم القسم.');
+      toast.error(t('product_basics_step.toasts.ki5xls7'));
       return;
     }
 
     if (categoryMode === 'child' && !categoryForm.parent) {
-      toast.error('اختر القسم الرئيسي أولًا.');
+      toast.error(t('product_basics_step.toasts.k2n215r'));
       return;
     }
 
@@ -229,10 +231,10 @@ export default function ProductBasicsStep({
         }));
       }
 
-      toast.success('تمت إضافة القسم بنجاح.');
+      toast.success(t('product_basics_step.toasts.kjw3v92'));
       setShowCategoryModal(false);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'تعذر إنشاء القسم.');
+      toast.error(error?.response?.data?.message || t('product_basics_step.toasts.k7wxjkq'));
     } finally {
       setSavingCategory(false);
     }
@@ -241,7 +243,7 @@ export default function ProductBasicsStep({
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       <section>
-        <SectionHeader icon={FileText} title="المعلومات الأساسية" subtitle="الاسم والأقسام والربط بالمورد" />
+        <SectionHeader icon={FileText} title={t('product_basics_step.titles.kxo1xqd')} subtitle="الاسم والأقسام والربط بالمورد" />
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 space-y-5">
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">
@@ -253,7 +255,7 @@ export default function ProductBasicsStep({
               id="name"
               value={form.name}
               onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
-              placeholder="مثال: تيشيرت قطن"
+              placeholder={t('product_basics_step.placeholders.k56ngeh')}
               className={`w-full rounded-xl border-2 bg-white px-4 py-3 text-base font-medium text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:bg-gray-800 dark:text-white ${
                 fieldErrors.name ? 'border-red-500 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'
               }`}
@@ -262,7 +264,7 @@ export default function ProductBasicsStep({
             {fieldErrors.name && (
               <p className="flex items-center gap-1 text-xs font-bold text-red-500 animate-shake">
                 <AlertCircle className="w-3.5 h-3.5" />
-                {fieldErrors.name === 'name_required' ? 'يرجى إدخال اسم المنتج.' : fieldErrors.name}
+                {fieldErrors.name === 'name_required' ? t('product_basics_step.ui.k56ynrg') : fieldErrors.name}
               </p>
             )}
             {form.name ? <p className="text-xs text-gray-400">{form.name.length}/200 حرف</p> : null}
@@ -272,27 +274,27 @@ export default function ProductBasicsStep({
             <div className="flex items-center justify-between gap-3">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                 <Tag className="w-4 h-4 text-primary-500" />
-                الأقسام
+                {t('product_basics_step.ui.kz8i2t1')}
               </label>
               <button
                 type="button"
                 onClick={openAddCategoryModal}
                 className="rounded-lg border border-primary-200 px-3 py-1.5 text-xs font-bold text-primary-600 transition-colors hover:bg-primary-50"
               >
-                إضافة قسم جديد
+                {t('product_basics_step.ui.kd5p0x6')}
               </button>
             </div>
 
             <CategorySelector
               categories={categories}
               value={form.category}
-              placeholder="بدون قسم"
+              placeholder={t('product_basics_step.placeholders.kmn6v53')}
               onChange={(categoryId) => setForm((prev) => ({ ...prev, category: categoryId || '', subcategory: '' }))}
             />
 
             {form.category && subcategories.length > 0 ? (
               <div className="space-y-2 animate-fade-in">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">القسم الفرعي</label>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.kbwqhp5')}</label>
                 {/* Level 2 dropdown */}
                 <select
                   value={level2Value}
@@ -300,7 +302,7 @@ export default function ProductBasicsStep({
                   className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   dir="rtl"
                 >
-                  <option value="">بدون قسم فرعي</option>
+                  <option value="">{t('product_basics_step.ui.k65tm8o')}</option>
                   {subcategories.map((subcategory) => (
                     <option key={subcategory._id} value={subcategory._id}>
                       {subcategory.icon ? `${subcategory.icon} ` : ''}{subcategory.name}
@@ -315,7 +317,7 @@ export default function ProductBasicsStep({
                     className="w-full rounded-xl border-2 border-primary-100 bg-primary-50/30 px-4 py-3 text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-primary-900/40 dark:bg-primary-950/20 dark:text-white"
                     dir="rtl"
                   >
-                    <option value="">بدون قسم أكثر تحديداً</option>
+                    <option value="">{t('product_basics_step.ui.klcdnoe')}</option>
                     {level3Subcats.map((sub) => (
                       <option key={sub._id} value={sub._id}>
                         {sub.icon ? `${sub.icon} ` : ''}{sub.name}
@@ -331,7 +333,7 @@ export default function ProductBasicsStep({
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                 <User className="w-4 h-4 text-primary-500" />
-                المورد
+                {t('product_basics_step.ui.kaawtj6')}
               </label>
               <select
                 value={form.supplier || ''}
@@ -339,7 +341,7 @@ export default function ProductBasicsStep({
                 className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 dir="rtl"
               >
-                <option value="">بدون مورد</option>
+                <option value="">{t('product_basics_step.ui.k8ca3ng')}</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier._id} value={supplier._id}>{supplier.name}</option>
                 ))}
@@ -350,7 +352,7 @@ export default function ProductBasicsStep({
       </section>
 
       <section>
-        <SectionHeader icon={FileText} title="وصف المنتج" subtitle="الوصف التحريري الكامل للمنتج" />
+        <SectionHeader icon={FileText} title={t('product_basics_step.titles.kau35mc')} subtitle="الوصف التحريري الكامل للمنتج" />
         <div className="overflow-visible rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <RichTextEditor
             value={form.description}
@@ -366,17 +368,17 @@ export default function ProductBasicsStep({
       </section>
 
       <section>
-        <SectionHeader icon={Hash} title="التنظيم والتعريف" subtitle="SKU والباركود المحلي والدولي وتاريخ الانتهاء" />
+        <SectionHeader icon={Hash} title={t('product_basics_step.titles.knaebra')} subtitle="SKU والباركود المحلي والدولي وتاريخ الانتهاء" />
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           {!showInternationalBarcode && !showLocalBarcode ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-4 text-sm text-gray-500">
-              إعدادات المتجر الحالية تخفي واجهات الباركود. القيم القديمة ستظل محفوظة في الخلفية إذا كانت موجودة.
+              {t('product_basics_step.ui.kjfee7y')}
             </div>
           ) : null}
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">كود الصنف (SKU)</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.k7thf9r')}</label>
               <input
                 type="text"
                 value={form.sku || ''}
@@ -390,7 +392,7 @@ export default function ProductBasicsStep({
             {showInternationalBarcode ? (
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">الباركود الدولي</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.knt29k7')}</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -410,13 +412,13 @@ export default function ProductBasicsStep({
                       className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-50 px-4 py-3 font-bold text-primary-600 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400"
                     >
                       <Camera className="w-4 h-4" />
-                      مسح
+                      {t('product_basics_step.ui.ky5b3')}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400">نوع الباركود الدولي</label>
+                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400">{t('product_basics_step.ui.ksxj6ny')}</label>
                   <select
                     value={form.internationalBarcodeType || 'UNKNOWN'}
                     onChange={(event) => setForm((prev) => ({ ...prev, internationalBarcodeType: event.target.value }))}
@@ -433,7 +435,7 @@ export default function ProductBasicsStep({
             {showLocalBarcode ? (
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">الباركود المحلي</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.kntfr92')}</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -453,7 +455,7 @@ export default function ProductBasicsStep({
                       className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200"
                     >
                       <Camera className="w-4 h-4" />
-                      مسح
+                      {t('product_basics_step.ui.ky5b3')}
                     </button>
                   </div>
                 </div>
@@ -483,7 +485,7 @@ export default function ProductBasicsStep({
                               }`}
                           >
                             {shouldAutoGenerateAfterSave
-                              ? (storeAutoGeneratesLocalBarcode ? 'إعداد المتجر' : 'خطوة واحدة')
+                              ? (storeAutoGeneratesLocalBarcode ? t('product_basics_step.ui.kq1jm5g') : t('product_basics_step.ui.ki1iz6'))
                               : 'بعد أول حفظ'}
                           </span>
                           <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
@@ -493,15 +495,14 @@ export default function ProductBasicsStep({
                         <p className="mt-2 text-sm font-black text-gray-900 dark:text-white">
                           {shouldAutoGenerateAfterSave
                             ? (storeAutoGeneratesLocalBarcode
-                              ? 'إعدادات المتجر الحالية ستولد الباركود المحلي تلقائيًا عند الحفظ.'
-                              : 'سيتم توليد الباركود المحلي تلقائيًا بمجرد حفظ المنتج.')
+                              ? t('product_basics_step.ui.kjotshn') : t('product_basics_step.ui.kqtbuut'))
                             : 'سيصبح التوليد اليدوي متاحًا لك من نفس الشاشة بعد أول حفظ.'}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
                           {shouldAutoGenerateAfterSave
                             ? (storeAutoGeneratesLocalBarcode
                               ? 'يمكنك تعديل هذا السلوك لاحقًا من إعدادات الباركود على مستوى المتجر، لكن المنتج الحالي سيحصل على كوده تلقائيًا.'
-                              : 'اترك الحقل فارغًا وسيقوم النظام بإنشاء الكود في الخلفية دون الحاجة للعودة مرة أخرى.')
+                              : t('product_basics_step.ui.k7dzu9t'))
                             : 'إذا كنت لا تريد التوليد التلقائي الآن، يمكنك حفظ المنتج أولًا ثم إعادة توليد الكود لاحقًا.'}
                         </p>
                       </div>
@@ -520,10 +521,10 @@ export default function ProductBasicsStep({
                         />
                         <span className="flex-1">
                           <span className="block text-sm font-bold text-gray-800 dark:text-gray-100">
-                            توليد تلقائي بعد أول حفظ
+                            {t('product_basics_step.ui.k34x3fr')}
                           </span>
                           <span className="mt-1 block text-xs leading-5 text-gray-500 dark:text-gray-400">
-                            يوفر على المستخدم خطوة الحفظ ثم الرجوع لإعادة توليد الباركود المحلي يدويًا.
+                            {t('product_basics_step.ui.kp4t9fy')}
                           </span>
                         </span>
                       </label>
@@ -535,7 +536,7 @@ export default function ProductBasicsStep({
                   {hasPersistedProduct ? (
                     <Button type="button" variant="outline" onClick={handleGenerateLocalBarcode} loading={generatingLocalBarcode}>
                       <RefreshCw className="w-4 h-4" />
-                      {form.localBarcode ? 'إعادة توليد' : 'توليد باركود محلي'}
+                      {form.localBarcode ? t('product_basics_step.ui.k2efgqw') : 'توليد باركود محلي'}
                     </Button>
                   ) : (
                     <span
@@ -547,10 +548,8 @@ export default function ProductBasicsStep({
                         }`}
                     >
                       {hasLocalBarcodeValue
-                        ? 'سيتم حفظ الكود الذي أدخلته مباشرة'
-                        : shouldAutoGenerateAfterSave
-                          ? 'سيُجهّز تلقائيًا بعد الحفظ'
-                          : 'التوليد اليدوي متاح بعد الحفظ'}
+                        ? t('product_basics_step.ui.k79gjcz') : shouldAutoGenerateAfterSave
+                          ? t('product_basics_step.ui.kooq6hc') : 'التوليد اليدوي متاح بعد الحفظ'}
                     </span>
                   )}
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-2 text-xs font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-300">
@@ -561,7 +560,7 @@ export default function ProductBasicsStep({
             ) : null}
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">تاريخ الانتهاء</label>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.khxljbv')}</label>
               <input
                 type="date"
                 value={form.expiryDate || ''}
@@ -577,22 +576,22 @@ export default function ProductBasicsStep({
                 <BarcodeLabel
                   value={activeBarcodePayload.value}
                   format={activeBarcodePayload.type === 'QR_CODE' ? 'QR_CODE' : 'CODE128'}
-                      title={activeBarcodePayload.source === 'local' ? 'باركود محلي' : 'باركود دولي'}
-                      subtitle={form.name || 'ملصق باركود'}
+                      title={activeBarcodePayload.source === 'local' ? t('product_basics_step.ui.kadubca') : 'باركود دولي'}
+                      subtitle={form.name || t('product_basics_step.toasts.k53y2ms')}
                   caption={activeBarcodePayload.value}
                   className="flex-1"
                 />
                 <div className="flex flex-col gap-2 lg:w-56">
                   <Button type="button" variant="outline" onClick={handleDownloadBarcode}>
                     <Download className="w-4 h-4" />
-                    تنزيل PNG
+                    {t('product_basics_step.ui.ktjyneh')}
                   </Button>
                   <Button type="button" onClick={handlePrintBarcode}>
                     <Printer className="w-4 h-4" />
-                    طباعة الملصق
+                    {t('product_basics_step.ui.kqqyk4j')}
                   </Button>
                   <p className="text-xs text-gray-500">
-                    الطباعة هنا تعتمد على متصفح الجهاز وقالب طباعة للملصقات، بدون طباعة صامتة.
+                    {t('product_basics_step.ui.ksodljs')}
                   </p>
                 </div>
               </div>
@@ -602,31 +601,31 @@ export default function ProductBasicsStep({
       </section>
 
       <section>
-        <SectionHeader icon={Search} title="تحسين محركات البحث (SEO)" subtitle="الكلمات المفتاحية والوصف الظاهرين في نتائج البحث" />
+        <SectionHeader icon={Search} title={t('product_basics_step.titles.kpvzq42')} subtitle="الكلمات المفتاحية والوصف الظاهرين في نتائج البحث" />
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">الكلمات المفتاحية</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.kf8zhwg')}</label>
             <TagInput
               value={form.seoTitle || ''}
               onChange={(newValue) => setForm((prev) => ({ ...prev, seoTitle: newValue }))}
-              placeholder="مثال: موبايل، آيفون، هاتف ذكي"
+              placeholder={t('product_basics_step.placeholders.kxjqz40')}
               maxTags={10}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">وصف SEO</label>
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('product_basics_step.ui.kexw2dt')}</label>
             <textarea
               value={form.seoDescription || ''}
               onChange={(event) => setForm((prev) => ({ ...prev, seoDescription: event.target.value }))}
-              placeholder="وصف مختصر وجذاب للمنتج"
+              placeholder={t('product_basics_step.placeholders.k4qljcr')}
               rows={3}
               maxLength={180}
               className="w-full resize-none rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm leading-relaxed text-gray-900 transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               dir="rtl"
             />
             <div className="flex justify-between text-xs text-gray-400">
-              <span>يفضل بين 150 و160 حرفًا</span>
+              <span>{t('product_basics_step.ui.ke9jw0p')}</span>
               <span className={(form.seoDescription?.length || 0) > 160 ? 'text-orange-500' : ''}>
                 {form.seoDescription?.length || 0}/180
               </span>
@@ -647,12 +646,12 @@ export default function ProductBasicsStep({
                   </div>
                   <div className="flex flex-col leading-tight pt-0.5 overflow-hidden w-full">
                     <span className="text-[14px] font-normal text-[#dadce0] truncate">
-                      {tenant?.storeName || tenant?.name || 'متجرك الإلكتروني'}
+                      {tenant?.storeName || tenant?.name || t('product_basics_step.toasts.knkt6px')}
                     </span>
                     <div className="flex items-center justify-start gap-1.5 text-[12px] text-[#bdc1c6] font-normal mt-0.5 max-w-full overflow-hidden truncate">
                       <span dir="ltr" className="truncate">{typeof window !== 'undefined' ? window.location.hostname : 'payqusta.store'}</span>
                       <span className="text-[10px] opacity-70 mt-0.5 shrink-0">›</span>
-                      <span className="shrink-0 truncate">المنتجات</span>
+                      <span className="shrink-0 truncate">{t('product_basics_step.ui.ks0nri5')}</span>
                     </div>
                   </div>
                 </div>
@@ -664,7 +663,7 @@ export default function ProductBasicsStep({
                     ) : (
                       <div className="text-gray-500 flex flex-col items-center justify-center gap-1 opacity-60">
                         <ImageIcon className="w-6 h-6" strokeWidth={1.5} />
-                        <span className="text-[9px] font-bold">صورة المنتج</span>
+                        <span className="text-[9px] font-bold">{t('product_basics_step.ui.k1kvwh7')}</span>
                       </div>
                     )}
                   </div>
@@ -673,13 +672,13 @@ export default function ProductBasicsStep({
                       {form.seoTitle ? form.seoTitle.replace(/,/g, ' | ') : form.name}
                     </h3>
                     <p className="text-[14px] text-[#bdc1c6] line-clamp-2 leading-relaxed">
-                      {form.seoDescription || (form.description ? form.description.replace(/<[^>]*>/g, '').slice(0, 155) : 'لا يوجد وصف بعد.')}
+                      {form.seoDescription || (form.description ? form.description.replace(/<[^>]*>/g, '').slice(0, 155) : t('product_basics_step.ui.kni9yzi'))}
                     </p>
                     {form.price && (
                       <p className="text-[14px] text-[#bdc1c6] mt-1 line-clamp-1">
                         السعر: {form.price} ج.م
                         {form.compareAtPrice && ` السعر السابق: ${form.compareAtPrice} ج.م`}
-                        <span className="text-[#81c995] font-bold mr-2">متوفر ✓</span>
+                        <span className="text-[#81c995] font-bold mr-2">{t('product_basics_step.ui.kxe93iy')}</span>
                       </p>
                     )}
                   </div>
@@ -693,7 +692,7 @@ export default function ProductBasicsStep({
       <Modal
         open={showCategoryModal}
         onClose={() => !savingCategory && setShowCategoryModal(false)}
-        title="إضافة قسم جديد"
+        title={t('product_basics_step.titles.kd5p0x6')}
         size="2xl"
         bodyClassName="!p-0 overflow-hidden"
         contentClassName="rounded-[2.5rem]"
@@ -716,20 +715,20 @@ export default function ProductBasicsStep({
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
                       <Badge variant="primary" className="bg-primary-500/20 text-primary-200 border border-primary-500/30">
-                        {categoryMode === 'root' ? 'قسم رئيسي' : 'قسم فرعي'}
+                        {categoryMode === 'root' ? t('product_basics_step.ui.k1hda1s') : 'قسم فرعي'}
                       </Badge>
                       {categoryMode === 'child' && (
                         <div className="flex items-center gap-1 text-[11px] font-bold text-white/50 uppercase tracking-widest">
                           <Layers className="w-3 h-3" />
-                          <span>منتسب</span>
+                          <span>{t('product_basics_step.ui.kpbwuke')}</span>
                         </div>
                       )}
                     </div>
                     <h4 className="text-2xl font-black tracking-tight truncate max-w-[300px]">
-                      {categoryForm.name || 'اسم القسم الجديد'}
+                      {categoryForm.name || t('product_basics_step.toasts.kw188sr')}
                     </h4>
                     <p className="text-sm text-white/60 line-clamp-1 italic font-medium">
-                      {categoryForm.description || 'سيظهر وصف القسم هنا بشكل مختصر وجذاب...'}
+                      {categoryForm.description || t('product_basics_step.toasts.kn1hab9')}
                     </p>
                   </div>
                 </div>
@@ -739,7 +738,7 @@ export default function ProductBasicsStep({
             {/* Input Fields Grid */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               <div className="md:col-span-3">
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">الأيقونة</label>
+                <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">{t('product_basics_step.ui.kqzk8ml')}</label>
                 <div className="relative group">
                   <input
                     type="text"
@@ -751,10 +750,10 @@ export default function ProductBasicsStep({
                 </div>
               </div>
               <div className="md:col-span-9">
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">اسم القسم</label>
+                <label className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">{t('product_basics_step.ui.kr36bdc')}</label>
                 <input
                   type="text"
-                  placeholder="مثلاً: ملابس رجالي، أحذية رياضية..."
+                  placeholder={t('product_basics_step.placeholders.kbqpunv')}
                   value={categoryForm.name}
                   onChange={(event) => handleCategoryNameChange(event.target.value)}
                   className="w-full rounded-2xl border-2 border-gray-100 bg-white px-5 py-4 text-lg font-bold shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none dark:border-white/5 dark:bg-white/5 dark:text-white"
@@ -765,7 +764,7 @@ export default function ProductBasicsStep({
 
             {/* Segmented Mode Selector */}
             <div className="space-y-4">
-              <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">نوع القسم</label>
+              <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">{t('product_basics_step.ui.kqsukby')}</label>
               <div className="relative p-1.5 flex bg-gray-200/50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
                 <div 
                   className="absolute inset-y-1.5 transition-all duration-300 ease-out bg-white dark:bg-slate-800 rounded-xl shadow-lg ring-1 ring-black/5"
@@ -782,14 +781,14 @@ export default function ProductBasicsStep({
                   }}
                   className={`relative z-10 flex-1 py-3 text-sm font-black transition-colors ${categoryMode === 'root' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}
                 >
-                  قسم رئيسي
+                  {t('product_basics_step.ui.k1hda1s')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setCategoryMode('child')}
                   className={`relative z-10 flex-1 py-3 text-sm font-black transition-colors ${categoryMode === 'child' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500'}`}
                 >
-                  قسم فرعي
+                  {t('product_basics_step.ui.kkkdjkj')}
                 </button>
               </div>
             </div>
@@ -802,12 +801,12 @@ export default function ProductBasicsStep({
                   exit={{ opacity: 0, height: 0, y: -10 }}
                   className="space-y-2 overflow-hidden"
                 >
-                  <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">القسم الرئيسي المرتبط</label>
+                  <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">{t('product_basics_step.ui.k9e2ora')}</label>
                   <CategorySelector
                     categories={rootCategories}
                     value={categoryForm.parent}
                     onChange={(value) => setCategoryForm((prev) => ({ ...prev, parent: value }))}
-                    placeholder="اختر القسم الأب..."
+                    placeholder={t('product_basics_step.placeholders.kpqflf3')}
                     className="!rounded-2xl"
                   />
                 </motion.div>
@@ -821,14 +820,14 @@ export default function ProductBasicsStep({
                   <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400">
                     <Sparkles className="w-4 h-4" />
                   </div>
-                  <h5 className="text-sm font-black text-gray-800 dark:text-white uppercase tracking-wide">أيقونات مقترحة</h5>
+                  <h5 className="text-sm font-black text-gray-800 dark:text-white uppercase tracking-wide">{t('product_basics_step.ui.kceg4f8')}</h5>
                 </div>
                 
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="ابحث عن أيقونة..."
+                    placeholder={t('product_basics_step.placeholders.ksmohkk')}
                     value={iconSearchQuery}
                     onChange={(e) => setIconSearchQuery(e.target.value)}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pr-9 pl-4 py-2 text-sm transition-all focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:focus:bg-slate-900"
@@ -868,12 +867,12 @@ export default function ProductBasicsStep({
 
             {/* Description Field */}
             <div className="space-y-2">
-              <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">وصف القسم</label>
+              <label className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">{t('product_basics_step.ui.ky0q67f')}</label>
               <textarea
                 value={categoryForm.description}
                 onChange={(event) => setCategoryForm((prev) => ({ ...prev, description: event.target.value }))}
                 rows={3}
-                placeholder="اكتب وصفاً جذاباً يساعد العملاء في العثور على ما يبحثون عنه..."
+                placeholder={t('product_basics_step.placeholders.kxlbh8x')}
                 className="w-full resize-none rounded-2xl border-2 border-gray-100 bg-white px-5 py-4 text-sm font-medium shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 focus:outline-none dark:border-white/5 dark:bg-white/5 dark:text-white"
                 dir="rtl"
               />
@@ -890,7 +889,7 @@ export default function ProductBasicsStep({
                 disabled={savingCategory}
                 className="px-8 rounded-2xl"
               >
-                إلغاء
+                {t('product_basics_step.ui.cancel')}
               </Button>
               <Button 
                 variant="primary"
@@ -900,7 +899,7 @@ export default function ProductBasicsStep({
                 loading={savingCategory}
                 className="px-10 rounded-2xl shadow-xl shadow-primary-500/20"
               >
-                حفظ القسم الجديد
+                {t('product_basics_step.ui.kjw7oyy')}
               </Button>
             </div>
           </div>

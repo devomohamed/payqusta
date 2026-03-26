@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ShoppingCart, Search, Package, Clock,
   User, RotateCcw, FileText,
@@ -11,6 +12,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export default function BranchDashboardPage() {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function BranchDashboardPage() {
                 className="bg-white text-primary-600 hover:bg-gray-100 border-none shadow-lg text-lg px-8 py-4 h-auto"
                 icon={<ShoppingCart className="w-6 h-6" />}
               >
-                بدء عملية بيع
+                {t('branch_dashboard_page.ui.ktityo8')}
               </Button>
             </Link>
             <Link to="/products">
@@ -84,7 +86,7 @@ export default function BranchDashboardPage() {
                 className="border-white/30 text-white hover:bg-white/10"
                 icon={<Search className="w-5 h-5" />}
               >
-                بحث عن منتج
+                {t('branch_dashboard_page.ui.kmuxy90')}
               </Button>
             </Link>
           </div>
@@ -101,13 +103,13 @@ export default function BranchDashboardPage() {
               <div>
                 <h3 className="text-indigo-100 font-bold mb-2 flex items-center gap-2">
                   <Target className="w-5 h-5" />
-                  تحدي اليوم
+                  {t('branch_dashboard_page.ui.k4ox020')}
                 </h3>
                 <div className="flex items-end gap-2 mb-1">
                   <span className="text-4xl font-black">
                     {stats?.gamification ? stats.gamification.progress : 0}%
                   </span>
-                  <span className="text-indigo-200 mb-1">من الهدف اليومي</span>
+                  <span className="text-indigo-200 mb-1">{t('branch_dashboard_page.ui.kec7ovx')}</span>
                 </div>
                 <p className="text-sm text-indigo-100 opacity-80">
                   حققت {stats?.gamification?.currentSales?.toLocaleString() || stats?.today?.paid?.toLocaleString() || 0} من {stats?.gamification?.dailyTarget?.toLocaleString() || 10000} ج.م
@@ -135,8 +137,8 @@ export default function BranchDashboardPage() {
               <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center text-amber-500 font-black text-2xl mb-2 border-4 border-amber-50 dark:border-amber-900/40">
                 {stats?.gamification?.level || user?.gamification?.level || 1}
               </div>
-              <h3 className="font-bold text-gray-800 dark:text-gray-100">بائع نشيط</h3>
-              <p className="text-xs text-gray-400 mb-3">المستوى الحالي</p>
+              <h3 className="font-bold text-gray-800 dark:text-gray-100">{t('branch_dashboard_page.ui.kh4nn13')}</h3>
+              <p className="text-xs text-gray-400 mb-3">{t('branch_dashboard_page.ui.kgtf9s3')}</p>
 
               <div className="mb-1 h-2 w-full rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
                 <div
@@ -153,7 +155,7 @@ export default function BranchDashboardPage() {
       {/* Quick Actions Grid */}
       <h2 className="text-xl font-bold flex items-center gap-2">
         <LayoutGrid className="w-5 h-5 text-gray-500" />
-        الوصول السريع
+        {t('branch_dashboard_page.ui.kf0pcu4')}
       </h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -161,28 +163,28 @@ export default function BranchDashboardPage() {
           <div className="w-14 h-14 rounded-full bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center group-hover:bg-primary-500 group-hover:text-white transition-colors text-primary-500">
             <ShoppingCart className="w-7 h-7" />
           </div>
-          <span className="font-bold text-gray-700 dark:text-gray-300">نقطة البيع</span>
+          <span className="font-bold text-gray-700 dark:text-gray-300">{t('branch_dashboard_page.ui.kqm1yy0')}</span>
         </Link>
 
         <Link to="/products" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-blue-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors text-blue-500">
             <Package className="w-7 h-7" />
           </div>
-          <span className="font-bold text-gray-700 dark:text-gray-300">المخزون والمنتجات</span>
+          <span className="font-bold text-gray-700 dark:text-gray-300">{t('branch_dashboard_page.ui.khx68gl')}</span>
         </Link>
 
         <Link to="/invoices" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-emerald-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-emerald-500 transition-colors text-emerald-500">
             <FileText className="w-7 h-7" />
           </div>
-          <span className="font-bold text-gray-700 dark:text-gray-300">الفواتير السابقة</span>
+          <span className="font-bold text-gray-700 dark:text-gray-300">{t('branch_dashboard_page.ui.ktt6kdo')}</span>
         </Link>
 
         <Link to="/returns-management" className="app-surface group flex flex-col items-center justify-center gap-3 rounded-2xl border border-gray-100/80 p-6 text-center shadow-sm transition-all hover:border-amber-500 hover:shadow-md dark:border-white/10">
           <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors text-amber-500">
             <RotateCcw className="w-7 h-7" />
           </div>
-          <span className="font-bold text-gray-700 dark:text-gray-300">المرتجعات</span>
+          <span className="font-bold text-gray-700 dark:text-gray-300">{t('branch_dashboard_page.ui.kq51opb')}</span>
         </Link>
       </div>
 
@@ -192,9 +194,9 @@ export default function BranchDashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Clock className="w-5 h-5 text-gray-500" />
-              آخر العمليات
+              {t('branch_dashboard_page.ui.kbi0jmb')}
             </h3>
-            <Link to="/invoices" className="text-primary-600 text-sm font-bold hover:underline">عرض الكل</Link>
+            <Link to="/invoices" className="text-primary-600 text-sm font-bold hover:underline">{t('branch_dashboard_page.ui.kwbgoww')}</Link>
           </div>
 
           {loading ? (
@@ -215,7 +217,7 @@ export default function BranchDashboardPage() {
                   <div className="text-left">
                     <p className="font-bold">{inv.totalAmount.toLocaleString()} ج.م</p>
                     <Badge variant={inv.status === 'paid' ? 'success' : 'warning'} size="sm">
-                      {inv.status === 'paid' ? 'مدفوع' : 'معلق'}
+                      {inv.status === 'paid' ? t('branch_dashboard_page.ui.kpbinfs') : 'معلق'}
                     </Badge>
                   </div>
                 </div>
@@ -223,7 +225,7 @@ export default function BranchDashboardPage() {
             </div>
           ) : (
             <div className="py-10 text-center text-gray-400">
-              لا توجد عمليات بيع اليوم
+              {t('branch_dashboard_page.ui.kxb39yw')}
             </div>
           )}
         </Card>
@@ -232,23 +234,23 @@ export default function BranchDashboardPage() {
         <Card className="p-5">
           <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
             <User className="w-5 h-5 text-gray-500" />
-            معلومات الموظف
+            {t('branch_dashboard_page.ui.kh2hgop')}
           </h3>
           <div className="space-y-4">
             <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
-              <span className="text-gray-500 text-sm">الاسم</span>
+              <span className="text-gray-500 text-sm">{t('branch_dashboard_page.ui.kovdol8')}</span>
               <span className="font-bold">{user?.name}</span>
             </div>
             <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
-              <span className="text-gray-500 text-sm">الدور الوظيفي</span>
-              <Badge variant="primary">{user?.role === 'vendor' ? 'موظف مبيعات' : user?.role}</Badge>
+              <span className="text-gray-500 text-sm">{t('branch_dashboard_page.ui.keulxs1')}</span>
+              <Badge variant="primary">{user?.role === 'vendor' ? t('branch_dashboard_page.ui.kj7m77t') : user?.role}</Badge>
             </div>
             <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
-              <span className="text-gray-500 text-sm">الفرع الحالي</span>
-              <span className="font-bold">{user?.branch?.name || 'الفرع الرئيسي'}</span>
+              <span className="text-gray-500 text-sm">{t('branch_dashboard_page.ui.kamwx1r')}</span>
+              <span className="font-bold">{user?.branch?.name || t('branch_dashboard_page.toasts.kphehwb')}</span>
             </div>
             <div className="app-surface-muted flex items-center justify-between rounded-xl p-3">
-              <span className="text-gray-500 text-sm">وقت الدخول</span>
+              <span className="text-gray-500 text-sm">{t('branch_dashboard_page.ui.k33dyko')}</span>
               <span className="font-bold font-mono">{format(new Date(), 'hh:mm a', { locale: ar })}</span>
             </div>
           </div>

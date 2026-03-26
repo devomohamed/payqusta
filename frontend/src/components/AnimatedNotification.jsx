@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { create } from 'zustand';
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Beautiful Animated Notification System
@@ -51,17 +53,33 @@ export const useNotificationStore = create((set) => ({
 
 // Notification helpers (easier to use)
 export const notify = {
-  success: (message, title = 'نجح العملية') =>
-    useNotificationStore.getState().addNotification({ type: 'success', title, message }),
+  success: (message, title) =>
+    useNotificationStore.getState().addNotification({
+      type: 'success',
+      title: title ?? i18n.t('common:notifications.success_title'),
+      message,
+    }),
 
-  error: (message, title = 'حدث خطأ') =>
-    useNotificationStore.getState().addNotification({ type: 'error', title, message }),
+  error: (message, title) =>
+    useNotificationStore.getState().addNotification({
+      type: 'error',
+      title: title ?? i18n.t('common:notifications.error_title'),
+      message,
+    }),
 
-  warning: (message, title = 'تحذير') =>
-    useNotificationStore.getState().addNotification({ type: 'warning', title, message }),
+  warning: (message, title) =>
+    useNotificationStore.getState().addNotification({
+      type: 'warning',
+      title: title ?? i18n.t('common:notifications.warning_title'),
+      message,
+    }),
 
-  info: (message, title = 'معلومة') =>
-    useNotificationStore.getState().addNotification({ type: 'info', title, message }),
+  info: (message, title) =>
+    useNotificationStore.getState().addNotification({
+      type: 'info',
+      title: title ?? i18n.t('common:notifications.info_title'),
+      message,
+    }),
 
   custom: (config) =>
     useNotificationStore.getState().addNotification(config),
@@ -197,6 +215,7 @@ function NotificationItem({ notification, onRemove }) {
 
 // Main Notifications Container
 export default function AnimatedNotification() {
+  const { t } = useTranslation('admin');
   const { notifications, removeNotification } = useNotificationStore();
 
   return (

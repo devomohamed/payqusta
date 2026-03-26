@@ -1,58 +1,60 @@
 ﻿import React from 'react';
 import { ArrowLeft, BarChart3, Boxes, CreditCard, MonitorSmartphone, ShieldCheck, Workflow } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const modules = [
   {
     icon: BarChart3,
-    title: 'إدارة المبيعات',
-    points: ['فواتير أسرع', 'متابعة أداء يومي', 'ربط مباشر بحركة النشاط'],
+    title: t('public_features_page.ui.k8sscar'),
+    points: ['فواتير أسرع', t('public_features_page.ui.kcmlywd'), 'ربط مباشر بحركة النشاط'],
     tone: 'from-amber-100 via-white to-white',
   },
   {
     icon: Boxes,
-    title: 'المنتجات والمخزون',
-    points: ['تنبيهات نقص المخزون', 'تنظيم الأقسام', 'إدارة الصور والأسعار'],
+    title: t('public_features_page.ui.ky58v5'),
+    points: ['تنبيهات نقص المخزون', t('public_features_page.ui.kffiyfo'), 'إدارة الصور والأسعار'],
     tone: 'from-emerald-100 via-white to-white',
   },
   {
     icon: CreditCard,
-    title: 'الأقساط والتحصيل',
-    points: ['جداول سداد مرنة', 'تأخير ومستحقات', 'رؤية أوضح للمديونيات'],
+    title: t('public_features_page.ui.k6vxcxs'),
+    points: ['جداول سداد مرنة', t('public_features_page.ui.k25lnu8'), 'رؤية أوضح للمديونيات'],
     tone: 'from-sky-100 via-white to-white',
   },
   {
     icon: MonitorSmartphone,
-    title: 'المتجر والواجهة العامة',
-    points: ['صفحات عامة احترافية', 'روابط قابلة للمشاركة', 'تجربة مناسبة للموبايل'],
+    title: t('public_features_page.ui.k1t67ec'),
+    points: ['صفحات عامة احترافية', t('public_features_page.ui.k7wbkw8'), 'تجربة مناسبة للموبايل'],
     tone: 'from-rose-100 via-white to-white',
   },
   {
     icon: Workflow,
-    title: 'سير عمل متماسك',
-    points: ['من المنتج إلى الفاتورة', 'من الفاتورة إلى التحصيل', 'من الإدارة إلى الموقع العام'],
+    title: t('public_features_page.ui.kndtscb'),
+    points: ['من المنتج إلى الفاتورة', t('public_features_page.ui.kmcdzxt'), 'من الإدارة إلى الموقع العام'],
     tone: 'from-slate-100 via-white to-white',
   },
   {
     icon: ShieldCheck,
-    title: 'ثقة واستمرارية',
-    points: ['هيكل واضح للمنصة', 'واجهة تعريفية احترافية', 'أساس جيد للتوسع والانتظام'],
+    title: t('public_features_page.ui.ku0orq1'),
+    points: ['هيكل واضح للمنصة', t('public_features_page.ui.kmnk00x'), 'أساس جيد للتوسع والانتظام'],
     tone: 'from-orange-100 via-white to-white',
   },
 ];
 
 const valueOutcomes = [
-  'صورة أوضح للعميل قبل الطلب أو التسجيل',
-  'تشغيل يومي أسرع لفريق البيع والتحصيل',
-  'ربط أفضل بين ما يراه العميل وما يحدث داخل النظام',
+  t('public_features_page.ui.kde5fxw'),
+  t('public_features_page.ui.kl1y2si'),
+  t('public_features_page.ui.kxr19pi'),
 ];
 
 export default function PublicFeaturesPage() {
+  const { t } = useTranslation('admin');
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
         <div className="text-right">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">المزايا</p>
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">{t('public_features_page.ui.kza7eva')}</p>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
             PayQusta ليس أداة واحدة، بل منظومة مترابطة
           </h1>
@@ -61,8 +63,8 @@ export default function PublicFeaturesPage() {
           </p>
 
           <div className="app-surface mt-6 rounded-[2rem] p-6">
-            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الصورة الكبيرة</p>
-            <h2 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">الميزة الأقوى هي الترابط</h2>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_features_page.ui.kocmmfc')}</p>
+            <h2 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">{t('public_features_page.ui.kwcz229')}</h2>
             <p className="app-text-soft mt-3 text-sm leading-7">
               قيمة المنصة ليست في كثرة المزايا فقط، بل في أن كل خطوة تكمل الأخرى: الفاتورة، العميل، المخزون، والتحصيل لا يعيش كل واحد منها في مكان منفصل.
             </p>
@@ -70,8 +72,8 @@ export default function PublicFeaturesPage() {
         </div>
 
         <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">النتيجة</p>
-          <h2 className="mt-3 text-3xl font-black leading-tight">زائر يفهم المشروع بسرعة، وفريق يعمل براحة أكبر</h2>
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">{t('public_features_page.ui.kz9s0xm')}</p>
+          <h2 className="mt-3 text-3xl font-black leading-tight">{t('public_features_page.ui.k7luaws')}</h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
             النتيجة التي يراها العميل أمامه يجب أن تنعكس أيضًا على راحة الفريق في الداخل، وهذا ما تبني عليه هذه المنظومة.
           </p>
@@ -87,7 +89,7 @@ export default function PublicFeaturesPage() {
               to="/login?mode=register"
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950"
             >
-              ابدأ الآن
+              {t('public_features_page.ui.kl6w4j0')}
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>
@@ -121,8 +123,8 @@ export default function PublicFeaturesPage() {
       <div className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ما الذي يتحسن فعليًا؟</p>
-            <h3 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">من عرض البراند إلى متابعة التحصيل، نفس المنظومة تخدمك</h3>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_features_page.ui.k71kkqu')}</p>
+            <h3 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_features_page.ui.kgdua1j')}</h3>
             <p className="app-text-soft mt-3 text-base leading-8">
               الهدف أن يرى العميل مشروعًا منظمًا، وأن يعمل الفريق على بيانات واضحة، وأن يتحول ذلك إلى مبيعات ومتابعة أدق مع الوقت.
             </p>
@@ -133,13 +135,13 @@ export default function PublicFeaturesPage() {
               to="/use-cases"
               className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
-              الحالات العملية
+              {t('public_features_page.ui.kr0hc5y')}
             </Link>
             <Link
               to="/login?mode=register"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
             >
-              جرّب الآن
+              {t('public_features_page.ui.k6qcg3f')}
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>

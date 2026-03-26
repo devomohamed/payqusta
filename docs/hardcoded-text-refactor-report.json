@@ -1,0 +1,2674 @@
+{
+  "generatedAt": "2026-03-27T12:48:09.468Z",
+  "scope": "frontend/src/**",
+  "migrationStatus": "partial-high-confidence-pass",
+  "replacedTexts": [
+    {
+      "file": "frontend/src/pages/ActivateAccountPage.jsx",
+      "before": "Local TRANSLATIONS object + conditional literals",
+      "after": "common.activation.* keys via useTranslation(common)"
+    },
+    {
+      "file": "frontend/src/components/Header.jsx",
+      "before": "Theme/quick-sale/super-badge literals",
+      "after": "admin.header.* keys"
+    },
+    {
+      "file": "frontend/src/components/AnimatedNotification.jsx",
+      "before": "Default Arabic notification titles",
+      "after": "common.notifications.* keys"
+    }
+  ],
+  "newlyAddedLocalizationKeys": [
+    "admin.header.quick_sale",
+    "admin.header.super_badge",
+    "admin.header.theme.system",
+    "admin.header.theme.to_light",
+    "admin.header.theme.to_dark",
+    "common.notifications.success_title",
+    "common.notifications.error_title",
+    "common.notifications.warning_title",
+    "common.notifications.info_title",
+    "common.activation.loading",
+    "common.activation.invalid_title",
+    "common.activation.invalid_sub",
+    "common.activation.back_home",
+    "common.activation.lang.english",
+    "common.activation.lang.arabic",
+    "common.activation.brand",
+    "common.activation.welcome",
+    "common.activation.subtitle",
+    "common.activation.account",
+    "common.activation.team_invite",
+    "common.activation.customer_portal",
+    "common.activation.fallback_title",
+    "common.activation.fallback_desc",
+    "common.activation.done_title",
+    "common.activation.done_sub",
+    "common.activation.redirecting",
+    "common.activation.step_title",
+    "common.activation.step_heading",
+    "common.activation.pass_label",
+    "common.activation.pass_placeholder",
+    "common.activation.confirm_label",
+    "common.activation.confirm_placeholder",
+    "common.activation.form.access_for",
+    "common.activation.support",
+    "common.activation.activating",
+    "common.activation.activate_btn",
+    "common.activation.powered_by",
+    "common.activation.validation.password_min",
+    "common.activation.validation.password_mismatch"
+  ],
+  "ambiguousManualReview": {
+    "totalCandidates": 6255,
+    "topFiles": [
+      {
+        "file": "frontend/src/publicSite/seoLandingPages.js",
+        "count": 227
+      },
+      {
+        "file": "frontend/src/pages/CustomersPage.jsx",
+        "count": 146
+      },
+      {
+        "file": "frontend/src/pages/PurchaseOrdersPage.jsx",
+        "count": 133
+      },
+      {
+        "file": "frontend/src/components/settings/SettingsStore.jsx",
+        "count": 132
+      },
+      {
+        "file": "frontend/src/pages/BusinessReportsPage.jsx",
+        "count": 126
+      },
+      {
+        "file": "frontend/src/pages/InvoicesPage.jsx",
+        "count": 125
+      },
+      {
+        "file": "frontend/src/pages/TenantManagementPage.jsx",
+        "count": 116
+      },
+      {
+        "file": "frontend/src/pages/SupplierPurchaseInvoicesPage.jsx",
+        "count": 115
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "count": 111
+      },
+      {
+        "file": "frontend/src/pages/BackupRestorePage.jsx",
+        "count": 111
+      },
+      {
+        "file": "frontend/src/pages/AdminUsersPage.jsx",
+        "count": 101
+      },
+      {
+        "file": "frontend/src/publicSite/content.js",
+        "count": 100
+      },
+      {
+        "file": "frontend/src/storefront/ProductDetails.jsx",
+        "count": 95
+      },
+      {
+        "file": "frontend/src/pages/BranchManagement.jsx",
+        "count": 93
+      },
+      {
+        "file": "frontend/src/components/products/ProductMediaStep.jsx",
+        "count": 92
+      },
+      {
+        "file": "frontend/src/storefront/Checkout.jsx",
+        "count": 88
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "count": 87
+      },
+      {
+        "file": "frontend/src/pages/InstallmentsDashboardPage.jsx",
+        "count": 86
+      },
+      {
+        "file": "frontend/src/pages/OnboardingPage.jsx",
+        "count": 86
+      },
+      {
+        "file": "frontend/src/pages/SuppliersPage.jsx",
+        "count": 85
+      },
+      {
+        "file": "frontend/src/pages/AdminShiftsPage.jsx",
+        "count": 84
+      },
+      {
+        "file": "frontend/src/storefront/StorefrontHome.jsx",
+        "count": 80
+      },
+      {
+        "file": "frontend/src/pages/PortalOrdersAdminPage.jsx",
+        "count": 76
+      },
+      {
+        "file": "frontend/src/pages/PublicSeoTopicPage.jsx",
+        "count": 72
+      },
+      {
+        "file": "frontend/src/pages/ReturnsManagementPage.jsx",
+        "count": 70
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "count": 65
+      },
+      {
+        "file": "frontend/src/pages/QuickSalePage.jsx",
+        "count": 64
+      },
+      {
+        "file": "frontend/src/pages/RolesPage.jsx",
+        "count": 64
+      },
+      {
+        "file": "frontend/src/pages/SuperAdminPlansPage.jsx",
+        "count": 64
+      },
+      {
+        "file": "frontend/src/pages/FinancialsPage.jsx",
+        "count": 63
+      },
+      {
+        "file": "frontend/src/pages/PublicContactPage.jsx",
+        "count": 62
+      },
+      {
+        "file": "frontend/src/storefront/StorefrontLayout.jsx",
+        "count": 61
+      },
+      {
+        "file": "frontend/src/pages/SubscriptionPage.jsx",
+        "count": 60
+      },
+      {
+        "file": "frontend/src/pages/PublicLeadsPage.jsx",
+        "count": 59
+      },
+      {
+        "file": "frontend/src/pages/AdminTenantsPage.jsx",
+        "count": 57
+      },
+      {
+        "file": "frontend/src/pages/CouponsPage.jsx",
+        "count": 57
+      },
+      {
+        "file": "frontend/src/pages/ExpensesPage.jsx",
+        "count": 57
+      },
+      {
+        "file": "frontend/src/pages/ProductsPage.jsx",
+        "count": 57
+      },
+      {
+        "file": "frontend/src/pages/CategoriesPage.jsx",
+        "count": 56
+      },
+      {
+        "file": "frontend/src/pages/ReportsPage.jsx",
+        "count": 55
+      },
+      {
+        "file": "frontend/src/components/settings/SettingsUsers.jsx",
+        "count": 52
+      },
+      {
+        "file": "frontend/src/components/settings/SettingsWhatsApp.jsx",
+        "count": 52
+      },
+      {
+        "file": "frontend/src/pages/StockAdjustmentsPage.jsx",
+        "count": 52
+      },
+      {
+        "file": "frontend/src/pages/SubscriptionRequestsPage.jsx",
+        "count": 51
+      },
+      {
+        "file": "frontend/src/pages/AdminDashboardPage.jsx",
+        "count": 49
+      },
+      {
+        "file": "frontend/src/pages/CashDrawerPage.jsx",
+        "count": 49
+      },
+      {
+        "file": "frontend/src/pages/StocktakePage.jsx",
+        "count": 49
+      },
+      {
+        "file": "frontend/src/pages/AdminAuditLogsPage.jsx",
+        "count": 48
+      },
+      {
+        "file": "frontend/src/pages/CommandCenterPage.jsx",
+        "count": 48
+      },
+      {
+        "file": "frontend/src/pages/DashboardPage.jsx",
+        "count": 47
+      }
+    ],
+    "samples": [
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 163,
+        "text": "Loading your workspace...",
+        "reason": "jsx_text_node_en"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 189,
+        "text": "<Route path=\"/dashboard\" element={<LazyRoute component={DashboardPage} message=\"جاري تحميل اللوحة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 190,
+        "text": "<Route path=\"/products\" element={<LazyRoute component={ProductsPage} message=\"جاري تحميل المنتجات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 191,
+        "text": "<Route path=\"/customers\" element={<LazyRoute component={CustomersPage} message=\"جاري تحميل العملاء...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 192,
+        "text": "<Route path=\"/invoices\" element={<LazyRoute component={InvoicesPage} message=\"جاري تحميل الفواتير...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 193,
+        "text": "<Route path=\"/settings\" element={<LazyRoute component={SettingsPage} message=\"جاري تحميل الإعدادات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 194,
+        "text": "<Route path=\"/branch-dashboard\" element={<LazyRoute component={BranchDashboardPage} message=\"جاري تحميل لوحة الفرع...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 195,
+        "text": "<Route path=\"/categories\" element={<LazyRoute component={CategoriesPage} message=\"جاري تحميل التصنيفات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 196,
+        "text": "<Route path=\"/stocktake\" element={<LazyRoute component={StocktakePage} message=\"جاري تحميل الجرد...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 197,
+        "text": "<Route path=\"/stock-adjustments\" element={<LazyRoute component={StockAdjustmentsPage} message=\"جاري تحميل تسويات المخزون...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 198,
+        "text": "<Route path=\"/marketing\" element={<LazyRoute component={MarketingPage} message=\"جاري تحميل التسويق...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 199,
+        "text": "<Route path=\"/staff-performance\" element={<LazyRoute component={StaffPerformancePage} message=\"جاري تحميل أداء الموظفين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 200,
+        "text": "<Route path=\"/financials\" element={<LazyRoute component={FinancialsPage} message=\"جاري تحميل المالية...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 201,
+        "text": "<Route path=\"/suppliers\" element={<LazyRoute component={SuppliersPage} message=\"جاري تحميل الموردين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 202,
+        "text": "<Route path=\"/quick-sale\" element={<LazyRoute component={QuickSalePage} message=\"جاري تحميل الكاشير...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 203,
+        "text": "<Route path=\"/reports\" element={<LazyRoute component={ReportsPage} message=\"جاري تحميل التقارير...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 204,
+        "text": "<Route path=\"/business-reports\" element={<LazyRoute component={BusinessReportsPage} message=\"جاري تحميل تقارير الأعمال...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 205,
+        "text": "<Route path=\"/command-center\" element={<LazyRoute component={CommandCenterPage} message=\"جاري تحميل مركز التحكم...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 206,
+        "text": "<Route path=\"/expenses\" element={<LazyRoute component={ExpensesPage} message=\"جاري تحميل المصاريف...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 207,
+        "text": "<Route path=\"/low-stock\" element={<LazyRoute component={LowStockPage} message=\"جاري تحميل النواقص...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 208,
+        "text": "<Route path=\"/subscriptions\" element={<LazyRoute component={SubscriptionPage} message=\"جاري تحميل الاشتراكات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 209,
+        "text": "<Route path=\"/cameras\" element={<LazyRoute component={CamerasPage} message=\"جاري تحميل الكاميرات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 210,
+        "text": "<Route path=\"/cash-drawer\" element={<LazyRoute component={CashDrawerPage} message=\"جاري تحميل الخزينة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 211,
+        "text": "<Route path=\"/roles\" element={<LazyRoute component={RolesPage} message=\"جاري تحميل الأدوار...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 212,
+        "text": "<Route path=\"/activity-logs\" element={<LazyRoute component={ActivityLogsPage} message=\"جاري تحميل سجل النشاط...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 213,
+        "text": "<Route path=\"/purchase-orders\" element={<LazyRoute component={PurchaseOrdersPage} message=\"جاري تحميل أوامر الشراء...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 214,
+        "text": "<Route path=\"/supplier-purchase-invoices\" element={<LazyRoute component={SupplierPurchaseInvoicesPage} message=\"جاري تحميل فواتير المشتريات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 215,
+        "text": "<Route path=\"/aging-report\" element={<LazyRoute component={AgingReportPage} message=\"جاري تحميل تقرير الأعمار...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 216,
+        "text": "<Route path=\"/installments\" element={<LazyRoute component={InstallmentsDashboardPage} message=\"جاري تحميل الأقساط...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 217,
+        "text": "<Route path=\"/admin/dashboard\" element={<LazyRoute component={AdminDashboardPage} message=\"جاري تحميل لوحة الإدارة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 218,
+        "text": "<Route path=\"/admin/tenants\" element={<LazyRoute component={AdminTenantsPage} message=\"جاري تحميل المستأجرين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 219,
+        "text": "<Route path=\"/admin/users\" element={<LazyRoute component={AdminUsersPage} message=\"جاري تحميل المستخدمين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 220,
+        "text": "<Route path=\"/admin/audit-logs\" element={<LazyRoute component={AdminAuditLogsPage} message=\"جاري تحميل سجلات التدقيق...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 221,
+        "text": "<Route path=\"/admin/statistics\" element={<LazyRoute component={AdminStatisticsPage} message=\"جاري تحميل الإحصائيات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 222,
+        "text": "<Route path=\"/import\" element={<LazyRoute component={ImportDataPage} message=\"جاري تحميل الاستيراد...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 223,
+        "text": "<Route path=\"/backup\" element={<LazyRoute component={BackupRestorePage} message=\"جاري تحميل النسخ الاحتياطي...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 224,
+        "text": "<Route path=\"/onboarding\" element={<LazyRoute component={OnboardingPage} message=\"جاري تحميل الإعداد الأولي...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 225,
+        "text": "<Route path=\"/branches\" element={<LazyRoute component={BranchManagement} message=\"جاري تحميل الفروع...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 226,
+        "text": "<Route path=\"/tenant-management\" element={<LazyRoute component={TenantManagementPage} message=\"جاري تحميل إدارة المتجر...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 227,
+        "text": "<Route path=\"/super-admin/plans\" element={<LazyRoute component={SuperAdminPlansPage} message=\"جاري تحميل الخطط...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 228,
+        "text": "<Route path=\"/super-admin/requests\" element={<LazyRoute component={SubscriptionRequestsPage} message=\"جاري تحميل الطلبات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 229,
+        "text": "<Route path=\"/super-admin/notifications\" element={<LazyRoute component={SuperAdminNotificationSettingsPage} message=\"جاري تحميل إعدادات الإشعارات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 230,
+        "text": "<Route path=\"/portal-orders\" element={<LazyRoute component={PortalOrdersAdminPage} message=\"جاري تحميل طلبات البوابة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 231,
+        "text": "<Route path=\"/returns-management\" element={<LazyRoute component={ReturnsManagementPage} message=\"جاري تحميل إدارة المرتجعات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 232,
+        "text": "<Route path=\"/kyc-review\" element={<LazyRoute component={KYCReviewPage} message=\"جاري تحميل مراجعة الهوية...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 233,
+        "text": "<Route path=\"/support-messages\" element={<LazyRoute component={SupportMessagesPage} message=\"جاري تحميل رسائل الدعم...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 234,
+        "text": "<Route path=\"/reviews\" element={<LazyRoute component={ReviewsPage} message=\"جاري تحميل التقييمات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 235,
+        "text": "<Route path=\"/coupons\" element={<LazyRoute component={CouponsPage} message=\"جاري تحميل الكوبونات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 236,
+        "text": "<Route path=\"/referral\" element={<LazyRoute component={ReferralPage} message=\"جاري تحميل الإحالات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 237,
+        "text": "<Route path=\"/revenue-analytics\" element={<LazyRoute component={RevenueAnalyticsPage} message=\"جاري تحميل التحليلات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 238,
+        "text": "<Route path=\"/notifications\" element={<LazyRoute component={NotificationsPage} message=\"جاري تحميل الإشعارات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 239,
+        "text": "<Route path=\"/stock-search\" element={<LazyRoute component={StockSearchPage} message=\"جاري تحميل البحث...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 240,
+        "text": "<Route path=\"/shift\" element={<LazyRoute component={ShiftManagementPage} message=\"جاري تحميل الورديات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 241,
+        "text": "<Route path=\"/admin-shifts\" element={<LazyRoute component={AdminShiftsPage} message=\"جاري تحميل مراقبة الورديات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 242,
+        "text": "<Route path=\"/supplier-aging-report\" element={<LazyRoute component={SupplierAgingReportPage} message=\"جاري تحميل تقرير الموردين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 243,
+        "text": "<Route path=\"/purchase-returns\" element={<LazyRoute component={PurchaseReturnsPage} message=\"جاري تحميل مرتجعات الشراء...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 294,
+        "text": "Pay",
+        "reason": "jsx_text_node_en"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 297,
+        "text": "Signing out...",
+        "reason": "jsx_text_node_en"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 329,
+        "text": "<LazyRoute component={PortalLogin} message=\"جاري تحميل تسجيل الدخول...\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 331,
+        "text": "<Route path=\"/portal/forgot-password\" element={<LazyRoute component={ForgotPasswordPage} message=\"جاري تحميل استعادة كلمة المرور...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 332,
+        "text": "<Route path=\"/portal/reset-password/:token\" element={<LazyRoute component={ResetPasswordPage} message=\"جاري تحميل إعادة التعيين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 334,
+        "text": "<Route path=\"/portal\" element={<LazyRoute component={PortalLayout} message=\"جاري تحميل البوابة...\" />}>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 336,
+        "text": "<Route path=\"dashboard\" element={<LazyRoute component={PortalHome} message=\"جاري تحميل البوابة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 337,
+        "text": "<Route path=\"invoices\" element={<LazyRoute component={PortalInvoices} message=\"جاري تحميل فواتير البوابة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 338,
+        "text": "<Route path=\"returns\" element={<LazyRoute component={PortalReturns} message=\"جاري تحميل المرتجعات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 339,
+        "text": "<Route path=\"statement\" element={<LazyRoute component={PortalStatement} message=\"جاري تحميل كشف الحساب...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 340,
+        "text": "<Route path=\"calculator\" element={<LazyRoute component={PortalInstallmentCalculator} message=\"جاري تحميل حاسبة الأقساط...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 341,
+        "text": "<Route path=\"documents\" element={<LazyRoute component={PortalDocuments} message=\"جاري تحميل المستندات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 342,
+        "text": "<Route path=\"addresses\" element={<LazyRoute component={PortalAddresses} message=\"جاري تحميل العناوين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 343,
+        "text": "<Route path=\"profile\" element={<LazyRoute component={PortalProfile} message=\"جاري تحميل الملف الشخصي...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 344,
+        "text": "<Route path=\"orders\" element={<LazyRoute component={PortalOrders} message=\"جاري تحميل الطلبات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 345,
+        "text": "<Route path=\"wishlist\" element={<LazyRoute component={PortalWishlist} message=\"جاري تحميل المفضلة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 346,
+        "text": "<Route path=\"support\" element={<LazyRoute component={PortalSupport} message=\"جاري تحميل الدعم...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 347,
+        "text": "<Route path=\"support/:id\" element={<LazyRoute component={PortalSupportChat} message=\"جاري تحميل المحادثة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 348,
+        "text": "<Route path=\"notifications\" element={<LazyRoute component={PortalNotifications} message=\"جاري تحميل الإشعارات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 349,
+        "text": "<Route path=\"points\" element={<LazyRoute component={PortalPointsHistory} message=\"جاري تحميل سجل النقاط...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 350,
+        "text": "<Route path=\"reviews\" element={<LazyRoute component={PortalReviews} message=\"جاري تحميل التقييمات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 351,
+        "text": "<Route path=\"products\" element={<LazyRoute component={PortalProducts} message=\"جاري تحميل المنتجات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 352,
+        "text": "<Route path=\"products/:id\" element={<LazyRoute component={PortalProductDetails} message=\"جاري تحميل تفاصيل المنتج...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 353,
+        "text": "<Route path=\"cart\" element={<LazyRoute component={ShoppingCart} message=\"جاري تحميل السلة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 354,
+        "text": "<Route path=\"checkout\" element={<LazyRoute component={PortalCheckout} message=\"جاري تحميل إتمام الطلب...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 355,
+        "text": "<Route path=\"payment/result\" element={<LazyRoute component={PortalPaymentResult} message=\"جاري تحميل نتيجة الدفع...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 358,
+        "text": "<Route path={storefrontPath('/')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontHome} message=\"جاري تحميل المتجر...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 359,
+        "text": "<Route path={storefrontPath('/products')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductCatalog} message=\"جاري تحميل كتالوج المنتجات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 360,
+        "text": "<Route path={storefrontPath('/products/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductDetails} message=\"جاري تحميل تفاصيل المنتج...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 361,
+        "text": "<Route path={storefrontPath('/collections/:slug')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontLandingPage} message=\"جاري تحميل المجموعة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 362,
+        "text": "<Route path={storefrontPath('/about')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontAbout} message=\"جاري تحميل صفحة المتجر...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 363,
+        "text": "<Route path={storefrontPath('/cart')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ShoppingCart} message=\"جاري تحميل السلة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 364,
+        "text": "<Route path={storefrontPath('/checkout')} element={<LazyLayoutRoute layout={StorefrontLayout} component={Checkout} message=\"جاري تحميل إتمام الطلب...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 365,
+        "text": "<Route path={storefrontPath('/order/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderConfirmation} message=\"جاري تحميل تفاصيل الطلب...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 366,
+        "text": "<Route path={storefrontPath('/track-order')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderTracking} message=\"جاري تحميل تتبع الطلب...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 369,
+        "text": "isAuthenticated ? <Navigate to=\"/\" replace /> : <LazyRoute component={LoginPage} message=\"جاري تحميل تسجيل الدخول...\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 371,
+        "text": "<Route path=\"/forgot-password\" element={<LazyRoute component={ForgotPasswordPage} message=\"جاري تحميل استعادة كلمة المرور...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 372,
+        "text": "<Route path=\"/reset-password/:token\" element={<LazyRoute component={ResetPasswordPage} message=\"جاري تحميل إعادة التعيين...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 373,
+        "text": "<Route path=\"/activate-account/:token\" element={<LazyRoute component={ActivateAccountPage} message=\"جاري تحميل صفحة التفعيل...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 380,
+        "text": "<LazyLayoutRoute layout={PublicSiteLayout} component={PublicLandingPage} message=\"جاري تحميل الصفحة الرئيسية...\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 383,
+        "text": "<Route path=\"/features\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFeaturesPage} message=\"جاري تحميل المزايا...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 384,
+        "text": "<Route path=\"/use-cases\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicUseCasesPage} message=\"جاري تحميل حالات الاستخدام...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 385,
+        "text": "<Route path=\"/how-it-works\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicHowItWorksPage} message=\"جاري تحميل شرح المنصة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 386,
+        "text": "<Route path=\"/faq\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFaqPage} message=\"جاري تحميل الأسئلة الشائعة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 387,
+        "text": "<Route path=\"/privacy\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicPrivacyPage} message=\"جاري تحميل سياسة الخصوصية...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 388,
+        "text": "<Route path=\"/terms\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicTermsPage} message=\"جاري تحميل الشروط والأحكام...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 389,
+        "text": "<Route path=\"/contact\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicContactPage} message=\"جاري تحميل صفحة التواصل...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 390,
+        "text": "<Route path=\"/payment/:gateway/:id\" element={<LazyRoute component={PublicPaymentInstructionPage} message=\"جاري تحميل تعليمات الدفع...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 391,
+        "text": "<Route path=\"/sales-management\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل صفحة إدارة المبيعات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 392,
+        "text": "<Route path=\"/inventory-management\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل صفحة إدارة المخزون...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 393,
+        "text": "<Route path=\"/installments-management\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل صفحة الأقساط والتحصيل...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 394,
+        "text": "<Route path=\"/pos-system\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل صفحة الكاشير ونقطة البيع...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 395,
+        "text": "<Route path=\"/ecommerce-platform\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل صفحة المتجر الإلكتروني...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 396,
+        "text": "<Route path=\"/pricing\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل الأسعار والباقات...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/App.jsx",
+        "line": 397,
+        "text": "<Route path=\"/demo\" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message=\"جاري تحميل الديمو والتجربة...\" />} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 42,
+        "text": "<h3 className=\"font-bold text-lg\">تحليل المخزون بالذكاء الاصطناعي</h3>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 43,
+        "text": "<p className=\"text-xs text-indigo-300\">توقعات النفاذ بناءً على المبيعات</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 53,
+        "text": "{item.status === 'critical' ? 'حرج جداً' : 'منخفض'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 59,
+        "text": "<p>المخزون الحالي: <span className=\"text-white font-bold\">{item.currentStock}</span></p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 60,
+        "text": "<p>معدل البيع: {item.ads} / يوم</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 65,
+        "text": "ينفذ في {item.daysUntilStockout} أيام",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 71,
+        "text": "<ShoppingCart className=\"w-3 h-3\" /> طلب توريد",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/AIStockWidget.jsx",
+        "line": 80,
+        "text": "عرض التقرير الكامل <ArrowRight className=\"w-4 h-4\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeLabel.jsx",
+        "line": 23,
+        "text": "لا يوجد باركود لعرضه",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 50,
+        "text": "setSuccess(`تم مسح: ${normalizedPayload.value}`);",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 78,
+        "text": "setError('تعذر قراءة الباركود من الكاميرا');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 88,
+        "text": "setError('لا يمكن الوصول إلى الكاميرا. تأكد من منح الإذن للمتصفح.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 101,
+        "text": "setError('الكشاف غير مدعوم على هذا الجهاز أو المتصفح');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 108,
+        "text": "setError('الباركود يجب أن يكون 3 أحرف على الأقل');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 134,
+        "text": "setError('لم يتم العثور على باركود واضح داخل الصورة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 173,
+        "text": "<h3 className=\"font-bold\">مسح الباركود</h3>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 207,
+        "text": "مسح بالكاميرا",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 212,
+        "text": "رفع صورة",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 221,
+        "text": "إيقاف",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 226,
+        "text": "تشغيل الفلاش",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 238,
+        "text": "placeholder=\"أدخل الباركود...\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 242,
+        "text": "<Button type=\"submit\" className=\"min-w-[5.5rem] rounded-2xl\">إضافة</Button>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BarcodeScanner.jsx",
+        "line": 246,
+        "text": "يدعم الكاميرا، قارئ USB keyboard، الإدخال اليدوي، ورفع صورة من الجهاز.",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 41,
+        "text": "notify.error('فشل تحميل بيانات التصفية');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 49,
+        "text": "notify.warning('الرجاء إدخال المبلغ النقدي الفعلي');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 67,
+        "text": "notify.success('تمت تصفية العهدة وإغلاق الوردية بنجاح');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 70,
+        "text": "notify.error(error.response?.data?.message || 'حدث خطأ أثناء التصفية');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 80,
+        "text": "<Modal open={open} onClose={onClose} title={`تصفية وردية - ${branchName || 'الفرع'}`} size=\"lg\">",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 85,
+        "text": "<span className=\"text-sm font-bold\">تاريخ التصفية:</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 104,
+        "text": "المبيعات",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 108,
+        "text": "<span className=\"text-gray-500\">مبيعات نقدية</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 112,
+        "text": "<span className=\"text-gray-500\">مبيعات آجلة</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 116,
+        "text": "<span className=\"font-bold\">الإجمالي</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 125,
+        "text": "الخصومات",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 129,
+        "text": "<span className=\"text-gray-500\">المصروفات</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 133,
+        "text": "<span className=\"text-gray-500\">المرتجعات</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 140,
+        "text": "<p className=\"mb-1 text-center text-sm text-gray-500\">صافي النقدية المتوقع</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 148,
+        "text": "المبلغ الفعلي في الدرج <span className=\"text-red-500\">*</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 160,
+        "text": "<label className=\"mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300\">الفرق (عجز/زيادة)</label>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 176,
+        "text": "<label className=\"mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300\">ملاحظات (اختياري)</label>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 182,
+        "text": "placeholder=\"أي ملاحظات حول التصفية...\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 190,
+        "text": "title=\"لا توجد بيانات\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 191,
+        "text": "description=\"تعذر تحميل بيانات التصفية لهذا الفرع الآن.\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 192,
+        "text": "action={{ label: 'إعادة المحاولة', onClick: fetchSettlementData }}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 199,
+        "text": "إلغاء",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/BranchSettlementModal.jsx",
+        "line": 207,
+        "text": "{settling ? 'جارٍ التصفية...' : 'تأكيد التصفية وإغلاق الوردية'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CameraWidget.jsx",
+        "line": 16,
+        "text": "المراقبة الحية",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CameraWidget.jsx",
+        "line": 22,
+        "text": "إدارة الكاميرات",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CameraWidget.jsx",
+        "line": 28,
+        "text": "<p className=\"text-sm\">لم يتم إضافة كاميرات بعد</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CameraWidget.jsx",
+        "line": 33,
+        "text": "إضافة كاميرا الآن",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CameraWidget.jsx",
+        "line": 48,
+        "text": "المراقبة الحية",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CameraWidget.jsx",
+        "line": 59,
+        "text": "عرض الكل",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CategorySelector.jsx",
+        "line": 77,
+        "text": "{category.children.length} أقسام فرعية",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CategorySelector.jsx",
+        "line": 134,
+        "text": "placeholder = 'اختر قسم...',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CategorySelector.jsx",
+        "line": 200,
+        "text": "<span className=\"text-[10px] font-bold uppercase tracking-wider text-primary-500\">قسم فرعي</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CategorySelector.jsx",
+        "line": 242,
+        "text": "placeholder=\"ابحث عن قسم...\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/CategorySelector.jsx",
+        "line": 252,
+        "text": "<p className=\"text-sm font-bold text-gray-400\">لم يتم العثور على أقسام</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ErrorBoundary.jsx",
+        "line": 26,
+        "text": "<h2 className=\"app-text-strong mb-2 text-xl font-black\">حدث خطأ غير متوقع</h2>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ErrorBoundary.jsx",
+        "line": 28,
+        "text": "{this.state.error?.message || 'حدث خطأ أثناء عرض هذا الجزء من النظام. أعد المحاولة مرة أخرى أو ارجع للصفحة الرئيسية.'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ErrorBoundary.jsx",
+        "line": 36,
+        "text": "إعادة المحاولة",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ErrorBoundary.jsx",
+        "line": 43,
+        "text": "الرئيسية",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/GlobalSearch.jsx",
+        "line": 257,
+        "text": "Enter",
+        "reason": "jsx_text_node_en"
+      },
+      {
+        "file": "frontend/src/components/GlobalSearch.jsx",
+        "line": 262,
+        "text": "Esc",
+        "reason": "jsx_text_node_en"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 132,
+        "text": "<h3 className=\"font-bold text-lg mb-1\">ثبت التطبيق</h3>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 134,
+        "text": "احصل على تجربة أسرع وأفضل مع تطبيق PayQusta",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 144,
+        "text": "<span>يعمل بدون إنترنت</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 148,
+        "text": "<span>تحميل فوري وسريع</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 152,
+        "text": "<span>إشعارات فورية</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 162,
+        "text": "لاحقاً",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/InstallPrompt.jsx",
+        "line": 169,
+        "text": "ثبت الآن",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/LazyStreamPlayer.jsx",
+        "line": 8,
+        "text": "function PlayerFallback({ message = 'جاري تحميل البث...' }) {",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/LazyStreamPlayer.jsx",
+        "line": 133,
+        "text": "<PlayerFallback message=\"تعذر تشغيل البث\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 28,
+        "text": "toast.error('فشل تحميل الإشعارات');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 41,
+        "text": "toast.error('فشل تحديث الحالة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 49,
+        "text": "toast.success('تم تحديد الكل كمقروء');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 51,
+        "text": "toast.error('فشل التحديث');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 59,
+        "text": "toast.success('تم الحذف');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 61,
+        "text": "toast.error('فشل الحذف');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 93,
+        "text": "<h2 className=\"text-lg font-bold text-gray-900 dark:text-white sm:text-xl\">الإشعارات</h2>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 117,
+        "text": "الكل",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 127,
+        "text": "غير مقروء",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 131,
+        "text": "تحديد الكل كمقروء",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 139,
+        "text": "<LoadingSpinner size=\"lg\" text=\"جارٍ تحميل الإشعارات...\" className=\"h-full\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 143,
+        "text": "title=\"لا توجد إشعارات\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 144,
+        "text": "description={filter === 'unread' ? 'لا توجد إشعارات غير مقروءة حاليًا.' : 'ستظهر إشعاراتك هنا عند وصول جديد.'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 145,
+        "text": "action={filter === 'unread' ? { label: 'عرض الكل', onClick: () => setFilter('all') } : null}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 190,
+        "text": "فتح <ChevronLeft size={12} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 204,
+        "text": "title=\"تحديد كمقروء\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/NotificationCenter.jsx",
+        "line": 215,
+        "text": "title=\"حذف\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 36,
+        "text": "text: 'غير متصل',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 37,
+        "text": "subtext: pendingCount > 0 ? `${pendingCount} عملية معلقة` : 'وضع عدم الاتصال',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 47,
+        "text": "text: 'جاري المزامنة...',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 48,
+        "text": "subtext: 'تحديث البيانات',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 59,
+        "text": "text: `${pendingCount} عملية منتظرة`,",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 60,
+        "text": "subtext: 'انقر للمزامنة',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 70,
+        "text": "text: 'فشلت المزامنة',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineBanner.jsx",
+        "line": 71,
+        "text": "subtext: 'انقر للمحاولة مجدداً',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 17,
+        "text": "notify.success('تم الاتصال بالإنترنت');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 20,
+        "text": "notify.warning('أنت غير متصل بالإنترنت');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 33,
+        "text": "notify.error('لا يمكن المزامنة بدون اتصال');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 43,
+        "text": "notify.success(`تم مزامنة ${successful} عملية`);",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 47,
+        "text": "notify.error('فشلت المزامنة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 69,
+        "text": "{isOnline ? 'متصل' : 'غير متصل'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/OfflineIndicator.jsx",
+        "line": 71,
+        "text": "<span className=\"mr-2\">({pendingCount} في الانتظار)</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 38,
+        "text": "صفحة{' '}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 40,
+        "text": "{' '}من{' '}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 50,
+        "text": "عنصر",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 60,
+        "text": "<NavBtn onClick={() => onPageChange(1)} disabled={currentPage === 1} title=\"الأولى\">",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 65,
+        "text": "<NavBtn onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} title=\"السابقة\">",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 118,
+        "text": "<NavBtn onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} title=\"التالية\">",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/Pagination.jsx",
+        "line": 123,
+        "text": "<NavBtn onClick={() => onPageChange(totalPages)} disabled={currentPage === totalPages} title=\"الأخيرة\">",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 41,
+        "text": "toast.error('فشل تحميل بوابات الدفع');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 56,
+        "text": "toast.error('اختر بوابة الدفع');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 70,
+        "text": "toast.success('تم إنشاء رابط الدفع');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 72,
+        "text": "toast.error(error.response?.data?.message || 'فشل إنشاء رابط الدفع');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 82,
+        "text": "toast.success('تم النسخ');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 90,
+        "text": "`مرحبًا ${customer.name}`,",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 92,
+        "text": "`فاتورة رقم: ${invoice.invoiceNumber}`,",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 93,
+        "text": "`المبلغ المستحق: ${amount.toFixed(2)} جنيه`,",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 94,
+        "text": "applyDiscount ? `خصم الدفع المبكر: ${discount.toFixed(2)} جنيه` : '',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 95,
+        "text": "`رابط الدفع: ${paymentLink.paymentLink}`,",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 96,
+        "text": "`طريقة الدفع: ${GATEWAY_NAMES[selectedGateway]}`,",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 119,
+        "text": "<h2 className=\"mb-2 text-xl font-bold\">إنشاء رابط دفع</h2>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 120,
+        "text": "<p className=\"text-sm text-blue-100\">العميل: {customer.name}</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 121,
+        "text": "<p className=\"text-sm text-blue-100\">الفاتورة: #{invoice.invoiceNumber}</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 128,
+        "text": "<p className=\"text-gray-600 dark:text-gray-400\">لا توجد بوابات دفع مفعلة</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 129,
+        "text": "<p className=\"mt-2 text-sm text-gray-500\">فعّل بوابة دفع من صفحة الإعدادات أولًا.</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 134,
+        "text": "<label className=\"mb-3 block text-sm font-medium text-gray-700 dark:text-gray-300\">اختر بوابة الدفع</label>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 154,
+        "text": "<p className=\"mt-1 text-xs text-gray-500\">رسوم: {gateway.fees}%</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 162,
+        "text": "<label className=\"mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300\">المبلغ المطلوب</label>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 170,
+        "text": "<p className=\"mt-1 text-xs text-gray-500\">المتبقي: {remainingAmount.toFixed(2)} جنيه</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 181,
+        "text": "<p className=\"text-sm font-medium text-gray-900 dark:text-white\">خصم الدفع المبكر (3%)</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 183,
+        "text": "{applyDiscount ? `قيمة الخصم: ${discount.toFixed(2)} جنيه` : 'غير مفعل'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 190,
+        "text": "<span className=\"text-gray-600 dark:text-gray-400\">المبلغ الأصلي</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 191,
+        "text": "<span className=\"font-medium\">{amount.toFixed(2)} ج.م</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 195,
+        "text": "<span>الخصم</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 196,
+        "text": "<span>- {discount.toFixed(2)} ج.م</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 200,
+        "text": "<span className=\"text-gray-600 dark:text-gray-400\">رسوم المعاملة</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 201,
+        "text": "<span className=\"font-medium\">+ {fees.toFixed(2)} ج.م</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 204,
+        "text": "<span>المبلغ النهائي</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 205,
+        "text": "<span className=\"text-blue-600\">{finalAmount.toFixed(2)} ج.م</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 214,
+        "text": "{loading ? 'جارٍ الإنشاء...' : 'إنشاء رابط الدفع'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 222,
+        "text": "<span className=\"font-bold\">تم إنشاء الرابط بنجاح</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 234,
+        "text": "{copied ? 'تم النسخ' : 'نسخ الرابط'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 243,
+        "text": "إرسال واتساب",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+        "line": 255,
+        "text": "إنشاء رابط جديد",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 23,
+        "text": "toast.error('الرجاء اختيار صورة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 29,
+        "text": "toast.error('حجم الصورة كبير جداً (الحد الأقصى 20 ميجا)');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 57,
+        "text": "toast.success('تم رفع الصورة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 59,
+        "text": "toast.error('فشل رفع الصورة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 80,
+        "text": "تحميل صورة الإيصال",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 131,
+        "text": "اختر صورة أخرى",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 141,
+        "text": "جاري الرفع...",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 146,
+        "text": "تأكيد",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 160,
+        "text": "التقط صورة",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 169,
+        "text": "اختر من المعرض",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/PhotoUpload.jsx",
+        "line": 174,
+        "text": "حجم الصورة الأقصى: 20 ميجابايت",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 34,
+        "text": "if (!value) return 'غير متوفر';",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 48,
+        "text": "UNKNOWN: 'تنسيق عام',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 50,
+        "text": "return labels[normalized] || normalized || 'تنسيق عام';",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 67,
+        "text": "label: 'متوفر بالمخزون',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 75,
+        "text": "label: 'مخزون منخفض',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 82,
+        "text": "label: 'نفد من المخزون',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 94,
+        "text": ": (branchId && tenantId && String(branchId) === String(tenantId) ? 'الفرع الرئيسي' : 'فرع غير معروف');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 105,
+        "text": "branchName: 'الفرع الرئيسي',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 117,
+        "text": "subtitle: 'الكود الداخلي',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 122,
+        "text": "title: 'الباركود الدولي',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 129,
+        "text": "title: 'الباركود المحلي',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 194,
+        "text": "نسخ",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 265,
+        "text": "const supplierName = displayProduct?.supplier?.name || 'بدون مورد';",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 266,
+        "text": "const supplierPhone = displayProduct?.supplier?.phone || 'غير متوفر';",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 277,
+        "text": "toast.success(`تم نسخ ${label}`);",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 279,
+        "text": "toast.error('تعذر نسخ القيمة');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 289,
+        "text": "title=\"تفاصيل المنتج\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 314,
+        "text": "<p className=\"text-sm font-medium\">لا توجد صورة</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 348,
+        "text": "{displayProduct?.category?.name || displayProduct?.categoryName || 'بدون تصنيف'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 367,
+        "text": "<span>المورد: {supplierName}</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 368,
+        "text": "<span>آخر تحديث: {formatDate(displayProduct?.updatedAt)}</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 376,
+        "text": "تعديل",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 383,
+        "text": "label=\"سعر البيع\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 385,
+        "text": "hint={compareAtPrice > price ? `قبل الخصم ${formatMoney(compareAtPrice)}` : 'السعر الحالي'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 388,
+        "text": "label=\"التكلفة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 390,
+        "text": "hint=\"تكلفة الوحدة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 393,
+        "text": "label=\"الربح للوحدة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 395,
+        "text": "hint={cost > 0 ? `${(((price - cost) / cost) * 100).toFixed(1)}% هامش ربح` : 'لا توجد تكلفة'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 398,
+        "text": "label=\"المخزون الحالي\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 399,
+        "text": "value={`${Number(displayProduct?.stock?.quantity) || 0} ${displayProduct?.stock?.unit || 'قطعة'}`}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 400,
+        "text": "hint={`الحد الأدنى ${Number(displayProduct?.stock?.minQuantity) || 0}`}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 411,
+        "text": "title=\"الأكواد والباركود\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 412,
+        "text": "subtitle=\"بطاقات منظمة تعرض SKU والباركود الدولي والمحلي بشكل أوضح\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 421,
+        "text": "لا يوجد باركود أو SKU محفوظ لهذا المنتج.",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 430,
+        "text": "title=\"توزيع المخزون\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 431,
+        "text": "subtitle=\"الكمية المتاحة في كل فرع\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 448,
+        "text": "الحد الأدنى: {row.minQuantity}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 455,
+        "text": "{low ? 'منخفض' : 'مستقر'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 467,
+        "text": "title=\"بيانات سريعة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 468,
+        "text": "subtitle=\"ملخص تشغيلي للمورد والشحن والضريبة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 471,
+        "text": "<DetailRow label=\"المورد\" value={supplierName} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 472,
+        "text": "<DetailRow label=\"هاتف المورد\" value={supplierPhone} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 473,
+        "text": "<DetailRow label=\"تكلفة الشحن\" value={hasValue(displayProduct?.shippingCost) ? formatMoney(displayProduct.shippingCost) : 'غير متوفر'} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 474,
+        "text": "<DetailRow label=\"الضريبة\" value={`${Number(displayProduct?.taxRate) || 0}%`} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 475,
+        "text": "<DetailRow label=\"الصلاحية\" value={formatDate(displayProduct?.expiryDate)} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 476,
+        "text": "<DetailRow label=\"تاريخ الإنشاء\" value={formatDate(displayProduct?.createdAt)} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 481,
+        "text": "<p className=\"mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400\">الوسوم</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 500,
+        "text": "title=\"بيانات SEO\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 501,
+        "text": "subtitle=\"العنوان والوصف الخاصان بالظهور الخارجي\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 504,
+        "text": "<DetailRow label=\"عنوان SEO\" value={displayProduct?.seoTitle || 'غير متوفر'} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 505,
+        "text": "<DetailRow label=\"وصف SEO\" value={displayProduct?.seoDescription || 'غير متوفر'} />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 514,
+        "text": "title=\"وصف المنتج\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 515,
+        "text": "subtitle=\"تفاصيل المنتج الكاملة كما تم إدخالها\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 536,
+        "text": "title=\"متغيرات المنتج\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 537,
+        "text": "subtitle=\"الألوان والمقاسات والخيارات مع السعر والمخزون\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 552,
+        "text": "متغير {index + 1}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 566,
+        "text": "بدون خصائص",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 572,
+        "text": "{variant?.isActive === false ? 'غير نشط' : 'نشط'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 578,
+        "text": "label=\"السعر\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 579,
+        "text": "value={hasValue(variant?.price) ? formatMoney(variant.price) : 'غير محدد'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 582,
+        "text": "label=\"المخزون\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 593,
+        "text": "<DetailRow label=\"الباركود\" value={variantBarcode} mono />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 609,
+        "text": "<LoadingSpinner text=\"جارٍ تحميل التفاصيل...\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 618,
+        "text": "تعديل",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductDetailModal.jsx",
+        "line": 622,
+        "text": "إغلاق",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 61,
+        "text": "toast.error('يرجى اختيار ملف Excel (.xlsx أو .xls) أو CSV فقط.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 66,
+        "text": "toast.error('حجم الملف يتجاوز 10 ميجابايت.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 85,
+        "text": "anchor.download = 'قالب_استيراد_المنتجات.xlsx';",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 88,
+        "text": "toast.success('تم تنزيل القالب.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 90,
+        "text": "toast.error('تعذر تنزيل القالب.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 121,
+        "text": "toast.error(error?.response?.data?.message || 'حدث خطأ أثناء الاستيراد.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 147,
+        "text": "<h2 className=\"text-lg font-black app-text-body\">استيراد المنتجات من Excel</h2>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 149,
+        "text": "{step === 'upload' && 'ارفع ملف Excel أو CSV لاستيراد المنتجات'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 150,
+        "text": "{step === 'importing' && 'جارٍ استيراد المنتجات...'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 151,
+        "text": "{step === 'report' && 'تم الانتهاء، راجع التقرير النهائي'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 172,
+        "text": "<span>تنزيل قالب Excel جاهز</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 216,
+        "text": "إزالة الملف",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 224,
+        "text": "<p className=\"text-sm font-bold app-text-body\">اسحب الملف هنا أو اضغط للاختيار</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 225,
+        "text": "<p className=\"mt-1 text-xs app-text-muted\">xlsx, xls, csv - حد أقصى 10 MB</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 238,
+        "text": "<p className=\"text-sm font-bold app-text-body\">تحديث المنتجات الموجودة</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 239,
+        "text": "<p className=\"text-xs app-text-muted\">إذا وُجد منتج بنفس الكود أو الباركود سيتم تحديث بياناته</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 249,
+        "text": "بدء الاستيراد",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 259,
+        "text": "<p className=\"mt-4 text-sm font-black app-text-body\">جارٍ استيراد المنتجات...</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 260,
+        "text": "<p className=\"mt-1 text-xs app-text-muted\">يرجى الانتظار وعدم إغلاق هذه النافذة</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 280,
+        "text": "<p className=\"text-xs font-bold text-emerald-700/70 dark:text-emerald-300/70\">تمت الإضافة</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 286,
+        "text": "<p className=\"text-xs font-bold text-blue-700/70 dark:text-blue-300/70\">تم التحديث</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 292,
+        "text": "<p className=\"text-xs font-bold text-amber-700/70 dark:text-amber-300/70\">تم التخطي</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 298,
+        "text": "<p className=\"text-xs font-bold text-red-700/70 dark:text-red-300/70\">فشل</p>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 306,
+        "text": "تحذيرات ({report.warnings.length})",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 322,
+        "text": "أخطاء ({report.errors.length})",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 327,
+        "text": "{typeof error === 'string' ? error : `صف ${error.row}: ${error.error}`}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/ProductImportModal.jsx",
+        "line": 339,
+        "text": "إغلاق",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 73,
+        "text": "<h3 className=\"app-text-strong text-xl font-bold\">تعديل صورة المنتج</h3>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 75,
+        "text": "قص 1:1",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 79,
+        "text": "حرّك الصورة داخل الإطار حتى تصل لنتيجة أنيقة وواضحة في بطاقة المنتج والغلاف الرئيسي.",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 88,
+        "text": "aria-label=\"إغلاق محرر الصورة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 98,
+        "text": "<div className=\"app-text-strong text-sm font-bold\">معاينة القص</div>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 100,
+        "text": "سيتم حفظ هذه النتيجة فقط عند الضغط على زر حفظ التعديل.",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 108,
+        "text": "تكبير {Math.round(zoom * 100)}%",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 116,
+        "text": "إطار الغلاف",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 141,
+        "text": "<div className=\"app-text-strong text-sm font-bold\">الصورة الأصلية</div>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 142,
+        "text": "<div className=\"app-text-soft text-xs\">مرجع سريع قبل الحفظ</div>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 148,
+        "text": "alt={currentFile.name || 'معاينة الصورة'}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 158,
+        "text": "<span className=\"app-text-soft font-semibold\">مستوى التكبير</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 166,
+        "text": "aria-label=\"تقليل التكبير\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 176,
+        "text": "aria-label=\"تكبير الصورة\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 184,
+        "text": "aria-label=\"زيادة التكبير\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 196,
+        "text": "<div className=\"app-text-strong text-sm font-bold\">ملاحظات سريعة</div>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 199,
+        "text": "<li>ضع المنتج في الوسط مع أقل قدر من الفراغات غير المهمة.</li>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 200,
+        "text": "<li>حافظ على وضوح العنصر الأساسي لأن هذه الصورة ستظهر في الكروت والقوائم.</li>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 201,
+        "text": "<li>في الـ light mode ستبدو الحدود أنعم، وفي الـ dark mode ستبقى القراءة واضحة.</li>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 209,
+        "text": "الضغط على إلغاء سيغلق النافذة بدون استبدال الصورة الحالية.",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 213,
+        "text": "إلغاء",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ImageEditorModal.jsx",
+        "line": 221,
+        "text": "حفظ التعديل",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 119,
+        "text": "toast.error('احفظ المنتج أولًا ثم أعد توليد الباركود المحلي.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 135,
+        "text": "toast.success('تم توليد الباركود المحلي.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 137,
+        "text": "toast.error(error?.response?.data?.message || 'تعذر توليد الباركود المحلي.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 156,
+        "text": "toast.error('تعذر تنزيل صورة الباركود.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 170,
+        "text": "title: form.name || 'ملصق باركود',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 171,
+        "text": "subtitle: activeBarcodePayload.source === 'local' ? 'باركود محلي' : 'باركود دولي',",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 199,
+        "text": "toast.error('يرجى إدخال اسم القسم.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 204,
+        "text": "toast.error('اختر القسم الرئيسي أولًا.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 232,
+        "text": "toast.success('تمت إضافة القسم بنجاح.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 235,
+        "text": "toast.error(error?.response?.data?.message || 'تعذر إنشاء القسم.');",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 244,
+        "text": "<SectionHeader icon={FileText} title=\"المعلومات الأساسية\" subtitle=\"الاسم والأقسام والربط بالمورد\" />",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 248,
+        "text": "اسم المنتج <span className=\"text-red-500\">*</span>",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 256,
+        "text": "placeholder=\"مثال: تيشيرت قطن\"",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 265,
+        "text": "{fieldErrors.name === 'name_required' ? 'يرجى إدخال اسم المنتج.' : fieldErrors.name}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 268,
+        "text": "{form.name ? <p className=\"text-xs text-gray-400\">{form.name.length}/200 حرف</p> : null}",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 275,
+        "text": "الأقسام",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 282,
+        "text": "إضافة قسم جديد",
+        "reason": "arabic_literal"
+      },
+      {
+        "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+        "line": 289,
+        "text": "placeholder=\"بدون قسم\"",
+        "reason": "arabic_literal"
+      }
+    ]
+  },
+  "notes": [
+    "Candidates are prioritized as Arabic literals and direct JSX English text nodes.",
+    "Samples are truncated for manual triage. Use file summaries to drive batch refactors."
+  ]
+}

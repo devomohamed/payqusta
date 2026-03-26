@@ -1,35 +1,36 @@
 import React, { useMemo } from 'react';
 import { Search, CheckCircle, AlertCircle, Info, BarChart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const analyzeSeoContent = ({ text = '', title = '' } = {}) => {
     const results = [];
     let score = 0;
 
     if (title.length >= 10 && title.length <= 60) {
-        results.push({ text: 'طول العنوان مناسب لمحركات البحث.', type: 'success' });
+        results.push({ text: t('seo_analyzer.ui.kdhvgsn'), type: 'success' });
         score += 30;
     } else if (title.length < 10) {
-        results.push({ text: 'العنوان قصير جدًا، حاول إضافة كلمات أكثر دقة.', type: 'warning' });
+        results.push({ text: t('seo_analyzer.ui.koetyhv'), type: 'warning' });
         score += 10;
     } else {
-        results.push({ text: 'العنوان طويل وقد يتم اقتطاعه في نتائج البحث.', type: 'warning' });
+        results.push({ text: t('seo_analyzer.ui.kr917mw'), type: 'warning' });
         score += 15;
     }
 
     const plainText = text.replace(/<[^>]*>/g, '');
 
     if (plainText.length > 60) {
-        results.push({ text: 'الوصف جيد ويعطي محركات البحث محتوى كافيًا.', type: 'success' });
+        results.push({ text: t('seo_analyzer.ui.khvha7w'), type: 'success' });
         score += 30;
     } else if (plainText.length > 20) {
-        results.push({ text: 'الوصف جيد، لكن يفضَّل زيادته قليلًا.', type: 'warning' });
+        results.push({ text: t('seo_analyzer.ui.kj4k62e'), type: 'warning' });
         score += 15;
     } else {
-        results.push({ text: 'الوصف قصير جدًا لمحركات البحث.', type: 'error' });
+        results.push({ text: t('seo_analyzer.ui.k16ejag'), type: 'error' });
     }
 
     if (title && plainText.toLowerCase().includes(title.toLowerCase())) {
-        results.push({ text: 'العنوان مستخدم داخل الوصف، وهذا يعزز الصلة.', type: 'success' });
+        results.push({ text: t('seo_analyzer.ui.ki6v32e'), type: 'success' });
         score += 30;
     }
 
@@ -51,11 +52,11 @@ const SeoAnalyzer = ({ text = '', title = '' }) => {
                     <div className="rounded-lg bg-primary-100 p-2 dark:bg-primary-900/30">
                         <Search className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                     </div>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">تحليل SEO الذكي</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{t('seo_analyzer.ui.k6py6q')}</span>
                 </div>
                 <div className="text-right">
                     <div className={`text-xl font-black ${scoreColor}`}>{analysis.score}%</div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">نقاط السيو</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{t('seo_analyzer.ui.kfz18tc')}</div>
                 </div>
             </div>
 
@@ -86,7 +87,7 @@ const SeoAnalyzer = ({ text = '', title = '' }) => {
                     <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-800/30 dark:bg-blue-900/20">
                         <div className="mb-1 flex items-center gap-2">
                             <BarChart className="h-3 w-3 text-blue-600" />
-                            <span className="text-[10px] font-bold uppercase tracking-tighter text-blue-600">نصيحة الخبراء</span>
+                            <span className="text-[10px] font-bold uppercase tracking-tighter text-blue-600">{t('seo_analyzer.ui.k48ag9h')}</span>
                         </div>
                         <p className="text-[11px] leading-normal text-blue-800 dark:text-blue-300">
                             كلما كان العنوان والوصف قريبين من الكلمات التي يبحث بها العملاء، زادت فرصة ظهور المنتج في نتائج البحث.

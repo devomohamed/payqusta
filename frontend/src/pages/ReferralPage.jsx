@@ -4,8 +4,10 @@ import { api, useAuthStore } from '../store';
 import { LoadingSpinner, Button, Badge, Modal } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 import { useThemeStore } from '../store';
+import { useTranslation } from 'react-i18next';
 
 export default function ReferralPage() {
+  const { t } = useTranslation('admin');
     const { dark } = useThemeStore();
     const { tenant } = useAuthStore();
     const [code, setCode] = useState('');
@@ -17,7 +19,7 @@ export default function ReferralPage() {
         fetchData();
     }, []);
 
-    const shareTitle = 'كود إحالة PayQusta';
+    const shareTitle = t('referral_page.ui.krv5xhi');
     const shareText = `استخدم كود الإحالة ${code} للحصول على شهر مجاني عند التسجيل في PayQusta${tenant?.name ? ` عبر متجر ${tenant.name}` : ''}.`;
     const shareUrl = `${window.location.origin}/login`;
     const canUseNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -31,7 +33,7 @@ export default function ReferralPage() {
             setCode(codeRes.data.data?.code || '');
             setStats(statsRes.data.data || {});
         } catch (err) {
-            notify.error('فشل تحميل بيانات الإحالات');
+            notify.error(t('referral_page.toasts.kacao3y'));
         } finally {
             setLoading(false);
         }
@@ -45,14 +47,14 @@ export default function ReferralPage() {
             await navigator.clipboard.writeText(value);
             notify.success(successMessage);
         } catch (err) {
-            notify.error('تعذر النسخ على هذا الجهاز');
+            notify.error(t('referral_page.toasts.k4mtcr1'));
         }
     };
 
-    const copyCode = () => copyToClipboard(code, 'تم نسخ كود الإحالة');
+    const copyCode = () => copyToClipboard(code, t('referral_page.ui.kvrj2a5'));
 
     const copyShareMessage = async () => {
-        await copyToClipboard(shareText, 'تم نسخ رسالة الإحالة');
+        await copyToClipboard(shareText, t('referral_page.ui.krgi75f'));
         setShareOpen(false);
     };
 
@@ -64,25 +66,25 @@ export default function ReferralPage() {
 
     const openWhatsApp = () => {
         const encoded = encodeURIComponent(shareText);
-        openExternalShare(`https://wa.me/?text=${encoded}`, 'تم فتح واتساب للمشاركة');
+        openExternalShare(`https://wa.me/?text=${encoded}`, t('referral_page.ui.k9kel1x'));
     };
 
     const openTelegram = () => {
         const encodedUrl = encodeURIComponent(shareUrl);
         const encodedText = encodeURIComponent(shareText);
-        openExternalShare(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`, 'تم فتح تيليجرام للمشاركة');
+        openExternalShare(`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`, t('referral_page.ui.ke696k5'));
     };
 
     const openEmail = () => {
         const subject = encodeURIComponent(shareTitle);
         const body = encodeURIComponent(`${shareText}\n\nرابط التسجيل: ${shareUrl}`);
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
-        notify.success('تم فتح البريد الإلكتروني');
+        notify.success(t('referral_page.toasts.kg3vhqm'));
         setShareOpen(false);
     };
 
     const copyDirectLink = async () => {
-        await copyToClipboard(shareUrl, 'تم نسخ رابط التسجيل المباشر');
+        await copyToClipboard(shareUrl, t('referral_page.ui.k2902hf'));
         setShareOpen(false);
     };
 
@@ -98,7 +100,7 @@ export default function ReferralPage() {
             await navigator.share({ title: shareTitle, text: shareText });
         } catch (err) {
             if (err?.name !== 'AbortError') {
-                notify.error('تعذر فتح مشاركة الجهاز');
+                notify.error(t('referral_page.toasts.kei5zko'));
             }
         }
     };
@@ -116,16 +118,16 @@ export default function ReferralPage() {
                         <div className="inline-flex items-center justify-center p-2 bg-white/20 rounded-xl mb-4 backdrop-blur-sm">
                             <Gift className="w-6 h-6" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold mb-3">برنامج الإحالات</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold mb-3">{t('referral_page.ui.kpelkd0')}</h1>
                         <p className="text-amber-100 text-lg max-w-2xl">
-                            شارك كودك مع أصحاب المتاجر واحصل على شهر مجاني لكل إحالة ناجحة يتحول فيها المُحال إلى مشترك مدفوع.
+                            {t('referral_page.ui.knx961t')}
                         </p>
                     </div>
                 </div>
 
                 {/* Referral Code Card */}
                 <div className="app-surface rounded-2xl p-6 border border-gray-100/80 dark:border-white/10 shadow-sm">
-                    <h3 className="font-bold text-lg mb-4">كود الإحالة الخاص بك</h3>
+                    <h3 className="font-bold text-lg mb-4">{t('referral_page.ui.kw7m0ad')}</h3>
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className={`flex-1 w-full text-center text-2xl font-mono font-bold py-4 px-6 rounded-xl border-2 border-dashed tracking-widest ${dark ? 'bg-gray-900 border-amber-500/50 text-amber-400' : 'bg-amber-50 border-amber-300 text-amber-700'}`}>
                             {code}
@@ -143,18 +145,18 @@ export default function ReferralPage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <StatCard icon={Users} label="إجمالي الإحالات" value={stats?.totalReferred || 0} color="blue" dark={dark} />
-                    <StatCard icon={TrendingUp} label="تم التحويل" value={stats?.converted || 0} color="green" dark={dark} />
-                    <StatCard icon={Clock} label="مكافآت بانتظار التفعيل" value={stats?.pendingReward || 0} color="amber" dark={dark} />
+                    <StatCard icon={Users} label={t('referral_page.form.kilcra')} value={stats?.totalReferred || 0} color="blue" dark={dark} />
+                    <StatCard icon={TrendingUp} label={t('referral_page.form.kar72gz')} value={stats?.converted || 0} color="green" dark={dark} />
+                    <StatCard icon={Clock} label={t('referral_page.form.koev1ge')} value={stats?.pendingReward || 0} color="amber" dark={dark} />
                 </div>
 
                 {/* Referrals List */}
                 <div className="app-surface rounded-2xl p-6 border border-gray-100/80 dark:border-white/10 shadow-sm">
-                    <h3 className="font-bold text-lg mb-4">سجل الإحالات</h3>
+                    <h3 className="font-bold text-lg mb-4">{t('referral_page.ui.kcmlhx6')}</h3>
                     {(!stats?.referrals || stats.referrals.length === 0) ? (
                         <div className="text-center py-12 text-gray-400">
                             <Gift className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                            <p>لا توجد إحالات بعد. شارك كودك وابدأ بجمع المكافآت.</p>
+                            <p>{t('referral_page.ui.kus6n3i')}</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -162,7 +164,7 @@ export default function ReferralPage() {
                                 <div key={idx} className="app-surface-muted flex items-center justify-between p-4 rounded-xl">
                                     <div>
                                         <p className={`font-medium ${dark ? 'text-white' : 'text-gray-900'}`}>
-                                            {ref.referred?.name || ref.referredEmail || 'مُحال جديد'}
+                                            {ref.referred?.name || ref.referredEmail || t('referral_page.toasts.kqmjjso')}
                                         </p>
                                         <p className="text-xs text-gray-400">
                                             {new Date(ref.createdAt).toLocaleDateString('ar-EG')}
@@ -173,9 +175,9 @@ export default function ReferralPage() {
                                             ref.status === 'converted' ? 'primary' :
                                                 ref.status === 'registered' ? 'warning' : 'gray'
                                     }>
-                                        {ref.status === 'rewarded' ? 'تمت المكافأة' :
-                                            ref.status === 'converted' ? 'تم التحويل' :
-                                                ref.status === 'registered' ? 'مسجل' : 'قيد الانتظار'}
+                                        {ref.status === 'rewarded' ? t('referral_page.ui.kaa0dpw') :
+                                            ref.status === 'converted' ? t('referral_page.ui.kar72gz') :
+                                                ref.status === 'registered' ? t('referral_page.ui.ktelra') : 'قيد الانتظار'}
                                     </Badge>
                                 </div>
                             ))}
@@ -184,7 +186,7 @@ export default function ReferralPage() {
                 </div>
             </div>
 
-            <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="مشاركة كود الإحالة" size="md">
+            <Modal open={shareOpen} onClose={() => setShareOpen(false)} title={t('referral_page.titles.kz9dbqo')} size="md">
                 <div className="space-y-5">
                     <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-5">
                         <div className="flex items-start gap-3">
@@ -192,7 +194,7 @@ export default function ReferralPage() {
                                 <Share2 className="w-5 h-5" />
                             </div>
                             <div className="space-y-2 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">اختر طريقة المشاركة المناسبة</p>
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('referral_page.ui.kib0afg')}</p>
                                 <p className="text-xs leading-6 text-gray-500 dark:text-gray-400">
                                     استخدم الخيارات السريعة بالأسفل للمشاركة مباشرة، أو افتح مشاركة الجهاز إذا أردت إرسال الكود إلى تطبيقات أخرى.
                                 </p>
@@ -202,7 +204,7 @@ export default function ReferralPage() {
 
                     <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 p-4 space-y-3">
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">كود الإحالة</span>
+                            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('referral_page.ui.k4d43o1')}</span>
                             <span className="text-lg font-mono font-bold tracking-widest text-amber-500">{code}</span>
                         </div>
                         <p className="text-sm leading-7 text-gray-600 dark:text-gray-300">{shareText}</p>
@@ -214,42 +216,42 @@ export default function ReferralPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <ShareActionButton
                             icon={Copy}
-                            label="نسخ الكود"
+                            label={t('referral_page.form.ktmhxf6')}
                             description="ينسخ الكود فقط لاستخدامه السريع"
                             onClick={copyCode}
                             variant="outline"
                         />
                         <ShareActionButton
                             icon={Link2}
-                            label="نسخ الرسالة"
+                            label={t('referral_page.form.kdjc2ha')}
                             description="ينسخ نص المشاركة كاملًا"
                             onClick={copyShareMessage}
                             variant="outline"
                         />
                         <ShareActionButton
                             icon={MessageCircle}
-                            label="مشاركة عبر واتساب"
+                            label={t('referral_page.form.kvx0nqg')}
                             description="يفتح واتساب مع الرسالة جاهزة"
                             onClick={openWhatsApp}
                             variant="whatsapp"
                         />
                         <ShareActionButton
                             icon={Send}
-                            label="مشاركة عبر تيليجرام"
+                            label={t('referral_page.form.k3wlruw')}
                             description="يفتح تيليجرام مع الرابط والرسالة"
                             onClick={openTelegram}
                             variant="outline"
                         />
                         <ShareActionButton
                             icon={Mail}
-                            label="إرسال بالبريد"
+                            label={t('referral_page.form.kqgb96x')}
                             description="يفتح تطبيق البريد على الجهاز"
                             onClick={openEmail}
                             variant="outline"
                         />
                         <ShareActionButton
                             icon={Link2}
-                            label="نسخ رابط مباشر"
+                            label={t('referral_page.form.kf66gmd')}
                             description="ينسخ رابط التسجيل المباشر"
                             onClick={copyDirectLink}
                             variant="outline"
@@ -258,11 +260,10 @@ export default function ReferralPage() {
 
                     <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">مشاركة عبر الجهاز</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('referral_page.ui.kgqiuqq')}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 {canUseNativeShare
-                                    ? 'سيفتح لك نافذة مشاركة الجهاز لاختيار التطبيق المناسب.'
-                                    : 'هذا الجهاز لا يدعم مشاركة النظام، وسيتم نسخ الرسالة بدلًا من ذلك.'}
+                                    ? t('referral_page.ui.kbm3l1y') : 'هذا الجهاز لا يدعم مشاركة النظام، وسيتم نسخ الرسالة بدلًا من ذلك.'}
                             </p>
                         </div>
                         <Button onClick={shareWithDevice} className="gap-2 whitespace-nowrap">

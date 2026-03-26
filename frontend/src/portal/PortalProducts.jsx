@@ -30,20 +30,20 @@ export default function PortalProducts() {
     const [sortBy, setSortBy] = useState('latest');
     const isArabic = i18n.language?.startsWith('ar');
     const labels = {
-        filters: isArabic ? 'الفلاتر' : 'Filters',
-        all: isArabic ? 'الكل' : 'All',
-        stockAll: isArabic ? 'جميع حالات المخزون' : 'All stock statuses',
-        stockAvailable: isArabic ? 'متاح فقط' : 'In stock only',
-        stockUnavailable: isArabic ? 'غير متاح فقط' : 'Out of stock only',
-        priceAll: isArabic ? 'جميع الأسعار' : 'All prices',
-        priceUnder500: isArabic ? 'أقل من 500 ج.م' : 'Under 500 EGP',
-        price500To2000: isArabic ? 'من 500 إلى 2000 ج.م' : '500 to 2000 EGP',
-        priceAbove2000: isArabic ? 'أكثر من 2000 ج.م' : 'Above 2000 EGP',
-        sortLatest: isArabic ? 'الأحدث' : 'Newest',
-        sortPriceLow: isArabic ? 'السعر: من الأقل للأعلى' : 'Price: Low to High',
-        sortPriceHigh: isArabic ? 'السعر: من الأعلى للأقل' : 'Price: High to Low',
-        sortName: isArabic ? 'الاسم: أ-ي' : 'Name: A-Z',
-        resetFilters: isArabic ? 'إعادة تعيين الفلاتر' : 'Reset filters',
+        filters: isArabic ? t('portal_products.ui.kzc348i') : 'Filters',
+        all: isArabic ? t('portal_products.ui.ksvtb2') : 'All',
+        stockAll: isArabic ? t('portal_products.ui.kxfn5c1') : 'All stock statuses',
+        stockAvailable: isArabic ? t('portal_products.ui.kdikiip') : 'In stock only',
+        stockUnavailable: isArabic ? t('portal_products.ui.kyumew0') : 'Out of stock only',
+        priceAll: isArabic ? t('portal_products.ui.kt5jnr2') : 'All prices',
+        priceUnder500: isArabic ? t('portal_products.ui.kv1r1o4') : 'Under 500 EGP',
+        price500To2000: isArabic ? t('portal_products.ui.k225abl') : '500 to 2000 EGP',
+        priceAbove2000: isArabic ? t('portal_products.ui.kcn3jsq') : 'Above 2000 EGP',
+        sortLatest: isArabic ? t('portal_products.ui.kabj35p') : 'Newest',
+        sortPriceLow: isArabic ? t('portal_products.ui.ko83hlu') : 'Price: Low to High',
+        sortPriceHigh: isArabic ? t('portal_products.ui.kbmk8l4') : 'Price: High to Low',
+        sortName: isArabic ? t('portal_products.ui.kn75j42') : 'Name: A-Z',
+        resetFilters: isArabic ? t('portal_products.ui.kfo5smq') : 'Reset filters',
     };
 
     useEffect(() => {

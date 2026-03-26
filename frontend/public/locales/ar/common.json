@@ -4,5 +4,50 @@
     "logout": "تسجيل الخروج",
     "save": "حفظ",
     "cancel": "إلغاء",
-    "loading": "جاري التحميل..."
+    "loading": "جاري التحميل...",
+    "locale": "ar-EG",
+    "notifications": {
+        "success_title": "تم بنجاح",
+        "error_title": "حدث خطأ",
+        "warning_title": "تحذير",
+        "info_title": "معلومة"
+    },
+    "activation": {
+        "loading": "جاري تحميل صفحة التفعيل...",
+        "invalid_title": "رابط التفعيل لم يعد صالحاً",
+        "invalid_sub": "يرجى طلب دعوة جديدة من فريق المتجر.",
+        "back_home": "العودة للرئيسية",
+        "lang": {
+            "english": "English",
+            "arabic": "عربي"
+        },
+        "brand": "المتجر",
+        "welcome": "مرحباً بك في {{brand}}",
+        "subtitle": "قم بتعيين كلمة المرور الخاصة بك لتفعيل مساحة العمل الخاصة بك والمدارة عبر PayQusta.",
+        "account": "الحساب",
+        "team_invite": "دعوة فريق عمل",
+        "customer_portal": "دخول بوابة العملاء",
+        "fallback_title": "نظام الحماية الذكي نشط",
+        "fallback_desc": "حسابك مؤمن بتشفير عالي المستوى ومخصص تماماً لهذه العلامة التجارية.",
+        "done_title": "تم التفعيل بنجاح",
+        "done_sub": "حسابك الآن نشط. جاري تحويلك...",
+        "redirecting": "جاري التحويل",
+        "step_title": "دخول آمن",
+        "step_heading": "إنشاء كلمة المرور",
+        "pass_label": "كلمة المرور الجديدة",
+        "pass_placeholder": "8 أحرف على الأقل",
+        "confirm_label": "تأكيد كلمة المرور",
+        "confirm_placeholder": "أعد كتابة كلمة المرور",
+        "form": {
+            "access_for": "أنت بصدد تفعيل صلاحية الدخول لمتجر {{brand}}."
+        },
+        "support": "الدعم",
+        "activating": "جاري التفعيل...",
+        "activate_btn": "تفعيل الحساب",
+        "powered_by": "مشغل بواسطة",
+        "validation": {
+            "password_min": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+            "password_mismatch": "كلمات المرور غير متطابقة"
+        }
+    }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Button } from '../UI';
 import { Save, AlertCircle, Loader2 } from 'lucide-react';
 import { confirm } from '../ConfirmDialog';
@@ -8,12 +8,13 @@ import ProductBasicsStep from './ProductBasicsStep';
 import ProductPricingStep from './ProductPricingStep';
 import ProductMediaStep from './ProductMediaStep';
 import ProductReviewStep from './ProductReviewStep';
+import { useTranslation } from 'react-i18next';
 
-export const COMPOSER_STEPS = [
-    { id: 'basics', label: 'الأساسيات', desc: 'الاسم والأقسام' },
-    { id: 'pricing', label: 'التسعير والمخزون', desc: 'السعر والكميات' },
-    { id: 'media', label: 'الصور والموديلات', desc: 'الوسائط والمتغيرات' },
-    { id: 'review', label: 'المراجعة والحفظ', desc: 'الملخص النهائي' },
+const getComposerSteps = (t) => [
+    { id: 'basics', label: t('product_composer.ui.kr269xo'), desc: t('product_composer.ui.kxzywy9') },
+    { id: 'pricing', label: t('product_composer.ui.k5m4q6w'), desc: t('product_composer.ui.khtsyu0') },
+    { id: 'media', label: t('product_composer.ui.kq2q7vn'), desc: t('product_composer.ui.kegga8a') },
+    { id: 'review', label: t('product_composer.ui.k18rv5r'), desc: t('product_composer.ui.ktg8ik0') },
 ];
 
 export default function ProductComposer({
@@ -50,6 +51,8 @@ export default function ProductComposer({
     pricingErrors = {},
     isDirty = false,
 }) {
+  const { t } = useTranslation('admin');
+        const composerSteps = useMemo(() => getComposerSteps(t), [t]);
     const [activeStep, setActiveStep] = useState('basics');
     const [visitedSteps, setVisitedSteps] = useState(['basics']);
 
@@ -87,8 +90,8 @@ export default function ProductComposer({
 
         if (isDirty) {
             const approved = await confirm.warn(
-                'لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟',
-                'تأكيد الإغلاق',
+                t('product_composer.ui.k659qyy'),
+                t('product_composer.ui.kria2po'),
             );
 
             if (approved) onClose();
@@ -125,16 +128,16 @@ export default function ProductComposer({
     };
 
     const handleNext = () => {
-        const currentIndex = COMPOSER_STEPS.findIndex((step) => step.id === activeStep);
-        if (currentIndex < COMPOSER_STEPS.length - 1) {
-            handleStepClick(COMPOSER_STEPS[currentIndex + 1].id);
+        const currentIndex = composerSteps.findIndex((step) => step.id === activeStep);
+        if (currentIndex < composerSteps.length - 1) {
+            handleStepClick(composerSteps[currentIndex + 1].id);
         }
     };
 
     const handlePrev = () => {
-        const currentIndex = COMPOSER_STEPS.findIndex((step) => step.id === activeStep);
+        const currentIndex = composerSteps.findIndex((step) => step.id === activeStep);
         if (currentIndex > 0) {
-            handleStepClick(COMPOSER_STEPS[currentIndex - 1].id);
+            handleStepClick(composerSteps[currentIndex - 1].id);
         }
     };
 
@@ -151,14 +154,14 @@ export default function ProductComposer({
             bodyClassName="app-surface-muted flex h-full flex-col p-0"
             contentClassName="h-[92vh] max-h-[900px] rounded-[2rem] shadow-2xl overflow-hidden"
             headerClassName="hidden"
-            title="إضافة منتج"
+            title={t('product_composer.titles.kq5gbc5')}
         >
             <div className="app-surface relative flex h-full w-full flex-col overflow-hidden">
                 <ProductComposerHeader
-                    title={mode === 'edit' ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد'}
+                    title={mode === 'edit' ? t('product_composer.ui.kaxytre') : 'إضافة منتج جديد'}
                     subtitle="أدخل تفاصيل المنتج خطوة بخطوة ثم احفظ التعديلات"
                     onClose={handleCloseRequest}
-                    steps={COMPOSER_STEPS}
+                    steps={composerSteps}
                     activeStep={activeStep}
                     onStepClick={handleStepClick}
                     visitedSteps={visitedSteps}
@@ -242,31 +245,31 @@ export default function ProductComposer({
                 <div className="app-surface sticky bottom-0 z-40 shrink-0 border-t border-gray-100/80 p-4 dark:border-white/10 lg:p-6">
                     <div className="mx-auto flex max-w-7xl items-center justify-between">
                         <Button variant="ghost" onClick={handleCloseRequest} disabled={loading}>
-                            إلغاء
+                            {t('product_composer.ui.cancel')}
                         </Button>
 
                         <div className="flex items-center gap-3">
                             {mode === 'create' && typeof onSuspendDraft === 'function' && (
                                 <Button variant="outline" onClick={onSuspendDraft} disabled={loading}>
-                                    حفظ كغير مكتمل
+                                    {t('product_composer.ui.kgwktk5')}
                                 </Button>
                             )}
 
                             {activeStep !== 'basics' && (
                                 <Button variant="outline" onClick={handlePrev} disabled={loading}>
-                                    السابق
+                                    {t('product_composer.ui.kab8zyt')}
                                 </Button>
                             )}
 
                             {!isLastStep ? (
                                 <Button variant="primary" onClick={handleNext} disabled={loading}>
-                                    التالي
+                                    {t('product_composer.ui.kabeq68')}
                                 </Button>
                             ) : (
                                 <>
                                     {mode === 'create' && typeof onQuickSuspend === 'function' && (
                                         <Button variant="warning" onClick={onQuickSuspend} disabled={loading}>
-                                            توقيف مؤقت
+                                            {t('product_composer.ui.kwnqn78')}
                                         </Button>
                                     )}
                                     <Button
@@ -276,8 +279,8 @@ export default function ProductComposer({
                                         icon={hasGlobalErrors ? <AlertCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                                     >
                                         {loading
-                                            ? (mode === 'edit' ? 'جارٍ حفظ المنتج...' : 'جارٍ إضافة المنتج...')
-                                            : (mode === 'edit' ? 'حفظ التعديلات' : 'إضافة المنتج')}
+                                            ? (mode === 'edit' ? t('product_composer.ui.kciounr') : t('product_composer.ui.ku0je03'))
+                                            : (mode === 'edit' ? t('product_composer.ui.km6ld24') : t('product_composer.ui.krla6ce'))}
                                     </Button>
                                 </>
                             )}
@@ -289,7 +292,7 @@ export default function ProductComposer({
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/55 backdrop-blur-[1px] dark:bg-gray-900/55">
                         <div className="app-surface flex items-center gap-2 rounded-xl border border-gray-100/80 px-4 py-2.5 text-sm font-bold text-gray-800 shadow-lg dark:border-white/10 dark:text-gray-100">
                             <Loader2 className="h-4 w-4 animate-spin text-primary-500" />
-                            <span>{mode === 'edit' ? 'جارٍ حفظ المنتج...' : 'جارٍ إضافة المنتج...'}</span>
+                            <span>{mode === 'edit' ? t('product_composer.ui.kciounr') : 'جارٍ إضافة المنتج...'}</span>
                         </div>
                     </div>
                 )}

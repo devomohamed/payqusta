@@ -3,10 +3,12 @@ import { Clock, DollarSign, X, PlayCircle, StopCircle, History, TrendingUp, Shop
 import { api, useShiftStore } from '../store';
 import toast from 'react-hot-toast';
 import { EmptyState, LoadingSpinner } from '../components/UI';
+import { useTranslation } from 'react-i18next';
 
 const fmt = (n) => Number(n || 0).toLocaleString('ar-EG');
 
 export default function ShiftManagementPage() {
+  const { t } = useTranslation('admin');
     const { fetchCurrentShift: syncHeaderWidget } = useShiftStore();
     const [currentShift, setCurrentShift] = useState(null);
     const [history, setHistory] = useState([]);
@@ -54,7 +56,7 @@ export default function ShiftManagementPage() {
         try {
             const res = await api.get('/cash-shifts/history');
             setHistory(res.data.data || []);
-        } catch { toast.error('خطأ في تحميل سجل الورديات'); }
+        } catch { toast.error(t('shift_management_page.toasts.klmcxa')); }
         finally { setHistoryLoading(false); }
     };
 
@@ -66,7 +68,7 @@ export default function ShiftManagementPage() {
             setOpeningBalance('');
             toast.success('✅ تم فتح الوردية بنجاح');
             syncHeaderWidget(); // Sync header widget
-        } catch (err) { toast.error(err.response?.data?.message || 'خطأ في فتح الوردية'); }
+        } catch (err) { toast.error(err.response?.data?.message || t('shift_management_page.toasts.kd9c8qj')); }
         finally { setOpenLoading(false); }
     };
 
@@ -81,7 +83,7 @@ export default function ShiftManagementPage() {
             toast.success('✅ تم إغلاق الوردية بنجاح');
             syncHeaderWidget(); // Sync header widget
             if (showHistory) fetchHistory();
-        } catch (err) { toast.error(err.response?.data?.message || 'خطأ في إغلاق الوردية'); }
+        } catch (err) { toast.error(err.response?.data?.message || t('shift_management_page.toasts.kqfk9cv')); }
         finally { setCloseLoading(false); }
     };
 
@@ -108,16 +110,16 @@ export default function ShiftManagementPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <Clock className="w-7 h-7 text-primary-600" />
-                        إدارة الورديات
+                        {t('shift_management_page.ui.k7967td')}
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">متابعة وردية الكاشير — النقدية والمبيعات</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('shift_management_page.ui.kux4quw')}</p>
                 </div>
                 <button
                     onClick={() => { setShowHistory(!showHistory); if (!showHistory) fetchHistory(); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                 >
                     <History className="w-4 h-4" />
-                    السجل
+                    {t('shift_management_page.ui.kovdxbi')}
                 </button>
             </div>
 
@@ -127,17 +129,17 @@ export default function ShiftManagementPage() {
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                            <span className="font-bold text-green-700 dark:text-green-400 text-sm">وردية مفتوحة</span>
+                            <span className="font-bold text-green-700 dark:text-green-400 text-sm">{t('shift_management_page.ui.ke4t9wv')}</span>
                         </div>
                         <span className="text-xs text-gray-500 dark:text-gray-400">منذ {shiftDuration(currentShift.startTime)}</span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                         {[
-                            { icon: Wallet, label: 'رصيد الافتتاح', value: `${fmt(currentShift.openingBalance)} ج.م`, color: 'text-blue-600' },
-                            { icon: TrendingUp, label: 'مبيعات الوردية', value: `${fmt(currentShift.currentSales)} ج.م`, color: 'text-green-600' },
-                            { icon: DollarSign, label: 'المتوقع في الدرج', value: `${fmt(currentShift.expectedNow)} ج.م`, color: 'text-primary-600' },
-                            { icon: ShoppingBag, label: 'عدد المعاملات', value: currentShift.breakdown?.totalTransactions || 0, color: 'text-orange-600' },
+                            { icon: Wallet, label: t('shift_management_page.ui.krl4axg'), value: `${fmt(currentShift.openingBalance)} ج.م`, color: 'text-blue-600' },
+                            { icon: TrendingUp, label: t('shift_management_page.ui.kni81pf'), value: `${fmt(currentShift.currentSales)} ج.م`, color: 'text-green-600' },
+                            { icon: DollarSign, label: t('shift_management_page.ui.klk2k5j'), value: `${fmt(currentShift.expectedNow)} ج.م`, color: 'text-primary-600' },
+                            { icon: ShoppingBag, label: t('shift_management_page.ui.kng3pov'), value: currentShift.breakdown?.totalTransactions || 0, color: 'text-orange-600' },
                         ].map(({ icon: Icon, label, value, color }) => (
                             <div key={label} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center">
                                 <Icon className={`w-5 h-5 ${color} mx-auto mb-1`} />
@@ -159,17 +161,17 @@ export default function ShiftManagementPage() {
                         className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition"
                     >
                         <StopCircle className="w-5 h-5" />
-                        إغلاق الوردية
+                        {t('shift_management_page.ui.krd2e8e')}
                     </button>
                 </div>
             ) : (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center shadow-sm">
                     <Clock className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-1">لا توجد وردية مفتوحة</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">ابدأ الوردية لتتبع المبيعات والنقدية</p>
+                    <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-1">{t('shift_management_page.ui.kbcbq0j')}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t('shift_management_page.ui.kt1wxv7')}</p>
                     <div className="max-w-xs mx-auto space-y-3">
                         <div className="text-right">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">رصيد الافتتاح (النقدية في الدرج)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('shift_management_page.ui.k20lylo')}</label>
                             <input
                                 type="number" min="0" value={openingBalance}
                                 onChange={(e) => setOpeningBalance(e.target.value)}
@@ -182,7 +184,7 @@ export default function ShiftManagementPage() {
                             className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
                         >
                             {openLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <PlayCircle className="w-5 h-5" />}
-                            فتح وردية جديدة
+                            {t('shift_management_page.ui.kvwgy2y')}
                         </button>
                     </div>
                 </div>
@@ -193,7 +195,7 @@ export default function ShiftManagementPage() {
                 <div className="space-y-3">
                     <h2 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <History className="w-5 h-5 text-primary-500" />
-                        سجل الورديات السابقة
+                        {t('shift_management_page.ui.kv1wpc9')}
                     </h2>
                     {historyLoading ? (
                         <div className="py-4">
@@ -202,7 +204,7 @@ export default function ShiftManagementPage() {
                     ) : history.length === 0 ? (
                         <EmptyState
                             icon={History}
-                            title="لا يوجد سجل بعد"
+                            title={t('shift_management_page.titles.krfd0mf')}
                             description="سيظهر تاريخ الورديات السابقة هنا بمجرد إغلاق أول وردية."
                             className="py-4"
                         />
@@ -221,19 +223,19 @@ export default function ShiftManagementPage() {
                                                 {shift.endTime ? ` — ${new Date(shift.endTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}` : ''}
                                             </p>
                                         </div>
-                                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">مغلقة</span>
+                                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">{t('shift_management_page.ui.kpbpqd2')}</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
                                         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
-                                            <p className="text-gray-400 mb-0.5">مبيعات</p>
+                                            <p className="text-gray-400 mb-0.5">{t('shift_management_page.ui.k3h4h91')}</p>
                                             <p className="font-bold text-green-600">{fmt(shift.totalCashSales)} ج.م</p>
                                         </div>
                                         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
-                                            <p className="text-gray-400 mb-0.5">النقدي الفعلي</p>
+                                            <p className="text-gray-400 mb-0.5">{t('shift_management_page.ui.kznbzt')}</p>
                                             <p className="font-bold text-gray-900 dark:text-white">{fmt(shift.actualCash)} ج.م</p>
                                         </div>
                                         <div className={`rounded-lg p-2 ${variance < 0 ? 'bg-red-50 dark:bg-red-900/20' : variance > 0 ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-green-50 dark:bg-green-900/20'}`}>
-                                            <p className="text-gray-400 mb-0.5">الفرق</p>
+                                            <p className="text-gray-400 mb-0.5">{t('shift_management_page.ui.kove7th')}</p>
                                             <p className={`font-bold ${variance < 0 ? 'text-red-600' : variance > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
                                                 {variance > 0 ? '+' : ''}{fmt(variance)} ج.م
                                             </p>
@@ -256,7 +258,7 @@ export default function ShiftManagementPage() {
                         <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
                             <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                                 <StopCircle className="w-5 h-5 text-red-500" />
-                                إغلاق الوردية
+                                {t('shift_management_page.ui.krd2e8e')}
                             </h3>
                             <button onClick={() => setShowCloseModal(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                                 <X className="w-5 h-5 text-gray-500" />
@@ -265,10 +267,10 @@ export default function ShiftManagementPage() {
                         
                         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto" dir="rtl">
                             <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/20 space-y-2 text-sm shadow-sm">
-                                <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">الرصيد الافتتاحي</span><span className="font-extrabold text-blue-700 dark:text-blue-400">{fmt(currentShift.openingBalance)} ج.م</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">المبيعات النقدية (+)</span><span className="font-extrabold text-emerald-600 dark:text-emerald-400">+{fmt(currentShift.currentSales)} ج.م</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">{t('shift_management_page.ui.kbu3ryl')}</span><span className="font-extrabold text-blue-700 dark:text-blue-400">{fmt(currentShift.openingBalance)} ج.م</span></div>
+                                <div className="flex justify-between items-center"><span className="text-gray-500 font-bold">{t('shift_management_page.ui.kj6s0r1')}</span><span className="font-extrabold text-emerald-600 dark:text-emerald-400">+{fmt(currentShift.currentSales)} ج.م</span></div>
                                 <div className="border-t border-blue-200 dark:border-blue-700/50 pt-2 flex justify-between items-center font-black text-lg">
-                                    <span className="text-gray-700 dark:text-gray-200">الإجمالي المتوقع</span>
+                                    <span className="text-gray-700 dark:text-gray-200">{t('shift_management_page.ui.kwh7707')}</span>
                                     <span className="text-primary-600 dark:text-primary-400">{fmt(currentShift.expectedNow)} ج.م</span>
                                 </div>
                             </div>
@@ -292,14 +294,14 @@ export default function ShiftManagementPage() {
                                         </div>
                                     ))}
                                     <div className="col-span-2 mt-1 py-1.5 bg-primary-50 dark:bg-primary-900/20 rounded-xl text-center">
-                                        <span className="text-[10px] font-bold text-gray-500">مجموع الجرد: </span>
+                                        <span className="text-[10px] font-bold text-gray-500">{t('shift_management_page.ui.k4wfeoy')} </span>
                                         <span className="text-sm font-black text-primary-600 dark:text-primary-400">{fmt(totalFromDenominations)} ج.م</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-black text-gray-600 dark:text-gray-400 mb-2 mr-1">النقدية الفعلية (الموجودة حالياً)</label>
+                                <label className="block text-xs font-black text-gray-600 dark:text-gray-400 mb-2 mr-1">{t('shift_management_page.ui.kxoaz3u')}</label>
                                 <div className="relative">
                                     <input
                                         type="number" min="0" value={actualCash}
@@ -311,7 +313,7 @@ export default function ShiftManagementPage() {
                                 </div>
                                 {actualCash && (
                                     <div className={`mt-3 p-2.5 rounded-xl border-l-4 text-center transition-all animate-fade-in ${Number(actualCash) - currentShift.expectedNow < 0 ? 'bg-rose-50 border-rose-500 text-rose-700' : Number(actualCash) - currentShift.expectedNow > 0 ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-emerald-50 border-emerald-500 text-emerald-700'}`}>
-                                        <p className="text-[10px] font-bold opacity-80 mb-0.5">فرق التسوية النهائي</p>
+                                        <p className="text-[10px] font-bold opacity-80 mb-0.5">{t('shift_management_page.ui.kuxpie8')}</p>
                                         <p className="font-black text-sm" dir="ltr">
                                             {Number(actualCash) - currentShift.expectedNow > 0 ? '+' : ''}{fmt(Number(actualCash) - currentShift.expectedNow)} ج.م
                                         </p>
@@ -320,17 +322,17 @@ export default function ShiftManagementPage() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-500 mb-1.5 mr-1 uppercase">ملاحظات إضافية</label>
-                                <textarea rows={2} value={closeNotes} onChange={(e) => setCloseNotes(e.target.value)} placeholder="أي ملاحظات عن العجز أو الزيادة..."
+                                <label className="block text-[10px] font-black text-gray-500 mb-1.5 mr-1 uppercase">{t('shift_management_page.ui.kyxy41g')}</label>
+                                <textarea rows={2} value={closeNotes} onChange={(e) => setCloseNotes(e.target.value)} placeholder={t('shift_management_page.placeholders.kbn7lan')}
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none font-medium" />
                             </div>
                         </div>
 
                         <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex gap-3">
-                            <button onClick={() => setShowCloseModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-bold text-sm hover:bg-white dark:hover:bg-gray-800 transition shadow-sm">إلغاء</button>
+                            <button onClick={() => setShowCloseModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-bold text-sm hover:bg-white dark:hover:bg-gray-800 transition shadow-sm">{t('shift_management_page.ui.cancel')}</button>
                             <button onClick={handleClose} disabled={closeLoading}
                                 className="flex-[2] py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 active:scale-[0.98]">
-                                {closeLoading ? <LoadingSpinner size="sm" /> : <><StopCircle className="w-5 h-5 fill-current" />إغلاق وتصفية الوردية</>}
+                                {closeLoading ? <LoadingSpinner size="sm" /> : <><StopCircle className="w-5 h-5 fill-current" />{t('shift_management_page.ui.kt5k6ol')}</>}
                             </button>
                         </div>
                     </div>

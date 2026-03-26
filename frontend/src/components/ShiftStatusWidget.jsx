@@ -104,7 +104,7 @@ export default function ShiftStatusWidget() {
 
         <div className="hidden sm:flex flex-col items-start px-1 border-r border-current/10 mr-1 pr-2">
           <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">
-            {isOpen ? 'نشط' : 'مغلق'}
+            {isOpen ? t('shift_status_widget.ui.ky62x') : 'مغلق'}
           </span>
           {isOpen && timeLeft && (
             <span className="text-[11px] font-black font-mono leading-none tracking-tighter">
@@ -131,7 +131,7 @@ export default function ShiftStatusWidget() {
                 <div className="w-6 h-6 rounded-lg bg-primary-500/10 flex items-center justify-center">
                   <Clock className="w-3.5 h-3.5 text-primary-500" />
                 </div>
-                إدارة الوردية
+                {t('shift_status_widget.ui.ky4vycd')}
               </h3>
             </div>
 
@@ -140,13 +140,13 @@ export default function ShiftStatusWidget() {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-gray-50/50 dark:bg-gray-950/40 p-3 rounded-xl border border-gray-100 dark:border-gray-800 transition-colors hover:bg-gray-100 dark:hover:bg-gray-950/60">
-                      <span className="block text-[10px] text-gray-400 mb-1">الرصيد الافتتاحي</span>
+                      <span className="block text-[10px] text-gray-400 mb-1">{t('shift_status_widget.ui.kbu3ryl')}</span>
                       <strong className="text-sm font-black text-gray-900 dark:text-white">
                         {activeShift.openingBalance?.toLocaleString() || '0.00'}
                       </strong>
                     </div>
                     <div className="bg-emerald-50/50 dark:bg-emerald-500/5 p-3 rounded-xl border border-emerald-100 dark:border-emerald-500/10 transition-colors hover:bg-emerald-100/50 dark:hover:bg-emerald-500/10">
-                      <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 mb-1">المبيعات الآن</span>
+                      <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 mb-1">{t('shift_status_widget.ui.ka3wglt')}</span>
                       <strong className="text-sm font-black text-emerald-700 dark:text-emerald-400">
                         {activeShift.currentSales?.toLocaleString() || '0.00'}
                       </strong>
@@ -154,7 +154,7 @@ export default function ShiftStatusWidget() {
                   </div>
                   
                   <div className="flex justify-between items-center py-2 px-1">
-                     <span className="text-xs text-gray-500 font-medium tracking-wide">الخزينة المتوقعة:</span>
+                     <span className="text-xs text-gray-500 font-medium tracking-wide">{t('shift_status_widget.ui.kchivvq')}</span>
                      <span className="text-lg font-black text-primary-600 dark:text-primary-400 font-mono">
                         {activeShift.expectedNow?.toLocaleString() || '0.00'}
                      </span>
@@ -167,7 +167,7 @@ export default function ShiftStatusWidget() {
                        : 'text-gray-500 bg-gray-50/50 border-gray-100 dark:text-gray-400 dark:bg-gray-950/40 dark:border-gray-800'
                      }`}>
                         <Clock className={`w-3.5 h-3.5 ${isWarning ? 'animate-pulse' : ''}`} />
-                        <span className="flex-1">تغلق تلقائياً خلال:</span>
+                        <span className="flex-1">{t('shift_status_widget.ui.kfmh8gw')}</span>
                         <span className="font-mono font-black tracking-widest">{timeLeft}</span>
                      </div>
                   )}
@@ -179,7 +179,7 @@ export default function ShiftStatusWidget() {
                       onClick={() => setDropdownOpen(false)}
                     >
                       <Square className="w-3.5 h-3.5 fill-current" />
-                      إغلاق
+                      {t('shift_status_widget.ui.close')}
                     </Link>
                     <Link
                       to="/shift"
@@ -187,7 +187,7 @@ export default function ShiftStatusWidget() {
                       onClick={() => setDropdownOpen(false)}
                     >
                       <History className="w-3.5 h-3.5" />
-                      التفاصيل
+                      {t('shift_status_widget.ui.ku5ftfg')}
                     </Link>
                   </div>
                 </>
@@ -205,7 +205,7 @@ export default function ShiftStatusWidget() {
                     onClick={() => setDropdownOpen(false)}
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    فتح وردية جديدة
+                    {t('shift_status_widget.ui.kvwgy2y')}
                   </Link>
                 </div>
               )}
@@ -218,7 +218,7 @@ export default function ShiftStatusWidget() {
                 onClick={() => setDropdownOpen(false)}
               >
                 <Activity className="w-3.5 h-3.5" />
-                مراقبة كافة الفروع
+                {t('shift_status_widget.ui.kx9487a')}
               </Link>
             )}
           </motion.div>

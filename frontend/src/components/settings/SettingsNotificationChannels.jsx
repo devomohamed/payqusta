@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BellRing, Save, Mail, MessageSquare, TestTube, Share2, Info, Building2
 } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Button, Input, Switch, Select } from '../UI';
 import { notify } from '../AnimatedNotification';
 
 export default function SettingsNotificationChannels() {
+  const { t } = useTranslation('admin');
   const { tenant, getMe } = useAuthStore();
   const [saving, setSaving] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
@@ -87,17 +89,17 @@ export default function SettingsNotificationChannels() {
         },
         notificationBranding: form.branding,
       });
-      notify.success('تم حفظ إعدادات الإشعارات بنجاح');
+      notify.success(t('settings_notification_channels.toasts.klj7alv'));
       getMe();
     } catch (err) {
-      notify.error(err.response?.data?.message || 'خطأ في الحفظ');
+      notify.error(err.response?.data?.message || t('settings_notification_channels.toasts.kw4gtna'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleTestEmail = async () => {
-    if (!testEmail) return notify.warning('يرجى إدخال بريد إلكتروني للاختبار');
+    if (!testEmail) return notify.warning(t('settings_notification_channels.toasts.kujxp4n'));
     setTestingEmail(true);
     try {
       const res = await api.post('/settings/notification-channels/test-email', {
@@ -105,16 +107,16 @@ export default function SettingsNotificationChannels() {
         notificationChannels: { email: form.email, routing: form.routing },
         notificationBranding: form.branding
       });
-      notify.success(res.data.message || 'تم الإرسال بنجاح');
+      notify.success(res.data.message || t('settings_notification_channels.toasts.khrsfue'));
     } catch (err) {
-      notify.error(err.response?.data?.message || 'فشل إرسال رسالة الاختبار');
+      notify.error(err.response?.data?.message || t('settings_notification_channels.toasts.kf5y5v7'));
     } finally {
       setTestingEmail(false);
     }
   };
 
   const handleTestSms = async () => {
-    if (!testPhone) return notify.warning('يرجى إدخال رقم هاتف للاختبار');
+    if (!testPhone) return notify.warning(t('settings_notification_channels.toasts.kodiggh'));
     setTestingSms(true);
     try {
       const res = await api.post('/settings/notification-channels/test-sms', {
@@ -122,9 +124,9 @@ export default function SettingsNotificationChannels() {
         notificationChannels: { sms: form.sms, routing: form.routing },
         notificationBranding: form.branding
       });
-      notify.success(res.data.message || 'تم الإرسال بنجاح');
+      notify.success(res.data.message || t('settings_notification_channels.toasts.khrsfue'));
     } catch (err) {
-      notify.error(err.response?.data?.message || 'فشل إرسال رسالة الاختبار');
+      notify.error(err.response?.data?.message || t('settings_notification_channels.toasts.kf5y5v7'));
     } finally {
       setTestingSms(false);
     }
@@ -137,8 +139,8 @@ export default function SettingsNotificationChannels() {
           <BellRing className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">قنوات الإشعارات (Notification Channels)</h2>
-          <p className="text-sm text-subtle">إدارة تفضيلات الإرسال (واتساب، إيميل، رسائل نصية) للعملاء</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('settings_notification_channels.ui.k58231v')}</h2>
+          <p className="text-sm text-subtle">{t('settings_notification_channels.ui.k16p14x')}</p>
         </div>
       </div>
 
@@ -146,33 +148,33 @@ export default function SettingsNotificationChannels() {
       <section className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 shadow-sm space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <Share2 className="w-5 h-5 text-indigo-500" />
-          <h3 className="font-bold text-lg">وضع التوجيه (Routing Mode)</h3>
+          <h3 className="font-bold text-lg">{t('settings_notification_channels.ui.kmb6pbp')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
-            label="القناة المفضلة الأساسية"
+            label={t('settings_notification_channels.form.kvmxw6l')}
             value={form.routing.mode}
             onChange={(e) => setForm({ ...form, routing: { ...form.routing, mode: e.target.value } })}
             options={[
-              { value: 'smart', label: 'ذكي (أفضل قناة متاحة)' },
-              { value: 'whatsapp_preferred', label: 'واتساب مفضل (ثم بدائل أخرى)' },
-              { value: 'whatsapp_only', label: 'واتساب فقط' },
-              { value: 'email_only', label: 'بريد إلكتروني فقط' },
-              { value: 'sms_only', label: 'رسائل نصية فقط' },
+              { value: 'smart', label: t('settings_notification_channels.ui.kwlxs9c') },
+              { value: 'whatsapp_preferred', label: t('settings_notification_channels.ui.kbnsug7') },
+              { value: 'whatsapp_only', label: t('settings_notification_channels.ui.kki0cgx') },
+              { value: 'email_only', label: t('settings_notification_channels.ui.k2bshs9') },
+              { value: 'sms_only', label: t('settings_notification_channels.ui.k47xqrl') },
             ]}
           />
           <div className="flex items-center mt-6">
             <Switch
               checked={form.routing.fallbackEnabled}
               onChange={(checked) => setForm({ ...form, routing: { ...form.routing, fallbackEnabled: checked } })}
-              label="تفعيل البدائل (Fallback)"
+              label={t('settings_notification_channels.form.kbwibdq')}
               description="الإرسال عبر قناة بديلة إذا فشلت القناة الأساسية"
             />
           </div>
         </div>
         <div className="p-3 mt-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-sm text-blue-700 dark:text-blue-300 flex items-start gap-2">
           <Info className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>عند اختيار <strong>واتساب مفضل</strong>، سيقوم النظام بمحاولة الإرسال عبر واتساب أولاً وتفعيل البدائل إذا فشل الإرسال (يتطلب تفعيل البدائل). يجب تفعيل واتساب من قائمة الإعدادات الخاصة به.</p>
+          <p>{t('settings_notification_channels.ui.k50rkkv')} <strong>{t('settings_notification_channels.ui.k3rsbmp')}</strong>، سيقوم النظام بمحاولة الإرسال عبر واتساب أولاً وتفعيل البدائل إذا فشل الإرسال (يتطلب تفعيل البدائل). يجب تفعيل واتساب من قائمة الإعدادات الخاصة به.</p>
         </div>
       </section>
 
@@ -180,30 +182,30 @@ export default function SettingsNotificationChannels() {
       <section className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 shadow-sm space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <Building2 className="w-5 h-5 text-indigo-500" />
-          <h3 className="font-bold text-lg">هوية المرسل (Branding)</h3>
+          <h3 className="font-bold text-lg">{t('settings_notification_channels.ui.k5q1uto')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input 
-            label="اسم المرسل (Sender Name)" 
-            placeholder="اسم المتجر الذي يظهر للعميل" 
+            label={t('settings_notification_channels.form.kqngtz8')} 
+            placeholder={t('settings_notification_channels.placeholders.kpbai47')} 
             value={form.branding.senderName} 
             onChange={(e) => setForm({ ...form, branding: { ...form.branding, senderName: e.target.value } })} 
           />
           <Input 
-            label="البريد للرد (Reply-To Email)" 
+            label={t('settings_notification_channels.form.k3fiipg')} 
             type="email"
             placeholder="support@yourstore.com" 
             value={form.branding.replyToEmail} 
             onChange={(e) => setForm({ ...form, branding: { ...form.branding, replyToEmail: e.target.value } })} 
           />
           <Input 
-            label="بريد الدعم (Support Email)" 
+            label={t('settings_notification_channels.form.k8oimpa')} 
             type="email"
             value={form.branding.supportEmail} 
             onChange={(e) => setForm({ ...form, branding: { ...form.branding, supportEmail: e.target.value } })} 
           />
           <Input 
-            label="هاتف الدعم (Support Phone)" 
+            label={t('settings_notification_channels.form.kjfncev')} 
             type="tel"
             value={form.branding.supportPhone} 
             onChange={(e) => setForm({ ...form, branding: { ...form.branding, supportPhone: e.target.value } })} 
@@ -216,7 +218,7 @@ export default function SettingsNotificationChannels() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="w-5 h-5 text-indigo-500" />
-            <h3 className="font-bold text-lg">البريد الإلكتروني (Email)</h3>
+            <h3 className="font-bold text-lg">{t('settings_notification_channels.ui.k3300w8')}</h3>
           </div>
           <Switch
             checked={form.email.enabled}
@@ -227,12 +229,12 @@ export default function SettingsNotificationChannels() {
         {form.email.enabled && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
             <Select
-              label="مزود الخدمة"
+              label={t('settings_notification_channels.form.k38kt0u')}
               value={form.email.mode}
               onChange={(e) => setForm({ ...form, email: { ...form.email, mode: e.target.value } })}
               options={[
-                { value: 'platform_default', label: 'الافتراضي للمنصة (مجاني/مدمج)' },
-                { value: 'custom_smtp', label: 'مزود SMTP مخصص' },
+                { value: 'platform_default', label: t('settings_notification_channels.ui.k86v625') },
+                { value: 'custom_smtp', label: t('settings_notification_channels.ui.kydd3zt') },
               ]}
             />
             
@@ -245,17 +247,17 @@ export default function SettingsNotificationChannels() {
                 <Input label="From Email" placeholder="noreply@domain.com" value={form.email.fromEmail} onChange={e => setForm({...form, email: {...form.email, fromEmail: e.target.value}})} />
                 <Input label="From Name" placeholder="My Store" value={form.email.fromName} onChange={e => setForm({...form, email: {...form.email, fromName: e.target.value}})} />
                 <div className="col-span-full">
-                  <Switch checked={form.email.secure} onChange={checked => setForm({...form, email: {...form.email, secure: checked}})} label="استخدام اتصال آمن (SSL/TLS)" />
+                  <Switch checked={form.email.secure} onChange={checked => setForm({...form, email: {...form.email, secure: checked}})} label={t('settings_notification_channels.form.krogmaw')} />
                 </div>
               </div>
             )}
             
             <div className="flex items-end gap-2 pt-2 border-t border-gray-100 dark:border-white/5">
               <div className="flex-1 max-w-xs">
-                <Input placeholder="بريد إلكتروني للاختبار" value={testEmail} onChange={e => setTestEmail(e.target.value)} />
+                <Input placeholder={t('settings_notification_channels.placeholders.kje26cc')} value={testEmail} onChange={e => setTestEmail(e.target.value)} />
               </div>
               <Button variant="outline" onClick={handleTestEmail} loading={testingEmail} icon={<TestTube className="w-4 h-4" />}>
-                اختبار البريد
+                {t('settings_notification_channels.ui.kw1vu70')}
               </Button>
             </div>
           </div>
@@ -267,7 +269,7 @@ export default function SettingsNotificationChannels() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-indigo-500" />
-            <h3 className="font-bold text-lg">الرسائل النصية (SMS)</h3>
+            <h3 className="font-bold text-lg">{t('settings_notification_channels.ui.kxdasoz')}</h3>
           </div>
           <Switch
             checked={form.sms.enabled}
@@ -278,19 +280,19 @@ export default function SettingsNotificationChannels() {
         {form.sms.enabled && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
             <Select
-              label="مزود الخدمة"
+              label={t('settings_notification_channels.form.k38kt0u')}
               value={form.sms.mode}
               onChange={(e) => setForm({ ...form, sms: { ...form.sms, mode: e.target.value } })}
               options={[
-                { value: 'platform_default', label: 'الافتراضي للمنصة (حسب الباقة)' },
-                { value: 'custom_provider', label: 'تكوين مزود خدمة خاص (Custom)' },
+                { value: 'platform_default', label: t('settings_notification_channels.ui.ka2k3y0') },
+                { value: 'custom_provider', label: t('settings_notification_channels.ui.ko664ns') },
               ]}
             />
             
             {form.sms.mode === 'custom_provider' && (
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 space-y-4">
                 <Select
-                  label="نوع المزود الخاص"
+                  label={t('settings_notification_channels.form.kp2gmqh')}
                   value={form.sms.provider}
                   onChange={(e) => setForm({ ...form, sms: { ...form.sms, provider: e.target.value } })}
                   options={[
@@ -309,7 +311,7 @@ export default function SettingsNotificationChannels() {
                           <Input label="Base URL" placeholder="https://api.smsprovider.com/send" value={form.sms.baseUrl} onChange={e => setForm({...form, sms: {...form.sms, baseUrl: e.target.value}})} />
                         </div>
                       )}
-                      <Input label={form.sms.provider.includes('twilio') ? "Account SID" : "API Key"} placeholder="أدخل المفتاح/المعرف" value={form.sms.apiKey} onChange={e => setForm({...form, sms: {...form.sms, apiKey: e.target.value}})} />
+                      <Input label={form.sms.provider.includes('twilio') ? "Account SID" : "API Key"} placeholder={t('settings_notification_channels.placeholders.kdswuhj')} value={form.sms.apiKey} onChange={e => setForm({...form, sms: {...form.sms, apiKey: e.target.value}})} />
                       <Input label={form.sms.provider.includes('twilio') ? "Auth Token" : "API Secret (اختياري)"} type="password" placeholder="••••••••" value={form.sms.apiSecret} onChange={e => setForm({...form, sms: {...form.sms, apiSecret: e.target.value}})} />
                     </>
                   )}
@@ -319,10 +321,10 @@ export default function SettingsNotificationChannels() {
             
             <div className="flex items-end gap-2 pt-2 border-t border-gray-100 dark:border-white/5">
               <div className="flex-1 max-w-xs">
-                <Input placeholder="رقم الموبايل للاختبار (+20...)" value={testPhone} onChange={e => setTestPhone(e.target.value)} />
+                <Input placeholder={t('settings_notification_channels.placeholders.kmzdaz6')} value={testPhone} onChange={e => setTestPhone(e.target.value)} />
               </div>
               <Button variant="outline" onClick={handleTestSms} loading={testingSms} icon={<TestTube className="w-4 h-4" />}>
-                اختبار الـ SMS
+                {t('settings_notification_channels.ui.k18es9h')}
               </Button>
             </div>
           </div>
@@ -331,7 +333,7 @@ export default function SettingsNotificationChannels() {
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 pt-6 border-t border-gray-100 dark:border-white/10">
-        <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>حفظ الإعدادات</Button>
+        <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>{t('settings_notification_channels.ui.kok3ib7')}</Button>
       </div>
     </div>
   );

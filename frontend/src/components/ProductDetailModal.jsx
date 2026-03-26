@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import {
   Barcode,
   Boxes,
@@ -30,13 +31,13 @@ function formatMoney(value) {
   return `${currencyFormatter.format(Number(value || 0))} ج.م`;
 }
 
-function formatDate(value) {
-  if (!value) return 'غير متوفر';
+function formatDate(value, t) {
+  if (!value) return t('product_detail_modal.ui.ksz9eto');
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? 'غير متوفر' : dateFormatter.format(parsed);
+  return Number.isNaN(parsed.getTime()) ? t('product_detail_modal.ui.ksz9eto') : dateFormatter.format(parsed);
 }
 
-function formatBarcodeType(type) {
+function formatBarcodeType(type, t) {
   const normalized = String(type || '').trim().toUpperCase();
   const labels = {
     UPC_A: 'UPC-A',
@@ -45,9 +46,9 @@ function formatBarcodeType(type) {
     EAN_13: 'EAN-13',
     QR_CODE: 'QR Code',
     CODE128: 'Code 128',
-    UNKNOWN: 'تنسيق عام',
+    UNKNOWN: t('product_detail_modal.ui.kqsyimy'),
   };
-  return labels[normalized] || normalized || 'تنسيق عام';
+  return labels[normalized] || normalized || t('product_detail_modal.toasts.kqsyimy');
 }
 
 function looksLikeHtml(text = '') {
@@ -60,11 +61,11 @@ function normalizeVariantAttributes(attributes) {
   return Object.entries(attributes).filter(([, value]) => hasValue(value));
 }
 
-function getStatusMeta(status) {
+function getStatusMeta(status, t) {
   if (status === 'in_stock') {
     return {
       badge: 'success',
-      label: 'متوفر بالمخزون',
+      label: t('product_detail_modal.ui.kejn2r5'),
       panel: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
     };
   }
@@ -72,26 +73,26 @@ function getStatusMeta(status) {
   if (status === 'low_stock') {
     return {
       badge: 'warning',
-      label: 'مخزون منخفض',
+      label: t('product_detail_modal.ui.kss45lj'),
       panel: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300',
     };
   }
 
   return {
     badge: 'danger',
-    label: 'نفد من المخزون',
+    label: t('product_detail_modal.ui.k1rveo9'),
     panel: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300',
   };
 }
 
-function buildAvailabilityRows(product, tenantId) {
+function buildAvailabilityRows(product, tenantId, t) {
   if (Array.isArray(product?.inventory) && product.inventory.length > 0) {
     return product.inventory.map((item) => {
       const branchRef = item?.branch;
       const branchId = typeof branchRef === 'string' ? branchRef : (branchRef?._id || '');
       const branchName = typeof branchRef === 'object' && branchRef?.name
         ? branchRef.name
-        : (branchId && tenantId && String(branchId) === String(tenantId) ? 'الفرع الرئيسي' : 'فرع غير معروف');
+        : (branchId && tenantId && String(branchId) === String(tenantId) ? t('product_detail_modal.ui.kphehwb') : t('product_detail_modal.ui.k6m0nkw'));
 
       return {
         branchName,
@@ -102,33 +103,33 @@ function buildAvailabilityRows(product, tenantId) {
   }
 
   return [{
-    branchName: 'الفرع الرئيسي',
+    branchName: t('product_detail_modal.ui.kphehwb'),
     quantity: Number(product?.stock?.quantity) || 0,
     minQuantity: Number(product?.stock?.minQuantity) || 5,
   }];
 }
 
-function buildIdentifierRows(product) {
+function buildIdentifierRows(product, t) {
   return [
     {
       key: 'sku',
       title: 'SKU',
       value: product?.sku,
-      subtitle: 'الكود الداخلي',
+      subtitle: t('product_detail_modal.ui.kmwlzys'),
       format: 'CODE128',
     },
     {
       key: 'international',
-      title: 'الباركود الدولي',
+      title: t('product_detail_modal.ui.knt29k7'),
       value: product?.internationalBarcode || product?.barcode,
-      subtitle: formatBarcodeType(product?.internationalBarcodeType || 'UNKNOWN'),
+      subtitle: formatBarcodeType(product?.internationalBarcodeType || 'UNKNOWN', t),
       format: product?.internationalBarcodeType || 'CODE128',
     },
     {
       key: 'local',
-      title: 'الباركود المحلي',
+      title: t('product_detail_modal.ui.kntfr92'),
       value: product?.localBarcode,
-      subtitle: formatBarcodeType(product?.localBarcodeType || 'CODE128'),
+      subtitle: formatBarcodeType(product?.localBarcodeType || 'CODE128', t),
       format: product?.localBarcodeType || 'CODE128',
     },
   ].filter((item) => hasValue(item.value));
@@ -177,7 +178,7 @@ function DetailRow({ label, value, mono = false }) {
   );
 }
 
-function IdentifierCard({ item, onCopy }) {
+function IdentifierCard({ item, onCopy, t }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/65">
       <div className="flex items-start justify-between gap-3">
@@ -191,7 +192,7 @@ function IdentifierCard({ item, onCopy }) {
           className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-primary-300 hover:text-primary-600 dark:border-slate-700 dark:text-slate-300"
         >
           <Copy className="h-3.5 w-3.5" />
-          نسخ
+          {t('product_detail_modal.ui.ky61t')}
         </button>
       </div>
 
@@ -214,6 +215,7 @@ function IdentifierCard({ item, onCopy }) {
 }
 
 export default function ProductDetailModal({ product, open, onClose, onEdit }) {
+  const { t } = useTranslation('admin');
   const tenantId = useAuthStore((state) => state.tenant?._id || state.tenant?.id || '');
   const [details, setDetails] = useState(product || null);
   const [loading, setLoading] = useState(false);
@@ -247,23 +249,23 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
   const displayProduct = details || product;
   const images = useMemo(() => collectProductImages(displayProduct), [displayProduct]);
   const availabilityRows = useMemo(
-    () => buildAvailabilityRows(displayProduct, tenantId),
-    [displayProduct, tenantId]
+    () => buildAvailabilityRows(displayProduct, tenantId, t),
+    [displayProduct, tenantId, t]
   );
   const identifiers = useMemo(
-    () => buildIdentifierRows(displayProduct),
-    [displayProduct]
+    () => buildIdentifierRows(displayProduct, t),
+    [displayProduct, t]
   );
 
   useEffect(() => {
     setActiveImage(images[0] || '');
   }, [images]);
 
-  const statusMeta = getStatusMeta(displayProduct?.stockStatus);
+  const statusMeta = getStatusMeta(displayProduct?.stockStatus, t);
   const variantCount = Array.isArray(displayProduct?.variants) ? displayProduct.variants.length : 0;
   const tags = Array.isArray(displayProduct?.tags) ? displayProduct.tags.filter(Boolean) : [];
-  const supplierName = displayProduct?.supplier?.name || 'بدون مورد';
-  const supplierPhone = displayProduct?.supplier?.phone || 'غير متوفر';
+  const supplierName = displayProduct?.supplier?.name || t('product_detail_modal.toasts.k8ca3ng');
+  const supplierPhone = displayProduct?.supplier?.phone || t('product_detail_modal.toasts.ksz9eto');
   const price = Number(displayProduct?.price) || 0;
   const cost = Number(displayProduct?.cost) || 0;
   const compareAtPrice = Number(displayProduct?.compareAtPrice) || 0;
@@ -276,7 +278,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
       await navigator.clipboard.writeText(String(value));
       toast.success(`تم نسخ ${label}`);
     } catch {
-      toast.error('تعذر نسخ القيمة');
+      toast.error(t('product_detail_modal.toasts.kydmqpk'));
     }
   };
 
@@ -286,7 +288,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="تفاصيل المنتج"
+      title={t('product_detail_modal.titles.kwkro4h')}
       size="2xl"
       bodyClassName="!p-0"
       contentClassName="overflow-hidden"
@@ -311,7 +313,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                           <div className="mb-3 rounded-2xl bg-slate-100 p-5 dark:bg-slate-800">
                             <Package className="h-10 w-10" />
                           </div>
-                          <p className="text-sm font-medium">لا توجد صورة</p>
+                          <p className="text-sm font-medium">{t('product_detail_modal.ui.kiz8zql')}</p>
                         </div>
                       )}
                     </div>
@@ -345,7 +347,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                           {statusMeta.label}
                         </Badge>
                         <span className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${statusMeta.panel}`}>
-                          {displayProduct?.category?.name || displayProduct?.categoryName || 'بدون تصنيف'}
+                          {displayProduct?.category?.name || displayProduct?.categoryName || t('product_detail_modal.toasts.kpyx615')}
                         </span>
                         {displayProduct?.subcategory?.name ? (
                           <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -365,7 +367,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                             </span>
                           ) : null}
                           <span>المورد: {supplierName}</span>
-                          <span>آخر تحديث: {formatDate(displayProduct?.updatedAt)}</span>
+                          <span>آخر تحديث: {formatDate(displayProduct?.updatedAt, t)}</span>
                         </div>
                       </div>
                     </div>
@@ -373,30 +375,30 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                     {onEdit ? (
                       <Button variant="outline" onClick={() => onEdit(displayProduct)} className="px-5">
                         <Pencil className="h-4 w-4" />
-                        تعديل
+                        {t('product_detail_modal.ui.edit')}
                       </Button>
                     ) : null}
                   </div>
 
                   <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <MetricCard
-                      label="سعر البيع"
+                      label={t('product_detail_modal.form.kq1oz2z')}
                       value={formatMoney(displayProduct?.price)}
                       hint={compareAtPrice > price ? `قبل الخصم ${formatMoney(compareAtPrice)}` : 'السعر الحالي'}
                     />
                     <MetricCard
-                      label="التكلفة"
+                      label={t('product_detail_modal.form.kzcdn5i')}
                       value={formatMoney(cost)}
                       hint="تكلفة الوحدة"
                     />
                     <MetricCard
-                      label="الربح للوحدة"
+                      label={t('product_detail_modal.form.klqmk0q')}
                       value={formatMoney(profit)}
                       hint={cost > 0 ? `${(((price - cost) / cost) * 100).toFixed(1)}% هامش ربح` : 'لا توجد تكلفة'}
                     />
                     <MetricCard
-                      label="المخزون الحالي"
-                      value={`${Number(displayProduct?.stock?.quantity) || 0} ${displayProduct?.stock?.unit || 'قطعة'}`}
+                      label={t('product_detail_modal.form.kjb03f7')}
+                      value={`${Number(displayProduct?.stock?.quantity) || 0} ${displayProduct?.stock?.unit || t('product_detail_modal.toasts.ktcs1x')}`}
                       hint={`الحد الأدنى ${Number(displayProduct?.stock?.minQuantity) || 0}`}
                     />
                   </div>
@@ -408,17 +410,17 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
               <Surface className="p-5 sm:p-6 xl:col-span-12">
                 <SectionHeader
                   icon={Barcode}
-                  title="الأكواد والباركود"
+                  title={t('product_detail_modal.titles.kg0kxv4')}
                   subtitle="بطاقات منظمة تعرض SKU والباركود الدولي والمحلي بشكل أوضح"
                 />
                 <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                   {identifiers.length > 0 ? (
                     identifiers.map((item) => (
-                      <IdentifierCard key={item.key} item={item} onCopy={handleCopy} />
+                      <IdentifierCard key={item.key} item={item} onCopy={handleCopy} t={t} />
                     ))
                   ) : (
                     <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-5 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-400 lg:col-span-2 2xl:col-span-3">
-                      لا يوجد باركود أو SKU محفوظ لهذا المنتج.
+                      {t('product_detail_modal.ui.kv2qjnt')}
                     </div>
                   )}
                 </div>
@@ -427,7 +429,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
               <Surface className="p-5 sm:p-6 xl:col-span-4">
                 <SectionHeader
                   icon={MapPin}
-                  title="توزيع المخزون"
+                  title={t('product_detail_modal.titles.kt57yod')}
                   subtitle="الكمية المتاحة في كل فرع"
                 />
                 <div className="mt-5 space-y-3">
@@ -452,7 +454,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                         <div className="text-left">
                           <p className="text-xl font-semibold text-slate-950 dark:text-white">{row.quantity}</p>
                           <p className={`mt-1 text-xs font-medium ${low ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                            {low ? 'منخفض' : 'مستقر'}
+                            {low ? t('product_detail_modal.ui.kpbwxvm') : 'مستقر'}
                           </p>
                         </div>
                       </div>
@@ -464,21 +466,21 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
               <Surface className="p-5 sm:p-6 xl:col-span-4">
                 <SectionHeader
                   icon={Truck}
-                  title="بيانات سريعة"
+                  title={t('product_detail_modal.titles.kt02lgg')}
                   subtitle="ملخص تشغيلي للمورد والشحن والضريبة"
                 />
                 <div className="mt-5">
-                  <DetailRow label="المورد" value={supplierName} />
-                  <DetailRow label="هاتف المورد" value={supplierPhone} />
-                  <DetailRow label="تكلفة الشحن" value={hasValue(displayProduct?.shippingCost) ? formatMoney(displayProduct.shippingCost) : 'غير متوفر'} />
-                  <DetailRow label="الضريبة" value={`${Number(displayProduct?.taxRate) || 0}%`} />
-                  <DetailRow label="الصلاحية" value={formatDate(displayProduct?.expiryDate)} />
-                  <DetailRow label="تاريخ الإنشاء" value={formatDate(displayProduct?.createdAt)} />
+                  <DetailRow label={t('product_detail_modal.form.kaawtj6')} value={supplierName} />
+                  <DetailRow label={t('product_detail_modal.form.kphe3bt')} value={supplierPhone} />
+                  <DetailRow label={t('product_detail_modal.form.kydnnlp')} value={hasValue(displayProduct?.shippingCost) ? formatMoney(displayProduct.shippingCost) : 'غير متوفر'} />
+                  <DetailRow label={t('product_detail_modal.form.kzig9m5')} value={`${Number(displayProduct?.taxRate) || 0}%`} />
+                  <DetailRow label={t('product_detail_modal.form.kzekvld')} value={formatDate(displayProduct?.expiryDate, t)} />
+                  <DetailRow label={t('product_detail_modal.form.kwmk0vc')} value={formatDate(displayProduct?.createdAt, t)} />
                 </div>
 
                 {tags.length > 0 ? (
                   <div className="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800">
-                    <p className="mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400">الوسوم</p>
+                    <p className="mb-3 text-xs font-semibold text-slate-500 dark:text-slate-400">{t('product_detail_modal.ui.kaavbkr')}</p>
                     <div className="flex flex-wrap gap-2">
                       {tags.map((tagValue) => (
                         <span
@@ -497,12 +499,12 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                 <Surface className="p-5 sm:p-6 xl:col-span-4">
                   <SectionHeader
                     icon={Tag}
-                    title="بيانات SEO"
+                    title={t('product_detail_modal.titles.kb15nq9')}
                     subtitle="العنوان والوصف الخاصان بالظهور الخارجي"
                   />
                   <div className="mt-5">
-                    <DetailRow label="عنوان SEO" value={displayProduct?.seoTitle || 'غير متوفر'} />
-                    <DetailRow label="وصف SEO" value={displayProduct?.seoDescription || 'غير متوفر'} />
+                    <DetailRow label={t('product_detail_modal.form.ktlrjtj')} value={displayProduct?.seoTitle || t('product_detail_modal.toasts.ksz9eto')} />
+                    <DetailRow label={t('product_detail_modal.form.kexw2dt')} value={displayProduct?.seoDescription || t('product_detail_modal.toasts.ksz9eto')} />
                   </div>
                 </Surface>
               ) : null}
@@ -511,7 +513,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                 <Surface className={`p-5 sm:p-6 ${displayProduct?.seoTitle || displayProduct?.seoDescription ? 'xl:col-span-8' : 'xl:col-span-12'}`}>
                   <SectionHeader
                     icon={Package}
-                    title="وصف المنتج"
+                    title={t('product_detail_modal.titles.kau35mc')}
                     subtitle="تفاصيل المنتج الكاملة كما تم إدخالها"
                   />
                   <div className="mt-5">
@@ -533,7 +535,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                 <Surface className="p-5 sm:p-6 xl:col-span-12">
                   <SectionHeader
                     icon={Boxes}
-                    title="متغيرات المنتج"
+                    title={t('product_detail_modal.titles.k31dn41')}
                     subtitle="الألوان والمقاسات والخيارات مع السعر والمخزون"
                   />
                   <div className="mt-5 grid grid-cols-1 gap-4 2xl:grid-cols-2">
@@ -563,23 +565,23 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                                   ))
                                 ) : (
                                   <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm dark:bg-slate-900 dark:text-slate-400">
-                                    بدون خصائص
+                                    {t('product_detail_modal.ui.kpwqnik')}
                                   </span>
                                 )}
                               </div>
                             </div>
                             <Badge variant={variant?.isActive === false ? 'gray' : 'success'}>
-                              {variant?.isActive === false ? 'غير نشط' : 'نشط'}
+                              {variant?.isActive === false ? t('product_detail_modal.ui.kw9q0sq') : 'نشط'}
                             </Badge>
                           </div>
 
                           <div className="mt-4 grid grid-cols-2 gap-3">
                             <MetricCard
-                              label="السعر"
+                              label={t('product_detail_modal.form.kovdxm6')}
                               value={hasValue(variant?.price) ? formatMoney(variant.price) : 'غير محدد'}
                             />
                             <MetricCard
-                              label="المخزون"
+                              label={t('product_detail_modal.form.kza9qom')}
                               value={`${Number(variant?.stock) || 0}`}
                             />
                           </div>
@@ -590,7 +592,7 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
                                 <DetailRow label="SKU" value={variant.sku} mono />
                               ) : null}
                               {variantBarcode ? (
-                                <DetailRow label="الباركود" value={variantBarcode} mono />
+                                <DetailRow label={t('product_detail_modal.form.kst8led')} value={variantBarcode} mono />
                               ) : null}
                             </div>
                           ) : null}
@@ -615,11 +617,11 @@ export default function ProductDetailModal({ product, open, onClose, onEdit }) {
         {onEdit ? (
           <Button variant="outline" onClick={() => onEdit(displayProduct)}>
             <Pencil className="h-4 w-4" />
-            تعديل
+            {t('product_detail_modal.ui.edit')}
           </Button>
         ) : null}
         <Button variant="ghost" onClick={onClose}>
-          إغلاق
+          {t('product_detail_modal.ui.close')}
         </Button>
       </div>
     </Modal>

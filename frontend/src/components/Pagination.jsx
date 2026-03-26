@@ -1,7 +1,9 @@
 import React from 'react';
 import { ChevronRight, ChevronLeft, ChevronsRight, ChevronsLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Pagination({ currentPage, totalPages, totalItems, onPageChange }) {
+  const { t, i18n } = useTranslation('admin');
   if (totalPages <= 1) return null;
 
   const pages = [];
@@ -35,9 +37,9 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
       <div className="flex items-center gap-2">
         <div className="app-surface-muted inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-100/80 dark:border-white/10">
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            صفحة{' '}
+            {t('pagination.page')}{' '}
             <span className="font-bold text-gray-800 dark:text-gray-200">{currentPage}</span>
-            {' '}من{' '}
+            {' '}{t('pagination.of')}{' '}
             <span className="font-bold text-gray-800 dark:text-gray-200">{totalPages}</span>
           </span>
           {totalItems > 0 && (
@@ -45,9 +47,9 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
               <span className="w-px h-3.5 bg-gray-300 dark:bg-gray-600" />
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 <span className="font-bold text-primary-600 dark:text-primary-400">
-                  {totalItems.toLocaleString('ar-EG')}
+                  {totalItems.toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'en-US')}
                 </span>{' '}
-                عنصر
+                {t('pagination.items')}
               </span>
             </>
           )}
@@ -57,12 +59,12 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
       {/* Buttons */}
       <div className="flex items-center gap-1.5">
         {/* First */}
-        <NavBtn onClick={() => onPageChange(1)} disabled={currentPage === 1} title="الأولى">
+        <NavBtn onClick={() => onPageChange(1)} disabled={currentPage === 1} title={t('pagination.first')}>
           <ChevronsRight className="w-4 h-4" />
         </NavBtn>
 
         {/* Previous */}
-        <NavBtn onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} title="السابقة">
+        <NavBtn onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} title={t('pagination.previous')}>
           <ChevronRight className="w-4 h-4" />
         </NavBtn>
 
@@ -115,12 +117,12 @@ export default function Pagination({ currentPage, totalPages, totalItems, onPage
         )}
 
         {/* Next */}
-        <NavBtn onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} title="التالية">
+        <NavBtn onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} title={t('pagination.next')}>
           <ChevronLeft className="w-4 h-4" />
         </NavBtn>
 
         {/* Last */}
-        <NavBtn onClick={() => onPageChange(totalPages)} disabled={currentPage === totalPages} title="الأخيرة">
+        <NavBtn onClick={() => onPageChange(totalPages)} disabled={currentPage === totalPages} title={t('pagination.last')}>
           <ChevronsLeft className="w-4 h-4" />
         </NavBtn>
       </div>

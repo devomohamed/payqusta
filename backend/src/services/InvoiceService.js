@@ -56,7 +56,7 @@ class InvoiceService {
       campaignAttribution,
     } = data;
     const resolvedCustomerId = customerId || legacyCustomerId;
-    const paymentMethod = rawPaymentMethod === 'online' ? PAYMENT_METHODS.VISA : rawPaymentMethod;
+    const paymentMethod = (rawPaymentMethod === 'online' || rawPaymentMethod === 'credit') ? PAYMENT_METHODS.VISA : rawPaymentMethod;
     const shouldSendWhatsApp = source === 'online_store' ? sendWhatsApp !== false : !!sendWhatsApp;
     let appliedCoupon = null;
     let reservedCouponUsage = false;

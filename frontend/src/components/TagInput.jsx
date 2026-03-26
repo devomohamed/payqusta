@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Tag } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function TagInput({ 
   value = '', 
   onChange, 
-  placeholder = 'أدخل الكلمة ثم اضغط Enter...', 
+  placeholder = t('tag_input.ui.kd51jvg'), 
   maxTags = 10,
   className = '' 
 }) {
+  const { t } = useTranslation('admin');
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef(null);
 
@@ -90,7 +92,7 @@ export default function TagInput({
       </div>
       
       <div className="flex justify-between text-[11px] text-gray-400 font-medium px-1">
-        <span>افصل بين الكلمات بفاصلة (,) أو اضغط Enter</span>
+        <span>{t('tag_input.ui.k9g29x5')}</span>
         <span>{tags.length}/{maxTags} كلمات</span>
       </div>
     </div>

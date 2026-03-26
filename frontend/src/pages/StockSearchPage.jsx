@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { productsApi, useAuthStore } from '../store';
 import { Badge, Card, EmptyState, LoadingSpinner } from '../components/UI';
 import Pagination from '../components/Pagination';
+import { useTranslation } from 'react-i18next';
 
 function getCategoryName(category) {
   if (!category) return '—';
@@ -18,12 +19,13 @@ function getCategoryIcon(category) {
   }
 
   const name = getCategoryName(category);
-  if (name === 'هواتف') return '📱';
-  if (name === 'لابتوب') return '💻';
+  if (name === t('stock_search_page.ui.kpd1nb1')) return '📱';
+  if (name === t('stock_search_page.ui.k2yx2dh')) return '💻';
   return '📦';
 }
 
 export default function StockSearchPage() {
+  const { t } = useTranslation('admin');
   const getBranches = useAuthStore((state) => state.getBranches);
 
   const [products, setProducts] = useState([]);
@@ -59,8 +61,8 @@ export default function StockSearchPage() {
   const resolveBranchName = useCallback((branchRef) => {
     if (branchRef?.name) return branchRef.name;
     const branchId = typeof branchRef === 'string' ? branchRef : (branchRef?._id || '');
-    if (!branchId) return 'الفرع الرئيسي';
-    return branchesMap[String(branchId)] || 'فرع غير معروف';
+    if (!branchId) return t('stock_search_page.ui.kphehwb');
+    return branchesMap[String(branchId)] || t('stock_search_page.toasts.k6m0nkw');
   }, [branchesMap]);
 
   const loadProducts = useCallback(async () => {
@@ -76,7 +78,7 @@ export default function StockSearchPage() {
             minQuantity: Number(inventoryItem?.minQuantity) || 5,
           }))
           : [{
-            branchName: 'الفرع الرئيسي',
+            branchName: t('stock_search_page.ui.kphehwb'),
             quantity: Number(product?.stock?.quantity) || 0,
             minQuantity: Number(product?.stock?.minQuantity) || 5,
           }];
@@ -98,7 +100,7 @@ export default function StockSearchPage() {
         totalItems: res?.data?.pagination?.totalItems || 0,
       });
     } catch (error) {
-      toast.error('حدث خطأ أثناء تحميل بيانات التوفر');
+      toast.error(t('stock_search_page.toasts.kpp3dr6'));
     } finally {
       setLoading(false);
     }
@@ -116,15 +118,15 @@ export default function StockSearchPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-gray-800 dark:text-white">البحث عن توفر المنتجات</h1>
-          <p className="text-sm text-gray-500">ابحث عن أي منتج لمعرفة الكميات المتوفرة في الفروع المختلفة.</p>
+          <h1 className="text-2xl font-black text-gray-800 dark:text-white">{t('stock_search_page.ui.k7y1cd5')}</h1>
+          <p className="text-sm text-gray-500">{t('stock_search_page.ui.k6hqywn')}</p>
         </div>
         <button
           onClick={() => void loadProducts()}
           className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-gray-600 transition-all hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
         >
           <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          تحديث
+          {t('stock_search_page.ui.update')}
         </button>
       </div>
 
@@ -138,7 +140,7 @@ export default function StockSearchPage() {
               setSearch(event.target.value);
               setPage(1);
             }}
-            placeholder="ابحث باسم المنتج أو SKU أو الباركود..."
+            placeholder={t('stock_search_page.placeholders.kkjmapi')}
             className="w-full rounded-2xl border-2 border-gray-100 bg-gray-50 py-4 pl-4 pr-12 text-lg outline-none transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-gray-800 dark:bg-gray-900/50"
           />
         </div>
@@ -150,7 +152,7 @@ export default function StockSearchPage() {
       ) : products.length === 0 ? (
         <EmptyState
           icon={<Package className="h-12 w-12" />}
-          title="لم يتم العثور على منتجات"
+          title={t('stock_search_page.titles.k4xtx3e')}
           description={search ? `لا توجد نتائج مطابقة للبحث عن "${search}"` : 'ابدأ بكتابة اسم المنتج أو كوده للبحث.'}
         />
       ) : (
@@ -169,7 +171,7 @@ export default function StockSearchPage() {
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-lg font-black text-gray-800 dark:text-white">{product.name}</h3>
                     <Badge variant={product.totalQuantity > 0 ? 'success' : 'danger'}>
-                      {product.totalQuantity > 0 ? 'متوفر إجمالًا' : 'غير متوفر'}
+                      {product.totalQuantity > 0 ? t('stock_search_page.ui.knsxbzq') : 'غير متوفر'}
                     </Badge>
                   </div>
                   <p className="flex items-center gap-2 text-sm text-gray-500">
@@ -198,7 +200,7 @@ export default function StockSearchPage() {
                         <span className={`text-lg font-black ${row.quantity <= 0 ? 'text-red-500' : row.quantity <= row.minQuantity ? 'text-amber-500' : 'text-primary-600'}`}>
                           {row.quantity}
                         </span>
-                        <span className="mr-1 text-[10px] font-bold text-gray-400">{product.stock?.unit || 'قطعة'}</span>
+                        <span className="mr-1 text-[10px] font-bold text-gray-400">{product.stock?.unit || t('stock_search_page.toasts.ktcs1x')}</span>
                       </div>
                     </div>
                   ))}
@@ -206,7 +208,7 @@ export default function StockSearchPage() {
               </div>
 
               <div className="flex items-center justify-between border-t border-gray-50 bg-white p-4 text-sm dark:border-gray-800 dark:bg-gray-900">
-                <span className="text-gray-400">إجمالي المخزون:</span>
+                <span className="text-gray-400">{t('stock_search_page.ui.kfos5cx')}</span>
                 <span className="text-lg font-black text-gray-800 dark:text-white">{product.totalQuantity}</span>
               </div>
             </Card>

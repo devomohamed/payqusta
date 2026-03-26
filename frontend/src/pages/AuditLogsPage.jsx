@@ -5,8 +5,10 @@ import { Shield, User, Clock, Search, Activity, Calendar, ChevronDown, ChevronUp
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 export default function AuditLogsPage() {
+  const { t } = useTranslation('admin');
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -40,7 +42,7 @@ export default function AuditLogsPage() {
       setLogs(data.data);
       setTotalPages(Math.ceil(data.total / 20));
     } catch (error) {
-      toast.error('فشل تحميل السجلات');
+      toast.error(t('audit_logs_page.toasts.k2t1n9e'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -76,8 +78,8 @@ export default function AuditLogsPage() {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white">سجلات النظام (Audit Logs)</h1>
-            <p className="text-sm text-gray-500">تتبع نشاط المستخدمين والعمليات الحساسة</p>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white">{t('audit_logs_page.ui.kfqhk36')}</h1>
+            <p className="text-sm text-gray-500">{t('audit_logs_page.ui.kaawfqw')}</p>
           </div>
         </div>
       </div>
@@ -87,7 +89,7 @@ export default function AuditLogsPage() {
           <Search className="w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="بحث في السجلات..."
+            placeholder={t('audit_logs_page.placeholders.kcrfmd6')}
             className="bg-transparent border-none outline-none w-full text-sm"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -108,7 +110,7 @@ export default function AuditLogsPage() {
           {logs.length === 0 ? (
             <div className="text-center py-20 text-gray-400">
               <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p>لا توجد سجلات مطابقة</p>
+              <p>{t('audit_logs_page.ui.ker3p1u')}</p>
             </div>
           ) : (
             logs.map((log) => (
@@ -131,7 +133,7 @@ export default function AuditLogsPage() {
                           {log.user?.name?.substring(0, 2) || '??'}
                         </div>
                         <div>
-                          <p className="text-sm font-bold truncate max-w-[120px]">{log.user?.name || 'مستخدم محذوف'}</p>
+                          <p className="text-sm font-bold truncate max-w-[120px]">{log.user?.name || t('audit_logs_page.toasts.k8no2bb')}</p>
                           <p className="text-[10px] text-gray-400">{log.user?.role || 'User'}</p>
                         </div>
                       </div>
@@ -173,20 +175,20 @@ export default function AuditLogsPage() {
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
                         <Database className="w-3 h-3" />
-                        تفاصيل العملية وخصائصها
+                        {t('audit_logs_page.ui.k1v7si')}
                       </h4>
                       <Badge variant="neutral" className="bg-gray-800 text-gray-400 border-none">{log.resourceId || 'N/A'}</Badge>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-500 font-madi">التفاصيل (Metadata)</p>
+                        <p className="text-[10px] font-bold text-gray-500 font-madi">{t('audit_logs_page.ui.k8ixrwq')}</p>
                         <pre className="text-[11px] text-blue-400 bg-gray-800/50 p-4 rounded-xl overflow-x-auto border border-gray-700 font-mono leading-relaxed">
                           {JSON.stringify(log.details || {}, null, 2)}
                         </pre>
                       </div>
                       <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-gray-500 font-madi">سجل التغييرات (Audit Trail)</p>
+                        <p className="text-[10px] font-bold text-gray-500 font-madi">{t('audit_logs_page.ui.kynsjha')}</p>
                         <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700 min-h-[100px] flex items-center justify-center">
                           {log.changes ? (
                              <pre className="text-[11px] text-green-400 w-full font-mono">
@@ -195,7 +197,7 @@ export default function AuditLogsPage() {
                           ) : (
                             <div className="text-center">
                               <Activity className="w-5 h-5 text-gray-700 mx-auto mb-2" />
-                              <p className="text-[10px] text-gray-600">لا توجد سجلات تغيير مفصلة لهذه العملية</p>
+                              <p className="text-[10px] text-gray-600">{t('audit_logs_page.ui.kp5q1wp')}</p>
                             </div>
                           )}
                         </div>
@@ -214,7 +216,7 @@ export default function AuditLogsPage() {
               disabled={page === 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
             >
-              السابق
+              {t('audit_logs_page.ui.kab8zyt')}
             </Button>
             <span className="flex items-center px-4 font-bold text-sm">
               صفحة {page} من {totalPages}
@@ -224,7 +226,7 @@ export default function AuditLogsPage() {
               disabled={page === totalPages}
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             >
-              التالي
+              {t('audit_logs_page.ui.kabeq68')}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   BarChart3,
@@ -22,30 +23,31 @@ import { seoLandingCards } from '../publicSite/seoLandingPages';
 const spotlightCards = [
   {
     icon: BarChart3,
-    label: 'تشغيل يومي أوضح',
-    text: 'تعرف ما الذي بيع اليوم، وما الذي يحتاج متابعة، وما الذي يستحق تدخلًا أسرع.',
+    label: t('public_landing_page.ui.kirs4f7'),
+    text: t('public_landing_page.ui.kqm0bi6'),
   },
   {
     icon: CreditCard,
-    label: 'أقساط وتحصيل',
-    text: 'متابعة السداد، المستحقات، والتأخير من نفس النظام بدل الجداول والرسائل المتفرقة.',
+    label: t('public_landing_page.ui.kcw46cg'),
+    text: t('public_landing_page.ui.kitil5o'),
   },
   {
     icon: Store,
-    label: 'واجهة احترافية للعميل',
-    text: 'صفحات واضحة تعرّف العميل بالبراند والمنتجات وتوصله مباشرة إلى الطلب أو التسجيل.',
+    label: t('public_landing_page.ui.k18pqep'),
+    text: t('public_landing_page.ui.k5bjspm'),
   },
 ];
 
 const heroMetrics = [
-  { label: 'واجهة العميل', value: 'موقع ومتجر واضحان' },
-  { label: 'تشغيل النشاط', value: 'بيع + مخزون + أقساط' },
-  { label: 'التوسع', value: 'طلبات ومتابعة من نفس المنصة' },
+  { label: t('public_landing_page.ui.kd63pmc'), value: t('public_landing_page.ui.kibhtav') },
+  { label: t('public_landing_page.ui.k797sof'), value: t('public_landing_page.ui.kczhrco') },
+  { label: t('public_landing_page.ui.kabe24f'), value: t('public_landing_page.ui.k41vqdx') },
 ];
 
 const brandAliasPreview = brandSearchAliases.slice(0, 10);
 
 export default function PublicLandingPage() {
+  const { t } = useTranslation('admin');
   return (
     <>
       <section className="mx-auto max-w-7xl px-4 pb-12 pt-12 sm:px-6 lg:px-8 lg:pb-16 lg:pt-16">
@@ -59,7 +61,7 @@ export default function PublicLandingPage() {
             <h1 className="mt-6 max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
               {brandDisplayName} يقدم لك
               <span className="block bg-[linear-gradient(135deg,#0f172a_0%,#0f766e_55%,#f59e0b_100%)] bg-clip-text text-transparent">
-                تشغيل يومي أوضح + واجهة احترافية + متجر إلكتروني متصل
+                {t('public_landing_page.ui.kox8vah')}
               </span>
             </h1>
 
@@ -68,13 +70,13 @@ export default function PublicLandingPage() {
             </p>
 
             <div className="app-surface mt-5 rounded-[1.75rem] p-5 text-right">
-              <p className="text-sm font-black text-slate-900 dark:text-white">اسم البراند</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white">{t('public_landing_page.ui.ky21zyb')}</p>
               <p className="app-text-soft mt-2 text-sm leading-7">
                 إذا عرفت المنصة باسم <span className="font-black text-slate-950 dark:text-white">PayQusta</span> أو
                 <span className="font-black text-slate-950 dark:text-white"> {brandArabicName}</span> فأنت تتحدث عن نفس البراند: منصة تساعد المتجر على البيع، المتابعة، والتحصيل مع واجهة احترافية للعميل.
               </p>
               <p className="app-text-soft mt-3 text-sm leading-7">
-                وقد يبحث بعض المستخدمين أيضًا عن المنصة بهذه الكتابات: {brandAliasPreview.join('، ')}.
+                وقد يبحث بعض المستخدمين أيضًا عن المنصة بهذه الكتابات: {brandAliasPreview.join(t('public_landing_page.ui.k111w'))}.
               </p>
               <div className="mt-4 flex flex-wrap justify-end gap-2">
                 {brandAliasPreview.map((alias) => (
@@ -93,14 +95,14 @@ export default function PublicLandingPage() {
                 to="/login?mode=register"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-xl shadow-slate-950/20 transition-transform hover:-translate-y-0.5"
               >
-                ابدأ حسابك
+                {t('public_landing_page.ui.khqnfld')}
                 <ArrowLeft className="h-4 w-4" />
               </Link>
               <Link
                 to="/features"
                 className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
               >
-                استكشف المزايا
+                {t('public_landing_page.ui.k21jqek')}
               </Link>
             </div>
 
@@ -122,7 +124,7 @@ export default function PublicLandingPage() {
               <div className="relative">
                 <div className="flex items-center justify-between gap-4">
                   <div className="text-right">
-                    <p className="text-sm font-bold text-slate-300">كيف تبدو التجربة للعميل وللفريق</p>
+                    <p className="text-sm font-bold text-slate-300">{t('public_landing_page.ui.kqdaj16')}</p>
                     <p className="mt-1 text-2xl font-black">PayQusta Experience</p>
                   </div>
                   <div className="rounded-2xl bg-white/10 p-3">
@@ -150,7 +152,7 @@ export default function PublicLandingPage() {
                 </div>
 
                 <div className="mt-5 rounded-[1.75rem] bg-white p-5 text-right text-slate-900 dark:bg-white/10 dark:text-white">
-                  <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">الفرق الحقيقي</p>
+                  <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">{t('public_landing_page.ui.kuhytnv')}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-200">
                     العميل يرى واجهة واضحة ومنظمة، بينما يرى الفريق في الداخل البيع والمخزون والتحصيل في صورة مترابطة أسهل في المتابعة.
                   </p>
@@ -164,9 +166,9 @@ export default function PublicLandingPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="app-surface rounded-[2rem] p-6 sm:p-8">
           <div className="max-w-3xl text-right">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">الركائز الأساسية</p>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">{t('public_landing_page.ui.ka5nzbg')}</p>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-              من أول زيارة عامة إلى إدارة التشغيل داخل المتجر
+              {t('public_landing_page.ui.kmcunps')}
             </h2>
             <p className="app-text-soft mt-3 text-base leading-8">
               الفكرة هنا أن تظهر قيمة المنصة كما هي في الواقع: جزء يخدم العميل أمامك، وجزء يخدم التشغيل داخل النشاط، وكلاهما يتحركان معًا.
@@ -219,8 +221,8 @@ export default function PublicLandingPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="app-surface rounded-[2rem] p-6 text-right sm:p-8">
           <div className="max-w-3xl">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">ابدأ من الجزء الأقرب لاحتياجك</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white">اختر المسار الذي يشبه طريقة عمل نشاطك الآن</h2>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-700">{t('public_landing_page.ui.k88kzkb')}</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white">{t('public_landing_page.ui.kzcivxw')}</h2>
             <p className="app-text-soft mt-3 text-base leading-8">
               إذا كان تركيزك الآن على المبيعات، أو المخزون، أو الأقساط، أو المتجر الإلكتروني، ستجد صفحة تبدأ من نفس الزاوية التي تفكر منها.
             </p>
@@ -264,8 +266,8 @@ export default function PublicLandingPage() {
         <div className="rounded-[2.25rem] border border-slate-200 bg-slate-950 px-6 py-8 text-right text-white shadow-[0_32px_90px_rgba(15,23,42,0.18)] sm:px-8">
           <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">الخطوة التالية</p>
-              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">جاهز لتجربة PayQusta</h2>
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">{t('public_landing_page.ui.kdatzw0')}</p>
+              <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">{t('public_landing_page.ui.k7354by')}</h2>
               <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-300 sm:text-base">
                 الواجهة العامة هنا تعرّف العميل بالبراند بسرعة، والمتجر يساعده على الطلب، بينما يظل التشغيل الداخلي مرتبًا لفريقك من نفس المنصة.
               </p>
@@ -276,14 +278,14 @@ export default function PublicLandingPage() {
                 to="/login?mode=register"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:-translate-y-0.5"
               >
-                أنشئ حسابك
+                {t('public_landing_page.ui.kwfqesx')}
                 <ArrowLeft className="h-4 w-4" />
               </Link>
               <Link
                 to="/features"
                 className="rounded-full border border-white/15 bg-white/10 px-6 py-3 text-center text-sm font-black text-white transition-colors hover:bg-white/15"
               >
-                استكشف المزايا
+                {t('public_landing_page.ui.k21jqek')}
               </Link>
             </div>
           </div>

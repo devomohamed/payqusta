@@ -7,8 +7,10 @@ import React, { useRef, useState } from 'react';
 import { Camera, Upload, X, Check, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const PhotoUpload = ({ onUpload, onClose }) => {
+  const { t } = useTranslation('admin');
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -20,13 +22,13 @@ const PhotoUpload = ({ onUpload, onClose }) => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('الرجاء اختيار صورة');
+      toast.error(t('photo_upload.toasts.kjbctd8'));
       return;
     }
 
     // Validate file size (max 20MB)
     if (file.size > 20 * 1024 * 1024) {
-      toast.error('حجم الصورة كبير جداً (الحد الأقصى 20 ميجا)');
+      toast.error(t('photo_upload.toasts.ku17k4b'));
       return;
     }
 
@@ -54,9 +56,9 @@ const PhotoUpload = ({ onUpload, onClose }) => {
       // In production, upload to server or cloud storage
       // For now, return base64
       onUpload(preview);
-      toast.success('تم رفع الصورة');
+      toast.success(t('photo_upload.toasts.kok5j18'));
     } catch (error) {
-      toast.error('فشل رفع الصورة');
+      toast.error(t('photo_upload.toasts.kyo2h66'));
     } finally {
       setUploading(false);
     }
@@ -77,7 +79,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-            تحميل صورة الإيصال
+            {t('photo_upload.ui.kxp28in')}
           </h3>
           <button
             onClick={onClose}
@@ -128,7 +130,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
                 onClick={handleClear}
                 className="app-surface-muted flex-1 px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
               >
-                اختر صورة أخرى
+                {t('photo_upload.ui.kec3kbq')}
               </button>
               <button
                 onClick={handleUpload}
@@ -138,12 +140,12 @@ const PhotoUpload = ({ onUpload, onClose }) => {
                 {uploading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    جاري الرفع...
+                    {t('photo_upload.ui.ksf7zo2')}
                   </>
                 ) : (
                   <>
                     <Check size={18} />
-                    تأكيد
+                    {t('photo_upload.ui.confirm')}
                   </>
                 )}
               </button>
@@ -157,7 +159,7 @@ const PhotoUpload = ({ onUpload, onClose }) => {
               className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition"
             >
               <Camera size={24} />
-              التقط صورة
+              {t('photo_upload.ui.k6y1glz')}
             </button>
 
             {/* Gallery Button */}
@@ -166,12 +168,12 @@ const PhotoUpload = ({ onUpload, onClose }) => {
               className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition"
             >
               <ImageIcon size={24} />
-              اختر من المعرض
+              {t('photo_upload.ui.k56oiub')}
             </button>
 
             {/* Info */}
             <p className="text-sm text-gray-500 text-center mt-4">
-              حجم الصورة الأقصى: 20 ميجابايت
+              {t('photo_upload.ui.kv0s59v')}
             </p>
           </div>
         )}

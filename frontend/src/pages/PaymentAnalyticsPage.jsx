@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   TrendingUp,
   DollarSign,
@@ -40,6 +41,7 @@ const GATEWAY_NAMES = {
 };
 
 const PaymentAnalytics = () => {
+  const { t } = useTranslation('admin');
   const [period, setPeriod] = useState('30');
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ const PaymentAnalytics = () => {
       const { data } = await api.get(`/payments/analytics?period=${period}`);
       setAnalytics(data.data);
     } catch (error) {
-      toast.error('فشل تحميل البيانات');
+      toast.error(t('payment_analytics_page.toasts.kkqsu4s'));
     } finally {
       setLoading(false);
     }
@@ -96,9 +98,9 @@ const PaymentAnalytics = () => {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Payments Pulse</p>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">تحليلات الدفع الإلكتروني</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('payment_analytics_page.ui.kp47cra')}</h1>
               <p className="max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-400">
-                إحصائيات شاملة حول المدفوعات الإلكترونية، مع توزيع أوضح للمؤشرات والرسوم على الهاتف.
+                {t('payment_analytics_page.ui.kdrshjw')}
               </p>
             </div>
           </div>
@@ -106,17 +108,17 @@ const PaymentAnalytics = () => {
           <div className="w-full sm:w-auto">
             <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
               <Calendar className="h-4 w-4" />
-              الفترة
+              {t('payment_analytics_page.ui.kaazzqa')}
             </label>
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
               className="app-surface w-full rounded-xl border border-transparent px-4 py-3 text-gray-900 dark:text-white sm:min-w-[220px]"
             >
-              <option value="7">آخر 7 أيام</option>
-              <option value="30">آخر 30 يوم</option>
-              <option value="90">آخر 3 شهور</option>
-              <option value="365">آخر سنة</option>
+              <option value="7">{t('payment_analytics_page.ui.kuley1j')}</option>
+              <option value="30">{t('payment_analytics_page.ui.kx03e5d')}</option>
+              <option value="90">{t('payment_analytics_page.ui.kwhamak')}</option>
+              <option value="365">{t('payment_analytics_page.ui.klwhom3')}</option>
             </select>
           </div>
         </div>
@@ -128,7 +130,7 @@ const PaymentAnalytics = () => {
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <DollarSign size={32} className="opacity-80" />
-            <span className="text-blue-100 text-sm">إجمالي المبالغ</span>
+            <span className="text-blue-100 text-sm">{t('payment_analytics_page.ui.khtsl3o')}</span>
           </div>
           <div className="text-3xl font-bold mb-1">
             {gatewayData.reduce((sum, g) => sum + g.amount, 0).toLocaleString()} ج.م
@@ -142,7 +144,7 @@ const PaymentAnalytics = () => {
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <CheckCircle size={32} className="opacity-80" />
-            <span className="text-green-100 text-sm">معدل النجاح</span>
+            <span className="text-green-100 text-sm">{t('payment_analytics_page.ui.kgi89a8')}</span>
           </div>
           <div className="text-3xl font-bold mb-1">
             {dailyData.length > 0
@@ -150,7 +152,7 @@ const PaymentAnalytics = () => {
               : 0}%
           </div>
           <p className="text-green-100 text-sm">
-            من إجمالي المعاملات
+            {t('payment_analytics_page.ui.ksoto0q')}
           </p>
         </div>
 
@@ -158,7 +160,7 @@ const PaymentAnalytics = () => {
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <CreditCard size={32} className="opacity-80" />
-            <span className="text-purple-100 text-sm">متوسط المعاملة</span>
+            <span className="text-purple-100 text-sm">{t('payment_analytics_page.ui.k27n1w3')}</span>
           </div>
           <div className="text-3xl font-bold mb-1">
             {gatewayData.reduce((sum, g) => sum + g.count, 0) > 0
@@ -166,7 +168,7 @@ const PaymentAnalytics = () => {
               : 0} ج.م
           </div>
           <p className="text-purple-100 text-sm">
-            للمعاملة الواحدة
+            {t('payment_analytics_page.ui.k8tyfsu')}
           </p>
         </div>
 
@@ -174,7 +176,7 @@ const PaymentAnalytics = () => {
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between mb-4">
             <TrendingUp size={32} className="opacity-80" />
-            <span className="text-orange-100 text-sm">البوابة الأكثر استخداماً</span>
+            <span className="text-orange-100 text-sm">{t('payment_analytics_page.ui.k8wyil5')}</span>
           </div>
           <div className="text-2xl font-bold mb-1">
             {gatewayData.length > 0
@@ -194,7 +196,7 @@ const PaymentAnalytics = () => {
         {/* Gateway Comparison */}
         <div className="app-surface rounded-3xl p-6">
           <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-            مقارنة البوابات
+            {t('payment_analytics_page.ui.klekctl')}
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={gatewayData}>
@@ -212,7 +214,7 @@ const PaymentAnalytics = () => {
         {/* Success Rate by Gateway */}
         <div className="app-surface rounded-3xl p-6">
           <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-            معدل النجاح لكل بوابة
+            {t('payment_analytics_page.ui.kzfzms3')}
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -239,7 +241,7 @@ const PaymentAnalytics = () => {
       {/* Daily Trend */}
       <div className="app-surface rounded-3xl p-6">
         <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-          الاتجاه اليومي
+          {t('payment_analytics_page.ui.krl3oy4')}
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={dailyData}>
@@ -272,7 +274,7 @@ const PaymentAnalytics = () => {
       {/* Gateway Details Table */}
       <div className="app-surface rounded-3xl p-6">
         <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-          تفاصيل البوابات
+          {t('payment_analytics_page.ui.kvx9l0e')}
         </h3>
         <div className="space-y-3 md:hidden">
           {gatewayData.map((gateway, index) => (
@@ -300,17 +302,17 @@ const PaymentAnalytics = () => {
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                  <p className="text-[11px] text-gray-400">عدد المعاملات</p>
+                  <p className="text-[11px] text-gray-400">{t('payment_analytics_page.ui.kng3pov')}</p>
                   <p className="mt-1 font-black text-gray-900 dark:text-white">{gateway.count}</p>
                 </div>
                 <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                  <p className="text-[11px] text-gray-400">إجمالي المبلغ</p>
+                  <p className="text-[11px] text-gray-400">{t('payment_analytics_page.ui.kfgpk5j')}</p>
                   <p className="mt-1 font-black text-gray-900 dark:text-white">{gateway.amount.toLocaleString()} ج.م</p>
                 </div>
               </div>
 
               <div className="mt-3 rounded-2xl bg-black/[0.03] p-3 text-sm dark:bg-white/[0.04]">
-                <p className="text-[11px] text-gray-400">متوسط المعاملة</p>
+                <p className="text-[11px] text-gray-400">{t('payment_analytics_page.ui.k27n1w3')}</p>
                 <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">
                   {(gateway.amount / gateway.count).toFixed(0)} ج.م
                 </p>
@@ -324,19 +326,19 @@ const PaymentAnalytics = () => {
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
                 <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
-                  البوابة
+                  {t('payment_analytics_page.ui.kzbcmsr')}
                 </th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
-                  عدد المعاملات
+                  {t('payment_analytics_page.ui.kng3pov')}
                 </th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
-                  إجمالي المبلغ
+                  {t('payment_analytics_page.ui.kfgpk5j')}
                 </th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
-                  معدل النجاح
+                  {t('payment_analytics_page.ui.kgi89a8')}
                 </th>
                 <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">
-                  متوسط المعاملة
+                  {t('payment_analytics_page.ui.k27n1w3')}
                 </th>
               </tr>
             </thead>

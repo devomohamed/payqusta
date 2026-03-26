@@ -6,8 +6,8 @@ import { notify } from './AnimatedNotification';
 import { Modal, Input, Button } from './UI';
 
 export default function BranchSwitcher() {
-  const { tenant, user, switchTenant, getBranches, createStore } = useAuthStore();
   const { t, i18n } = useTranslation('admin');
+  const { tenant, user, switchTenant, getBranches, createStore } = useAuthStore();
   const isRTL = i18n.dir() === 'rtl';
   const [branches, setBranches] = useState([]);
   const [isOpen, setIsOpen] = useState(false);

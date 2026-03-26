@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   TrendingUp, Building2, Users, DollarSign, Target,
   PieChart, BarChart3, Activity, ArrowUpRight, ArrowDownRight,
@@ -11,6 +12,7 @@ import { useAuthStore } from '../store';
 import BusinessReportsPage from './BusinessReportsPage';
 
 export default function AdminStatisticsPage() {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function AdminStatisticsPage() {
       const res = await adminApi.getStatistics();
       setData(res.data.data);
     } catch (err) {
-      toast.error('خطأ في تحميل الإحصائيات');
+      toast.error(t('admin_statistics_page.toasts.kw9t62b'));
     } finally {
       setLoading(false);
     }
@@ -53,8 +55,8 @@ export default function AdminStatisticsPage() {
             <TrendingUp className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold">إحصائيات متقدمة</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">تحليل شامل للنظام</p>
+            <h1 className="text-2xl font-extrabold">{t('admin_statistics_page.ui.kf3nxjf')}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('admin_statistics_page.ui.kdjchl3')}</p>
           </div>
         </div>
         <button
@@ -62,7 +64,7 @@ export default function AdminStatisticsPage() {
           className="app-surface flex items-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
         >
           <Activity className="w-4 h-4" />
-          <span className="text-sm font-medium">تحديث</span>
+          <span className="text-sm font-medium">{t('admin_statistics_page.ui.update')}</span>
         </button>
       </div>
 
@@ -71,7 +73,7 @@ export default function AdminStatisticsPage() {
         <div className="p-6">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Building2 className="w-5 h-5 text-primary-500" />
-            أفضل 10 متاجر (حسب الإيرادات)
+            {t('admin_statistics_page.ui.k94pcup')}
           </h2>
           <div className="space-y-3">
             {data?.topTenants?.map((tenant, index) => (
@@ -103,7 +105,7 @@ export default function AdminStatisticsPage() {
             {(!data?.topTenants || data.topTenants.length === 0) && (
               <EmptyState
                 icon={Building2}
-                title="لا توجد بيانات"
+                title={t('admin_statistics_page.titles.km3iafu')}
                 description="ستظهر أفضل المتاجر هنا بمجرد توفر بيانات كافية."
                 className="py-6"
               />
@@ -118,7 +120,7 @@ export default function AdminStatisticsPage() {
           <div className="p-6">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-500" />
-              توزيع المستخدمين حسب الدور
+              {t('admin_statistics_page.ui.ku7cqt')}
             </h2>
             <div className="space-y-3">
               {data?.usersByRole?.map((role) => (
@@ -157,7 +159,7 @@ export default function AdminStatisticsPage() {
           <div className="p-6">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <PieChart className="w-5 h-5 text-purple-500" />
-              الاشتراكات
+              {t('admin_statistics_page.ui.k2s1plc')}
             </h2>
             <div className="space-y-3">
               {data?.subscriptionDistribution?.map((sub) => (
@@ -201,12 +203,12 @@ export default function AdminStatisticsPage() {
         <div className="p-6">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-emerald-500" />
-            اتجاهات الإيرادات
+            {t('admin_statistics_page.ui.k2ywwre')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">إجمالي الإيرادات</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('admin_statistics_page.ui.ktvonbd')}</span>
                 <ArrowUpRight className="w-4 h-4 text-emerald-500" />
               </div>
               <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
@@ -215,7 +217,7 @@ export default function AdminStatisticsPage() {
             </div>
             <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">المبالغ المدفوعة</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('admin_statistics_page.ui.kogl8db')}</span>
                 <ArrowUpRight className="w-4 h-4 text-blue-500" />
               </div>
               <p className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
@@ -224,7 +226,7 @@ export default function AdminStatisticsPage() {
             </div>
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">المتبقي</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('admin_statistics_page.ui.kzaci6q')}</span>
                 <ArrowDownRight className="w-4 h-4 text-red-500" />
               </div>
               <p className="text-2xl font-extrabold text-red-600 dark:text-red-400">
@@ -233,7 +235,7 @@ export default function AdminStatisticsPage() {
             </div>
             <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">نسبة التحصيل</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('admin_statistics_page.ui.kxqu0t')}</span>
                 <Target className="w-4 h-4 text-purple-500" />
               </div>
               <p className="text-2xl font-extrabold text-purple-600 dark:text-purple-400">
@@ -251,7 +253,7 @@ export default function AdminStatisticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <div className="p-6">
-            <h2 className="text-lg font-bold mb-4">المتاجر النشطة</h2>
+            <h2 className="text-lg font-bold mb-4">{t('admin_statistics_page.ui.kkjs3rh')}</h2>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-3xl font-extrabold">{data?.activeTenants || 0}</p>
@@ -271,7 +273,7 @@ export default function AdminStatisticsPage() {
 
         <Card>
           <div className="p-6">
-            <h2 className="text-lg font-bold mb-4">المستخدمون النشطون</h2>
+            <h2 className="text-lg font-bold mb-4">{t('admin_statistics_page.ui.koilfbh')}</h2>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-3xl font-extrabold">{data?.activeUsers || 0}</p>

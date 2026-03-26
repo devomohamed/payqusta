@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   MapPin, 
   Navigation, 
   CheckCircle, 
@@ -25,6 +26,7 @@ import SignatureCanvas from '../components/SignatureCanvas';
 import PhotoUpload from '../components/PhotoUpload';
 
 const FieldCollectionApp = () => {
+  const { t } = useTranslation('admin');
   const [tasks, setTasks] = useState([]);
   const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ const FieldCollectionApp = () => {
         console.log('No route for today');
       }
     } catch (error) {
-      toast.error('فشل تحميل البيانات');
+      toast.error(t('field_collection_app.toasts.kkqsu4s'));
     } finally {
       setLoading(false);
     }
@@ -77,10 +79,10 @@ const FieldCollectionApp = () => {
   const handleVisit = async (taskId) => {
     try {
       await api.post(`/collection/tasks/${taskId}/visit`);
-      toast.success('تم تسجيل الزيارة');
+      toast.success(t('field_collection_app.toasts.kmvpkda'));
       fetchTodayData();
     } catch (error) {
-      toast.error('فشل تسجيل الزيارة');
+      toast.error(t('field_collection_app.toasts.ksdqqi0'));
     }
   };
 
@@ -94,17 +96,17 @@ const FieldCollectionApp = () => {
       setSelectedTask(null);
       fetchTodayData();
     } catch (error) {
-      toast.error('فشل تسجيل التحصيل');
+      toast.error(t('field_collection_app.toasts.ksinav7'));
     }
   };
 
   const handleSkip = async (taskId, reason) => {
     try {
       await api.post(`/collection/tasks/${taskId}/skip`, { reason });
-      toast.success('تم تخطي المهمة');
+      toast.success(t('field_collection_app.toasts.ketr6xz'));
       fetchTodayData();
     } catch (error) {
-      toast.error('فشل تخطي المهمة');
+      toast.error(t('field_collection_app.toasts.k43pxy5'));
     }
   };
 
@@ -114,7 +116,7 @@ const FieldCollectionApp = () => {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
       window.open(url, '_blank');
     } else {
-      toast.error('الموقع غير متوفر');
+      toast.error(t('field_collection_app.toasts.kdj7ij9'));
     }
   };
 
@@ -134,29 +136,29 @@ const FieldCollectionApp = () => {
     <div className="app-shell-bg min-h-screen pb-20 app-text-soft">
       {/* Header Stats */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
-        <h1 className="text-2xl font-bold mb-4">التحصيل الميداني</h1>
+        <h1 className="text-2xl font-bold mb-4">{t('field_collection_app.ui.k3hsy0h')}</h1>
         
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-2xl bg-white/20 p-3 shadow-sm backdrop-blur-sm">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-blue-100">إجمالي المهام</div>
+            <div className="text-sm text-blue-100">{t('field_collection_app.ui.kfgq6ge')}</div>
           </div>
           <div className="rounded-2xl bg-white/20 p-3 shadow-sm backdrop-blur-sm">
             <div className="text-2xl font-bold">{stats.completed}</div>
-            <div className="text-sm text-blue-100">تم التحصيل</div>
+            <div className="text-sm text-blue-100">{t('field_collection_app.ui.kar7gk6')}</div>
           </div>
           <div className="rounded-2xl bg-white/20 p-3 shadow-sm backdrop-blur-sm">
             <div className="text-2xl font-bold">
               {stats.collected.toLocaleString()}
             </div>
-            <div className="text-sm text-blue-100">ج.م</div>
+            <div className="text-sm text-blue-100">{t('field_collection_app.ui.kwlxf')}</div>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mt-4">
           <div className="flex items-center justify-between text-sm mb-1">
-            <span>التقدم</span>
+            <span>{t('field_collection_app.ui.kabe6np')}</span>
             <span>{stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%</span>
           </div>
           <div className="w-full bg-white/20 rounded-full h-2">
@@ -174,10 +176,10 @@ const FieldCollectionApp = () => {
           <div className="text-center py-12">
             <CheckCircle className="mx-auto mb-3 text-green-500" size={48} />
             <p className="text-gray-600 dark:text-gray-400 font-medium">
-              لا توجد مهام متبقية
+              {t('field_collection_app.ui.kautb38')}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              أحسنت! أكملت جميع المهام
+              {t('field_collection_app.ui.kufhzrg')}
             </p>
           </div>
         ) : (
@@ -194,7 +196,7 @@ const FieldCollectionApp = () => {
                   <div className="flex items-center gap-2">
                     <User size={20} className="text-gray-400" />
                     <span className="font-bold text-gray-900 dark:text-white">
-                      {task.customer?.name || 'عميل'}
+                      {task.customer?.name || t('field_collection_app.toasts.kt7bza')}
                     </span>
                   </div>
                   <span className={`
@@ -206,7 +208,7 @@ const FieldCollectionApp = () => {
                       : 'app-surface-muted text-gray-700 dark:text-gray-300'
                     }
                   `}>
-                    {task.priority === 'urgent' ? 'عاجل' : task.priority === 'high' ? 'أولوية' : 'عادي'}
+                    {task.priority === 'urgent' ? t('field_collection_app.ui.kt6p0m') : task.priority === 'high' ? t('field_collection_app.ui.kc4wr4o') : 'عادي'}
                   </span>
                 </div>
 
@@ -233,7 +235,7 @@ const FieldCollectionApp = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <DollarSign size={20} />
-                    <span className="text-sm">المبلغ المطلوب</span>
+                    <span className="text-sm">{t('field_collection_app.ui.kdfjle3')}</span>
                   </div>
                   <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {task.amount?.toLocaleString()} ج.م
@@ -248,7 +250,7 @@ const FieldCollectionApp = () => {
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2"
                 >
                   <Navigation size={18} />
-                  التوجيه
+                  {t('field_collection_app.ui.kzcgcj2')}
                 </button>
                 
                 <button
@@ -256,12 +258,12 @@ const FieldCollectionApp = () => {
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2"
                 >
                   <CheckCircle size={18} />
-                  تحصيل
+                  {t('field_collection_app.ui.kowmolo')}
                 </button>
 
                 <button
                   onClick={() => {
-                    const reason = prompt('سبب التخطي:');
+                    const reason = prompt(t('field_collection_app.ui.kbu4y8p'));
                     if (reason) handleSkip(task._id, reason);
                   }}
                   className="app-surface rounded-xl px-4 font-medium text-gray-700 transition-colors hover:bg-black/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.04]"
@@ -293,7 +295,7 @@ const CollectionModal = ({ task, onClose, onCollect }) => {
 
   const handleSubmit = () => {
     if (amount <= 0 || amount > task.amount) {
-      toast.error('المبلغ غير صحيح');
+      toast.error(t('field_collection_app.toasts.kod5l8k'));
       return;
     }
     onCollect(task._id, amount, method);
@@ -316,7 +318,7 @@ const CollectionModal = ({ task, onClose, onCollect }) => {
         {/* Amount */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            المبلغ المحصل
+            {t('field_collection_app.ui.kirhpwe')}
           </label>
           <input
             type="number"
@@ -333,7 +335,7 @@ const CollectionModal = ({ task, onClose, onCollect }) => {
         {/* Payment Method */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            طريقة الدفع
+            {t('field_collection_app.ui.kfj3di7')}
           </label>
           <div className="grid grid-cols-2 gap-2">
             {['cash', 'card', 'bank_transfer', 'mobile_wallet'].map(m => (
@@ -348,7 +350,7 @@ const CollectionModal = ({ task, onClose, onCollect }) => {
                   }
                 `}
               >
-                {m === 'cash' ? 'نقدي' : m === 'card' ? 'بطاقة' : m === 'bank_transfer' ? 'تحويل' : 'محفظة'}
+                {m === 'cash' ? t('field_collection_app.ui.ktfjxz') : m === 'card' ? t('field_collection_app.ui.kovp6ov') : m === 'bank_transfer' ? t('field_collection_app.ui.kown2ov') : 'محفظة'}
               </button>
             ))}
           </div>
@@ -360,13 +362,13 @@ const CollectionModal = ({ task, onClose, onCollect }) => {
             onClick={onClose}
             className="app-surface flex-1 rounded-xl px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-black/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.04]"
           >
-            إلغاء
+            {t('field_collection_app.ui.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             className="flex-1 rounded-xl bg-blue-600 px-4 py-3 font-bold text-white shadow-lg shadow-blue-500/20 transition-colors hover:bg-blue-700"
           >
-            تأكيد التحصيل
+            {t('field_collection_app.ui.krksgke')}
           </button>
         </div>
       </motion.div>

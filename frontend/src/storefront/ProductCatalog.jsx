@@ -10,6 +10,7 @@ import { createBuyNowItem } from './buyNowItem';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
 import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
 import { STOREFRONT_VOLUME_OFFER_TIERS } from './storefrontVolumeOffers';
+import { useTranslation } from 'react-i18next';
 import {
   loadStorefrontCategories,
   loadStorefrontProducts,
@@ -18,14 +19,18 @@ import {
   buildStorefrontCategorySections,
 } from './storefrontShowcase';
 
-const priceRanges = [
-  { value: 'all', label: 'جميع الأسعار' },
-  { value: 'under100', label: 'أقل من 100 ج.م' },
-  { value: '100-500', label: '100 – 500 ج.م' },
-  { value: 'over500', label: 'أكثر من 500 ج.م' },
-];
+function getPriceRanges(t) {
+  return [
+    { value: 'all', label: t('product_catalog.ui.kt5jnr2') },
+    { value: 'under100', label: t('product_catalog.ui.krnu380') },
+    { value: '100-500', label: '100 – 500 ج.م' },
+    { value: 'over500', label: t('product_catalog.ui.k6za89f') },
+  ];
+}
 
 export default function ProductCatalog() {
+  const { t } = useTranslation('admin');
+  const priceRanges = getPriceRanges(t);
   const location = useLocation();
   const navigate = useNavigate();
   const isPortal = location.pathname.includes('/portal');
@@ -120,13 +125,13 @@ export default function ProductCatalog() {
     e.preventDefault();
     e.stopPropagation();
     if (product.isShowcasePlaceholder) {
-      notify.info('هذا العنصر غير متاح للطلب المباشر حالياً.');
+      notify.info(t('product_catalog.toasts.kfypy1h'));
       navigate(detailPath(product));
       return;
     }
-    if (product.stock?.quantity === 0) { notify.error('المنتج غير متوفر حالياً'); return; }
+    if (product.stock?.quantity === 0) { notify.error(t('product_catalog.toasts.kk8kk8g')); return; }
     if (product.hasVariants) {
-      notify.info('اختر المواصفات أولاً من صفحة المنتج');
+      notify.info(t('product_catalog.toasts.ke5ldsi'));
       navigate(detailPath(product));
       return;
     }
@@ -148,13 +153,13 @@ export default function ProductCatalog() {
     e.preventDefault();
     e.stopPropagation();
     if (product.isShowcasePlaceholder) {
-      notify.info('هذا العنصر غير متاح للمفضلة حالياً.');
+      notify.info(t('product_catalog.toasts.klnqgzv'));
       return;
     }
     setWishlistLoading(prev => ({ ...prev, [product._id]: true }));
     const res = await toggleWishlist(product._id);
     if (res.success) {
-      notify.success(res.wishlisted ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة');
+      notify.success(res.wishlisted ? t('product_catalog.ui.ky2j5to') : t('product_catalog.ui.ktcsgs2'));
     }
     setWishlistLoading(prev => ({ ...prev, [product._id]: false }));
   };
@@ -173,25 +178,25 @@ export default function ProductCatalog() {
     e.stopPropagation();
 
     if (product.isShowcasePlaceholder) {
-      notify.info('افتح القسم لمشاهدة المنتجات المتاحة حالياً.');
+      notify.info(t('product_catalog.toasts.kq36k5p'));
       navigate(detailPath(product));
       return;
     }
 
     if (product.stock?.quantity === 0) {
-      notify.error('المنتج غير متوفر حالياً');
+      notify.error(t('product_catalog.toasts.kk8kk8g'));
       return;
     }
 
     if (product.hasVariants) {
-      notify.info('اختر المواصفات أولاً لإتمام الشراء');
+      notify.info(t('product_catalog.toasts.kadyuv5'));
       navigate(detailPath(product));
       return;
     }
 
     const buyNowItem = createBuyNowItem(product);
     if (!buyNowItem) {
-      notify.error('تعذر بدء الشراء الآن');
+      notify.error(t('product_catalog.toasts.kuqj79l'));
       return;
     }
 
@@ -223,9 +228,9 @@ export default function ProductCatalog() {
         </div>
       ) : (
         <div>
-          <h1 className="text-3xl font-black mb-2">جميع المنتجات</h1>
+          <h1 className="text-3xl font-black mb-2">{t('product_catalog.ui.k38tgth')}</h1>
           <p className="text-gray-500">
-            {usingShowcaseFallback ? 'عرض تجريبي يملأ المتجر مؤقتًا حتى تضيف منتجاتك الفعلية.' : 'تصفح مجموعتنا الكاملة من المنتجات'}
+            {usingShowcaseFallback ? t('product_catalog.ui.kklhn9f') : 'تصفح مجموعتنا الكاملة من المنتجات'}
           </p>
         </div>
       )}
@@ -239,15 +244,15 @@ export default function ProductCatalog() {
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-sm font-black text-gray-900 dark:text-white">تسوق كضيف بدون خطوات إضافية</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">أضف للسلة وأكمل الطلب في أي وقت.</p>
+                <p className="text-sm font-black text-gray-900 dark:text-white">{t('product_catalog.ui.kpqvqh6')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('product_catalog.ui.klme8wb')}</p>
               </div>
             </div>
             <button
               onClick={() => navigate(storefrontPath('/cart'))}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-500"
             >
-              السلة
+              {t('product_catalog.ui.kovdxvf')}
               <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">{cartCount}</span>
               <ArrowLeft className="h-4 w-4" />
             </button>
@@ -260,7 +265,7 @@ export default function ProductCatalog() {
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="ابحث عن منتج..."
+            placeholder={t('product_catalog.placeholders.ko3wsqh')}
             value={search}
             onFocus={() => setSearchFocused(true)}
             onChange={(e) => {
@@ -294,7 +299,7 @@ export default function ProductCatalog() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{product.name}</p>
                         <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                          {typeof product.category === 'object' ? product.category?.name : (product.categoryName || product.category || 'منتج')}
+                          {typeof product.category === 'object' ? product.category?.name : (product.categoryName || product.category || t('product_catalog.toasts.ktezs3'))}
                         </p>
                       </div>
                       <span className="text-xs font-black text-primary-600">{product.price?.toLocaleString()} ج.م</span>
@@ -302,14 +307,14 @@ export default function ProductCatalog() {
                   ))}
                 </div>
               ) : search.trim() ? (
-                <div className="px-4 py-4 text-center text-sm text-gray-400">لا توجد نتائج قريبة، جرّب اسمًا أقصر أو SKU.</div>
+                <div className="px-4 py-4 text-center text-sm text-gray-400">{t('product_catalog.ui.kxws3hb')}</div>
               ) : (
-                <div className="px-4 py-3 text-xs font-bold text-gray-400">ابدأ بالكتابة أو اختر قسمًا شائعًا.</div>
+                <div className="px-4 py-3 text-xs font-bold text-gray-400">{t('product_catalog.ui.kspf4pg')}</div>
               )}
 
               {searchSuggestions.categories.length > 0 && (
                 <div className="px-4 py-3 text-right">
-                  <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-gray-400">اقتراحات سريعة</p>
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-gray-400">{t('product_catalog.ui.ke2icih')}</p>
                   <div className="flex flex-wrap gap-2">
                     {searchSuggestions.categories.map((category) => (
                       <button
@@ -338,7 +343,7 @@ export default function ProductCatalog() {
       {/* ═══ CATEGORIES SCROLL ═══ */}
       {usingShowcaseFallback && !isPortal && (
         <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-right text-xs font-bold text-amber-800">
-          يتم عرض أقسام ومنتجات افتراضية مؤقتًا حتى لا يظهر المتجر فارغًا للعميل.
+          {t('product_catalog.ui.ksnwsas')}
         </div>
       )}
 
@@ -348,7 +353,7 @@ export default function ProductCatalog() {
             onClick={() => setSelectedCategory('')}
             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 snap-start ${!selectedCategory ? 'bg-primary-500 text-white shadow-md shadow-primary-500/20' : 'app-surface text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-white/10'}`}
           >
-            الكل
+            {t('product_catalog.ui.ksvtb2')}
           </button>
           {catalogCategories.map(cat => {
             const catId = cat._id || cat.id || cat.name;
@@ -372,7 +377,7 @@ export default function ProductCatalog() {
       {/* ═══ PRICE FILTER (collapsible) ═══ */}
       {showFilters && (
         <div className="app-surface rounded-2xl p-4 border border-gray-200/80 dark:border-white/10 animate-fade-in">
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">نطاق السعر</p>
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">{t('product_catalog.ui.kmx89xi')}</p>
           <div className="flex flex-wrap gap-2">
             {priceRanges.map(r => (
               <button
@@ -400,8 +405,8 @@ export default function ProductCatalog() {
       ) : filteredProducts.length === 0 ? (
         <div className="text-center py-20">
           <ShoppingBag className="w-14 h-14 text-gray-300 mx-auto mb-3" />
-          <p className="font-bold text-gray-500 dark:text-gray-400">لا توجد منتجات</p>
-          <p className="text-sm text-gray-400 mt-1">جرب تغيير معايير البحث</p>
+          <p className="font-bold text-gray-500 dark:text-gray-400">{t('product_catalog.ui.k8fd1p4')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('product_catalog.ui.krxrg2r')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
@@ -444,7 +449,7 @@ export default function ProductCatalog() {
                   {/* Out of stock */}
                   {outOfStock && (
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
-                      <span className="bg-white text-gray-800 text-xs px-3 py-1 rounded-full font-black">نفذت الكمية</span>
+                      <span className="bg-white text-gray-800 text-xs px-3 py-1 rounded-full font-black">{t('product_catalog.ui.kuw1l5')}</span>
                     </div>
                   )}
 
@@ -508,7 +513,7 @@ export default function ProductCatalog() {
                     <div>
                       <p className="text-lg font-black text-primary-600 leading-none">
                         {product.price.toLocaleString()}
-                        <span className="text-xs text-gray-400 font-normal mr-0.5">ج.م</span>
+                        <span className="text-xs text-gray-400 font-normal mr-0.5">{t('product_catalog.ui.kwlxf')}</span>
                       </p>
                       {product.stock?.quantity > 0 && product.stock?.quantity <= 5 && (
                         <p className="text-[10px] text-orange-500 font-bold mt-0.5 flex items-center gap-0.5">
@@ -518,9 +523,9 @@ export default function ProductCatalog() {
                       )}
                     </div>
                     {isShowcasePlaceholder ? (
-                      <span className="text-[10px] rounded-full bg-amber-50 px-2 py-0.5 font-bold text-amber-700">عرض توضيحي</span>
+                      <span className="text-[10px] rounded-full bg-amber-50 px-2 py-0.5 font-bold text-amber-700">{t('product_catalog.ui.kg184i7')}</span>
                     ) : product.stock?.quantity > 5 && (
-                      <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">متوفر</span>
+                      <span className="text-[10px] text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">{t('product_catalog.ui.kpbflir')}</span>
                     )}
                   </div>
 
@@ -541,15 +546,15 @@ export default function ProductCatalog() {
                     className={`w-full mt-2.5 h-10 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm ${(outOfStock && !isShowcasePlaceholder) ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary-500 text-white hover:bg-primary-600 shadow-primary-500/20'}`}
                   >
                     {isShowcasePlaceholder ? (
-                      'استعرض القسم'
+                      t('product_catalog.ui.k3rnbfb')
                     ) : outOfStock ? (
-                      'نفذت الكمية'
+                      t('product_catalog.ui.kuw1l5')
                     ) : isAdding ? (
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                       <>
                         <ShoppingCart className="w-3.5 h-3.5" />
-                        {product.hasVariants ? 'اختر المواصفات' : 'أضف للسلة'}
+                        {product.hasVariants ? t('product_catalog.ui.ka27v6s') : 'أضف للسلة'}
                       </>
                     )}
                   </button>
@@ -559,7 +564,7 @@ export default function ProductCatalog() {
                       onClick={(e) => handleBuyNow(e, product)}
                       className="w-full mt-2 h-9 rounded-xl border border-gray-200/80 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:border-primary-300 hover:text-primary-600 transition-colors"
                     >
-                      اشترِ الآن
+                      {t('product_catalog.ui.kkjjf1h')}
                     </button>
                   )}
 
@@ -570,11 +575,11 @@ export default function ProductCatalog() {
                       className="w-full mt-2.5 h-10 rounded-xl bg-primary-500 text-white text-xs font-bold hover:bg-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shadow-primary-500/20"
                     >
                       {outOfStock ? (
-                        'نفذت الكمية'
+                        t('product_catalog.ui.kuw1l5')
                       ) : isAdding ? (
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <><ShoppingCart className="w-3.5 h-3.5" />أضف للسلة</>
+                        <><ShoppingCart className="w-3.5 h-3.5" />{t('product_catalog.ui.kwsmbc6')}</>
                       )}
                     </button>
                   )}

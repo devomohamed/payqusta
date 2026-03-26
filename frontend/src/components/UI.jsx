@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Loader2, Info, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // ========== MODAL ==========
 export function Modal({
@@ -15,6 +16,7 @@ export function Modal({
   showCloseButton = true,
   closeOnOutsideClick = true,
 }) {
+  const { t } = useTranslation('admin');
   const dialogRef = React.useRef(null);
   const closeButtonRef = React.useRef(null);
   const onCloseRef = React.useRef(onClose);
@@ -148,7 +150,7 @@ export function Modal({
               ref={closeButtonRef}
               onClick={onClose}
               className="app-surface-muted app-text-muted p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-colors"
-              aria-label="إغلاق النافذة"
+              aria-label={t('u_i.form.krec0ka')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -427,6 +429,7 @@ export function EmptyState({ icon, title, description, action, className = '' })
 
 // ========== LOADING SPINNER ==========
 export function LoadingSpinner({ text, size = 'md', className = '' }) {
+  const { t } = useTranslation('admin');
   const sizes = {
     xs: {
       shell: '',
@@ -454,7 +457,7 @@ export function LoadingSpinner({ text, size = 'md', className = '' }) {
     },
   };
   const config = sizes[size] || sizes.md;
-  const fallbackText = 'جاري التحميل...';
+  const fallbackText = t('u_i.ui.k68g58l');
   const shouldShowText = typeof text === 'string'
     ? text.length > 0
     : !['xs', 'sm'].includes(size);

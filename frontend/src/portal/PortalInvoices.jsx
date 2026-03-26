@@ -71,7 +71,7 @@ export default function PortalInvoices() {
   ];
 
   const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
-  const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+  const currency = i18n.language === 'ar' ? t('portal_invoices.ui.kwlxf') : 'EGP';
 
   return (
     <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>
@@ -388,7 +388,7 @@ export default function PortalInvoices() {
             <div className="p-5 space-y-4">
               {/* Amount summary */}
               <div className="rounded-xl bg-primary-50 p-3 text-center dark:bg-primary-900/20">
-                <p className="text-xs text-gray-500 dark:text-gray-400">المبلغ المتبقي</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('portal_invoices.ui.kdfapok')}</p>
                 <p className="text-2xl font-black text-primary-600 dark:text-primary-400">
                   {selectedInvoice.remainingAmount?.toLocaleString('ar-EG')} ج.م
                 </p>
@@ -396,13 +396,13 @@ export default function PortalInvoices() {
 
               {/* Gateway choice */}
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">اختر طريقة الدفع</label>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('portal_invoices.ui.keq8s7l')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: 'paymob', label: 'Paymob', sub: 'فيزا / ماستركارد / محفظة', icon: '💳' },
-                    { id: 'fawry', label: 'Fawry', sub: 'دفع نقدي في المحلات', icon: '🏪' },
-                    { id: 'vodafone', label: 'Vodafone Cash', sub: 'تحويل محفظة', icon: '📱' },
-                    { id: 'instapay', label: 'InstaPay', sub: 'تحويل بنكي فوري', icon: '⚡' },
+                    { id: 'paymob', label: 'Paymob', sub: t('portal_invoices.ui.kaea85c'), icon: '💳' },
+                    { id: 'fawry', label: 'Fawry', sub: t('portal_invoices.ui.k5rcedh'), icon: '🏪' },
+                    { id: 'vodafone', label: 'Vodafone Cash', sub: t('portal_invoices.ui.k5gefe1'), icon: '📱' },
+                    { id: 'instapay', label: 'InstaPay', sub: t('portal_invoices.ui.kfazwbe'), icon: '⚡' },
                   ].map((g) => (
                     <button
                       key={g.id}
@@ -428,12 +428,12 @@ export default function PortalInvoices() {
                   if (res.success && res.data?.paymentLink) {
                     window.open(res.data.paymentLink, '_blank');
                     setPayModalOpen(false);
-                    notify.success('تم إنشاء رابط الدفع — أكمل عملية الدفع في النافذة الجديدة');
+                    notify.success(t('portal_invoices.toasts.k5rmkl8'));
                   } else if (res.success && res.data?.transaction) {
                     // Paymob might need gateway not enabled yet
-                    notify.error(res.message || 'بوابة الدفع غير مفعلة. تواصل مع المتجر.');
+                    notify.error(res.message || t('portal_invoices.toasts.k3uaz9m'));
                   } else {
-                    notify.error(res.message || 'فشل إنشاء رابط الدفع');
+                    notify.error(res.message || t('portal_invoices.toasts.ktuw6a7'));
                   }
                 }}
                 disabled={payLoading || !payMethod}
@@ -447,7 +447,7 @@ export default function PortalInvoices() {
               </button>
 
               <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-                ستُفتح صفحة الدفع في نافذة جديدة آمنة
+                {t('portal_invoices.ui.k66jpo7')}
               </p>
             </div>
           </div>

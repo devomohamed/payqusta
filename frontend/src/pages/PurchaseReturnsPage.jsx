@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     RefreshCcw, Plus, Search, Truck, Calendar, DollarSign,
     ChevronRight, X, Eye, FileText, ArrowLeft, Trash2, Printer,
@@ -10,6 +11,7 @@ import { Button, Input, Select, Modal, Badge, Card, LoadingSpinner, EmptyState }
 import Pagination from '../components/Pagination';
 
 export default function PurchaseReturnsPage() {
+  const { t } = useTranslation('admin');
     const [returns, setReturns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -47,7 +49,7 @@ export default function PurchaseReturnsPage() {
                 totalItems: res.data.pagination?.totalItems || 0
             });
         } catch {
-            toast.error('خطأ في تحميل المرتجعات');
+            toast.error(t('purchase_returns_page.toasts.ke6wkd8'));
         } finally {
             setLoading(false);
         }
@@ -80,7 +82,7 @@ export default function PurchaseReturnsPage() {
 
     const addItem = (p) => {
         const exists = form.items.find(i => i.productId === p._id);
-        if (exists) return toast.error('المنتج مضاف بالفعل');
+        if (exists) return toast.error(t('purchase_returns_page.toasts.k2q3mfw'));
 
         setForm({
             ...form,
@@ -114,17 +116,17 @@ export default function PurchaseReturnsPage() {
 
     const handleSave = async () => {
         if (!form.supplierId || !form.branchId || form.items.length === 0) {
-            return toast.error('يرجى ملء كافة البيانات والمنتجات');
+            return toast.error(t('purchase_returns_page.toasts.k6cr946'));
         }
         setSaving(true);
         try {
             await purchaseReturnsApi.create(form);
-            toast.success('تم تسجيل المرتجع بنجاح ✅');
+            toast.success(t('purchase_returns_page.toasts.k2bpy75'));
             setShowModal(false);
             setForm({ supplierId: '', branchId: '', purchaseInvoiceId: '', reason: 'defective', notes: '', items: [] });
             loadReturns();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'حدث خطأ');
+            toast.error(err.response?.data?.message || t('purchase_returns_page.toasts.ktcqm3h'));
         } finally {
             setSaving(false);
         }
@@ -146,20 +148,20 @@ export default function PurchaseReturnsPage() {
                             <RefreshCcw className="h-3.5 w-3.5" />
                             Debit Notes والمردودات
                         </div>
-                        <h1 className="mt-4 text-2xl font-black sm:text-3xl">مرتجعات الشراء</h1>
-                        <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">إدارة مرتجعات السلع للموردين وتسوية المديونيات من واجهة أوضح وأنظف على الهاتف.</p>
+                        <h1 className="mt-4 text-2xl font-black sm:text-3xl">{t('purchase_returns_page.ui.kj45kme')}</h1>
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">{t('purchase_returns_page.ui.kgdishv')}</p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
                         <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                            <p className="text-xs font-bold text-white/65">العمليات الظاهرة</p>
+                            <p className="text-xs font-bold text-white/65">{t('purchase_returns_page.ui.kskchgb')}</p>
                             <p className="mt-2 text-2xl font-black">{summary.total}</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                            <p className="text-xs font-bold text-white/65">الأصناف المرتجعة</p>
+                            <p className="text-xs font-bold text-white/65">{t('purchase_returns_page.ui.kyheixi')}</p>
                             <p className="mt-2 text-2xl font-black">{summary.items}</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                            <p className="text-xs font-bold text-white/65">قيمة المرتجعات</p>
+                            <p className="text-xs font-bold text-white/65">{t('purchase_returns_page.ui.k40l9i5')}</p>
                             <p className="mt-2 text-lg font-black">{fmt(summary.amount)} ج.م</p>
                         </div>
                     </div>
@@ -178,7 +180,7 @@ export default function PurchaseReturnsPage() {
                 ) : returns.length === 0 ? (
                     <EmptyState
                         icon={RefreshCcw}
-                        title="لا توجد مرتجعات مسجلة"
+                        title={t('purchase_returns_page.titles.k1yzg6p')}
                         description="ابدأ بتسجيل أول عملية إرجاع للمورد لخصمها من المديونية"
                     />
                 ) : (
@@ -197,11 +199,11 @@ export default function PurchaseReturnsPage() {
                                 </div>
                                 <div className="mt-3 grid grid-cols-2 gap-2">
                                     <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
-                                        <p className="text-[10px] text-gray-400">المبلغ</p>
+                                        <p className="text-[10px] text-gray-400">{t('purchase_returns_page.ui.kaaxgsq')}</p>
                                         <p className="mt-1 text-xs font-black text-red-500">{fmt(r.totalAmount)} ج.م</p>
                                     </div>
                                     <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
-                                        <p className="text-[10px] text-gray-400">المنتجات</p>
+                                        <p className="text-[10px] text-gray-400">{t('purchase_returns_page.ui.ks0nri5')}</p>
                                         <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{r.items?.length} صنف</p>
                                     </div>
                                 </div>
@@ -212,12 +214,12 @@ export default function PurchaseReturnsPage() {
                         <table className="w-full text-right">
                             <thead>
                                 <tr className="bg-gray-50 dark:bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800">
-                                    <th className="px-6 py-4">المرجع</th>
-                                    <th className="px-6 py-4">المورد</th>
-                                    <th className="px-6 py-4">التاريخ</th>
-                                    <th className="px-6 py-4">المبلغ</th>
-                                    <th className="px-6 py-4">المنتجات</th>
-                                    <th className="px-6 py-4 text-center">الإجراءات</th>
+                                    <th className="px-6 py-4">{t('purchase_returns_page.ui.kaaxap6')}</th>
+                                    <th className="px-6 py-4">{t('purchase_returns_page.ui.kaawtj6')}</th>
+                                    <th className="px-6 py-4">{t('purchase_returns_page.ui.kzbvdnf')}</th>
+                                    <th className="px-6 py-4">{t('purchase_returns_page.ui.kaaxgsq')}</th>
+                                    <th className="px-6 py-4">{t('purchase_returns_page.ui.ks0nri5')}</th>
+                                    <th className="px-6 py-4 text-center">{t('purchase_returns_page.ui.kvfmk6')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -259,36 +261,36 @@ export default function PurchaseReturnsPage() {
             <Modal
                 open={showModal}
                 onClose={() => setShowModal(false)}
-                title="تسجيل مرتجع شراء جديد"
+                title={t('purchase_returns_page.titles.k8c1lo9')}
                 size="2xl"
             >
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Select
-                            label="المورد *"
+                            label={t('purchase_returns_page.form.krzgpa0')}
                             value={form.supplierId}
                             onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
                             options={suppliers.map(s => ({ value: s._id, label: s.name }))}
                         />
                         <Select
-                            label="الفرع (المخزن المسترجع منه) *"
+                            label={t('purchase_returns_page.form.k8odzj8')}
                             value={form.branchId}
                             onChange={(e) => setForm({ ...form, branchId: e.target.value })}
                             options={branches.map(b => ({ value: b._id, label: b.name }))}
                         />
                         <Select
-                            label="سبب الإرجاع"
+                            label={t('purchase_returns_page.form.kbrfofc')}
                             value={form.reason}
                             onChange={(e) => setForm({ ...form, reason: e.target.value })}
                             options={[
-                                { value: 'defective', label: 'منتج تالف / عيب صناعة' },
-                                { value: 'wrong_item', label: 'منتج خاطئ' },
-                                { value: 'expired', label: 'منتهي الصلاحية' },
-                                { value: 'other', label: 'أخرى (اكتب في الملاحظات)' },
+                                { value: 'defective', label: t('purchase_returns_page.ui.ke4xowz') },
+                                { value: 'wrong_item', label: t('purchase_returns_page.ui.k8z3717') },
+                                { value: 'expired', label: t('purchase_returns_page.ui.kd9vb97') },
+                                { value: 'other', label: t('purchase_returns_page.ui.kv4u6t0') },
                             ]}
                         />
                         <Input
-                            label="ملاحظات"
+                            label={t('purchase_returns_page.form.notes')}
                             value={form.notes}
                             onChange={(e) => setForm({ ...form, notes: e.target.value })}
                         />
@@ -296,12 +298,12 @@ export default function PurchaseReturnsPage() {
 
                     {/* Product Search */}
                     <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">إضافة منتجات للمرتجع</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('purchase_returns_page.ui.ko79i1f')}</p>
                         <div className="relative">
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-primary-500 outline-none text-sm transition-all"
-                                placeholder="ابحث عن المنتج بالاسم أو الباركود..."
+                                placeholder={t('purchase_returns_page.placeholders.kotv1t0')}
                                 value={searchProduct}
                                 onChange={(e) => handleProductSearch(e.target.value)}
                             />
@@ -371,10 +373,10 @@ export default function PurchaseReturnsPage() {
                             <table className="w-full text-right text-xs">
                                 <thead className="bg-gray-100/50 dark:bg-gray-800/80 font-bold text-gray-400">
                                     <tr>
-                                        <th className="px-4 py-3">المنتج</th>
-                                        <th className="px-4 py-3 text-center" style={{ width: '80px' }}>الكمية</th>
-                                        <th className="px-4 py-3 text-center">التكلفة (الوحدة)</th>
-                                        <th className="px-4 py-3 text-left">الإجمالي</th>
+                                        <th className="px-4 py-3">{t('purchase_returns_page.ui.kaawv6o')}</th>
+                                        <th className="px-4 py-3 text-center" style={{ width: '80px' }}>{t('purchase_returns_page.ui.kaay54y')}</th>
+                                        <th className="px-4 py-3 text-center">{t('purchase_returns_page.ui.k202okv')}</th>
+                                        <th className="px-4 py-3 text-left">{t('purchase_returns_page.ui.krh6w30')}</th>
                                         <th className="px-4 py-3" style={{ width: '40px' }}></th>
                                     </tr>
                                 </thead>
@@ -410,7 +412,7 @@ export default function PurchaseReturnsPage() {
                                 </tbody>
                                 <tfoot className="bg-primary-500/5 dark:bg-primary-500/10 font-bold border-t border-primary-500/20">
                                     <tr>
-                                        <td colSpan={3} className="px-4 py-3 text-left">إجمالي قيمة المرتجع</td>
+                                        <td colSpan={3} className="px-4 py-3 text-left">{t('purchase_returns_page.ui.km0mdyt')}</td>
                                         <td className="px-4 py-3 text-left text-primary-600 dark:text-primary-400 text-sm">
                                             {fmt(form.items.reduce((acc, i) => acc + (i.quantity * i.unitCost), 0))} ج.م
                                         </td>
@@ -423,7 +425,7 @@ export default function PurchaseReturnsPage() {
                     )}
 
                     <div className="flex justify-end gap-3 pt-4">
-                        <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
+                        <Button variant="ghost" onClick={() => setShowModal(false)}>{t('purchase_returns_page.ui.cancel')}</Button>
                         <Button onClick={handleSave} loading={saving}>
                             <Check className="w-4 h-4" /> تنفيذ الإرجاع
                         </Button>

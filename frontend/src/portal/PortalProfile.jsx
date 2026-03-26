@@ -7,10 +7,10 @@ import { notify } from '../components/AnimatedNotification';
 import { Input } from '../components/UI';
 
 const tierConfig = {
-  bronze: { label: 'برونزي', color: 'from-amber-600 to-amber-800', icon: Shield },
-  silver: { label: 'فضي', color: 'from-gray-400 to-gray-600', icon: Award },
-  gold: { label: 'ذهبي', color: 'from-yellow-400 to-yellow-600', icon: Star },
-  platinum: { label: 'بلاتيني', color: 'from-purple-400 to-purple-700', icon: Crown },
+  bronze: { label: t('portal_profile.ui.ka49ew1'), color: 'from-amber-600 to-amber-800', icon: Shield },
+  silver: { label: t('portal_profile.ui.ky2fp'), color: 'from-gray-400 to-gray-600', icon: Award },
+  gold: { label: t('portal_profile.ui.kt1lrt'), color: 'from-yellow-400 to-yellow-600', icon: Star },
+  platinum: { label: t('portal_profile.ui.kl2fcgh'), color: 'from-purple-400 to-purple-700', icon: Crown },
 };
 
 export default function PortalProfile() {
@@ -49,7 +49,7 @@ export default function PortalProfile() {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 20 * 1024 * 1024) { // 20MB limit
-        notify.error(t('profile.messages.image_size') || 'حجم الصورة يجب ألا يتجاوز 20 ميجابايت');
+        notify.error(t('profile.messages.image_size') || t('portal_profile.toasts.khs68co'));
         return;
       }
       const reader = new FileReader();
@@ -72,7 +72,7 @@ export default function PortalProfile() {
   
   const handleForgotCurrentPassword = async () => {
     const identifier = customer?.email || customer?.phone;
-    if (!identifier) return notify.error('لا يوجد بريد إلكتروني أو رقم هاتف مسجل');
+    if (!identifier) return notify.error(t('portal_profile.toasts.kss0j13'));
     
     setSendingReset(true);
     const result = await forgotPassword(identifier);
@@ -80,7 +80,7 @@ export default function PortalProfile() {
     
     if (result.success) {
       setResetEmailSent(true);
-      notify.success(result.message || 'تم إرسال رابط إعادة التعيين لبريدك');
+      notify.success(result.message || t('portal_profile.toasts.kepnxek'));
     } else {
       notify.error(result.message);
     }
@@ -259,9 +259,9 @@ export default function PortalProfile() {
           <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
              <Shield className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">إعدادات الأمان</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('portal_profile.ui.kdf5b4o')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto leading-relaxed">
-            لتغيير كلمة المرور الخاصة بك، سنقوم بإرسال رابط آمن إلى بريدك الإلكتروني أو رقم هاتفك المسجل:
+            {t('portal_profile.ui.ksfqhpi')}
             <br />
             <span className="font-bold text-gray-800 dark:text-gray-200 mt-2 block">{customer?.email || customer?.phone}</span>
           </p>
@@ -277,19 +277,19 @@ export default function PortalProfile() {
             ) : resetEmailSent ? (
                <>
                  <CheckCircle className="w-5 h-5 text-white" />
-                 تم إرسال الرابط
+                 {t('portal_profile.ui.kcatskd')}
                </>
             ) : (
               <>
                 <Mail className="w-5 h-5 text-white" />
-                إرسال رابط إعادة التعيين
+                {t('portal_profile.ui.kd6zgqg')}
               </>
             )}
           </button>
           
           {resetEmailSent && (
             <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 font-medium animate-pulse">
-              تحقق من صندوق الوارد الخاص بك الآن
+              {t('portal_profile.ui.k1gtstz')}
             </p>
           )}
         </div>

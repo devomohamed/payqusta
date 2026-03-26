@@ -42,7 +42,7 @@ export default function PortalWishlist() {
         notify.success(t('wishlist.added_to_cart'));
     };
 
-    const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+    const currency = i18n.language === 'ar' ? t('portal_wishlist.ui.kwlxf') : 'EGP';
 
     return (
         <div className="space-y-4 pb-20 app-text-soft" dir={i18n.dir()}>

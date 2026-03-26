@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   Edit,
@@ -32,12 +33,14 @@ import toast from 'react-hot-toast';
 import { api, useAuthStore } from '../store';
 import { confirm } from '../components/ConfirmDialog';
 
-const BRANCH_TYPE_OPTIONS = [
-  { value: 'store', label: 'فرع بيع' },
-  { value: 'warehouse', label: 'مخزن' },
-  { value: 'fulfillment_center', label: 'مركز تنفيذ' },
-  { value: 'hybrid', label: 'فرع هجين' },
-];
+function getBranchTypeOptions(t) {
+  return [
+    { value: 'store', label: t('branch_management.ui.kirgwf4') },
+    { value: 'warehouse', label: t('branch_management.ui.ktei71') },
+    { value: 'fulfillment_center', label: t('branch_management.ui.klm4yiu') },
+    { value: 'hybrid', label: t('branch_management.ui.kde497s') },
+  ];
+}
 
 const INITIAL_FORM = {
   tenantId: '',
@@ -122,8 +125,8 @@ function SummaryCard({ title, value, caption, icon: Icon, tone = 'primary' }) {
   );
 }
 
-function branchTypeLabel(branchType) {
-  return BRANCH_TYPE_OPTIONS.find((option) => option.value === branchType)?.label || 'فرع';
+function branchTypeLabel(branchType, branchTypeOptions, t) {
+  return branchTypeOptions.find((option) => option.value === branchType)?.label || t('branch_management.toasts.ky2ax');
 }
 
 function shippingOriginSummary(branch) {
@@ -147,8 +150,10 @@ function buildBranchAuditTrailLink(branch) {
 }
 
 export default function BranchManagement() {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
   const isSuperAdmin = user?.isSuperAdmin;
+  const branchTypeOptions = useMemo(() => getBranchTypeOptions(t), [t]);
 
   const [branches, setBranches] = useState([]);
   const [tenants, setTenants] = useState([]);
@@ -176,7 +181,7 @@ export default function BranchManagement() {
       }
       setAvailableManagers(usersRes.data?.data || []);
     } catch (error) {
-      toast.error('فشل تحميل بيانات الفروع');
+      toast.error(t('branch_management.toasts.k6h9rg9'));
     } finally {
       setLoading(false);
     }
@@ -204,28 +209,28 @@ export default function BranchManagement() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      return toast.error('اسم الفرع مطلوب');
+      return toast.error(t('branch_management.toasts.kax06lz'));
     }
 
     if (isSuperAdmin && !editingBranch && !form.tenantId) {
-      return toast.error('يجب اختيار المتجر أولًا');
+      return toast.error(t('branch_management.toasts.klphaev'));
     }
 
     const validatePhone = (value) => /^01[0125][0-9]{8}$/.test(value);
     if (form.phone && !validatePhone(form.phone)) {
-      return toast.error('رقم هاتف الفرع غير صالح');
+      return toast.error(t('branch_management.toasts.krtvokr'));
     }
 
     if (managerSelectionMode === 'new') {
       if (!form.managerName || !form.managerEmail || !form.managerPhone) {
-        return toast.error('يرجى إدخال جميع بيانات مدير الفرع المطلوبة');
+        return toast.error(t('branch_management.toasts.kwqol4'));
       }
       if (!validatePhone(form.managerPhone)) {
-        return toast.error('رقم هاتف مدير الفرع غير صالح');
+        return toast.error(t('branch_management.toasts.k5nshuo'));
       }
     } else if (managerSelectionMode === 'existing') {
       if (!form.managerId) {
-        return toast.error('يرجى اختيار المدير من القائمة');
+        return toast.error(t('branch_management.toasts.kbg3x2g'));
       }
     }
 
@@ -250,30 +255,30 @@ export default function BranchManagement() {
 
       if (editingBranch) {
         await api.put(`/branches/${editingBranch._id}`, payload);
-        toast.success('تم تحديث الفرع بنجاح');
+        toast.success(t('branch_management.toasts.k79ky94'));
       } else {
         await api.post('/branches', payload);
-        toast.success('تمت إضافة الفرع بنجاح');
+        toast.success(t('branch_management.toasts.kgq038t'));
       }
 
       await fetchBranches();
       setShowModal(false);
       resetForm();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'حدث خطأ أثناء حفظ الفرع');
+      toast.error(error.response?.data?.message || t('branch_management.toasts.kqksr5h'));
     }
   };
 
   const handleDelete = async (branchId) => {
-    const ok = await confirm.delete('هل أنت متأكد من حذف هذا الفرع؟');
+    const ok = await confirm.delete(t('branch_management.ui.kc25dxg'));
     if (!ok) return;
 
     try {
       await api.delete(`/branches/${branchId}`);
-      toast.success('تم حذف الفرع');
+      toast.success(t('branch_management.toasts.kivi8rp'));
       await fetchBranches();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'تعذر حذف الفرع');
+      toast.error(error.response?.data?.message || t('branch_management.toasts.khex0pm'));
     }
   };
 
@@ -348,10 +353,10 @@ export default function BranchManagement() {
                 <Building2 className="h-7 w-7" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white">إدارة الفروع</h1>
+                <h1 className="text-3xl font-black text-white">{t('branch_management.ui.kjff1ih')}</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-white/80">
-                  اضبط هيكل الفرع، تشغيل الأونلاين، مركز التنفيذ، الاستلام من الفرع، ومصدر الشحن
-                  من شاشة واحدة أوضح وأكثر راحة على الهاتف.
+                  {t('branch_management.ui.ksbr4u')}
+                  {t('branch_management.ui.kc4h4r5')}
                 </p>
               </div>
             </div>
@@ -363,7 +368,7 @@ export default function BranchManagement() {
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15 lg:w-auto"
             >
               <FileSearch className="h-4 w-4 text-white" />
-              سجل تغييرات الفروع
+              {t('branch_management.ui.ksb2z5d')}
             </Link>
             <Button
               size="lg"
@@ -374,23 +379,23 @@ export default function BranchManagement() {
               }}
               className="w-full bg-white text-primary-700 hover:bg-white/90 lg:w-auto"
             >
-              إضافة فرع جديد
+              {t('branch_management.ui.k5zjh6n')}
             </Button>
           </div>
         </div>
       </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="إجمالي الفروع" value={summary.total} caption="عدد الفروع المعروضة بعد الفلاتر الحالية" icon={Store} tone="primary" />
-        <SummaryCard title="الأونلاين مفعل" value={summary.onlineEnabled} caption="فروع يمكن إدخالها في خصم طلبات الأونلاين لاحقًا" icon={Globe} tone="emerald" />
-        <SummaryCard title="مراكز التنفيذ" value={summary.fulfillmentCenters} caption="فروع مناسبة للتنفيذ أو التجهيز والشحن" icon={PackageCheck} tone="amber" />
-        <SummaryCard title="استلام من الفرع" value={summary.pickupEnabled} caption="فروع تسمح بخدمة الاستلام أو التسليم المحلي" icon={Truck} tone="cyan" />
+        <SummaryCard title={t('branch_management.titles.kfgn6z3')} value={summary.total} caption="عدد الفروع المعروضة بعد الفلاتر الحالية" icon={Store} tone="primary" />
+        <SummaryCard title={t('branch_management.titles.kz6ps2k')} value={summary.onlineEnabled} caption="فروع يمكن إدخالها في خصم طلبات الأونلاين لاحقًا" icon={Globe} tone="emerald" />
+        <SummaryCard title={t('branch_management.titles.kinqlu0')} value={summary.fulfillmentCenters} caption="فروع مناسبة للتنفيذ أو التجهيز والشحن" icon={PackageCheck} tone="amber" />
+        <SummaryCard title={t('branch_management.titles.kjo7sfd')} value={summary.pickupEnabled} caption="فروع تسمح بخدمة الاستلام أو التسليم المحلي" icon={Truck} tone="cyan" />
       </div>
 
       <Card className="p-4 sm:p-5">
         <div className="mb-4">
-          <p className="text-sm font-black app-text-strong">البحث والتصفية</p>
-          <p className="mt-1 text-xs app-text-muted">ابحث باسم الفرع أو المدير أو مصدر الشحن، وضيّق النتائج حسب المتجر عند الحاجة.</p>
+          <p className="text-sm font-black app-text-strong">{t('branch_management.ui.kex4i93')}</p>
+          <p className="mt-1 text-xs app-text-muted">{t('branch_management.ui.k26u2hs')}</p>
         </div>
         <div className="flex flex-col gap-3 xl:flex-row">
           <div className="relative flex-1">
@@ -398,7 +403,7 @@ export default function BranchManagement() {
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="ابحث باسم الفرع أو العنوان أو المدير أو مصدر الشحن..."
+              placeholder={t('branch_management.placeholders.kb92qqs')}
               className="pr-10"
             />
             {searchTerm && (
@@ -436,19 +441,18 @@ export default function BranchManagement() {
       ) : filteredBranches.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title={hasFilters ? 'لا توجد نتائج' : 'لا توجد فروع حتى الآن'}
+          title={hasFilters ? t('branch_management.ui.kkcniav') : 'لا توجد فروع حتى الآن'}
           description={hasFilters
-            ? 'جرّب تغيير كلمات البحث أو إعادة ضبط الفلاتر الحالية.'
-            : 'ابدأ بإضافة أول فرع ثم فعّل إعدادات التشغيل التي تحتاجها للأونلاين والتنفيذ.'}
+            ? t('branch_management.ui.kem54nq') : 'ابدأ بإضافة أول فرع ثم فعّل إعدادات التشغيل التي تحتاجها للأونلاين والتنفيذ.'}
           action={hasFilters ? {
-            label: 'إعادة ضبط الفلاتر',
+            label: t('branch_management.ui.kr8yv4w'),
             onClick: () => {
               setSearchTerm('');
               setTenantFilter('all');
             },
             variant: 'outline',
           } : {
-            label: 'إضافة فرع',
+            label: t('branch_management.ui.km2iaqh'),
             onClick: () => {
               resetForm();
               setShowModal(true);
@@ -468,7 +472,7 @@ export default function BranchManagement() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-lg font-black app-text-strong">{branch.name}</h3>
-                        <Badge variant="gray">{branchTypeLabel(branch.branchType)}</Badge>
+                        <Badge variant="gray">{branchTypeLabel(branch.branchType, branchTypeOptions, t)}</Badge>
                       </div>
                       <p className="mt-2 text-sm app-text-muted">
                         {isSuperAdmin && branch.tenant ? `المتجر: ${branch.tenant.name}` : 'إعدادات تشغيل الفرع والتوفر التجاري'}
@@ -480,7 +484,7 @@ export default function BranchManagement() {
                     <Link
                       to={buildBranchAuditTrailLink(branch)}
                       className="rounded-xl p-2.5 app-surface-muted app-text-body transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
-                      aria-label="عرض سجل تدقيق الفرع"
+                      aria-label={t('branch_management.form.kv18jiu')}
                     >
                       <FileSearch className="h-4 w-4" />
                     </Link>
@@ -488,7 +492,7 @@ export default function BranchManagement() {
                       type="button"
                       onClick={() => handleEdit(branch)}
                       className="rounded-xl p-2.5 app-surface-muted app-text-body hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
-                      aria-label="تعديل الفرع"
+                      aria-label={t('branch_management.form.k2zzome')}
                     >
                       <Edit className="h-4 w-4" />
                     </button>
@@ -496,7 +500,7 @@ export default function BranchManagement() {
                       type="button"
                       onClick={() => handleDelete(branch._id)}
                       className="rounded-xl p-2.5 bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20"
-                      aria-label="حذف الفرع"
+                      aria-label={t('branch_management.form.kdbi6c6')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -505,13 +509,13 @@ export default function BranchManagement() {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge variant={branch.participatesInOnlineOrders ? 'success' : 'gray'}>
-                    {branch.participatesInOnlineOrders ? 'يدخل في الأونلاين' : 'خارج خصم الأونلاين'}
+                    {branch.participatesInOnlineOrders ? t('branch_management.ui.khehmi9') : 'خارج خصم الأونلاين'}
                   </Badge>
                   <Badge variant={branch.isFulfillmentCenter ? 'warning' : 'gray'}>
-                    {branch.isFulfillmentCenter ? 'مركز تنفيذ' : 'ليس مركز تنفيذ'}
+                    {branch.isFulfillmentCenter ? t('branch_management.ui.klm4yiu') : 'ليس مركز تنفيذ'}
                   </Badge>
                   <Badge variant={branch.pickupEnabled ? 'info' : 'gray'}>
-                    {branch.pickupEnabled ? 'الاستلام متاح' : 'الاستلام غير متاح'}
+                    {branch.pickupEnabled ? t('branch_management.ui.k15nppm') : 'الاستلام غير متاح'}
                   </Badge>
                 </div>
               </div>
@@ -519,11 +523,11 @@ export default function BranchManagement() {
               <div className="space-y-4 p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl app-surface-muted p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">أولوية الأونلاين</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">{t('branch_management.ui.k618thx')}</p>
                     <p className="mt-2 text-2xl font-black app-text-strong">#{branch.onlinePriority || 100}</p>
                   </div>
                   <div className="rounded-2xl app-surface-muted p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">الكاميرات</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">{t('branch_management.ui.kb870ku')}</p>
                     <p className="mt-2 text-2xl font-black app-text-strong">{branch.cameras?.length || 0}</p>
                   </div>
                 </div>
@@ -563,7 +567,7 @@ export default function BranchManagement() {
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
-        title={editingBranch ? 'تعديل الفرع' : 'إضافة فرع جديد'}
+        title={editingBranch ? t('branch_management.ui.k2zzome') : 'إضافة فرع جديد'}
         size="xl"
         bodyClassName="space-y-6"
       >
@@ -571,19 +575,19 @@ export default function BranchManagement() {
           <div className="space-y-6">
             <Card className="p-5">
               <div className="mb-4">
-                <h3 className="text-base font-black app-text-strong">البيانات الأساسية</h3>
-                <p className="mt-1 text-sm app-text-muted">اسم الفرع وبيانات التواصل والكيان التشغيلي له.</p>
+                <h3 className="text-base font-black app-text-strong">{t('branch_management.ui.kl8rjwp')}</h3>
+                <p className="mt-1 text-sm app-text-muted">{t('branch_management.ui.k1870xb')}</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 {isSuperAdmin && !editingBranch && (
                   <Select
-                    label="المتجر"
+                    label={t('branch_management.form.kaaxfw9')}
                     value={form.tenantId}
                     onChange={(event) => setForm((current) => ({ ...current, tenantId: event.target.value }))}
                     className="md:col-span-2"
                   >
-                    <option value="">اختر المتجر</option>
+                    <option value="">{t('branch_management.ui.kfeejax')}</option>
                     {tenants.map((tenant) => (
                       <option key={tenant._id} value={tenant._id}>
                         {tenant.name}
@@ -594,36 +598,36 @@ export default function BranchManagement() {
 
                 {isSuperAdmin && editingBranch?.tenant && (
                   <div className="md:col-span-2 rounded-2xl app-surface-muted p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">المتجر التابع له الفرع</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] app-text-muted">{t('branch_management.ui.kmxvid1')}</p>
                     <p className="mt-2 text-sm font-bold app-text-strong">{editingBranch.tenant.name}</p>
                   </div>
                 )}
 
                 <Input
-                  label="اسم الفرع"
+                  label={t('branch_management.form.kr36akl')}
                   value={form.name}
                   onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="فرع القاهرة"
+                  placeholder={t('branch_management.placeholders.khv84fu')}
                 />
                 <Select
-                  label="نوع الفرع"
+                  label={t('branch_management.form.kqsujj7')}
                   value={form.branchType}
                   onChange={(event) => setForm((current) => ({ ...current, branchType: event.target.value }))}
                 >
-                  {BRANCH_TYPE_OPTIONS.map((option) => (
+                  {branchTypeOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </Select>
                 <Input
-                  label="رقم هاتف الفرع"
+                  label={t('branch_management.form.kff8ylr')}
                   value={form.phone}
                   onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                   placeholder="01234567890"
                 />
                 <Input
-                  label="أولوية خصم الأونلاين"
+                  label={t('branch_management.form.kx5s0o9')}
                   type="number"
                   min="1"
                   max="9999"
@@ -632,10 +636,10 @@ export default function BranchManagement() {
                   placeholder="100"
                 />
                 <TextArea
-                  label="عنوان الفرع"
+                  label={t('branch_management.form.k9t8aze')}
                   value={form.address}
                   onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
-                  placeholder="العنوان التفصيلي للفرع"
+                  placeholder={t('branch_management.placeholders.k21nqdh')}
                   className="md:col-span-2"
                   rows={3}
                 />
@@ -644,36 +648,36 @@ export default function BranchManagement() {
 
             <Card className="p-5">
               <div className="mb-4">
-                <h3 className="text-base font-black app-text-strong">إعدادات التشغيل التجاري</h3>
-                <p className="mt-1 text-sm app-text-muted">حدد هل يدخل الفرع في خصم طلبات الأونلاين وهل يعمل كمركز تنفيذ أو نقطة استلام.</p>
+                <h3 className="text-base font-black app-text-strong">{t('branch_management.ui.knmg2xg')}</h3>
+                <p className="mt-1 text-sm app-text-muted">{t('branch_management.ui.ks2hj04')}</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <ToggleTile
-                  title="إدخال الفرع في طلبات الأونلاين"
+                  title={t('branch_management.titles.ksjv5p9')}
                   description="عند التفعيل يمكن استخدام هذا الفرع لاحقًا داخل سياسة خصم طلبات المتجر الإلكتروني."
                   icon={Globe}
                   checked={form.participatesInOnlineOrders}
                   onChange={(value) => setForm((current) => ({ ...current, participatesInOnlineOrders: value }))}
                 />
                 <ToggleTile
-                  title="اعتبار الفرع مركز تنفيذ"
+                  title={t('branch_management.titles.kze0eu8')}
                   description="فعّل هذا الخيار إذا كان الفرع مناسبًا للتجهيز أو التسليم أو اعتماد المخزون للأوردرات."
                   icon={PackageCheck}
                   checked={form.isFulfillmentCenter}
                   onChange={(value) => setForm((current) => ({ ...current, isFulfillmentCenter: value }))}
                 />
                 <ToggleTile
-                  title="الاستلام من الفرع"
+                  title={t('branch_management.titles.k8cdcz8')}
                   description="يفيد عند تقديم خدمة استلام الطلب من نفس الفرع أو تنسيقه مع الشحن المحلي."
                   icon={Store}
                   checked={form.pickupEnabled}
                   onChange={(value) => setForm((current) => ({ ...current, pickupEnabled: value }))}
                 />
                 <div className="rounded-2xl border border-dashed border-[color:var(--surface-border)] app-surface-muted p-4">
-                  <p className="text-sm font-bold app-text-strong">ملاحظة تشغيلية</p>
+                  <p className="text-sm font-bold app-text-strong">{t('branch_management.ui.k8msrkx')}</p>
                   <p className="mt-2 text-xs leading-6 app-text-muted">
-                    أولوية الأونلاين الأقل رقمًا تعني أولوية أعلى لاحقًا عندما نربط سياسة خصم الطلبات بين أكثر من فرع.
+                    {t('branch_management.ui.k3kmzd0')}
                   </p>
                 </div>
               </div>
@@ -683,40 +687,40 @@ export default function BranchManagement() {
           <div className="space-y-6">
             <Card className="p-5">
               <div className="mb-4">
-                <h3 className="text-base font-black app-text-strong">مصدر الشحن</h3>
-                <p className="mt-1 text-sm app-text-muted">هذه البيانات ستساعد لاحقًا في ربط الشحن ومصدر تنفيذ الطلبات.</p>
+                <h3 className="text-base font-black app-text-strong">{t('branch_management.ui.kl68plu')}</h3>
+                <p className="mt-1 text-sm app-text-muted">{t('branch_management.ui.k93huxx')}</p>
               </div>
 
               <div className="space-y-4">
                 <Input
-                  label="المحافظة"
+                  label={t('branch_management.form.kseg3bk')}
                   value={form.shippingOrigin.governorate}
                   onChange={(event) => setShippingOriginField('governorate', event.target.value)}
-                  placeholder="القاهرة"
+                  placeholder={t('branch_management.placeholders.kzc16df')}
                 />
                 <Input
-                  label="المدينة"
+                  label={t('branch_management.form.kza8lyy')}
                   value={form.shippingOrigin.city}
                   onChange={(event) => setShippingOriginField('city', event.target.value)}
-                  placeholder="مدينة نصر"
+                  placeholder={t('branch_management.placeholders.kp0bo2j')}
                 />
                 <Input
-                  label="المنطقة"
+                  label={t('branch_management.form.kz9ubgg')}
                   value={form.shippingOrigin.area}
                   onChange={(event) => setShippingOriginField('area', event.target.value)}
-                  placeholder="الحي السابع"
+                  placeholder={t('branch_management.placeholders.k6jh26g')}
                 />
                 <Input
-                  label="الرمز البريدي"
+                  label={t('branch_management.form.k5t65xc')}
                   value={form.shippingOrigin.postalCode}
                   onChange={(event) => setShippingOriginField('postalCode', event.target.value)}
                   placeholder="11765"
                 />
                 <TextArea
-                  label="سطر العنوان"
+                  label={t('branch_management.form.klkpx9y')}
                   value={form.shippingOrigin.addressLine}
                   onChange={(event) => setShippingOriginField('addressLine', event.target.value)}
-                  placeholder="التفاصيل التي تعتمد عليها شركات الشحن"
+                  placeholder={t('branch_management.placeholders.kpg82hq')}
                   rows={3}
                 />
               </div>
@@ -724,8 +728,8 @@ export default function BranchManagement() {
 
             <Card className="p-5">
               <div className="mb-4">
-                <h3 className="text-base font-black app-text-strong">مدير الفرع</h3>
-                <p className="mt-1 text-sm app-text-muted">يمكنك إبقاء الفرع بدون مدير، أو اختيار مدير موجود أو إنشاء حساب جديد.</p>
+                <h3 className="text-base font-black app-text-strong">{t('branch_management.ui.kfosuxv')}</h3>
+                <p className="mt-1 text-sm app-text-muted">{t('branch_management.ui.kwf4t7q')}</p>
               </div>
 
               <div className="mb-6 flex overflow-hidden rounded-xl border border-[color:var(--surface-border)] bg-black/[0.02] p-1 dark:bg-white/[0.02]">
@@ -738,7 +742,7 @@ export default function BranchManagement() {
                       : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                   }`}
                 >
-                  بدون مدير
+                  {t('branch_management.ui.k8c9lpo')}
                 </button>
                 <button
                   type="button"
@@ -749,7 +753,7 @@ export default function BranchManagement() {
                       : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                   }`}
                 >
-                  اختيار حالي
+                  {t('branch_management.ui.k4t5841')}
                 </button>
                 <button
                   type="button"
@@ -760,14 +764,14 @@ export default function BranchManagement() {
                       : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
                   }`}
                 >
-                  مدير جديد
+                  {t('branch_management.ui.kd8s60n')}
                 </button>
               </div>
 
               {managerSelectionMode === 'existing' && (
                 <div className="space-y-4 animate-fade-in">
                   <Select
-                    label="اختر المدير"
+                    label={t('branch_management.form.kfeenq8')}
                     value={form.managerId}
                     onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
                   >
@@ -784,20 +788,20 @@ export default function BranchManagement() {
               {managerSelectionMode === 'new' && (
                 <div className="space-y-4 animate-fade-in">
                   <Input
-                    label="اسم المدير"
+                    label={t('branch_management.form.kcmuzvv')}
                     value={form.managerName}
                     onChange={(event) => setForm((current) => ({ ...current, managerName: event.target.value }))}
-                    placeholder="أحمد محمد"
+                    placeholder={t('branch_management.placeholders.kpsrhs2')}
                   />
                   <Input
-                    label="البريد الإلكتروني"
+                    label={t('branch_management.form.k8lvosz')}
                     type="email"
                     value={form.managerEmail}
                     onChange={(event) => setForm((current) => ({ ...current, managerEmail: event.target.value }))}
                     placeholder="manager@brand.com"
                   />
                   <Input
-                    label="رقم الهاتف"
+                    label={t('branch_management.form.k3pahhc')}
                     value={form.managerPhone}
                     onChange={(event) => setForm((current) => ({ ...current, managerPhone: event.target.value }))}
                     placeholder="01012345678"
@@ -809,8 +813,8 @@ export default function BranchManagement() {
         </div>
 
         <div className="flex flex-col-reverse gap-2 border-t border-[color:var(--surface-border)] pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
-          <Button onClick={handleSave}>{editingBranch ? 'حفظ التعديلات' : 'إضافة الفرع'}</Button>
+          <Button variant="ghost" onClick={() => setShowModal(false)}>{t('branch_management.ui.cancel')}</Button>
+          <Button onClick={handleSave}>{editingBranch ? t('branch_management.ui.km6ld24') : 'إضافة الفرع'}</Button>
         </div>
       </Modal>
     </div>

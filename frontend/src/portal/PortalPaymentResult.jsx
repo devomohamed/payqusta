@@ -45,10 +45,10 @@ export default function PortalPaymentResult() {
                             <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
                         </div>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
-                            تم الدفع بنجاح
+                            {t('portal_payment_result.ui.kvfxozd')}
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400">
-                            شكراً لك. تم استلام دفعتك وتحديث حالة الفاتورة. قد يستغرق ظهور التحديث بضع دقائق.
+                            {t('portal_payment_result.ui.kv3ba5x')}
                         </p>
                     </div>
                 ) : (
@@ -57,10 +57,10 @@ export default function PortalPaymentResult() {
                             <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
                         </div>
                         <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
-                            فشلت عملية الدفع
+                            {t('portal_payment_result.ui.khf0na2')}
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400">
-                            عذراً، لم نتمكن من إتمام عملية الدفع. يرجى المحاولة مرة أخرى أو استخدام طريقة دفع مختلفة.
+                            {t('portal_payment_result.ui.ku180qx')}
                         </p>
                     </div>
                 )}
@@ -71,14 +71,14 @@ export default function PortalPaymentResult() {
                         className="w-full py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition flex items-center justify-center gap-2"
                     >
                         <FileText className="w-5 h-5" />
-                        العودة للفواتير
+                        {t('portal_payment_result.ui.k3f58qd')}
                     </Link>
                     <Link
                         to="/portal/dashboard"
                         className="app-surface w-full rounded-xl border border-gray-100/80 py-3 font-bold text-gray-700 transition hover:bg-black/[0.02] dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/[0.03] flex items-center justify-center gap-2"
                     >
                         <ArrowRight className="w-5 h-5" />
-                        الرئيسية
+                        {t('portal_payment_result.ui.kx2j17e')}
                     </Link>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   Crown, Building2, Users, TrendingUp, DollarSign, Activity, 
   Package, ShoppingCart, Plus, ArrowRight, CheckCircle, AlertCircle,
   Server, Zap, Eye
@@ -10,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function SuperAdminDashboard() {
+  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [tenants, setTenants] = useState([]);
@@ -29,7 +31,7 @@ export default function SuperAdminDashboard() {
       setAnalytics(analyticsRes.data.data);
       setTenants(tenantsRes.data.data.tenants || []);
     } catch (err) {
-      toast.error('فشل تحميل البيانات');
+      toast.error(t('super_admin_dashboard.toasts.kkqsu4s'));
     } finally {
       setLoading(false);
     }
@@ -54,8 +56,8 @@ export default function SuperAdminDashboard() {
             <Crown className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold">لوحة تحكم Super Admin</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">نظرة شاملة على كل النظام</p>
+            <h1 className="text-2xl font-extrabold">{t('super_admin_dashboard.ui.kvvv9n5')}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('super_admin_dashboard.ui.kfn4ikr')}</p>
           </div>
         </div>
 
@@ -66,14 +68,14 @@ export default function SuperAdminDashboard() {
             icon={<Crown className="w-4 h-4" />}
             onClick={() => navigate('/super-admin/plans')}
           >
-            إدارة الباقات
+            {t('super_admin_dashboard.ui.kxn4iqm')}
           </Button>
           <Button 
             variant="primary" 
             icon={<Plus className="w-4 h-4" />}
             onClick={() => navigate('/tenant-management')}
           >
-            متجر جديد
+            {t('super_admin_dashboard.ui.k2yca6a')}
           </Button>
         </div>
       </div>
@@ -86,13 +88,13 @@ export default function SuperAdminDashboard() {
               <Server className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">حالة النظام</h3>
-              <p className="text-sm text-white/80">كل الأنظمة تعمل بشكل طبيعي</p>
+              <h3 className="text-lg font-bold">{t('super_admin_dashboard.ui.kbftok2')}</h3>
+              <p className="text-sm text-white/80">{t('super_admin_dashboard.ui.kf3jena')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5" />
-            <span className="text-sm font-bold">نشط</span>
+            <span className="text-sm font-bold">{t('super_admin_dashboard.ui.ky62x')}</span>
           </div>
         </div>
       </Card>
@@ -100,26 +102,26 @@ export default function SuperAdminDashboard() {
       {/* Main Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="إجمالي المتاجر" 
+          title={t('super_admin_dashboard.titles.khtrbpj')} 
           value={analytics?.overview?.tenants || 0} 
           icon={<Building2 className="w-5 h-5" />} 
           gradient="bg-gradient-to-br from-blue-500 to-blue-700"
           subtext={`${activeTenants} نشط`}
         />
         <StatCard 
-          title="إجمالي الفروع" 
+          title={t('super_admin_dashboard.titles.kfgn6z3')} 
           value={analytics?.overview?.branches || 0} 
           icon={<Activity className="w-5 h-5" />} 
           gradient="bg-gradient-to-br from-purple-500 to-purple-700" 
         />
         <StatCard 
-          title="إجمالي المستخدمين" 
+          title={t('super_admin_dashboard.titles.kg69frm')} 
           value={analytics?.overview?.users || 0} 
           icon={<Users className="w-5 h-5" />} 
           gradient="bg-gradient-to-br from-emerald-500 to-emerald-700" 
         />
         <StatCard 
-          title="إجمالي الإيرادات" 
+          title={t('super_admin_dashboard.titles.ktvonbd')} 
           value={`${fmt(totalRevenue)} ج.م`} 
           icon={<DollarSign className="w-5 h-5" />} 
           gradient="bg-gradient-to-br from-amber-500 to-amber-700" 
@@ -135,7 +137,7 @@ export default function SuperAdminDashboard() {
             </div>
             <div>
               <p className="text-2xl font-extrabold">{fmt(totalCustomers)}</p>
-              <p className="text-xs text-gray-500">إجمالي العملاء</p>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.khzv0t8')}</p>
             </div>
           </div>
         </div>
@@ -147,7 +149,7 @@ export default function SuperAdminDashboard() {
             </div>
             <div>
               <p className="text-2xl font-extrabold">{fmt(totalProducts)}</p>
-              <p className="text-xs text-gray-500">إجمالي المنتجات</p>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.kg1tjdg')}</p>
             </div>
           </div>
         </div>
@@ -159,7 +161,7 @@ export default function SuperAdminDashboard() {
             </div>
             <div>
               <p className="text-2xl font-extrabold">{fmt(analytics?.overview?.invoices || 0)}</p>
-              <p className="text-xs text-gray-500">إجمالي الفواتير</p>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.ke6opdr')}</p>
             </div>
           </div>
         </div>
@@ -170,8 +172,8 @@ export default function SuperAdminDashboard() {
               <Eye className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-primary-600 dark:text-primary-400">عرض جميع</p>
-              <p className="text-xs text-gray-500">المتاجر والفروع</p>
+              <p className="text-sm font-bold text-primary-600 dark:text-primary-400">{t('super_admin_dashboard.ui.kwbdh2u')}</p>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.kod25m8')}</p>
             </div>
           </div>
         </div>
@@ -182,7 +184,7 @@ export default function SuperAdminDashboard() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary-500" />
-            أعلى المحلات إيراداً
+            {t('super_admin_dashboard.ui.kb06c5n')}
           </h3>
           <Button 
             variant="ghost" 
@@ -190,7 +192,7 @@ export default function SuperAdminDashboard() {
             onClick={() => navigate('/tenant-management')}
             icon={<ArrowRight className="w-4 h-4" />}
           >
-            عرض الكل
+            {t('super_admin_dashboard.ui.kwbgoww')}
           </Button>
         </div>
 
@@ -216,7 +218,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div className="text-left shrink-0">
                   <p className="text-sm font-bold text-emerald-500">{fmt(tenant.revenue)} ج.م</p>
-                  <p className="text-xs text-gray-400">إيراد</p>
+                  <p className="text-xs text-gray-400">{t('super_admin_dashboard.ui.koue4fo')}</p>
                 </div>
               </div>
             ))}
@@ -224,7 +226,7 @@ export default function SuperAdminDashboard() {
         ) : (
           <EmptyState
             icon={TrendingUp}
-            title="لا توجد بيانات متاحة"
+            title={t('super_admin_dashboard.titles.k396hzw')}
             description="ستظهر المتاجر الأعلى أداءً هنا بمجرد توفر نشاط كافٍ."
             className="py-6"
           />
@@ -242,8 +244,8 @@ export default function SuperAdminDashboard() {
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold">إدارة المتاجر</h4>
-              <p className="text-xs text-gray-500">عرض وإدارة جميع المتاجر</p>
+              <h4 className="font-bold">{t('super_admin_dashboard.ui.ky33x0f')}</h4>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.k3stzy5')}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </div>
@@ -258,8 +260,8 @@ export default function SuperAdminDashboard() {
               <Crown className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold">إدارة الباقات والأسعار</h4>
-              <p className="text-xs text-gray-500">إنشاء وتعديل وإيقاف الباقات</p>
+              <h4 className="font-bold">{t('super_admin_dashboard.ui.k77uu6o')}</h4>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.k7wvodp')}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </div>
@@ -274,8 +276,8 @@ export default function SuperAdminDashboard() {
               <Users className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold">إدارة المستخدمين</h4>
-              <p className="text-xs text-gray-500">عرض وإدارة المستخدمين</p>
+              <h4 className="font-bold">{t('super_admin_dashboard.ui.kaod4c')}</h4>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.k9sv0aa')}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </div>
@@ -290,8 +292,8 @@ export default function SuperAdminDashboard() {
               <Activity className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <h4 className="font-bold">سجل النشاطات</h4>
-              <p className="text-xs text-gray-500">تتبع عمليات النظام</p>
+              <h4 className="font-bold">{t('super_admin_dashboard.ui.kscxbg3')}</h4>
+              <p className="text-xs text-gray-500">{t('super_admin_dashboard.ui.kujequv')}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </div>

@@ -2,14 +2,16 @@
 import { ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { workflowSteps } from '../publicSite/content';
+import { useTranslation } from 'react-i18next';
 
 export default function PublicHowItWorksPage() {
+  const { t } = useTranslation('admin');
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <div className="grid gap-6 lg:grid-cols-[0.95fr,1.05fr] lg:items-start">
         <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">كيف يعمل</p>
-          <h1 className="mt-3 text-4xl font-black leading-tight">رحلة واضحة من تجهيز النشاط إلى تشغيله ثم عرضه للزوار</h1>
+          <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-300">{t('public_how_it_works_page.ui.kb77dqk')}</p>
+          <h1 className="mt-3 text-4xl font-black leading-tight">{t('public_how_it_works_page.ui.k6wrvof')}</h1>
           <p className="mt-4 text-sm leading-7 text-slate-300">
             المنصة تعمل كمسار واضح يبدأ من تجهيز البيانات، ثم البيع والمتابعة، ثم إظهار البراند والمنتجات للعميل بشكل احترافي.
           </p>
@@ -17,7 +19,7 @@ export default function PublicHowItWorksPage() {
           <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-amber-200">
               <Sparkles className="h-3.5 w-3.5" />
-              لماذا هذا الترتيب؟
+              {t('public_how_it_works_page.ui.k17s91c')}
             </div>
             <p className="mt-4 text-sm leading-7 text-slate-300">
               لأن النشاط الناجح لا يبدأ من الإعلان فقط، ولا من شاشة البيع فقط، بل من ترتيب البيانات ثم التشغيل ثم تقديم التجربة المناسبة للعميل.
@@ -26,9 +28,9 @@ export default function PublicHowItWorksPage() {
         </div>
 
         <div className="text-right">
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.2em]">المسار</p>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.2em]">{t('public_how_it_works_page.ui.kaax9cb')}</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
-            خطوات متتابعة توصل الزائر إلى صورة تشغيل كاملة
+            {t('public_how_it_works_page.ui.kxhf6ix')}
           </h2>
           <p className="app-text-soft mt-4 text-base leading-8 sm:text-lg">
             كل خطوة هنا تقرّبك من تشغيل أكثر تنظيمًا وتجربة أوضح للعميل، بدل العمل المتقطع بين أدوات وملفات كثيرة.
@@ -65,7 +67,7 @@ export default function PublicHowItWorksPage() {
       <div className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
           <div>
-            <h2 className="text-3xl font-black text-slate-950 dark:text-white">الخطوة الطبيعية التالية</h2>
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white">{t('public_how_it_works_page.ui.kyazfwe')}</h2>
             <p className="app-text-soft mt-3 max-w-3xl text-base leading-8">
               بعد رؤية المسار كاملًا، تصبح الخطوة التالية بسيطة: تجربة المنصة أو بدء الحساب على بيانات نشاطك بدل الاكتفاء بالقراءة فقط.
             </p>
@@ -76,13 +78,13 @@ export default function PublicHowItWorksPage() {
               to="/faq"
               className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
             >
-              الأسئلة الشائعة
+              {t('public_how_it_works_page.ui.kluu3hg')}
             </Link>
             <Link
               to="/login?mode=register"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
             >
-              ابدأ الآن
+              {t('public_how_it_works_page.ui.kl6w4j0')}
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>

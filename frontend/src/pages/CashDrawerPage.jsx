@@ -5,8 +5,10 @@ import { DollarSign, Clock, Lock, CheckCircle, AlertTriangle, History, TrendingU
 import { Button, Card, Input, Modal, LoadingSpinner, EmptyState, Badge } from '../components/UI';
 import Pagination from '../components/Pagination';
 import { useAuthStore } from '../store';
+import { useTranslation } from 'react-i18next';
 
 export default function CashDrawerPage() {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
   const [activeShift, setActiveShift] = useState(null);
   const [history, setHistory] = useState([]);
@@ -33,7 +35,7 @@ export default function CashDrawerPage() {
       setHistory(historyRes.data.data);
       setPagination(historyRes.data.pagination);
     } catch (err) {
-      toast.error('فشل تحميل بيانات الخزينة');
+      toast.error(t('cash_drawer_page.toasts.kbxi5nn'));
     } finally {
       setLoading(false);
     }
@@ -46,11 +48,11 @@ export default function CashDrawerPage() {
   const handleOpenShift = async () => {
     try {
       await api.post('/cash-shifts/open', { openingBalance: Number(openingBalance) });
-      toast.success('تم فتح الوردية');
+      toast.success(t('cash_drawer_page.toasts.klrwc8p'));
       setShowOpenModal(false);
       fetchDat();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'خطأ');
+      toast.error(err.response?.data?.message || t('cash_drawer_page.toasts.kxoca'));
     }
   };
 
@@ -60,12 +62,12 @@ export default function CashDrawerPage() {
         actualCash: Number(closingForm.actualCash),
         notes: closingForm.notes
       });
-      toast.success('تم إغلاق الوردية');
+      toast.success(t('cash_drawer_page.toasts.kpua9ar'));
       setShowCloseModal(false);
       setClosingForm({ actualCash: 0, notes: '' });
       fetchDat();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'خطأ');
+      toast.error(err.response?.data?.message || t('cash_drawer_page.toasts.kxoca'));
     }
   };
 
@@ -81,23 +83,23 @@ export default function CashDrawerPage() {
               <Wallet className="h-3.5 w-3.5" />
               Cash Control Center
             </div>
-            <h1 className="mt-4 bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">إدارة الخزينة والورديات</h1>
+            <h1 className="mt-4 bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">{t('cash_drawer_page.ui.kslfn1')}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
-              {user?.role === 'admin' || user?.isSuperAdmin ? 'متابعة نقدية الفروع والموظفين مع قراءة أسرع للسجل والانحرافات على الموبايل.' : 'إدارة ورديتك ومبيعاتك اليومية من شاشة أخف وأسهل في الاستخدام.'}
+              {user?.role === 'admin' || user?.isSuperAdmin ? t('cash_drawer_page.ui.kr5ld1y') : 'إدارة ورديتك ومبيعاتك اليومية من شاشة أخف وأسهل في الاستخدام.'}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">الحالة الحالية</p>
-              <p className="mt-2 text-lg font-black">{activeShift ? 'وردية مفتوحة' : 'لا توجد وردية'}</p>
+              <p className="text-xs font-bold text-white/65">{t('cash_drawer_page.ui.k2hkmtk')}</p>
+              <p className="mt-2 text-lg font-black">{activeShift ? t('cash_drawer_page.ui.ke4t9wv') : 'لا توجد وردية'}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">سجل الورديات</p>
+              <p className="text-xs font-bold text-white/65">{t('cash_drawer_page.ui.kt9ioft')}</p>
               <p className="mt-2 text-2xl font-black">{history.length}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">انحرافات مسجلة</p>
+              <p className="text-xs font-bold text-white/65">{t('cash_drawer_page.ui.ken05wj')}</p>
               <p className="mt-2 text-2xl font-black">{varianceIssues}</p>
             </div>
           </div>
@@ -110,9 +112,9 @@ export default function CashDrawerPage() {
           {!activeShift ? (
             <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-8 text-center text-white shadow-xl shadow-slate-950/20 transition-transform duration-300 motion-safe:hover:-translate-y-1">
               <Lock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <h2 className="text-2xl font-bold mb-2">لا توجد وردية مفتوحة</h2>
-              <p className="text-gray-400 mb-6">يجب فتح وردية جديدة لبدء تسجيل المبيعات النقدية</p>
-              <Button size="lg" onClick={() => setShowOpenModal(true)} icon={<DollarSign />}>فتح وردية جديدة</Button>
+              <h2 className="text-2xl font-bold mb-2">{t('cash_drawer_page.ui.kbcbq0j')}</h2>
+              <p className="text-gray-400 mb-6">{t('cash_drawer_page.ui.kiuu0ik')}</p>
+              <Button size="lg" onClick={() => setShowOpenModal(true)} icon={<DollarSign />}>{t('cash_drawer_page.ui.kvwgy2y')}</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -121,24 +123,24 @@ export default function CashDrawerPage() {
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h2 className="text-lg font-bold opacity-90">الوردية الحالية</h2>
+                      <h2 className="text-lg font-bold opacity-90">{t('cash_drawer_page.ui.kmu2o98')}</h2>
                       <p className="text-sm opacity-75">{new Date(activeShift.startTime).toLocaleString('ar-EG')}</p>
                     </div>
-                    <Badge className="bg-white/20 text-white border-0">مفتوحة ✅</Badge>
+                    <Badge className="bg-white/20 text-white border-0">{t('cash_drawer_page.ui.k1gg77p')}</Badge>
                   </div>
                   
                   <div className="space-y-4">
                     <div className="flex justify-between items-center p-3 bg-black/10 rounded-xl">
                       <div className="flex items-center gap-2">
                         <Wallet className="w-4 h-4 opacity-80" />
-                        <span className="text-sm font-medium opacity-80">الرصيد الافتتاحي</span>
+                        <span className="text-sm font-medium opacity-80">{t('cash_drawer_page.ui.kbu3ryl')}</span>
                       </div>
                       <span className="font-bold text-lg">{fmt(activeShift.openingBalance)}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-black/10 rounded-xl">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 opacity-80" />
-                        <span className="text-sm font-medium opacity-80">مبيعات نقدية (مسجلة)</span>
+                        <span className="text-sm font-medium opacity-80">{t('cash_drawer_page.ui.kvl473f')}</span>
                       </div>
                       <div className="text-right">
                          <span className="font-bold text-lg text-green-200">+{fmt(activeShift.currentSales)}</span>
@@ -150,7 +152,7 @@ export default function CashDrawerPage() {
                       </div>
                     </div>
                     <div className="pt-2 border-t border-white/10 flex justify-between items-center">
-                       <span className="text-lg font-bold">المتوقع في الدرج</span>
+                       <span className="text-lg font-bold">{t('cash_drawer_page.ui.klk2k5j')}</span>
                        <span className="text-3xl font-black">{fmt(activeShift.expectedNow)}</span>
                     </div>
                   </div>
@@ -161,7 +163,7 @@ export default function CashDrawerPage() {
                       className="w-full bg-white/10 hover:bg-white/20 border-0 text-white backdrop-blur-sm"
                       onClick={() => setShowCloseModal(true)}
                     >
-                      إغلاق الوردية
+                      {t('cash_drawer_page.ui.krd2e8e')}
                     </Button>
                   </div>
                 </div>
@@ -170,7 +172,7 @@ export default function CashDrawerPage() {
               <Card className="app-surface-muted flex flex-col justify-center items-center text-center space-y-4 p-6">
                 <Clock className="w-12 h-12 text-primary-500" />
                 <div>
-                   <h3 className="text-xl font-bold">زمن الوردية</h3>
+                   <h3 className="text-xl font-bold">{t('cash_drawer_page.ui.kplbi5h')}</h3>
                    <p className="text-gray-500">مفتوحة منذ {Math.floor((new Date() - new Date(activeShift.startTime)) / 1000 / 60)} دقيقة</p>
                 </div>
                 {/* Motivation for Staff */}
@@ -183,13 +185,13 @@ export default function CashDrawerPage() {
 
           {/* History Table */}
           <div className="mt-10">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="w-5 h-5" /> {user?.role === 'admin' ? 'سجل ورديات الموظفين' : 'سجل وردياتي السابق'}</h3>
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="w-5 h-5" /> {user?.role === 'admin' ? t('cash_drawer_page.ui.kapdjxz') : 'سجل وردياتي السابق'}</h3>
             <Card className="overflow-hidden rounded-3xl">
                <div className="space-y-3 p-4 md:hidden">
                  {history.length === 0 ? (
                    <EmptyState
                      icon={History}
-                     title="لا يوجد سجل سابق"
+                     title={t('cash_drawer_page.titles.k24yftn')}
                      description="ستظهر الورديات المغلقة السابقة هنا بمجرد إتمام أول وردية."
                      className="py-4"
                    />
@@ -201,7 +203,7 @@ export default function CashDrawerPage() {
                          <p className="mt-1 text-[11px] text-gray-400">{new Date(shift.startTime).toLocaleDateString('ar-EG')}</p>
                        </div>
                        {shift.variance === 0 ? (
-                         <Badge variant="success">مطابق ✅</Badge>
+                         <Badge variant="success">{t('cash_drawer_page.ui.krr8u24')}</Badge>
                        ) : shift.variance < 0 ? (
                          <Badge variant="danger" className="dir-ltr">عجز {fmt(shift.variance)}</Badge>
                        ) : (
@@ -211,11 +213,11 @@ export default function CashDrawerPage() {
 
                      <div className="mt-3 grid grid-cols-2 gap-2">
                        <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
-                         <p className="text-[10px] text-gray-400">الفتح</p>
+                         <p className="text-[10px] text-gray-400">{t('cash_drawer_page.ui.kove7mv')}</p>
                          <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{new Date(shift.startTime).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'})}</p>
                        </div>
                        <div className="rounded-xl bg-white px-3 py-2 text-center dark:bg-gray-900/70">
-                         <p className="text-[10px] text-gray-400">الإغلاق</p>
+                         <p className="text-[10px] text-gray-400">{t('cash_drawer_page.ui.kz9gwp9')}</p>
                          <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{shift.endTime ? new Date(shift.endTime).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '—'}</p>
                        </div>
                      </div>
@@ -227,12 +229,12 @@ export default function CashDrawerPage() {
                  <table className="w-full text-right text-sm">
                    <thead className="bg-black/[0.02] dark:bg-white/[0.03]">
                      <tr>
-                       <th className="p-4">التاريخ</th>
-                       <th className="p-4">الموظف</th>
-                       <th className="p-4">الفتح</th>
-                       <th className="p-4">الإغلاق</th>
-                       <th className="p-4">المبيعات</th>
-                       <th className="p-4">العجز/الزيادة</th>
+                       <th className="p-4">{t('cash_drawer_page.ui.kzbvdnf')}</th>
+                       <th className="p-4">{t('cash_drawer_page.ui.kaawtcn')}</th>
+                       <th className="p-4">{t('cash_drawer_page.ui.kove7mv')}</th>
+                       <th className="p-4">{t('cash_drawer_page.ui.kz9gwp9')}</th>
+                       <th className="p-4">{t('cash_drawer_page.ui.ksgkw32')}</th>
+                       <th className="p-4">{t('cash_drawer_page.ui.k2avu01')}</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-gray-100/80 dark:divide-white/5">
@@ -241,7 +243,7 @@ export default function CashDrawerPage() {
                          <td colSpan="6" className="p-4">
                            <EmptyState
                              icon={History}
-                             title="لا يوجد سجل سابق"
+                             title={t('cash_drawer_page.titles.k24yftn')}
                              description="ستظهر الورديات المغلقة السابقة هنا بمجرد إتمام أول وردية."
                              className="py-4"
                            />
@@ -256,7 +258,7 @@ export default function CashDrawerPage() {
                          <td className="p-4 font-bold text-emerald-600">{fmt(shift.totalCashSales)}</td>
                          <td className="p-4">
                            {shift.variance === 0 ? (
-                             <Badge variant="success">مطابق ✅</Badge>
+                             <Badge variant="success">{t('cash_drawer_page.ui.krr8u24')}</Badge>
                            ) : shift.variance < 0 ? (
                              <Badge variant="danger" className="dir-ltr">عجز {fmt(shift.variance)}</Badge>
                            ) : (
@@ -275,24 +277,24 @@ export default function CashDrawerPage() {
       )}
 
       {/* Open Modal */}
-      <Modal open={showOpenModal} onClose={() => setShowOpenModal(false)} title="فتح وردية جديدة">
+      <Modal open={showOpenModal} onClose={() => setShowOpenModal(false)} title={t('cash_drawer_page.titles.kvwgy2y')}>
         <div className="space-y-4">
           <Input 
-            label="الرصيد الافتتاحي (كم يوجد في الدرج الآن؟)"
+            label={t('cash_drawer_page.form.k30bn47')}
             type="number"
             value={openingBalance}
             onChange={(e) => setOpeningBalance(e.target.value)}
             className="text-lg font-bold"
           />
-          <Button onClick={handleOpenShift} className="w-full" size="lg">بدء الوردية</Button>
+          <Button onClick={handleOpenShift} className="w-full" size="lg">{t('cash_drawer_page.ui.ksh4ide')}</Button>
         </div>
       </Modal>
 
       {/* Close Modal */}
-      <Modal open={showCloseModal} onClose={() => setShowCloseModal(false)} title="إغلاق الوردية">
+      <Modal open={showCloseModal} onClose={() => setShowCloseModal(false)} title={t('cash_drawer_page.titles.krd2e8e')}>
         <div className="space-y-4">
           <div className="app-surface-muted rounded-2xl border border-dashed border-gray-300/80 p-4 text-center dark:border-white/10">
-             <p className="text-gray-500 text-sm mb-1">المبلغ المتوقع في الدرج</p>
+             <p className="text-gray-500 text-sm mb-1">{t('cash_drawer_page.ui.koh94yl')}</p>
              <p className="text-4xl font-black text-gray-800 dark:text-gray-100">{activeShift && fmt(activeShift.expectedNow)}</p>
           </div>
           
@@ -301,7 +303,7 @@ export default function CashDrawerPage() {
           </div>
 
           <Input 
-            label="النقدية الفعلية (بعد العد)"
+            label={t('cash_drawer_page.form.kprgfjd')}
             type="number"
             value={closingForm.actualCash}
             onChange={(e) => setClosingForm({...closingForm, actualCash: e.target.value})}
@@ -321,13 +323,13 @@ export default function CashDrawerPage() {
           )}
 
           <Input 
-            label="ملاحظات (اختياري)"
+            label={t('cash_drawer_page.form.ki8iche')}
             value={closingForm.notes}
             onChange={(e) => setClosingForm({...closingForm, notes: e.target.value})}
-            placeholder="مثال: تم صرف 50 ريال للصيانة..."
+            placeholder={t('cash_drawer_page.placeholders.kb1stqj')}
           />
 
-          <Button onClick={handleCloseShift} variant="danger" className="w-full" size="lg">تأكيد الإغلاق وترحيل المبالغ</Button>
+          <Button onClick={handleCloseShift} variant="danger" className="w-full" size="lg">{t('cash_drawer_page.ui.kn2vh7r')}</Button>
         </div>
       </Modal>
     </div>

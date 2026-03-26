@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     TrendingUp, Users, DollarSign, Activity, ArrowUpRight,
     ArrowDownRight, BarChart3, UserCheck, UserX
@@ -9,6 +10,7 @@ import { notify } from '../components/AnimatedNotification';
 import { useThemeStore } from '../store';
 
 export default function RevenueAnalyticsPage() {
+  const { t } = useTranslation('admin');
     const { dark } = useThemeStore();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function RevenueAnalyticsPage() {
             const res = await api.get('/admin/analytics/revenue');
             setData(res.data.data);
         } catch (err) {
-            notify.error('فشل تحميل تحليلات الإيرادات');
+            notify.error(t('revenue_analytics_page.toasts.kgszud7'));
         } finally {
             setLoading(false);
         }
@@ -35,9 +37,9 @@ export default function RevenueAnalyticsPage() {
         return (
             <EmptyState
                 icon={BarChart3}
-                title="لا توجد بيانات"
+                title={t('revenue_analytics_page.titles.km3iafu')}
                 description="تعذر تحميل تحليلات الإيرادات حاليًا. جرّب التحديث مرة أخرى."
-                action={{ label: 'إعادة المحاولة', onClick: fetchAnalytics }}
+                action={{ label: t('revenue_analytics_page.ui.k267yxq'), onClick: fetchAnalytics }}
             />
         );
     }
@@ -52,8 +54,8 @@ export default function RevenueAnalyticsPage() {
                     <BarChart3 className="w-6 h-6" />
                 </div>
                 <div>
-                    <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>تحليلات الإيرادات</h1>
-                    <p className="text-sm text-gray-400">ملخص أداء المنصة والمقاييس الرئيسية</p>
+                    <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('revenue_analytics_page.ui.k3zdiqg')}</h1>
+                    <p className="text-sm text-gray-400">{t('revenue_analytics_page.ui.k7xfpty')}</p>
                 </div>
             </div>
 
@@ -66,13 +68,13 @@ export default function RevenueAnalyticsPage() {
                     color="from-green-500 to-emerald-600"
                 />
                 <KPICard
-                    dark={dark} icon={Users} label="المتاجر المسجلة"
+                    dark={dark} icon={Users} label={t('revenue_analytics_page.form.k288n8w')}
                     value={data.tenants?.total}
                     sub={`مدفوع: ${data.tenants?.paid} | تجريبي: ${data.tenants?.trial}`}
                     color="from-blue-500 to-indigo-600"
                 />
                 <KPICard
-                    dark={dark} icon={UserCheck} label="معدل التحويل"
+                    dark={dark} icon={UserCheck} label={t('revenue_analytics_page.form.kewoh79')}
                     value={`${data.conversion?.rate || 0}%`}
                     sub="Trial → Paid"
                     color="from-purple-500 to-violet-600"
@@ -94,11 +96,11 @@ export default function RevenueAnalyticsPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="app-surface-muted rounded-2xl p-4">
-                            <p className="text-sm text-gray-400 mb-1">يومي (DAU)</p>
+                            <p className="text-sm text-gray-400 mb-1">{t('revenue_analytics_page.ui.kce1p9g')}</p>
                             <p className="text-3xl font-bold">{data.activity?.dau || 0}</p>
                         </div>
                         <div className="app-surface-muted rounded-2xl p-4">
-                            <p className="text-sm text-gray-400 mb-1">أسبوعي (WAU)</p>
+                            <p className="text-sm text-gray-400 mb-1">{t('revenue_analytics_page.ui.khrfy2h')}</p>
                             <p className="text-3xl font-bold">{data.activity?.wau || 0}</p>
                         </div>
                     </div>
@@ -111,11 +113,11 @@ export default function RevenueAnalyticsPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="app-surface-muted rounded-2xl p-4">
-                            <p className="text-sm text-gray-400 mb-1">هذا الشهر</p>
+                            <p className="text-sm text-gray-400 mb-1">{t('revenue_analytics_page.ui.kze6jsv')}</p>
                             <p className="text-2xl font-bold">{fmt(data.revenue?.thisMonth)} جنيه</p>
                         </div>
                         <div className="app-surface-muted rounded-2xl p-4">
-                            <p className="text-sm text-gray-400 mb-1">الشهر الماضي</p>
+                            <p className="text-sm text-gray-400 mb-1">{t('revenue_analytics_page.ui.k47lnke')}</p>
                             <p className="text-2xl font-bold">{fmt(data.revenue?.lastMonth)} جنيه</p>
                         </div>
                     </div>
@@ -128,7 +130,7 @@ export default function RevenueAnalyticsPage() {
                         <span className={`font-bold text-lg ${data.revenue?.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {data.revenue?.growth || 0}%
                         </span>
-                        <span className="text-sm text-gray-400">نمو الإيرادات</span>
+                        <span className="text-sm text-gray-400">{t('revenue_analytics_page.ui.kyjcbwj')}</span>
                     </div>
                 </div>
             </div>
@@ -136,7 +138,7 @@ export default function RevenueAnalyticsPage() {
             {/* Growth Over Time */}
             {data.growthOverTime?.length > 0 && (
                 <div className="app-surface rounded-3xl p-6">
-                    <h3 className="text-lg font-bold mb-4">نمو المتاجر الجديدة (آخر 6 شهور)</h3>
+                    <h3 className="text-lg font-bold mb-4">{t('revenue_analytics_page.ui.ktywa1j')}</h3>
                     <div className="flex items-end gap-3 h-40">
                         {data.growthOverTime.map((item, idx) => {
                             const maxCount = Math.max(...data.growthOverTime.map(g => g.count));

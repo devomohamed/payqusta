@@ -1,10 +1,12 @@
 import React from 'react';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { offlineSync } from '../utils/offlineSync';
 import { notify } from './AnimatedNotification';
 
 export default function OfflineIndicator() {
+  const { t } = useTranslation('admin');
   const { isOnline, wasOffline } = useOnlineStatus();
   const [syncing, setSyncing] = React.useState(false);
   const [pendingCount, setPendingCount] = React.useState(0);
@@ -14,12 +16,12 @@ export default function OfflineIndicator() {
 
   React.useEffect(() => {
     if (isOnline && wasOffline) {
-      notify.success('تم الاتصال بالإنترنت');
+      notify.success(t('offline_indicator.toasts.online'));
       handleSync();
     } else if (!isOnline) {
-      notify.warning('أنت غير متصل بالإنترنت');
+      notify.warning(t('offline_indicator.toasts.offline'));
     }
-  }, [isOnline, wasOffline]);
+  }, [isOnline, t, wasOffline]);
 
   const loadPendingCount = async () => {
     try {
@@ -30,7 +32,7 @@ export default function OfflineIndicator() {
 
   const handleSync = async () => {
     if (!isOnline) {
-      notify.error('لا يمكن المزامنة بدون اتصال');
+      notify.error(t('offline_indicator.toasts.sync_requires_online'));
       return;
     }
 
@@ -40,11 +42,11 @@ export default function OfflineIndicator() {
       const successful = results.filter(r => r.success).length;
       
       if (successful > 0) {
-        notify.success(`تم مزامنة ${successful} عملية`);
+        notify.success(t('offline_indicator.toasts.sync_success', { count: successful }));
         loadPendingCount();
       }
     } catch (err) {
-      notify.error('فشلت المزامنة');
+      notify.error(t('offline_indicator.toasts.sync_failed'));
     } finally {
       setSyncing(false);
     }
@@ -66,9 +68,9 @@ export default function OfflineIndicator() {
         )}
         
         <div className="text-sm font-medium">
-          {isOnline ? 'متصل' : 'غير متصل'}
+          {isOnline ? t('offline_indicator.status.online') : t('offline_indicator.status.offline')}
           {pendingCount > 0 && (
-            <span className="mr-2">({pendingCount} في الانتظار)</span>
+            <span className="mr-2">({t('offline_indicator.status.pending', { count: pendingCount })})</span>
           )}
         </div>
 

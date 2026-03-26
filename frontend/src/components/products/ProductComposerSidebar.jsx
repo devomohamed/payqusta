@@ -1,10 +1,12 @@
 import React from 'react';
 import { Package, Tag, DollarSign, Layers } from 'lucide-react';
 import { Badge } from '../UI';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductComposerSidebar({ form, categories = [] }) {
+  const { t } = useTranslation('admin');
     // Find category name
-    const categoryName = categories.find(c => c._id === form.category)?.name || 'بدون قسم';
+    const categoryName = categories.find(c => c._id === form.category)?.name || t('product_composer_sidebar.toasts.kmn6v53');
 
     // Calculate Profit
     const price = Number(form.price) || 0;
@@ -18,7 +20,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
     return (
         <div className="app-surface-muted w-full lg:w-80 shrink-0 border-l border-gray-100/80 dark:border-white/10 p-6 flex flex-col gap-6 overflow-y-auto">
             <div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">ملخص المنتج</h3>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">{t('product_composer_sidebar.ui.ksisqw6')}</h3>
 
                 {/* Main Preview Card */}
                 <div className="app-surface rounded-2xl p-4 shadow-sm border border-gray-100/80 dark:border-white/10 mb-6">
@@ -31,7 +33,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                     </div>
 
                     <h4 className="font-bold text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
-                        {form.name || 'اسم المنتج...'}
+                        {form.name || t('product_composer_sidebar.toasts.k6yhfeh')}
                     </h4>
                     <p className="text-primary-600 font-black text-lg">
                         {price.toLocaleString('en-US')} ج.م
@@ -43,7 +45,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                     <div className="app-surface flex items-center justify-between p-3 rounded-xl border border-gray-100/80 dark:border-white/10">
                         <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">القسم</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('product_composer_sidebar.ui.kove8lz')}</span>
                         </div>
                         <span className="text-sm font-bold truncate max-w-[120px]">{categoryName}</span>
                     </div>
@@ -51,7 +53,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                     <div className="app-surface flex items-center justify-between p-3 rounded-xl border border-gray-100/80 dark:border-white/10">
                         <div className="flex items-center gap-2">
                             <Layers className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">الموديلات</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('product_composer_sidebar.ui.kf5q0wk')}</span>
                         </div>
                         <Badge variant={variantsCount > 0 ? 'primary' : 'gray'}>
                             {variantsCount} موديل
@@ -61,7 +63,7 @@ export default function ProductComposerSidebar({ form, categories = [] }) {
                     <div className="app-surface flex items-center justify-between p-3 rounded-xl border border-gray-100/80 dark:border-white/10">
                         <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">الربح المتوقع</span>
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('product_composer_sidebar.ui.ky5xdu2')}</span>
                         </div>
                         <div className="text-left">
                             <p className={`text-sm font-bold ${profit > 0 ? 'text-emerald-600' : profit < 0 ? 'text-red-600' : 'text-gray-500'}`}>

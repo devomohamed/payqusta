@@ -199,7 +199,7 @@ export default function ProductPricingStep({
       <section className="app-surface rounded-2xl border border-gray-100/80 p-6 shadow-sm dark:border-white/10">
         <h3 className="mb-6 flex items-center gap-2 text-lg font-bold app-text-strong">
           <DollarSign className="h-5 w-5 text-emerald-500" />
-          التسعير الأساسي
+          {t('product_pricing_step.ui.kgq29qj')}
         </h3>
 
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -208,7 +208,7 @@ export default function ProductPricingStep({
             name="price"
             type="number"
             min="0"
-            label="سعر البيع *"
+            label={t('product_pricing_step.form.ksc168h')}
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             placeholder="0.00"
@@ -219,7 +219,7 @@ export default function ProductPricingStep({
             name="compareAtPrice"
             type="number"
             min="0"
-            label="السعر قبل الخصم"
+            label={t('product_pricing_step.form.kgjuv65')}
             value={form.compareAtPrice}
             onChange={(e) => setForm({ ...form, compareAtPrice: e.target.value })}
             placeholder="0.00"
@@ -234,7 +234,7 @@ export default function ProductPricingStep({
             name="costPrice"
             type="number"
             min="0"
-            label="سعر التكلفة"
+            label={t('product_pricing_step.form.ksb0r33')}
             value={form.costPrice}
             onChange={(e) => setForm({ ...form, costPrice: e.target.value })}
             placeholder="0.00"
@@ -246,7 +246,7 @@ export default function ProductPricingStep({
             name="wholesalePrice"
             type="number"
             min="0"
-            label="سعر الجملة"
+            label={t('product_pricing_step.form.kq47440')}
             value={form.wholesalePrice}
             onChange={(e) => setForm({ ...form, wholesalePrice: e.target.value })}
             placeholder="0.00"
@@ -257,25 +257,25 @@ export default function ProductPricingStep({
         <div className="app-surface-muted mt-8 rounded-xl border border-gray-100/80 p-4 dark:border-white/10">
           <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold app-text-muted">
             <TrendingUp className="h-4 w-4" />
-            ملخص الربحية
+            {t('product_pricing_step.ui.kw4xfb6')}
           </h4>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-              <p className="mb-1 text-xs app-text-muted">صافي الربح</p>
+              <p className="mb-1 text-xs app-text-muted">{t('product_pricing_step.ui.krtt038')}</p>
               <p className={`text-lg font-black ${profit > 0 ? 'text-emerald-600' : profit < 0 ? 'text-red-500' : 'app-text-strong'}`}>
                 {profit > 0 ? '+' : ''}
                 {profit.toLocaleString('en-US')} ج.م
               </p>
             </div>
             <div>
-              <p className="mb-1 text-xs app-text-muted">هامش الربح</p>
+              <p className="mb-1 text-xs app-text-muted">{t('product_pricing_step.ui.kp72kvs')}</p>
               <p className={`text-lg font-black ${margin > 0 ? 'text-emerald-600' : margin < 0 ? 'text-red-500' : 'app-text-strong'}`}>
                 {margin}%
               </p>
             </div>
             {discount > 0 && (
               <div>
-                <p className="mb-1 text-xs app-text-muted">نسبة الخصم</p>
+                <p className="mb-1 text-xs app-text-muted">{t('product_pricing_step.ui.ksdqr5d')}</p>
                 <Badge variant="danger" className="py-1 text-sm">-{discount.toFixed(0)}%</Badge>
               </div>
             )}
@@ -288,7 +288,7 @@ export default function ProductPricingStep({
           <div>
             <h3 className="flex items-center gap-2 text-lg font-bold app-text-strong">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              المخزون والتوفر حسب الفرع
+              {t('product_pricing_step.ui.ki9v8fp')}
             </h3>
             <p className="mt-2 text-sm leading-7 app-text-muted">
               الكمية لا تعني وحدها أن المنتج متاح للبيع. من هنا تحدد لكل فرع هل المنتج ظاهر ومتّاح في نقطة البيع أو الأونلاين.
@@ -309,7 +309,7 @@ export default function ProductPricingStep({
               }}
             >
               <Plus className="h-4 w-4" />
-              إضافة فرع
+              {t('product_pricing_step.ui.km2iaqh')}
             </Button>
           )}
         </div>
@@ -334,14 +334,14 @@ export default function ProductPricingStep({
                 <div key={`${branchId || 'branch'}-${index}`} className="overflow-hidden rounded-2xl border border-[color:var(--surface-border)] app-surface-muted">
                   <div className="grid grid-cols-1 gap-4 border-b border-[color:var(--surface-border)] p-4 lg:grid-cols-12">
                     <div className="lg:col-span-4">
-                      <label className="mb-1.5 block text-sm font-medium app-text-soft">الفرع</label>
+                      <label className="mb-1.5 block text-sm font-medium app-text-soft">{t('product_pricing_step.ui.kove7t8')}</label>
                       <select
                         className="app-surface app-field w-full rounded-xl px-3 py-2.5 text-sm app-text-body"
                         value={branchId}
                         disabled={isBranchScopedUser}
                         onChange={(e) => updateInventoryRow(index, 'branch', e.target.value)}
                       >
-                        <option value="">اختر فرعًا</option>
+                        <option value="">{t('product_pricing_step.ui.kswi1al')}</option>
                         {branchOptions.map((branch) => {
                           const optionId = String(branch._id);
                           const usedElsewhere = (form.inventory || []).some(
@@ -359,7 +359,7 @@ export default function ProductPricingStep({
                       <Input
                         type="number"
                         min="0"
-                        label="الكمية"
+                        label={t('product_pricing_step.form.kaay54y')}
                         value={inv.quantity}
                         onChange={(e) => updateInventoryRow(index, 'quantity', e.target.value)}
                         placeholder="0"
@@ -369,7 +369,7 @@ export default function ProductPricingStep({
                       <Input
                         type="number"
                         min="0"
-                        label="حد التنبيه"
+                        label={t('product_pricing_step.form.k25bob6')}
                         value={inv.minQuantity}
                         onChange={(e) => updateInventoryRow(index, 'minQuantity', e.target.value)}
                         placeholder="5"
@@ -391,17 +391,17 @@ export default function ProductPricingStep({
                   <div className="space-y-4 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <ToggleChip
-                        label="متاح في الفرع"
+                        label={t('product_pricing_step.form.k59btqu')}
                         checked={availability.isAvailableInBranch}
                         onChange={(value) => updateAvailabilityRow(branchId, 'isAvailableInBranch', value)}
                       />
                       <ToggleChip
-                        label="يُباع في POS"
+                        label={t('product_pricing_step.form.kd3je60')}
                         checked={availability.isSellableInPos}
                         onChange={(value) => updateAvailabilityRow(branchId, 'isSellableInPos', value)}
                       />
                       <ToggleChip
-                        label="يُباع أونلاين"
+                        label={t('product_pricing_step.form.ktv0u39')}
                         checked={availability.isSellableOnline}
                         onChange={(value) => updateAvailabilityRow(branchId, 'isSellableOnline', value)}
                       />
@@ -419,7 +419,7 @@ export default function ProductPricingStep({
                       <Input
                         type="number"
                         min="0"
-                        label="احتياطي الأونلاين"
+                        label={t('product_pricing_step.form.kptqdrd')}
                         value={availability.onlineReserveQty}
                         onChange={(e) => updateAvailabilityRow(branchId, 'onlineReserveQty', e.target.value)}
                         placeholder="0"
@@ -427,7 +427,7 @@ export default function ProductPricingStep({
                       <Input
                         type="number"
                         min="1"
-                        label="أولوية الفرع"
+                        label={t('product_pricing_step.form.k7b0qs4')}
                         value={availability.priorityRank}
                         onChange={(e) => updateAvailabilityRow(branchId, 'priorityRank', e.target.value)}
                         placeholder="100"
@@ -435,8 +435,8 @@ export default function ProductPricingStep({
                     </div>
 
                     <div className="rounded-xl border border-dashed border-[color:var(--surface-border)] px-4 py-3 text-xs leading-6 app-text-muted">
-                      إذا كان المنتج موجودًا في المخزون لكن <strong className="app-text-body">غير متاح في الفرع</strong> فلن يعتبره النظام صالحًا للبيع من هذا الفرع.
-                      ويمكنك تعطيل البيع الأونلاين فقط مع الإبقاء على البيع في POS أو العكس حسب احتياج التشغيل.
+                      إذا كان المنتج موجودًا في المخزون لكن <strong className="app-text-body">{t('product_pricing_step.ui.kr008ff')}</strong> فلن يعتبره النظام صالحًا للبيع من هذا الفرع.
+                      {t('product_pricing_step.ui.ka6miji')}
                     </div>
                   </div>
                 </div>
@@ -447,13 +447,13 @@ export default function ProductPricingStep({
               <div className="app-surface-muted rounded-xl border border-dashed border-gray-300/80 py-8 text-center dark:border-white/10">
                 <Store className="mx-auto mb-3 h-8 w-8 app-text-muted" />
                 <p className="text-sm app-text-muted">
-                  {isBranchScopedUser ? 'جارٍ تجهيز ربط المنتج بفرعك...' : 'أضف فرعًا أولًا لتحديد المخزون وإعدادات التوفر الخاصة به.'}
+                  {isBranchScopedUser ? t('product_pricing_step.ui.kvkvmpc') : 'أضف فرعًا أولًا لتحديد المخزون وإعدادات التوفر الخاصة به.'}
                 </p>
               </div>
             )}
 
             <div className="flex items-center justify-between rounded-xl border border-primary-100 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/10">
-              <span className="text-sm font-bold text-primary-700 dark:text-primary-300">إجمالي الكمية في كل الفروع</span>
+              <span className="text-sm font-bold text-primary-700 dark:text-primary-300">{t('product_pricing_step.ui.k3vge3b')}</span>
               <span className="text-lg font-black text-primary-700 dark:text-primary-300">{totalBranchQuantity} قطعة</span>
             </div>
           </div>
@@ -462,7 +462,7 @@ export default function ProductPricingStep({
         <div className="mt-6 md:w-1/2">
           <Input
             type="date"
-            label="تاريخ الصلاحية"
+            label={t('product_pricing_step.form.koj289l')}
             value={form.expiryDate ? new Date(form.expiryDate).toISOString().split('T')[0] : ''}
             onChange={(e) => setForm({ ...form, expiryDate: e.target.value })}
           />
@@ -472,7 +472,7 @@ export default function ProductPricingStep({
       <section className="app-surface rounded-2xl border border-gray-100/80 p-6 shadow-sm dark:border-white/10">
         <h3 className="mb-6 flex items-center gap-2 text-lg font-bold app-text-strong">
           <Truck className="h-5 w-5 text-blue-500" />
-          الشحن والتوصيل
+          {t('product_pricing_step.ui.knttn3w')}
         </h3>
 
         <div className="flex flex-col gap-6">
@@ -484,9 +484,9 @@ export default function ProductPricingStep({
               className="h-5 w-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
             />
             <div>
-              <p className="font-bold app-text-strong">هذا المنتج يشحن مجانًا</p>
+              <p className="font-bold app-text-strong">{t('product_pricing_step.ui.k60r4u7')}</p>
               <p className="text-sm app-text-muted">
-                سيظهر للعميل كشحن مجاني، ولن تُضاف تكلفة شحن مستقلة لهذا المنتج.
+                {t('product_pricing_step.ui.kitsexh')}
               </p>
             </div>
           </label>
@@ -496,7 +496,7 @@ export default function ProductPricingStep({
               <Input
                 type="number"
                 min="0"
-                label="تكلفة الشحن الثابتة"
+                label={t('product_pricing_step.form.k1p9cbz')}
                 value={form.shippingCost}
                 onChange={(e) => setForm({ ...form, shippingCost: e.target.value })}
                 placeholder="0.00"

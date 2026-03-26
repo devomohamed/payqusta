@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   TrendingUp,
   FileText,
@@ -24,6 +25,7 @@ import { StatCard, Card, Badge, EmptyState, LoadingSpinner } from '../components
 import AIStockWidget from '../components/AIStockWidget';
 
 export default function DashboardPage() {
+  const { t } = useTranslation('admin');
   const { user, getBranches, can } = useAuthStore();
   const [data, setData] = useState(null);
   const [collections, setCollections] = useState(null);
@@ -80,7 +82,7 @@ export default function DashboardPage() {
       to: '/customers',
       icon: Users,
       value: data.customers?.total || 0,
-      label: 'العملاء',
+      label: t('dashboard_page.ui.kzgg8kr'),
       accentClass: 'bg-primary-50 dark:bg-primary-500/10',
       iconClass: 'text-primary-600 dark:text-primary-300',
     },
@@ -89,7 +91,7 @@ export default function DashboardPage() {
       to: '/suppliers',
       icon: Truck,
       value: data.suppliers?.total || 0,
-      label: 'الموردون',
+      label: t('dashboard_page.ui.krzfmdg'),
       accentClass: 'bg-emerald-50 dark:bg-emerald-500/10',
       iconClass: 'text-emerald-600 dark:text-emerald-300',
     },
@@ -97,7 +99,7 @@ export default function DashboardPage() {
       key: 'stock-value',
       icon: DollarSign,
       value: fmt(data.stock?.totalValue || 0),
-      label: 'قيمة المخزون',
+      label: t('dashboard_page.ui.k3ma4dm'),
       accentClass: 'bg-amber-50 dark:bg-amber-500/10',
       iconClass: 'text-amber-600 dark:text-amber-300',
     },
@@ -105,7 +107,7 @@ export default function DashboardPage() {
       key: 'upcoming-installments',
       icon: Star,
       value: data.installments?.upcomingCount || 0,
-      label: 'أقساط قريبة',
+      label: t('dashboard_page.ui.ki4okg'),
       accentClass: 'bg-violet-50 dark:bg-violet-500/10',
       iconClass: 'text-violet-600 dark:text-violet-300',
     },
@@ -113,7 +115,7 @@ export default function DashboardPage() {
       key: 'quick-links',
       icon: Link2,
       value: `${fmt(data.quickCollections?.totalCollected || 0)} ج.م`,
-      label: 'تحصيل الروابط',
+      label: t('dashboard_page.ui.kkkgu8i'),
       subtext: `العمولة: ${fmt(data.quickCollections?.totalFees || 0)} ج.م`,
       accentClass: 'bg-indigo-50 dark:bg-indigo-500/10',
       iconClass: 'text-indigo-600 dark:text-indigo-300',
@@ -126,10 +128,10 @@ export default function DashboardPage() {
         <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-primary-500/10 via-primary-500/5 to-transparent pointer-events-none" />
         <div className="relative flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="max-w-3xl">
-            <p className="app-text-muted text-[11px] font-black uppercase tracking-[0.22em]">لوحة التحكم</p>
-            <h1 className="mt-2 text-xl font-black text-gray-900 dark:text-white sm:text-2xl lg:text-[2rem]">صورة سريعة لأداء المتجر</h1>
+            <p className="app-text-muted text-[11px] font-black uppercase tracking-[0.22em]">{t('dashboard_page.ui.krcr5uq')}</p>
+            <h1 className="mt-2 text-xl font-black text-gray-900 dark:text-white sm:text-2xl lg:text-[2rem]">{t('dashboard_page.ui.k9g9jd6')}</h1>
             <p className="app-text-soft mt-2 text-sm leading-7">
-              المؤشرات الأهم، المتحصلات، والمخزون في شاشة واحدة تساعدك على اتخاذ قرار أسرع.
+              {t('dashboard_page.ui.k9alu18')}
             </p>
           </div>
 
@@ -140,7 +142,7 @@ export default function DashboardPage() {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-amber-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl sm:w-auto sm:py-2.5"
               >
                 <Zap className="h-4 w-4" />
-                بيع سريع
+                {t('dashboard_page.ui.kbvlebu')}
               </Link>
             )}
             {can('reports', 'read') && (
@@ -149,7 +151,7 @@ export default function DashboardPage() {
                 className="app-surface-muted inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 transition-colors hover:bg-white dark:text-gray-100 dark:hover:bg-white/10 sm:w-auto sm:py-2.5"
               >
                 <BarChart3 className="h-4 w-4 text-violet-500" />
-                التقارير
+                {t('dashboard_page.ui.ku5zj1i')}
               </Link>
             )}
             {(user?.role === 'admin' || user?.isSuperAdmin) && branches.length > 0 && (
@@ -160,7 +162,7 @@ export default function DashboardPage() {
                   onChange={(e) => setSelectedBranch(e.target.value)}
                   className="min-w-0 flex-1 cursor-pointer border-none bg-transparent text-sm font-bold focus:ring-0 sm:flex-none"
                 >
-                  <option value="all">كل الفروع</option>
+                  <option value="all">{t('dashboard_page.ui.ki14stf')}</option>
                   {branches.map((branch) => (
                     <option key={branch._id} value={branch._id}>
                       {branch.name}
@@ -181,10 +183,10 @@ export default function DashboardPage() {
                 <CheckSquare className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] app-text-muted">تشغيل المتجر</p>
-                <h2 className="mt-2 text-xl font-black app-text-strong">أكمل الإعداد الأولي قبل التشغيل الفعلي</h2>
+                <p className="text-xs font-black uppercase tracking-[0.18em] app-text-muted">{t('dashboard_page.ui.k798myr')}</p>
+                <h2 className="mt-2 text-xl font-black app-text-strong">{t('dashboard_page.ui.kbzscwd')}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-7 app-text-muted">
-                  راجع بيانات المتجر، الهوية، الكتالوج، النسخ الاحتياطي، والمتجر العام من شاشة واحدة.
+                  {t('dashboard_page.ui.k3k00u9')}
                 </p>
               </div>
             </div>
@@ -195,14 +197,14 @@ export default function DashboardPage() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl"
               >
                 <CheckSquare className="h-4 w-4" />
-                فتح قائمة الإعداد
+                {t('dashboard_page.ui.kd6has1')}
               </Link>
               <Link
                 to="/backup"
                 className="app-surface-muted inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-white dark:text-gray-100 dark:hover:bg-white/10"
               >
                 <Store className="h-4 w-4 text-emerald-500" />
-                النسخ الاحتياطي
+                {t('dashboard_page.ui.k4ssz6j')}
               </Link>
             </div>
           </div>
@@ -212,7 +214,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {can('reports', 'read') && (
           <StatCard
-            title="إجمالي المبيعات"
+            title={t('dashboard_page.titles.kflwesj')}
             value={`${fmt(data.sales?.totalSales)} ج.م`}
             icon={<TrendingUp className="w-5 h-5" />}
             change={`${data.sales?.invoiceCount || 0} فاتورة`}
@@ -221,7 +223,7 @@ export default function DashboardPage() {
         )}
         {can('invoices', 'read') && (
           <StatCard
-            title="تم التحصيل"
+            title={t('dashboard_page.titles.kar7gk6')}
             value={`${fmt(data.sales?.totalPaid)} ج.م`}
             icon={<CreditCard className="w-5 h-5" />}
             change="المبالغ المحصلة"
@@ -230,7 +232,7 @@ export default function DashboardPage() {
         )}
         {can('reports', 'read') && (
           <StatCard
-            title="أقساط مستحقة"
+            title={t('dashboard_page.titles.ke6czak')}
             value={`${fmt(data.sales?.totalOutstanding)} ج.م`}
             icon={<Clock className="w-5 h-5" />}
             change={`${data.installments?.overdueCount || 0} متأخرة`}
@@ -239,7 +241,7 @@ export default function DashboardPage() {
         )}
         {can('products', 'read') && (
           <StatCard
-            title="المنتجات"
+            title={t('dashboard_page.titles.ks0nri5')}
             value={`${(data.stock?.inStock || 0) + (data.stock?.lowStock || 0) + (data.stock?.outOfStock || 0)}`}
             icon={<Boxes className="w-5 h-5" />}
             change={`${data.stock?.lowStock || 0} منخفض, ${data.stock?.outOfStock || 0} نافد`}
@@ -262,7 +264,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <Link to="/reports" className="flex-shrink-0 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white">
-            التفاصيل
+            {t('dashboard_page.ui.ku5ftfg')}
           </Link>
         </div>
       )}
@@ -272,7 +274,7 @@ export default function DashboardPage() {
 
         {can('reports', 'read') && (
           <Card className="p-5 lg:col-span-2">
-            <h3 className="mb-4 text-base font-bold text-gray-900 dark:text-gray-100">المبيعات الشهرية</h3>
+            <h3 className="mb-4 text-base font-bold text-gray-900 dark:text-gray-100">{t('dashboard_page.ui.kwktnaq')}</h3>
             {data.monthlySales?.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={data.monthlySales}>
@@ -313,7 +315,7 @@ export default function DashboardPage() {
             ) : (
               <EmptyState
                 icon={BarChart3}
-                title="لا توجد بيانات مبيعات بعد"
+                title={t('dashboard_page.titles.klhlwvh')}
                 description="ستظهر حركة المبيعات الشهرية هنا بمجرد تسجيل فواتير ومبيعات جديدة."
                 className="h-60 py-4"
               />
@@ -326,25 +328,25 @@ export default function DashboardPage() {
             <div className="mb-4 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-base font-bold text-gray-900 dark:text-gray-100">
                 <Calendar className="h-4 w-4 text-primary-500" />
-                جدول التحصيل
+                {t('dashboard_page.ui.k5ldmtq')}
               </h3>
               <Link to="/reports" className="text-xs font-semibold text-primary-500 hover:underline">
-                عرض الكل
+                {t('dashboard_page.ui.kwbgoww')}
               </Link>
             </div>
             <div className="space-y-3">
               <div className="rounded-xl border border-primary-200 bg-primary-50 p-3 dark:border-primary-500/20 dark:bg-primary-500/10">
-                <p className="mb-1 text-[10px] font-bold text-primary-500">مستحقة اليوم</p>
+                <p className="mb-1 text-[10px] font-bold text-primary-500">{t('dashboard_page.ui.kfdwama')}</p>
                 <p className="text-xl font-black text-primary-600">{fmt(collections?.today?.total || 0)} ج.م</p>
                 <p className="text-[10px] text-gray-400">{collections?.today?.items?.length || 0} قسط</p>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-                <p className="mb-1 text-[10px] font-bold text-amber-500">هذا الأسبوع</p>
+                <p className="mb-1 text-[10px] font-bold text-amber-500">{t('dashboard_page.ui.kahs1jq')}</p>
                 <p className="text-xl font-black text-amber-600">{fmt(collections?.week?.total || 0)} ج.م</p>
                 <p className="text-[10px] text-gray-400">{collections?.week?.items?.length || 0} قسط</p>
               </div>
               <div className="rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-500/20 dark:bg-red-500/10">
-                <p className="mb-1 text-[10px] font-bold text-red-500">متأخرة</p>
+                <p className="mb-1 text-[10px] font-bold text-red-500">{t('dashboard_page.ui.k3hiy14')}</p>
                 <p className="text-xl font-black text-red-600">{fmt(collections?.overdue?.total || 0)} ج.م</p>
                 <p className="text-[10px] text-gray-400">{collections?.overdue?.items?.length || 0} قسط</p>
               </div>
@@ -355,7 +357,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
         <Card className="p-5">
-          <h3 className="mb-4 text-base font-bold text-gray-900 dark:text-gray-100">الأكثر مبيعًا</h3>
+          <h3 className="mb-4 text-base font-bold text-gray-900 dark:text-gray-100">{t('dashboard_page.ui.kmhof7v')}</h3>
           {data.topProducts?.length > 0 ? (
             <div className="space-y-2">
               {data.topProducts.map((product, index) => (
@@ -374,7 +376,7 @@ export default function DashboardPage() {
           ) : (
             <EmptyState
               icon={Boxes}
-              title="لا توجد مبيعات بعد"
+              title={t('dashboard_page.titles.kri2tuz')}
               description="عند بدء المبيعات ستظهر المنتجات الأعلى أداءً هنا."
               className="h-40 py-4"
             />
@@ -383,9 +385,9 @@ export default function DashboardPage() {
 
         <Card className="p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">آخر الفواتير</h3>
+            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{t('dashboard_page.ui.k7ojc6v')}</h3>
             <Link to="/invoices" className="text-xs font-semibold text-primary-500 hover:underline">
-              عرض الكل
+              {t('dashboard_page.ui.kwbgoww')}
             </Link>
           </div>
           {data.recentInvoices?.length > 0 ? (
@@ -401,7 +403,7 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{fmt(invoice.totalAmount)}</span>
                   <Badge variant={invoice.status === 'paid' ? 'success' : invoice.status === 'overdue' ? 'danger' : 'warning'}>
-                    {invoice.status === 'paid' ? 'مدفوع' : invoice.status === 'overdue' ? 'متأخر' : 'جزئي'}
+                    {invoice.status === 'paid' ? t('dashboard_page.ui.kpbinfs') : invoice.status === 'overdue' ? t('dashboard_page.ui.kpbetmp') : 'جزئي'}
                   </Badge>
                 </div>
               ))}
@@ -409,7 +411,7 @@ export default function DashboardPage() {
           ) : (
             <EmptyState
               icon={FileText}
-              title="لا توجد فواتير بعد"
+              title={t('dashboard_page.titles.kimgir5')}
               description="ستظهر آخر الفواتير المسجلة هنا تلقائيًا."
               className="py-6"
             />

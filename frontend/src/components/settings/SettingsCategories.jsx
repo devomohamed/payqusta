@@ -3,8 +3,10 @@ import { Tag, Plus, Trash2, Loader } from 'lucide-react';
 import { api, productsApi } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsCategories() {
+  const { t } = useTranslation('admin');
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ export default function SettingsCategories() {
       const productCategories = productsRes.data?.data || [];
       setCategories(Array.from(new Set([...settingsNames, ...productCategories])));
     } catch (error) {
-      notify.error('فشل في تحميل الأقسام');
+      notify.error(t('settings_categories.toasts.kaf56sp'));
     } finally {
       setLoading(false);
     }
@@ -40,9 +42,9 @@ export default function SettingsCategories() {
     setSaving(true);
     try {
       await api.put('/settings/categories', { categories: updatedCategories });
-      notify.success('تم حفظ التغييرات');
+      notify.success(t('settings_categories.toasts.kjrxjsq'));
     } catch (error) {
-      notify.error('فشل في حفظ التغييرات');
+      notify.error(t('settings_categories.toasts.kbtcvi5'));
     } finally {
       setSaving(false);
     }
@@ -53,7 +55,7 @@ export default function SettingsCategories() {
     if (!trimmed) return;
 
     if (categories.includes(trimmed)) {
-      notify.warning('القسم موجود بالفعل');
+      notify.warning(t('settings_categories.toasts.ktm1ctc'));
       return;
     }
 
@@ -66,18 +68,18 @@ export default function SettingsCategories() {
   const removeCategory = (category) => {
     notify.custom({
       type: 'warning',
-      title: 'حذف القسم',
+      title: t('settings_categories.ui.kdbi5jf'),
       message: `هل أنت متأكد من حذف قسم "${category}"؟ سيتم نقل المنتجات المرتبطة به إلى قسم "أخرى".`,
       action: {
-        label: 'حذف نهائي',
+        label: t('settings_categories.ui.kcuf6ig'),
         onClick: async () => {
           setSaving(true);
           try {
             await api.delete(`/settings/categories/${encodeURIComponent(category)}`);
             setCategories((prev) => prev.filter((item) => item !== category));
-            notify.success('تم حذف القسم بنجاح');
+            notify.success(t('settings_categories.toasts.ko0gg78'));
           } catch (error) {
-            notify.error('فشل في حذف القسم');
+            notify.error(t('settings_categories.toasts.k2u80pf'));
           } finally {
             setSaving(false);
           }
@@ -93,15 +95,15 @@ export default function SettingsCategories() {
           <Tag className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold">أقسام المنتجات</h2>
-          <p className="text-sm text-gray-400">إدارة فئات المنتجات الخاصة بمتجرك</p>
+          <h2 className="text-xl font-bold">{t('settings_categories.ui.k5wqg29')}</h2>
+          <p className="text-sm text-gray-400">{t('settings_categories.ui.kmhq2nr')}</p>
         </div>
       </div>
 
       <div className="flex gap-3">
         <div className="flex-1">
           <Input
-            placeholder="اسم القسم الجديد..."
+            placeholder={t('settings_categories.placeholders.kst6xwn')}
             value={newCategory}
             onChange={(event) => setNewCategory(event.target.value)}
             onKeyPress={(event) => event.key === 'Enter' && addCategory()}
@@ -113,7 +115,7 @@ export default function SettingsCategories() {
           disabled={loading || saving || !newCategory.trim()}
           icon={saving ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         >
-          {saving ? 'جارٍ الحفظ...' : 'إضافة'}
+          {saving ? t('settings_categories.ui.kuyp1dc') : 'إضافة'}
         </Button>
       </div>
 
@@ -130,7 +132,7 @@ export default function SettingsCategories() {
                 onClick={() => removeCategory(category)}
                 disabled={saving}
                 className="rounded-lg p-1.5 text-red-500 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
-                title="حذف"
+                title={t('settings_categories.titles.delete')}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -140,8 +142,8 @@ export default function SettingsCategories() {
           {categories.length === 0 && (
             <div className="app-surface-muted col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-gray-400 dark:border-white/10">
               <Tag className="mb-3 h-12 w-12 opacity-20" />
-              <p>لا توجد أقسام مضافة بعد</p>
-              <p className="mt-1 text-xs opacity-70">أضف أقسامًا لتنظيم منتجاتك</p>
+              <p>{t('settings_categories.ui.k59icpg')}</p>
+              <p className="mt-1 text-xs opacity-70">{t('settings_categories.ui.kzh03ik')}</p>
             </div>
           )}
         </div>

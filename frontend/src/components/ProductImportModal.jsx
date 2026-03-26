@@ -1,4 +1,5 @@
 ﻿import React, { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Upload,
   Download,
@@ -30,6 +31,7 @@ function isValidFile(file) {
 }
 
 export default function ProductImportModal({ isOpen, onClose, onImportComplete }) {
+  const { t } = useTranslation('admin');
   const [step, setStep] = useState('upload');
   const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
@@ -58,12 +60,12 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
     if (!selectedFile) return;
 
     if (!isValidFile(selectedFile)) {
-      toast.error('يرجى اختيار ملف Excel (.xlsx أو .xls) أو CSV فقط.');
+      toast.error(t('product_import_modal.toasts.krybssx'));
       return;
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      toast.error('حجم الملف يتجاوز 10 ميجابايت.');
+      toast.error(t('product_import_modal.toasts.kukvos4'));
       return;
     }
 
@@ -82,12 +84,12 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
       const url = URL.createObjectURL(res.data);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = 'قالب_استيراد_المنتجات.xlsx';
+      anchor.download = t('product_import_modal.ui.kh1dirg');
       anchor.click();
       URL.revokeObjectURL(url);
-      toast.success('تم تنزيل القالب.');
+      toast.success(t('product_import_modal.toasts.kic8u7h'));
     } catch {
-      toast.error('تعذر تنزيل القالب.');
+      toast.error(t('product_import_modal.toasts.kr2j5o8'));
     }
   }, []);
 
@@ -118,7 +120,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
       setStep('report');
       onImportComplete?.();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'حدث خطأ أثناء الاستيراد.');
+      toast.error(error?.response?.data?.message || t('product_import_modal.toasts.ka3lhtp'));
       setStep('upload');
     } finally {
       setUploading(false);
@@ -144,7 +146,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
               <FileSpreadsheet className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black app-text-body">استيراد المنتجات من Excel</h2>
+              <h2 className="text-lg font-black app-text-body">{t('product_import_modal.ui.kqv4jum')}</h2>
               <p className="text-xs app-text-muted">
                 {step === 'upload' && 'ارفع ملف Excel أو CSV لاستيراد المنتجات'}
                 {step === 'importing' && 'جارٍ استيراد المنتجات...'}
@@ -169,7 +171,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                 className="flex w-full items-center gap-3 rounded-2xl border border-emerald-300/60 bg-emerald-50/60 px-4 py-3 text-sm font-bold text-emerald-700 transition-all hover:border-emerald-400 hover:bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-500/10 dark:text-emerald-300"
               >
                 <Download className="h-5 w-5" />
-                <span>تنزيل قالب Excel جاهز</span>
+                <span>{t('product_import_modal.ui.kgfflau')}</span>
                 <span className="mr-auto text-xs text-emerald-500 dark:text-emerald-300">.xlsx</span>
               </button>
 
@@ -213,7 +215,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                       className="mt-3 flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      إزالة الملف
+                      {t('product_import_modal.ui.kdp25to')}
                     </button>
                   </>
                 ) : (
@@ -221,7 +223,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl app-surface text-gray-400 dark:text-gray-500">
                       <Upload className="h-7 w-7" />
                     </div>
-                    <p className="text-sm font-bold app-text-body">اسحب الملف هنا أو اضغط للاختيار</p>
+                    <p className="text-sm font-bold app-text-body">{t('product_import_modal.ui.kfwduqy')}</p>
                     <p className="mt-1 text-xs app-text-muted">xlsx, xls, csv - حد أقصى 10 MB</p>
                   </>
                 )}
@@ -235,8 +237,8 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                   className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
                 <div>
-                  <p className="text-sm font-bold app-text-body">تحديث المنتجات الموجودة</p>
-                  <p className="text-xs app-text-muted">إذا وُجد منتج بنفس الكود أو الباركود سيتم تحديث بياناته</p>
+                  <p className="text-sm font-bold app-text-body">{t('product_import_modal.ui.kx9o76o')}</p>
+                  <p className="text-xs app-text-muted">{t('product_import_modal.ui.k9y892u')}</p>
                 </div>
               </label>
 
@@ -246,7 +248,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
               >
                 <Upload className="h-4 w-4" />
-                بدء الاستيراد
+                {t('product_import_modal.ui.kvz3u16')}
               </button>
             </div>
           )}
@@ -256,8 +258,8 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
               <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-300">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-              <p className="mt-4 text-sm font-black app-text-body">جارٍ استيراد المنتجات...</p>
-              <p className="mt-1 text-xs app-text-muted">يرجى الانتظار وعدم إغلاق هذه النافذة</p>
+              <p className="mt-4 text-sm font-black app-text-body">{t('product_import_modal.ui.ks9jvbj')}</p>
+              <p className="mt-1 text-xs app-text-muted">{t('product_import_modal.ui.kbg8u4l')}</p>
 
               <div className="mt-6 w-full max-w-xs">
                 <div className="h-2 overflow-hidden rounded-full app-surface-muted">
@@ -277,25 +279,25 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                 <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-4 text-center dark:border-emerald-900/40 dark:bg-emerald-500/10">
                   <CheckCircle className="mx-auto h-6 w-6 text-emerald-500" />
                   <p className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">{report.created || 0}</p>
-                  <p className="text-xs font-bold text-emerald-700/70 dark:text-emerald-300/70">تمت الإضافة</p>
+                  <p className="text-xs font-bold text-emerald-700/70 dark:text-emerald-300/70">{t('product_import_modal.ui.kgv69bk')}</p>
                 </div>
 
                 <div className="rounded-2xl border border-blue-200/70 bg-blue-50/60 p-4 text-center dark:border-blue-900/40 dark:bg-blue-500/10">
                   <CheckCircle className="mx-auto h-6 w-6 text-blue-500" />
                   <p className="mt-2 text-2xl font-black text-blue-700 dark:text-blue-300">{report.updated || 0}</p>
-                  <p className="text-xs font-bold text-blue-700/70 dark:text-blue-300/70">تم التحديث</p>
+                  <p className="text-xs font-bold text-blue-700/70 dark:text-blue-300/70">{t('product_import_modal.ui.kar7l11')}</p>
                 </div>
 
                 <div className="rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 text-center dark:border-amber-900/40 dark:bg-amber-500/10">
                   <AlertTriangle className="mx-auto h-6 w-6 text-amber-500" />
                   <p className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">{report.skipped || 0}</p>
-                  <p className="text-xs font-bold text-amber-700/70 dark:text-amber-300/70">تم التخطي</p>
+                  <p className="text-xs font-bold text-amber-700/70 dark:text-amber-300/70">{t('product_import_modal.ui.kn9d52f')}</p>
                 </div>
 
                 <div className="rounded-2xl border border-red-200/70 bg-red-50/60 p-4 text-center dark:border-red-900/40 dark:bg-red-500/10">
                   <XCircle className="mx-auto h-6 w-6 text-red-500" />
                   <p className="mt-2 text-2xl font-black text-red-700 dark:text-red-300">{report.errorsCount || 0}</p>
-                  <p className="text-xs font-bold text-red-700/70 dark:text-red-300/70">فشل</p>
+                  <p className="text-xs font-bold text-red-700/70 dark:text-red-300/70">{t('product_import_modal.ui.ky2dt')}</p>
                 </div>
               </div>
 
@@ -336,7 +338,7 @@ export default function ProductImportModal({ isOpen, onClose, onImportComplete }
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5"
               >
                 <CheckCircle className="h-4 w-4" />
-                إغلاق
+                {t('product_import_modal.ui.close')}
               </button>
             </div>
           )}

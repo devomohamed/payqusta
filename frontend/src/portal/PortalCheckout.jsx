@@ -15,12 +15,12 @@ import {
 } from '../storefront/storefrontShipping';
 
 const EGYPT_GOVERNORATES = [
-    'القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'البحر الأحمر',
-    'البحيرة', 'الفيوم', 'الغربية', 'الإسماعيلية', 'المنوفية',
-    'المنيا', 'القليوبية', 'الوادي الجديد', 'السويس', 'أسوان',
-    'أسيوط', 'بني سويف', 'بورسعيد', 'دمياط', 'الشرقية',
-    'جنوب سيناء', 'كفر الشيخ', 'مطروح', 'الأقصر', 'قنا',
-    'شمال سيناء', 'سوهاج',
+    t('portal_checkout.ui.kzc16df'), t('portal_checkout.ui.kabcqpa'), t('portal_checkout.ui.kdnbixb'), t('portal_checkout.ui.kwjsgoc'), t('portal_checkout.ui.kumgbyc'),
+    t('portal_checkout.ui.kzaw4bk'), t('portal_checkout.ui.kaazbfh'), t('portal_checkout.ui.kzg9rn1'), t('portal_checkout.ui.kbql37p'), t('portal_checkout.ui.ks045hm'),
+    t('portal_checkout.ui.kaawuf9'), t('portal_checkout.ui.kactay2'), t('portal_checkout.ui.krb8c9a'), t('portal_checkout.ui.kab8ap1'), t('portal_checkout.ui.koswbmf'),
+    t('portal_checkout.ui.koswdvt'), t('portal_checkout.ui.k8hpkio'), t('portal_checkout.ui.kj0lilg'), t('portal_checkout.ui.koztdz8'), t('portal_checkout.ui.kzhk21z'),
+    t('portal_checkout.ui.ku69n8d'), t('portal_checkout.ui.kadyxke'), t('portal_checkout.ui.kpbnfgk'), t('portal_checkout.ui.kabinfs'), t('portal_checkout.ui.ky3j7'),
+    t('portal_checkout.ui.k1s9e9j'), t('portal_checkout.ui.kp22f2v'),
 ];
 
 export default function PortalCheckout() {
@@ -317,10 +317,10 @@ export default function PortalCheckout() {
                             <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 px-4 py-3 text-xs text-primary-700 dark:text-primary-300">
                                 <div className="flex items-center justify-between gap-3 font-bold">
                                     <span>{shippingConfig.defaultMethodName}</span>
-                                    <span>{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
+                                    <span>{shipping === 0 ? t('portal_checkout.ui.kpbg75w') : `${shipping.toLocaleString()} ج.م`}</span>
                                 </div>
                                 <div className="mt-1 flex items-center justify-between gap-3 text-[11px]">
-                                    <span>{selectedShippingZone?.label || 'سيتم اعتماد الرسوم الأساسية'}</span>
+                                    <span>{selectedShippingZone?.label || t('portal_checkout.toasts.ki131k1')}</span>
                                     <span>{shippingEta}</span>
                                 </div>
                                 {shippingDiscount > 0 && (
@@ -441,8 +441,8 @@ export default function PortalCheckout() {
                             </div>
                         )}
                         <div className="app-surface-muted px-5 py-3 flex justify-between items-center border-t border-gray-100/80 dark:border-white/10">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">الشحن</span>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{t('portal_checkout.ui.kovdy34')}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{shipping === 0 ? t('portal_checkout.ui.kpbg75w') : `${shipping.toLocaleString()} ج.م`}</span>
                         </div>
                         <div className="app-surface-muted px-5 py-4 flex justify-between items-center">
                             <span className="font-bold text-gray-700 dark:text-gray-300">{t('checkout.review.total')}</span>
@@ -469,11 +469,11 @@ export default function PortalCheckout() {
                                 <span className="font-bold text-gray-800 dark:text-gray-200">{selectedShippingZone?.label || form.governorate} {form.city && `/ ${form.city}`}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-400">وسيلة الشحن</span>
+                                <span className="text-gray-400">{t('portal_checkout.ui.krmcqvo')}</span>
                                 <span className="font-bold text-gray-800 dark:text-gray-200">{shippingConfig.defaultMethodName}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-400">موعد متوقع</span>
+                                <span className="text-gray-400">{t('portal_checkout.ui.k3bxnv1')}</span>
                                 <span className="font-bold text-primary-600">{shippingEta}</span>
                             </div>
                             <div className="flex justify-between">

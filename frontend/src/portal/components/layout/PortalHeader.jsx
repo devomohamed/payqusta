@@ -33,12 +33,11 @@ export default function PortalHeader({
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const accountBasePath = location.pathname.startsWith('/account') ? '/account' : '/portal';
   const storeHomePath = storefrontPath('/');
-  const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+  const currency = i18n.language === 'ar' ? t('portal_header.ui.kwlxf') : 'EGP';
   const moreActionsLabel = t('layout.more_actions', { defaultValue: 'More actions' });
   const ThemeIcon = themeMode === 'system' ? Monitor : dark ? Sun : Moon;
   const themeActionLabel = themeMode === 'system'
-    ? 'الوضع التلقائي'
-    : dark
+    ? t('portal_header.ui.ke76d02') : dark
       ? t('layout.light_mode')
       : t('layout.dark_mode');
 

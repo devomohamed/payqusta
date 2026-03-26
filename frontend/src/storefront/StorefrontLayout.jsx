@@ -11,6 +11,7 @@ import { notify } from '../components/AnimatedNotification';
 import { getBackofficeDashboardUrl, storefrontPath } from '../utils/storefrontHost';
 import { pickProductImage } from '../utils/media';
 import { buildStorefrontSearchSuggestions, rankStorefrontProducts } from './storefrontSearch';
+import { useTranslation } from 'react-i18next';
 import {
   getCustomerNavLinks,
   getSupportStatusBadge,
@@ -25,6 +26,7 @@ import {
 import { getStorefrontLandingPagePath } from './storefrontLandingPages';
 
 export default function StorefrontLayout({ children }) {
+  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -65,7 +67,7 @@ export default function StorefrontLayout({ children }) {
   const trackOrderPath = storefrontPath('/track-order');
   const seasonalLandingPath = getStorefrontLandingPagePath('seasonal');
   const accountEntryPath = isAuthenticated ? '/portal/dashboard' : '/portal/login';
-  const accountEntryLabel = isAuthenticated ? (customer?.name?.split(' ')[0] || 'حسابي') : 'تسجيل الدخول';
+  const accountEntryLabel = isAuthenticated ? (customer?.name?.split(' ')[0] || t('storefront_layout.toasts.koydl43')) : t('storefront_layout.ui.k32w7dx');
   const AccountEntryIcon = User;
   const isProductDetailsPage = /\/products\/[^/]+$/.test(location.pathname);
   const canAccessBackoffice = isAdminAuthenticated && (
@@ -228,7 +230,7 @@ export default function StorefrontLayout({ children }) {
     event.preventDefault();
 
     if (!supportSubject.trim() || !supportMessage.trim()) {
-      notify.error('اكتب عنوان الرسالة والمحتوى قبل الإرسال');
+      notify.error(t('storefront_layout.toasts.kqd9hz2'));
       return;
     }
 
@@ -236,11 +238,11 @@ export default function StorefrontLayout({ children }) {
     try {
       const result = await sendSupportMessage(supportSubject.trim(), supportMessage.trim(), supportType);
       if (!result?.success) {
-        notify.error(result?.message || 'فشل إرسال الرسالة');
+        notify.error(result?.message || t('storefront_layout.toasts.kvnwt5q'));
         return;
       }
 
-      notify.success(result.message || 'تم إرسال رسالتك إلى المتجر');
+      notify.success(result.message || t('storefront_layout.toasts.k1wmosc'));
       setSupportSubject('');
       setSupportMessage('');
       setSupportType('inquiry');
@@ -254,11 +256,11 @@ export default function StorefrontLayout({ children }) {
   const supportStatusBadge = (status) => {
     switch (status) {
       case 'replied':
-        return { label: 'تم الرد', className: 'bg-emerald-100 text-emerald-700' };
+        return { label: t('storefront_layout.ui.ket1r40'), className: 'bg-emerald-100 text-emerald-700' };
       case 'closed':
-        return { label: 'مغلقة', className: 'bg-slate-100 text-slate-600' };
+        return { label: t('storefront_layout.ui.kpbpqd2'), className: 'bg-slate-100 text-slate-600' };
       default:
-        return { label: 'مفتوحة', className: 'bg-amber-100 text-amber-700' };
+        return { label: t('storefront_layout.ui.k3ub7rq'), className: 'bg-amber-100 text-amber-700' };
     }
   };
 
@@ -278,15 +280,15 @@ export default function StorefrontLayout({ children }) {
                 </div>
               )}
               <span className={`max-w-[8.5rem] truncate font-black bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent transition-all duration-300 sm:max-w-none ${scrolled ? 'text-sm sm:text-base' : 'text-base sm:text-xl'}`}>
-                {settings?.store?.name || 'المتجر'}
+                {settings?.store?.name || t('storefront_layout.toasts.kaaxfw9')}
               </span>
             </Link>
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-6">
-              <Link to={storefrontPath('/')} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">الرئيسية</Link>
-              <Link to={storefrontPath('/products')} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">المنتجات</Link>
-              <Link to={seasonalLandingPath} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">العروض</Link>
+              <Link to={storefrontPath('/')} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">{t('storefront_layout.ui.kx2j17e')}</Link>
+              <Link to={storefrontPath('/products')} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">{t('storefront_layout.ui.ks0nri5')}</Link>
+              <Link to={seasonalLandingPath} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">{t('storefront_layout.ui.kab4xvh')}</Link>
 
               {/* Mega Categories Dropdown */}
               {categories?.length > 0 && (
@@ -319,7 +321,7 @@ export default function StorefrontLayout({ children }) {
                 </div>
               )}
 
-              <Link to={storefrontPath('/about')} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">من نحن</Link>
+              <Link to={storefrontPath('/about')} className="app-text-soft hover:text-primary-600 font-medium text-sm transition-colors">{t('storefront_layout.ui.k35mzk0')}</Link>
             </nav>
 
             {/* Right Actions */}
@@ -334,7 +336,7 @@ export default function StorefrontLayout({ children }) {
                       value={searchQuery}
                       onChange={e => handleSearch(e.target.value)}
                       onFocus={() => setSearchOpen(true)}
-                      placeholder="ابحث عن منتج..."
+                      placeholder={t('storefront_layout.placeholders.ko3wsqh')}
                       className="flex-1 py-2 pr-1 pl-3 bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none placeholder-gray-400 min-w-0"
                     />
                     {storefrontBarcodeSearchEnabled ? (
@@ -342,7 +344,7 @@ export default function StorefrontLayout({ children }) {
                         type="button"
                         onClick={() => setShowBarcodeScanner(true)}
                         className="p-1 text-gray-400 hover:text-primary-600 flex-shrink-0"
-                        title="بحث بالباركود"
+                        title={t('storefront_layout.titles.k4jcd3x')}
                       >
                         <Camera className="w-4 h-4" />
                       </button>
@@ -371,12 +373,12 @@ export default function StorefrontLayout({ children }) {
                           </button>
                         ))}
                         <button onClick={() => { navigate(storefrontPath(`/products?search=${encodeURIComponent(searchQuery)}`)); setSearchOpen(false); }} className="w-full py-3 text-sm font-bold text-primary-600 hover:bg-primary-50 transition-colors">
-                          عرض جميع النتائج →
+                          {t('storefront_layout.ui.kvfm4aw')}
                         </button>
                       </div>
                     ) : !searchQuery.trim() && headerSearchSuggestions.categories.length > 0 ? (
                       <div className="p-4 text-right">
-                        <p className="mb-3 text-[11px] font-black uppercase tracking-wider app-text-muted">عمليات بحث شائعة</p>
+                        <p className="mb-3 text-[11px] font-black uppercase tracking-wider app-text-muted">{t('storefront_layout.ui.k24wmym')}</p>
                         <div className="flex flex-wrap gap-2">
                           {headerSearchSuggestions.categories.map((category) => (
                             <button
@@ -407,14 +409,14 @@ export default function StorefrontLayout({ children }) {
                 <Link to="/portal/register" className="relative group hidden md:inline-flex items-center justify-center mr-2">
                   <span className="absolute inset-0 w-full h-full rounded-full bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600 opacity-60 blur-sm animate-pulse group-hover:opacity-100 transition-opacity duration-300"></span>
                   <span className="relative z-10 font-bold text-xs text-white bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 rounded-full shadow-md transform group-hover:-translate-y-0.5 transition-all duration-300">
-                    انشاء متجرك
+                    {t('storefront_layout.ui.kc2w93c')}
                   </span>
                 </Link>
               ) : null}
 
               {canAccessBackoffice && (
                 <a href={backofficeDashboardUrl} className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-primary-50 text-primary-700 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50 rounded-xl transition-colors text-sm font-bold border border-primary-200 dark:border-primary-800">
-                  لوحة التحكم
+                  {t('storefront_layout.ui.krcr5uq')}
                 </a>
               )}
 
@@ -450,7 +452,7 @@ export default function StorefrontLayout({ children }) {
               <form onSubmit={handleSearchSubmit} className="mb-4">
                 <div className="app-surface-muted flex items-center gap-3 rounded-2xl border-2 border-transparent px-4 py-3 focus-within:border-primary-300">
                   <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  <input type="text" value={searchQuery} onFocus={() => setSearchOpen(true)} onChange={e => handleSearch(e.target.value)} placeholder="ابحث عن منتج..." className="flex-1 bg-transparent text-base app-text-body focus:outline-none placeholder:text-gray-400" />
+                  <input type="text" value={searchQuery} onFocus={() => setSearchOpen(true)} onChange={e => handleSearch(e.target.value)} placeholder={t('storefront_layout.placeholders.ko3wsqh')} className="flex-1 bg-transparent text-base app-text-body focus:outline-none placeholder:text-gray-400" />
                   {storefrontBarcodeSearchEnabled ? (
                     <button type="button" onClick={() => setShowBarcodeScanner(true)} className="text-gray-400 hover:text-primary-600">
                       <Camera className="w-4 h-4" />
@@ -472,7 +474,7 @@ export default function StorefrontLayout({ children }) {
                     ))}
                     {searchResults.length === 0 && headerSearchSuggestions.categories.length > 0 && (
                       <div className="px-4 py-3 text-right">
-                        <p className="mb-2 text-[11px] font-black uppercase tracking-wider app-text-muted">اقتراحات سريعة</p>
+                        <p className="mb-2 text-[11px] font-black uppercase tracking-wider app-text-muted">{t('storefront_layout.ui.ke2icih')}</p>
                         <div className="flex flex-wrap gap-2">
                           {headerSearchSuggestions.categories.map((category) => (
                             <button
@@ -499,17 +501,17 @@ export default function StorefrontLayout({ children }) {
                 </div>
                 {canAccessBackoffice && (
                   <a href={backofficeDashboardUrl} onClick={() => setMobileMenuOpen(false)} className="px-3 py-2.5 rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 font-bold border border-primary-200 dark:border-primary-800 transition-colors">
-                    لوحة التحكم
+                    {t('storefront_layout.ui.krcr5uq')}
                   </a>
                 )}
-                {[{ to: storefrontPath('/'), label: 'الرئيسية' }, { to: storefrontPath('/products'), label: 'المنتجات' }, { to: seasonalLandingPath, label: 'العروض' }, { to: storefrontPath('/about'), label: 'من نحن' }, { to: accountEntryPath, label: accountEntryLabel }].map(item => (
+                {[{ to: storefrontPath('/'), label: t('storefront_layout.ui.kx2j17e') }, { to: storefrontPath('/products'), label: t('storefront_layout.ui.ks0nri5') }, { to: seasonalLandingPath, label: t('storefront_layout.ui.kab4xvh') }, { to: storefrontPath('/about'), label: t('storefront_layout.ui.k35mzk0') }, { to: accountEntryPath, label: accountEntryLabel }].map(item => (
                   <Link key={item.to} to={item.to} onClick={() => setMobileMenuOpen(false)} className="px-4 py-3.5 rounded-xl app-text-body hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-primary-600 font-medium transition-colors text-base flex items-center">
                     {item.label}
                   </Link>
                 ))}
                 {categories?.length > 0 && (
                   <div className="px-3 py-2">
-                    <p className="mb-2 text-xs font-black uppercase tracking-wider app-text-muted">الأقسام</p>
+                    <p className="mb-2 text-xs font-black uppercase tracking-wider app-text-muted">{t('storefront_layout.ui.kz8i2t1')}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {categories.map((cat) => (
                         <Link key={cat._id || cat} to={storefrontPath(`/products?category=${cat._id || cat}`)} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-1.5 py-1 text-sm app-text-soft hover:text-primary-600 transition-colors">
@@ -534,8 +536,8 @@ export default function StorefrontLayout({ children }) {
                   <User className="h-4.5 w-4.5" />
                 </div>
                 <div>
-                  <p className="text-xs font-black text-slate-900 dark:text-white">{customer?.name || 'حسابك'}</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">وصول سريع داخل المتجر</p>
+                  <p className="text-xs font-black text-slate-900 dark:text-white">{customer?.name || t('storefront_layout.toasts.koydl3w')}</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('storefront_layout.ui.k24jyf7')}</p>
                 </div>
               </div>
 
@@ -560,7 +562,7 @@ export default function StorefrontLayout({ children }) {
                 className="inline-flex min-w-max items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
               >
                 <Bell className="h-4 w-4" />
-                إشعارات ودعم
+                {t('storefront_layout.ui.kny0aho')}
                 {unreadCount > 0 ? (
                   <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black text-white">
                     {unreadCount > 99 ? '99+' : unreadCount}
@@ -587,7 +589,7 @@ export default function StorefrontLayout({ children }) {
         <Modal
           open={showSupportModal}
           onClose={() => setShowSupportModal(false)}
-          title="الدعم السريع"
+          title={t('storefront_layout.titles.kcjjx4c')}
           size="lg"
         >
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]" dir="rtl">
@@ -595,9 +597,9 @@ export default function StorefrontLayout({ children }) {
               <div className="rounded-[1.5rem] border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-emerald-50 p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-black text-slate-900">مرحبًا {customer?.name?.split(' ')[0] || 'بك'}</p>
+                    <p className="text-sm font-black text-slate-900">مرحبًا {customer?.name?.split(' ')[0] || t('storefront_layout.toasts.k12xn')}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
-                      أرسل رسالة سريعة للمتجر أو افتح صفحة الدعم الكاملة لمتابعة المحادثات والردود.
+                      {t('storefront_layout.ui.k601aix')}
                     </p>
                   </div>
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
@@ -607,7 +609,7 @@ export default function StorefrontLayout({ children }) {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge className="app-surface text-slate-700 dark:text-slate-200">التذاكر المفتوحة: {supportTicketsOpenCount}</Badge>
-                  {directSupportPhone ? <Badge className="app-surface text-slate-700 dark:text-slate-200">هاتف المتجر متاح</Badge> : null}
+                  {directSupportPhone ? <Badge className="app-surface text-slate-700 dark:text-slate-200">{t('storefront_layout.ui.kj47hln')}</Badge> : null}
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -616,7 +618,7 @@ export default function StorefrontLayout({ children }) {
                     onClick={() => setShowSupportModal(false)}
                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-slate-800"
                   >
-                    افتح مركز الدعم
+                    {t('storefront_layout.ui.ku8858')}
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>
                   {directSupportPhone ? (
@@ -624,7 +626,7 @@ export default function StorefrontLayout({ children }) {
                       href={`tel:${directSupportPhone}`}
                       className="app-surface inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[color:var(--surface-border)] px-5 py-3 text-sm font-black app-text-body transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.05]"
                     >
-                      اتصال سريع
+                      {t('storefront_layout.ui.kd5kjhe')}
                       <PhoneCall className="h-4 w-4" />
                     </a>
                   ) : null}
@@ -646,18 +648,18 @@ export default function StorefrontLayout({ children }) {
                 </div>
 
                 <Input
-                  label="عنوان الرسالة"
+                  label={t('storefront_layout.form.khkjeqv')}
                   value={supportSubject}
                   onChange={(event) => setSupportSubject(event.target.value)}
-                  placeholder="مثال: تأخير في شحن الطلب"
+                  placeholder={t('storefront_layout.placeholders.k40xye9')}
                   autoFocus
                 />
 
                 <TextArea
-                  label="تفاصيل الرسالة"
+                  label={t('storefront_layout.form.kf4wz58')}
                   value={supportMessage}
                   onChange={(event) => setSupportMessage(event.target.value)}
-                  placeholder="اكتب المشكلة أو الاستفسار باختصار واضح حتى يصل للفريق بسرعة."
+                  placeholder={t('storefront_layout.placeholders.kqfzj7f')}
                   rows={5}
                 />
 
@@ -668,7 +670,7 @@ export default function StorefrontLayout({ children }) {
                     loading={supportSubmitting}
                     icon={!supportSubmitting ? <Send className="h-4 w-4" /> : undefined}
                   >
-                    إرسال إلى المتجر
+                    {t('storefront_layout.ui.kbrgx09')}
                   </Button>
                   <Button
                     type="button"
@@ -676,7 +678,7 @@ export default function StorefrontLayout({ children }) {
                     className="flex-1"
                     onClick={() => setShowSupportModal(false)}
                   >
-                    إغلاق
+                    {t('storefront_layout.ui.close')}
                   </Button>
                 </div>
               </form>
@@ -685,8 +687,8 @@ export default function StorefrontLayout({ children }) {
             <div className="app-surface-muted rounded-[1.5rem] border border-[color:var(--surface-border)] p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="text-right">
-                  <h3 className="text-lg font-black text-slate-900">آخر المحادثات</h3>
-                  <p className="mt-1 text-sm text-slate-500">ملخص سريع قبل فتح مركز الدعم الكامل.</p>
+                  <h3 className="text-lg font-black text-slate-900">{t('storefront_layout.ui.kkw4l6u')}</h3>
+                  <p className="mt-1 text-sm text-slate-500">{t('storefront_layout.ui.kd5ycqq')}</p>
                 </div>
                 <div className="app-surface flex h-11 w-11 items-center justify-center rounded-2xl text-slate-500 shadow-sm">
                   <Clock className="h-4.5 w-4.5" />
@@ -697,7 +699,7 @@ export default function StorefrontLayout({ children }) {
                 <div className="flex min-h-[220px] items-center justify-center">
                   <div className="app-surface inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-slate-500 shadow-sm">
                     <Clock className="h-4 w-4 animate-pulse" />
-                    جاري تحميل المحادثات
+                    {t('storefront_layout.ui.k3ihwy9')}
                   </div>
                 </div>
               ) : supportTickets.length > 0 ? (
@@ -725,8 +727,8 @@ export default function StorefrontLayout({ children }) {
               ) : (
                 <div className="app-surface flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-[color:var(--surface-border)] px-6 text-center">
                   <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-                  <p className="mt-4 text-sm font-black text-slate-900">لا توجد محادثات حالية</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-500">ابدأ أول رسالة من النموذج المجاور وسيتم تتبعها هنا تلقائيًا.</p>
+                  <p className="mt-4 text-sm font-black text-slate-900">{t('storefront_layout.ui.ka7fpaz')}</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-500">{t('storefront_layout.ui.k946bdj')}</p>
                 </div>
               )}
             </div>
@@ -739,19 +741,19 @@ export default function StorefrontLayout({ children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-right" dir="rtl">
             <div>
-              <h3 className="mb-3 text-lg font-black text-gray-900 dark:text-white">{settings?.store?.name || 'المتجر'}</h3>
-              <p className="text-sm leading-relaxed app-text-muted">{settings?.businessInfo?.address || settings?.store?.address || 'متجر إلكتروني متكامل'}</p>
+              <h3 className="mb-3 text-lg font-black text-gray-900 dark:text-white">{settings?.store?.name || t('storefront_layout.toasts.kaaxfw9')}</h3>
+              <p className="text-sm leading-relaxed app-text-muted">{settings?.businessInfo?.address || settings?.store?.address || t('storefront_layout.toasts.ku58kr5')}</p>
             </div>
             <div>
-              <h3 className="mb-3 text-lg font-black text-gray-900 dark:text-white">روابط سريعة</h3>
+              <h3 className="mb-3 text-lg font-black text-gray-900 dark:text-white">{t('storefront_layout.ui.km9or3v')}</h3>
               <div className="flex flex-col gap-2 text-sm">
-                {[{ to: storefrontPath('/'), label: 'الرئيسية' }, { to: storefrontPath('/products'), label: 'المنتجات' }, { to: seasonalLandingPath, label: 'العروض' }, { to: storefrontPath('/cart'), label: 'سلة التسوق' }, { to: accountEntryPath, label: accountEntryLabel }].map(item => (
+                {[{ to: storefrontPath('/'), label: t('storefront_layout.ui.kx2j17e') }, { to: storefrontPath('/products'), label: t('storefront_layout.ui.ks0nri5') }, { to: seasonalLandingPath, label: t('storefront_layout.ui.kab4xvh') }, { to: storefrontPath('/cart'), label: t('storefront_layout.ui.kh9kcoo') }, { to: accountEntryPath, label: accountEntryLabel }].map(item => (
                   <Link key={item.to} to={item.to} className="app-text-muted hover:text-primary-600 transition-colors">{item.label}</Link>
                 ))}
               </div>
             </div>
             <div>
-              <h3 className="mb-3 text-lg font-black text-gray-900 dark:text-white">تواصل معنا</h3>
+              <h3 className="mb-3 text-lg font-black text-gray-900 dark:text-white">{t('storefront_layout.ui.kit0rx9')}</h3>
               <div className="space-y-2 text-sm app-text-muted">
                 {(settings?.businessInfo?.phone || settings?.store?.phone) && <p className="flex items-center gap-2">📞 <span dir="ltr">{settings?.businessInfo?.phone || settings?.store?.phone}</span></p>}
                 {(settings?.businessInfo?.email || settings?.store?.email) && <p className="flex items-center gap-2">📧 <span dir="ltr">{settings?.businessInfo?.email || settings?.store?.email}</span></p>}
@@ -765,12 +767,12 @@ export default function StorefrontLayout({ children }) {
               <Link to="/portal/register" className="relative group inline-flex items-center justify-center">
                 <span className="absolute inset-0 w-full h-full rounded-full bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600 opacity-60 blur-md animate-pulse group-hover:opacity-100 transition-opacity duration-500"></span>
                 <span className="relative z-10 font-black text-sm text-white bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-2.5 rounded-full shadow-lg transform group-hover:scale-105 transition-all duration-300">
-                  إنشاء متجرك
+                  {t('storefront_layout.ui.khi07a')}
                 </span>
               </Link>
             ) : null}
             <div className="text-center text-sm font-bold app-text-muted">
-              جميع الحقوق محفوظة لـ {settings?.store?.name || 'المتجر'} © {new Date().getFullYear()}
+              جميع الحقوق محفوظة لـ {settings?.store?.name || t('storefront_layout.toasts.kaaxfw9')} © {new Date().getFullYear()}
             </div>
           </div>
         </div>
@@ -780,15 +782,15 @@ export default function StorefrontLayout({ children }) {
         <a
           href={backofficeDashboardUrl}
           className={`fixed right-4 z-50 flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-elevated)]/95 p-2.5 shadow-[0_18px_44px_rgba(15,23,42,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-[0_22px_54px_rgba(15,23,42,0.2)] sm:right-6 sm:gap-3 sm:p-3 ${showSupportFab ? 'bottom-24 sm:bottom-28' : 'bottom-4 sm:bottom-6'} ${mobileMenuOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
-          title="العودة إلى لوحة التحكم"
-          aria-label="العودة إلى لوحة التحكم"
+          title={t('storefront_layout.titles.k8odh76')}
+          aria-label={t('storefront_layout.form.k8odh76')}
         >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 via-primary-500 to-slate-900 text-white shadow-lg shadow-primary-500/20 sm:h-11 sm:w-11">
               <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5" />
             </span>
           <span className="hidden sm:flex flex-col text-right leading-tight">
-            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">إدارة المتجر</span>
-            <span className="text-sm font-black text-slate-900 dark:text-white">لوحة التحكم</span>
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{t('storefront_layout.ui.kjfhfle')}</span>
+            <span className="text-sm font-black text-slate-900 dark:text-white">{t('storefront_layout.ui.krcr5uq')}</span>
           </span>
         </a>
       ) : null}
@@ -801,7 +803,7 @@ export default function StorefrontLayout({ children }) {
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-primary-600 px-3 py-3 text-white shadow-2xl transition-transform hover:scale-105 hover:bg-primary-500 sm:bottom-6 sm:right-6 sm:gap-3 sm:px-4 sm:py-3.5 relative"
         >
           <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="hidden text-sm font-bold sm:inline-block">الدعم المباشر</span>
+          <span className="hidden text-sm font-bold sm:inline-block">{t('storefront_layout.ui.kxyb3sy')}</span>
           {supportTicketsOpenCount > 0 ? (
             <span className="absolute -top-1 -left-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-400 px-1 text-[10px] font-black text-slate-950">
               {supportTicketsOpenCount > 9 ? '9+' : supportTicketsOpenCount}
@@ -814,7 +816,7 @@ export default function StorefrontLayout({ children }) {
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-primary-600 px-3 py-3 text-white shadow-2xl transition-transform hover:scale-105 hover:bg-primary-500 sm:bottom-6 sm:right-6 sm:gap-3 sm:px-4 sm:py-3.5"
         >
           {directSupportPhone ? <PhoneCall className="h-5 w-5 sm:h-6 sm:w-6" /> : <Package className="h-5 w-5 sm:h-6 sm:w-6" />}
-          <span className="hidden text-sm font-bold sm:inline-block">{directSupportPhone ? 'اتصل بالمتجر' : 'تتبع الطلب'}</span>
+          <span className="hidden text-sm font-bold sm:inline-block">{directSupportPhone ? t('storefront_layout.ui.k6h54nz') : 'تتبع الطلب'}</span>
         </a>
       ) : null}
     </div>

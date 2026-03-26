@@ -153,6 +153,7 @@ function LazyLayoutRoute({ layout: Layout, component: Component, message }) {
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
+  const { t } = useTranslation('admin');
   const { isAuthenticated, user, loadingUser } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (loadingUser || !user) {
@@ -160,7 +161,7 @@ function ProtectedRoute({ children }) {
       <div className="app-shell-bg min-h-screen flex items-center justify-center">
         <div className="app-surface app-eye-candy-ring flex items-center gap-3 rounded-2xl px-5 py-4 app-text-soft">
           <span className="w-5 h-5 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-          <span className="app-text-strong text-sm font-semibold">Loading your workspace...</span>
+          <span className="app-text-strong text-sm font-semibold">{t('app.loading.workspace')}</span>
         </div>
       </div>
     );
@@ -169,6 +170,7 @@ function ProtectedRoute({ children }) {
 }
 
 function MainLayout() {
+  const { t } = useTranslation('admin');
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -186,61 +188,61 @@ function MainLayout() {
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<LazyRoute component={DashboardPage} message="جاري تحميل اللوحة..." />} />
-                <Route path="/products" element={<LazyRoute component={ProductsPage} message="جاري تحميل المنتجات..." />} />
-                <Route path="/customers" element={<LazyRoute component={CustomersPage} message="جاري تحميل العملاء..." />} />
-                <Route path="/invoices" element={<LazyRoute component={InvoicesPage} message="جاري تحميل الفواتير..." />} />
-                <Route path="/settings" element={<LazyRoute component={SettingsPage} message="جاري تحميل الإعدادات..." />} />
-                <Route path="/branch-dashboard" element={<LazyRoute component={BranchDashboardPage} message="جاري تحميل لوحة الفرع..." />} />
-                <Route path="/categories" element={<LazyRoute component={CategoriesPage} message="جاري تحميل التصنيفات..." />} />
-                <Route path="/stocktake" element={<LazyRoute component={StocktakePage} message="جاري تحميل الجرد..." />} />
-                <Route path="/stock-adjustments" element={<LazyRoute component={StockAdjustmentsPage} message="جاري تحميل تسويات المخزون..." />} />
-                <Route path="/marketing" element={<LazyRoute component={MarketingPage} message="جاري تحميل التسويق..." />} />
-                <Route path="/staff-performance" element={<LazyRoute component={StaffPerformancePage} message="جاري تحميل أداء الموظفين..." />} />
-                <Route path="/financials" element={<LazyRoute component={FinancialsPage} message="جاري تحميل المالية..." />} />
-                <Route path="/suppliers" element={<LazyRoute component={SuppliersPage} message="جاري تحميل الموردين..." />} />
-                <Route path="/quick-sale" element={<LazyRoute component={QuickSalePage} message="جاري تحميل الكاشير..." />} />
-                <Route path="/reports" element={<LazyRoute component={ReportsPage} message="جاري تحميل التقارير..." />} />
-                <Route path="/business-reports" element={<LazyRoute component={BusinessReportsPage} message="جاري تحميل تقارير الأعمال..." />} />
-                <Route path="/command-center" element={<LazyRoute component={CommandCenterPage} message="جاري تحميل مركز التحكم..." />} />
-                <Route path="/expenses" element={<LazyRoute component={ExpensesPage} message="جاري تحميل المصاريف..." />} />
-                <Route path="/low-stock" element={<LazyRoute component={LowStockPage} message="جاري تحميل النواقص..." />} />
-                <Route path="/subscriptions" element={<LazyRoute component={SubscriptionPage} message="جاري تحميل الاشتراكات..." />} />
-                <Route path="/cameras" element={<LazyRoute component={CamerasPage} message="جاري تحميل الكاميرات..." />} />
-                <Route path="/cash-drawer" element={<LazyRoute component={CashDrawerPage} message="جاري تحميل الخزينة..." />} />
-                <Route path="/roles" element={<LazyRoute component={RolesPage} message="جاري تحميل الأدوار..." />} />
-                <Route path="/activity-logs" element={<LazyRoute component={ActivityLogsPage} message="جاري تحميل سجل النشاط..." />} />
-                <Route path="/purchase-orders" element={<LazyRoute component={PurchaseOrdersPage} message="جاري تحميل أوامر الشراء..." />} />
-                <Route path="/supplier-purchase-invoices" element={<LazyRoute component={SupplierPurchaseInvoicesPage} message="جاري تحميل فواتير المشتريات..." />} />
-                <Route path="/aging-report" element={<LazyRoute component={AgingReportPage} message="جاري تحميل تقرير الأعمار..." />} />
-                <Route path="/installments" element={<LazyRoute component={InstallmentsDashboardPage} message="جاري تحميل الأقساط..." />} />
-                <Route path="/admin/dashboard" element={<LazyRoute component={AdminDashboardPage} message="جاري تحميل لوحة الإدارة..." />} />
-                <Route path="/admin/tenants" element={<LazyRoute component={AdminTenantsPage} message="جاري تحميل المستأجرين..." />} />
-                <Route path="/admin/users" element={<LazyRoute component={AdminUsersPage} message="جاري تحميل المستخدمين..." />} />
-                <Route path="/admin/audit-logs" element={<LazyRoute component={AdminAuditLogsPage} message="جاري تحميل سجلات التدقيق..." />} />
-                <Route path="/admin/statistics" element={<LazyRoute component={AdminStatisticsPage} message="جاري تحميل الإحصائيات..." />} />
-                <Route path="/import" element={<LazyRoute component={ImportDataPage} message="جاري تحميل الاستيراد..." />} />
-                <Route path="/backup" element={<LazyRoute component={BackupRestorePage} message="جاري تحميل النسخ الاحتياطي..." />} />
-                <Route path="/onboarding" element={<LazyRoute component={OnboardingPage} message="جاري تحميل الإعداد الأولي..." />} />
-                <Route path="/branches" element={<LazyRoute component={BranchManagement} message="جاري تحميل الفروع..." />} />
-                <Route path="/tenant-management" element={<LazyRoute component={TenantManagementPage} message="جاري تحميل إدارة المتجر..." />} />
-                <Route path="/super-admin/plans" element={<LazyRoute component={SuperAdminPlansPage} message="جاري تحميل الخطط..." />} />
-                <Route path="/super-admin/requests" element={<LazyRoute component={SubscriptionRequestsPage} message="جاري تحميل الطلبات..." />} />
-                <Route path="/super-admin/notifications" element={<LazyRoute component={SuperAdminNotificationSettingsPage} message="جاري تحميل إعدادات الإشعارات..." />} />
-                <Route path="/portal-orders" element={<LazyRoute component={PortalOrdersAdminPage} message="جاري تحميل طلبات البوابة..." />} />
-                <Route path="/returns-management" element={<LazyRoute component={ReturnsManagementPage} message="جاري تحميل إدارة المرتجعات..." />} />
-                <Route path="/kyc-review" element={<LazyRoute component={KYCReviewPage} message="جاري تحميل مراجعة الهوية..." />} />
-                <Route path="/support-messages" element={<LazyRoute component={SupportMessagesPage} message="جاري تحميل رسائل الدعم..." />} />
-                <Route path="/reviews" element={<LazyRoute component={ReviewsPage} message="جاري تحميل التقييمات..." />} />
-                <Route path="/coupons" element={<LazyRoute component={CouponsPage} message="جاري تحميل الكوبونات..." />} />
-                <Route path="/referral" element={<LazyRoute component={ReferralPage} message="جاري تحميل الإحالات..." />} />
-                <Route path="/revenue-analytics" element={<LazyRoute component={RevenueAnalyticsPage} message="جاري تحميل التحليلات..." />} />
-                <Route path="/notifications" element={<LazyRoute component={NotificationsPage} message="جاري تحميل الإشعارات..." />} />
-                <Route path="/stock-search" element={<LazyRoute component={StockSearchPage} message="جاري تحميل البحث..." />} />
-                <Route path="/shift" element={<LazyRoute component={ShiftManagementPage} message="جاري تحميل الورديات..." />} />
-                <Route path="/admin-shifts" element={<LazyRoute component={AdminShiftsPage} message="جاري تحميل مراقبة الورديات..." />} />
-                <Route path="/supplier-aging-report" element={<LazyRoute component={SupplierAgingReportPage} message="جاري تحميل تقرير الموردين..." />} />
-                <Route path="/purchase-returns" element={<LazyRoute component={PurchaseReturnsPage} message="جاري تحميل مرتجعات الشراء..." />} />
+                <Route path="/dashboard" element={<LazyRoute component={DashboardPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/products" element={<LazyRoute component={ProductsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/customers" element={<LazyRoute component={CustomersPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/invoices" element={<LazyRoute component={InvoicesPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/settings" element={<LazyRoute component={SettingsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/branch-dashboard" element={<LazyRoute component={BranchDashboardPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/categories" element={<LazyRoute component={CategoriesPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/stocktake" element={<LazyRoute component={StocktakePage} message={t('app.loading.route_generic')} />} />
+                <Route path="/stock-adjustments" element={<LazyRoute component={StockAdjustmentsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/marketing" element={<LazyRoute component={MarketingPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/staff-performance" element={<LazyRoute component={StaffPerformancePage} message={t('app.loading.route_generic')} />} />
+                <Route path="/financials" element={<LazyRoute component={FinancialsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/suppliers" element={<LazyRoute component={SuppliersPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/quick-sale" element={<LazyRoute component={QuickSalePage} message={t('app.loading.route_generic')} />} />
+                <Route path="/reports" element={<LazyRoute component={ReportsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/business-reports" element={<LazyRoute component={BusinessReportsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/command-center" element={<LazyRoute component={CommandCenterPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/expenses" element={<LazyRoute component={ExpensesPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/low-stock" element={<LazyRoute component={LowStockPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/subscriptions" element={<LazyRoute component={SubscriptionPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/cameras" element={<LazyRoute component={CamerasPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/cash-drawer" element={<LazyRoute component={CashDrawerPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/roles" element={<LazyRoute component={RolesPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/activity-logs" element={<LazyRoute component={ActivityLogsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/purchase-orders" element={<LazyRoute component={PurchaseOrdersPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/supplier-purchase-invoices" element={<LazyRoute component={SupplierPurchaseInvoicesPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/aging-report" element={<LazyRoute component={AgingReportPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/installments" element={<LazyRoute component={InstallmentsDashboardPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/admin/dashboard" element={<LazyRoute component={AdminDashboardPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/admin/tenants" element={<LazyRoute component={AdminTenantsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/admin/users" element={<LazyRoute component={AdminUsersPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/admin/audit-logs" element={<LazyRoute component={AdminAuditLogsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/admin/statistics" element={<LazyRoute component={AdminStatisticsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/import" element={<LazyRoute component={ImportDataPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/backup" element={<LazyRoute component={BackupRestorePage} message={t('app.loading.route_generic')} />} />
+                <Route path="/onboarding" element={<LazyRoute component={OnboardingPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/branches" element={<LazyRoute component={BranchManagement} message={t('app.loading.route_generic')} />} />
+                <Route path="/tenant-management" element={<LazyRoute component={TenantManagementPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/super-admin/plans" element={<LazyRoute component={SuperAdminPlansPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/super-admin/requests" element={<LazyRoute component={SubscriptionRequestsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/super-admin/notifications" element={<LazyRoute component={SuperAdminNotificationSettingsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/portal-orders" element={<LazyRoute component={PortalOrdersAdminPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/returns-management" element={<LazyRoute component={ReturnsManagementPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/kyc-review" element={<LazyRoute component={KYCReviewPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/support-messages" element={<LazyRoute component={SupportMessagesPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/reviews" element={<LazyRoute component={ReviewsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/coupons" element={<LazyRoute component={CouponsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/referral" element={<LazyRoute component={ReferralPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/revenue-analytics" element={<LazyRoute component={RevenueAnalyticsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/notifications" element={<LazyRoute component={NotificationsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/stock-search" element={<LazyRoute component={StockSearchPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/shift" element={<LazyRoute component={ShiftManagementPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/admin-shifts" element={<LazyRoute component={AdminShiftsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/supplier-aging-report" element={<LazyRoute component={SupplierAgingReportPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/purchase-returns" element={<LazyRoute component={PurchaseReturnsPage} message={t('app.loading.route_generic')} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </ErrorBoundary>
@@ -252,6 +254,7 @@ function MainLayout() {
 }
 
 export default function App() {
+  const { t } = useTranslation('admin');
   const { dark, syncWithSystem } = useThemeStore();
   const { isAuthenticated, getMe, user, loadingUser, loggingOut } = useAuthStore();
 
@@ -269,9 +272,9 @@ export default function App() {
     const key = `super-login-toast:${user.email?.toLowerCase()}`;
     if (sessionStorage.getItem(key)) return;
 
-    toast.success('Signed in as Super Admin');
+    toast.success(t('app.toasts.super_admin_signed_in'));
     sessionStorage.setItem(key, '1');
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, t, user]);
 
   if (loggingOut) {
     return (
@@ -294,7 +297,7 @@ export default function App() {
             <h2 className="text-xl font-black text-gray-900 dark:text-white">Pay<span className="text-primary-500">Qusta</span></h2>
             <div className="flex items-center gap-3 text-primary-600 dark:text-primary-400">
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm font-bold tracking-wide">Signing out...</span>
+              <span className="text-sm font-bold tracking-wide">{t('app.loading.signing_out')}</span>
             </div>
           </div>
         </div>
@@ -326,75 +329,75 @@ export default function App() {
 
         <Routes>
           <Route path="/portal/login" element={
-            <LazyRoute component={PortalLogin} message="جاري تحميل تسجيل الدخول..." />
+            <LazyRoute component={PortalLogin} message={t('app.loading.route_generic')} />
           } />
-          <Route path="/portal/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message="جاري تحميل استعادة كلمة المرور..." />} />
-          <Route path="/portal/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message="جاري تحميل إعادة التعيين..." />} />
+          <Route path="/portal/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/portal/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message={t('app.loading.route_generic')} />} />
 
-          <Route path="/portal" element={<LazyRoute component={PortalLayout} message="جاري تحميل البوابة..." />}>
+          <Route path="/portal" element={<LazyRoute component={PortalLayout} message={t('app.loading.route_generic')} />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<LazyRoute component={PortalHome} message="جاري تحميل البوابة..." />} />
-            <Route path="invoices" element={<LazyRoute component={PortalInvoices} message="جاري تحميل فواتير البوابة..." />} />
-            <Route path="returns" element={<LazyRoute component={PortalReturns} message="جاري تحميل المرتجعات..." />} />
-            <Route path="statement" element={<LazyRoute component={PortalStatement} message="جاري تحميل كشف الحساب..." />} />
-            <Route path="calculator" element={<LazyRoute component={PortalInstallmentCalculator} message="جاري تحميل حاسبة الأقساط..." />} />
-            <Route path="documents" element={<LazyRoute component={PortalDocuments} message="جاري تحميل المستندات..." />} />
-            <Route path="addresses" element={<LazyRoute component={PortalAddresses} message="جاري تحميل العناوين..." />} />
-            <Route path="profile" element={<LazyRoute component={PortalProfile} message="جاري تحميل الملف الشخصي..." />} />
-            <Route path="orders" element={<LazyRoute component={PortalOrders} message="جاري تحميل الطلبات..." />} />
-            <Route path="wishlist" element={<LazyRoute component={PortalWishlist} message="جاري تحميل المفضلة..." />} />
-            <Route path="support" element={<LazyRoute component={PortalSupport} message="جاري تحميل الدعم..." />} />
-            <Route path="support/:id" element={<LazyRoute component={PortalSupportChat} message="جاري تحميل المحادثة..." />} />
-            <Route path="notifications" element={<LazyRoute component={PortalNotifications} message="جاري تحميل الإشعارات..." />} />
-            <Route path="points" element={<LazyRoute component={PortalPointsHistory} message="جاري تحميل سجل النقاط..." />} />
-            <Route path="reviews" element={<LazyRoute component={PortalReviews} message="جاري تحميل التقييمات..." />} />
-            <Route path="products" element={<LazyRoute component={PortalProducts} message="جاري تحميل المنتجات..." />} />
-            <Route path="products/:id" element={<LazyRoute component={PortalProductDetails} message="جاري تحميل تفاصيل المنتج..." />} />
-            <Route path="cart" element={<LazyRoute component={ShoppingCart} message="جاري تحميل السلة..." />} />
-            <Route path="checkout" element={<LazyRoute component={PortalCheckout} message="جاري تحميل إتمام الطلب..." />} />
-            <Route path="payment/result" element={<LazyRoute component={PortalPaymentResult} message="جاري تحميل نتيجة الدفع..." />} />
+            <Route path="dashboard" element={<LazyRoute component={PortalHome} message={t('app.loading.route_generic')} />} />
+            <Route path="invoices" element={<LazyRoute component={PortalInvoices} message={t('app.loading.route_generic')} />} />
+            <Route path="returns" element={<LazyRoute component={PortalReturns} message={t('app.loading.route_generic')} />} />
+            <Route path="statement" element={<LazyRoute component={PortalStatement} message={t('app.loading.route_generic')} />} />
+            <Route path="calculator" element={<LazyRoute component={PortalInstallmentCalculator} message={t('app.loading.route_generic')} />} />
+            <Route path="documents" element={<LazyRoute component={PortalDocuments} message={t('app.loading.route_generic')} />} />
+            <Route path="addresses" element={<LazyRoute component={PortalAddresses} message={t('app.loading.route_generic')} />} />
+            <Route path="profile" element={<LazyRoute component={PortalProfile} message={t('app.loading.route_generic')} />} />
+            <Route path="orders" element={<LazyRoute component={PortalOrders} message={t('app.loading.route_generic')} />} />
+            <Route path="wishlist" element={<LazyRoute component={PortalWishlist} message={t('app.loading.route_generic')} />} />
+            <Route path="support" element={<LazyRoute component={PortalSupport} message={t('app.loading.route_generic')} />} />
+            <Route path="support/:id" element={<LazyRoute component={PortalSupportChat} message={t('app.loading.route_generic')} />} />
+            <Route path="notifications" element={<LazyRoute component={PortalNotifications} message={t('app.loading.route_generic')} />} />
+            <Route path="points" element={<LazyRoute component={PortalPointsHistory} message={t('app.loading.route_generic')} />} />
+            <Route path="reviews" element={<LazyRoute component={PortalReviews} message={t('app.loading.route_generic')} />} />
+            <Route path="products" element={<LazyRoute component={PortalProducts} message={t('app.loading.route_generic')} />} />
+            <Route path="products/:id" element={<LazyRoute component={PortalProductDetails} message={t('app.loading.route_generic')} />} />
+            <Route path="cart" element={<LazyRoute component={ShoppingCart} message={t('app.loading.route_generic')} />} />
+            <Route path="checkout" element={<LazyRoute component={PortalCheckout} message={t('app.loading.route_generic')} />} />
+            <Route path="payment/result" element={<LazyRoute component={PortalPaymentResult} message={t('app.loading.route_generic')} />} />
           </Route>
 
-          <Route path={storefrontPath('/')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontHome} message="جاري تحميل المتجر..." />} />
-          <Route path={storefrontPath('/products')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductCatalog} message="جاري تحميل كتالوج المنتجات..." />} />
-          <Route path={storefrontPath('/products/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductDetails} message="جاري تحميل تفاصيل المنتج..." />} />
-          <Route path={storefrontPath('/collections/:slug')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontLandingPage} message="جاري تحميل المجموعة..." />} />
-          <Route path={storefrontPath('/about')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontAbout} message="جاري تحميل صفحة المتجر..." />} />
-          <Route path={storefrontPath('/cart')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ShoppingCart} message="جاري تحميل السلة..." />} />
-          <Route path={storefrontPath('/checkout')} element={<LazyLayoutRoute layout={StorefrontLayout} component={Checkout} message="جاري تحميل إتمام الطلب..." />} />
-          <Route path={storefrontPath('/order/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderConfirmation} message="جاري تحميل تفاصيل الطلب..." />} />
-          <Route path={storefrontPath('/track-order')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderTracking} message="جاري تحميل تتبع الطلب..." />} />
+          <Route path={storefrontPath('/')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontHome} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/products')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductCatalog} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/products/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ProductDetails} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/collections/:slug')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontLandingPage} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/about')} element={<LazyLayoutRoute layout={StorefrontLayout} component={StorefrontAbout} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/cart')} element={<LazyLayoutRoute layout={StorefrontLayout} component={ShoppingCart} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/checkout')} element={<LazyLayoutRoute layout={StorefrontLayout} component={Checkout} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/order/:id')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderConfirmation} message={t('app.loading.route_generic')} />} />
+          <Route path={storefrontPath('/track-order')} element={<LazyLayoutRoute layout={StorefrontLayout} component={OrderTracking} message={t('app.loading.route_generic')} />} />
 
           <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/" replace /> : <LazyRoute component={LoginPage} message="جاري تحميل تسجيل الدخول..." />
+            isAuthenticated ? <Navigate to="/" replace /> : <LazyRoute component={LoginPage} message={t('app.loading.route_generic')} />
           } />
-          <Route path="/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message="جاري تحميل استعادة كلمة المرور..." />} />
-          <Route path="/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message="جاري تحميل إعادة التعيين..." />} />
-          <Route path="/activate-account/:token" element={<LazyRoute component={ActivateAccountPage} message="جاري تحميل صفحة التفعيل..." />} />
+          <Route path="/forgot-password" element={<LazyRoute component={ForgotPasswordPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/reset-password/:token" element={<LazyRoute component={ResetPasswordPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/activate-account/:token" element={<LazyRoute component={ActivateAccountPage} message={t('app.loading.route_generic')} />} />
           <Route path="/" element={
             isAuthenticated ? (
               <ProtectedRoute>
                 <MainLayout />
               </ProtectedRoute>
             ) : (
-              <LazyLayoutRoute layout={PublicSiteLayout} component={PublicLandingPage} message="جاري تحميل الصفحة الرئيسية..." />
+              <LazyLayoutRoute layout={PublicSiteLayout} component={PublicLandingPage} message={t('app.loading.route_generic')} />
             )
           } />
-          <Route path="/features" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFeaturesPage} message="جاري تحميل المزايا..." />} />
-          <Route path="/use-cases" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicUseCasesPage} message="جاري تحميل حالات الاستخدام..." />} />
-          <Route path="/how-it-works" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicHowItWorksPage} message="جاري تحميل شرح المنصة..." />} />
-          <Route path="/faq" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFaqPage} message="جاري تحميل الأسئلة الشائعة..." />} />
-          <Route path="/privacy" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicPrivacyPage} message="جاري تحميل سياسة الخصوصية..." />} />
-          <Route path="/terms" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicTermsPage} message="جاري تحميل الشروط والأحكام..." />} />
-          <Route path="/contact" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicContactPage} message="جاري تحميل صفحة التواصل..." />} />
-          <Route path="/payment/:gateway/:id" element={<LazyRoute component={PublicPaymentInstructionPage} message="جاري تحميل تعليمات الدفع..." />} />
-          <Route path="/sales-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة إدارة المبيعات..." />} />
-          <Route path="/inventory-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة إدارة المخزون..." />} />
-          <Route path="/installments-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة الأقساط والتحصيل..." />} />
-          <Route path="/pos-system" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة الكاشير ونقطة البيع..." />} />
-          <Route path="/ecommerce-platform" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل صفحة المتجر الإلكتروني..." />} />
-          <Route path="/pricing" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل الأسعار والباقات..." />} />
-          <Route path="/demo" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message="جاري تحميل الديمو والتجربة..." />} />
+          <Route path="/features" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFeaturesPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/use-cases" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicUseCasesPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/how-it-works" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicHowItWorksPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/faq" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFaqPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/privacy" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicPrivacyPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/terms" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicTermsPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/contact" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicContactPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/payment/:gateway/:id" element={<LazyRoute component={PublicPaymentInstructionPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/sales-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/inventory-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/installments-management" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/pos-system" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/ecommerce-platform" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/pricing" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
+          <Route path="/demo" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicSeoTopicPage} message={t('app.loading.route_generic')} />} />
 
           <Route path="/*" element={
             <ProtectedRoute>

@@ -119,7 +119,7 @@ class EmailService {
                       <li>لا تقم بمشاركة الرابط مع أي شخص آخر.</li>
                     </ul>
                   </div>
-                  <p class="support">إذا واجهت أي مشكلة في فتح الرابط أو تأكدت أن الطلب لم يكن منك، تواصل معنا فورًا عبر support@payqusta.store.</p>
+                  <p class="support">إذا واجهت أي مشكلة في فتح الرابط أو تأكدت أن الطلب لم يكن منك، تواصل معنا فورًا عبر ${process.env.SUPPORT_EMAIL || 'support@payqusta.store'}.</p>
                 </div>
                 <div class="footer">
                   <p>© 2026 PayQusta. جميع الحقوق محفوظة.</p>

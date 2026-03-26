@@ -1,4 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Camera,
@@ -32,10 +33,11 @@ function getBranchQuantity(product, branchId) {
 }
 
 function getDisplayCode(product) {
-  return product?.localBarcode || product?.internationalBarcode || product?.barcode || product?.sku || 'بدون كود';
+  return product?.localBarcode || product?.internationalBarcode || product?.barcode || product?.sku || t('stocktake_page.toasts.kmn6twx');
 }
 
 export default function StocktakePage() {
+  const { t } = useTranslation('admin');
   const user = useAuthStore((state) => state.user);
   const getBranches = useAuthStore((state) => state.getBranches);
   const userBranchId = user?.branch?._id || user?.branch || '';
@@ -101,7 +103,7 @@ export default function StocktakePage() {
       });
     } catch (error) {
       console.error('Stocktake load error:', error);
-      toast.error('حدث خطأ أثناء تحميل بيانات الجرد');
+      toast.error(t('stocktake_page.toasts.ksbovom'));
     } finally {
       setLoading(false);
     }
@@ -154,7 +156,7 @@ export default function StocktakePage() {
     if (!code) return;
 
     if (!selectedBranchId && !userBranchId) {
-      toast.error('اختر الفرع أولاً قبل بدء الجرد بالمسح');
+      toast.error(t('stocktake_page.toasts.khkkyx4'));
       setShowScanner(false);
       return;
     }
@@ -185,7 +187,7 @@ export default function StocktakePage() {
         window.setTimeout(() => setShowScanner(true), 650);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'لم يتم العثور على منتج لهذا الباركود');
+      toast.error(error?.response?.data?.message || t('stocktake_page.toasts.k2506z6'));
       setShowScanner(false);
       if (scanMode) {
         window.setTimeout(() => setShowScanner(true), 900);
@@ -202,18 +204,18 @@ export default function StocktakePage() {
   const toggleScanMode = () => {
     if (!scanMode) {
       if (!selectedBranchId && !userBranchId) {
-        toast.error('اختر الفرع أولاً قبل بدء الجرد بالمسح');
+        toast.error(t('stocktake_page.toasts.khkkyx4'));
         return;
       }
       setScanMode(true);
-      setScanStatus('وضع المسح المتتابع مفعل');
+      setScanStatus(t('stocktake_page.ui.kn90yhw'));
       setShowScanner(true);
       return;
     }
 
     setScanMode(false);
     setShowScanner(false);
-    setScanStatus('تم إيقاف وضع المسح');
+    setScanStatus(t('stocktake_page.ui.k2ivtpb'));
   };
 
   const handleBranchChange = async (nextBranchId) => {
@@ -221,8 +223,8 @@ export default function StocktakePage() {
 
     if (hasChanges) {
       const approved = await confirm.warn(
-        'سيتم فقد أي فروقات غير محفوظة عند تغيير الفرع. هل تريد المتابعة؟',
-        'تغيير الفرع'
+        t('stocktake_page.ui.kjj5sf3'),
+        t('stocktake_page.ui.kkqvg37')
       );
       if (!approved) return;
     }
@@ -237,7 +239,7 @@ export default function StocktakePage() {
   const handleSaveStocktake = async () => {
     const targetBranchId = selectedBranchId || userBranchId;
     if (!targetBranchId) {
-      toast.error('يرجى تحديد الفرع أولاً قبل حفظ الجرد');
+      toast.error(t('stocktake_page.toasts.ka6tdgz'));
       return;
     }
 
@@ -249,19 +251,19 @@ export default function StocktakePage() {
       }));
 
     if (discrepancies.length === 0) {
-      toast.success('لا توجد فروقات تحتاج إلى حفظ');
+      toast.success(t('stocktake_page.toasts.kjjhibb'));
       return;
     }
 
     const approved = await confirm.warn(
       `سيتم حفظ فروقات ${discrepancies.length} صنف. هل تريد المتابعة؟`,
-      'تأكيد حفظ الجرد'
+      t('stocktake_page.ui.k55m58g')
     );
 
     if (!approved) return;
 
     setSaving(true);
-    const loadingToast = toast.loading('جاري حفظ فروقات الجرد...');
+    const loadingToast = toast.loading(t('stocktake_page.ui.kn5byz8'));
 
     try {
       const response = await productsApi.stocktake({
@@ -269,13 +271,13 @@ export default function StocktakePage() {
         branchId: targetBranchId,
       });
 
-      toast.success(response?.data?.message || 'تم حفظ الجرد بنجاح', { id: loadingToast });
+      toast.success(response?.data?.message || t('stocktake_page.toasts.kah6ijk'), { id: loadingToast });
       setScanMode(false);
       setShowScanner(false);
-      setScanStatus('تم حفظ الجرد');
+      setScanStatus(t('stocktake_page.ui.kllz1cc'));
       await loadData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'فشل حفظ الجرد', { id: loadingToast });
+      toast.error(error?.response?.data?.message || t('stocktake_page.toasts.kolhdxa'), { id: loadingToast });
     } finally {
       setSaving(false);
     }
@@ -284,8 +286,8 @@ export default function StocktakePage() {
   const resetCounts = async () => {
     if (hasChanges) {
       const approved = await confirm.warn(
-        'سيتم فقد جميع التعديلات غير المحفوظة. هل تريد إعادة التعيين؟',
-        'إعادة تعيين الجرد'
+        t('stocktake_page.ui.kbn8pzl'),
+        t('stocktake_page.ui.k7hbo9d')
       );
       if (!approved) return;
     }
@@ -312,9 +314,9 @@ export default function StocktakePage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary-500/80">Stocktake Console</p>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">الجرد الشامل للمخزون</h1>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('stocktake_page.ui.kg80utl')}</h1>
               <p className="mt-1 max-w-2xl text-sm leading-7 text-gray-500">
-                عدّ فعلي يدوي أو بالمسح، ثم حفظ الفروقات على الفرع المحدد مباشرة.
+                {t('stocktake_page.ui.kswb8ki')}
               </p>
             </div>
           </div>
@@ -322,11 +324,11 @@ export default function StocktakePage() {
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button variant={scanMode ? 'primary' : 'outline'} onClick={toggleScanMode} className="w-full sm:w-auto">
               <Camera className="w-4 h-4" />
-              {scanMode ? 'إيقاف المسح' : 'بدء المسح'}
+              {scanMode ? t('stocktake_page.ui.kwshufb') : 'بدء المسح'}
             </Button>
             <Button variant="ghost" onClick={resetCounts} className="w-full sm:w-auto">
               <RefreshCw className="w-4 h-4" />
-              إعادة التعيين
+              {t('stocktake_page.ui.k9i1fa1')}
             </Button>
           </div>
         </div>
@@ -339,7 +341,7 @@ export default function StocktakePage() {
             onChange={(event) => { void handleBranchChange(event.target.value); }}
             className="min-w-[180px] rounded-xl border-2 border-primary-200 bg-primary-50 px-4 py-2.5 text-sm font-bold text-primary-700 dark:border-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
           >
-            <option value="" disabled>اختر الفرع</option>
+            <option value="" disabled>{t('stocktake_page.ui.ktagena')}</option>
             {branches.map((branch) => (
               <option key={branch._id} value={branch._id}>{branch.name}</option>
             ))}
@@ -351,7 +353,7 @@ export default function StocktakePage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="بحث بالاسم أو الكود..."
+            placeholder={t('stocktake_page.placeholders.kk99m7q')}
             className="w-full rounded-xl border-2 border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900"
           />
         </div>
@@ -361,7 +363,7 @@ export default function StocktakePage() {
           onChange={(event) => setCategoryFilter(event.target.value)}
           className="rounded-xl border-2 border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900"
         >
-          <option value="">كل الفئات</option>
+          <option value="">{t('stocktake_page.ui.ki151rw')}</option>
           {categories.map((category) => {
             const id = category?._id || category;
             const name = category?.name || category;
@@ -378,16 +380,16 @@ export default function StocktakePage() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-500" />
           <div>
-            <h4 className="font-bold text-amber-800">تنبيه الجرد</h4>
+            <h4 className="font-bold text-amber-800">{t('stocktake_page.ui.kxmj12')}</h4>
             <p className="mt-1 text-sm text-amber-700">
-              كل مسحة ناجحة تزيد العدد الفعلي بمقدار 1. يمكنك بعد ذلك التصحيح يدويًا قبل الحفظ النهائي.
+              {t('stocktake_page.ui.kly2bwi')}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={scanMode ? 'success' : 'gray'}>
-            {scanMode ? 'المسح المتتابع مفعل' : 'المسح غير مفعل'}
+            {scanMode ? t('stocktake_page.ui.kvj1hyx') : 'المسح غير مفعل'}
           </Badge>
           {lastScannedCode ? (
             <span className="rounded-full bg-white px-3 py-1 font-mono text-xs text-gray-600">
@@ -406,7 +408,7 @@ export default function StocktakePage() {
       {visibleProducts.length === 0 ? (
         <EmptyState
           icon={<Package className="h-8 w-8" />}
-          title="لا توجد منتجات"
+          title={t('stocktake_page.titles.k8fd1p4')}
           description="لم يتم العثور على منتجات مطابقة للفلاتر الحالية."
         />
       ) : (
@@ -418,10 +420,10 @@ export default function StocktakePage() {
                   <div>
                     <p className="font-extrabold text-gray-900 dark:text-white">{product.name}</p>
                     <p className="mt-1 font-mono text-[10px] text-gray-400">{getDisplayCode(product)}</p>
-                    <p className="mt-1 text-xs text-gray-500">{product.category?.name || product.category || 'بدون فئة'}</p>
+                    <p className="mt-1 text-xs text-gray-500">{product.category?.name || product.category || t('stocktake_page.toasts.kmn6w7r')}</p>
                   </div>
                   {product.diff === 0 ? (
-                    <Badge variant="gray">متطابق</Badge>
+                    <Badge variant="gray">{t('stocktake_page.ui.k3hvkdr')}</Badge>
                   ) : product.diff > 0 ? (
                     <Badge variant="success">+{product.diff}</Badge>
                   ) : (
@@ -431,11 +433,11 @@ export default function StocktakePage() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">النظامي</p>
+                    <p className="text-[11px] text-gray-400">{t('stocktake_page.ui.kz9jsg3')}</p>
                     <p className="mt-1 font-mono font-black text-gray-900 dark:text-white">{product.systemQty}</p>
                   </div>
                   <div className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">الفعلي</p>
+                    <p className="text-[11px] text-gray-400">{t('stocktake_page.ui.kaazo4l')}</p>
                     <p className="mt-1 font-mono font-black text-primary-600">{product.actualQty}</p>
                   </div>
                 </div>
@@ -472,11 +474,11 @@ export default function StocktakePage() {
             <table className="w-full text-right text-sm">
               <thead className="bg-gray-50/50 text-xs text-gray-500 dark:bg-gray-800/50">
                 <tr>
-                  <th className="rounded-tr-xl px-4 py-4 font-bold">المنتج والكود</th>
-                  <th className="px-4 py-4 font-bold">الفئة</th>
-                  <th className="px-4 py-4 text-center font-bold">الكمية النظامية</th>
-                  <th className="px-4 py-4 text-center font-bold">الكمية الفعلية</th>
-                  <th className="px-4 py-4 text-center font-bold">الفرق</th>
+                  <th className="rounded-tr-xl px-4 py-4 font-bold">{t('stocktake_page.ui.kpzrrid')}</th>
+                  <th className="px-4 py-4 font-bold">{t('stocktake_page.ui.kove7jb')}</th>
+                  <th className="px-4 py-4 text-center font-bold">{t('stocktake_page.ui.ka9bd2m')}</th>
+                  <th className="px-4 py-4 text-center font-bold">{t('stocktake_page.ui.k8wr1v8')}</th>
+                  <th className="px-4 py-4 text-center font-bold">{t('stocktake_page.ui.kove7th')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
@@ -489,7 +491,7 @@ export default function StocktakePage() {
                       <p className="mt-0.5 font-mono text-[10px] text-gray-400">{getDisplayCode(product)}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-500">
-                      {product.category?.name || product.category || 'بدون فئة'}
+                      {product.category?.name || product.category || t('stocktake_page.toasts.kmn6w7r')}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="inline-block rounded-lg bg-gray-100 px-3 py-1 font-mono font-bold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -524,7 +526,7 @@ export default function StocktakePage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {product.diff === 0 ? (
-                        <Badge variant="gray">متطابق</Badge>
+                        <Badge variant="gray">{t('stocktake_page.ui.k3hvkdr')}</Badge>
                       ) : product.diff > 0 ? (
                         <Badge variant="success">+{product.diff}</Badge>
                       ) : (
@@ -542,13 +544,13 @@ export default function StocktakePage() {
       {hasChanges ? (
         <div className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1.5rem)] max-w-3xl -translate-x-1/2 flex-col items-start gap-4 rounded-2xl border-2 border-primary-200 bg-white p-4 shadow-2xl dark:border-primary-800 dark:bg-gray-900 sm:bottom-6 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
           <div>
-            <p className="font-bold text-primary-700 dark:text-primary-400">توجد فروقات غير محفوظة</p>
-            <p className="text-xs text-gray-500">يمكنك متابعة المسح أو الحفظ الآن.</p>
+            <p className="font-bold text-primary-700 dark:text-primary-400">{t('stocktake_page.ui.k2xt4rx')}</p>
+            <p className="text-xs text-gray-500">{t('stocktake_page.ui.kiu0kd6')}</p>
           </div>
           <div className="flex w-full gap-2 sm:w-auto">
-            <Button variant="ghost" onClick={resetCounts} className="flex-1 sm:flex-none">إعادة تعيين</Button>
+            <Button variant="ghost" onClick={resetCounts} className="flex-1 sm:flex-none">{t('stocktake_page.ui.k2eox30')}</Button>
             <Button icon={<Save className="h-4 w-4" />} onClick={handleSaveStocktake} loading={saving} className="flex-1 sm:flex-none">
-              اعتماد الجرد
+              {t('stocktake_page.ui.kteu66')}
             </Button>
           </div>
         </div>

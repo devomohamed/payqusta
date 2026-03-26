@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   CreditCard, User, MapPin, Phone, Mail, CheckCircle,
   Wallet, AlertCircle, ShieldCheck, Truck, ChevronLeft,
@@ -52,6 +53,7 @@ const STEPS = [
 ];
 
 export default function Checkout() {
+  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
@@ -93,7 +95,7 @@ export default function Checkout() {
       variantId: item.variantId || item.variant?.id || item.variant?._id,
       quantity: item.quantity || 1,
       price: item.price ?? item.unitPrice ?? item.variant?.price ?? product?.price ?? 0,
-      name: item.name || product?.name || 'منتج',
+      name: item.name || product?.name || t('checkout.toasts.ktezs3'),
       image: item.image || pickProductImage(product),
     };
   };
@@ -151,11 +153,9 @@ export default function Checkout() {
     ? 0
     : estimatedShippingFee;
   const shippingRegionLabel = isPortal
-    ? 'توصيل قياسي'
-    : selectedShippingRegion?.label || shippingConfig?.defaultMethodName || 'اختر المحافظة';
+    ? t('checkout.ui.kble1bt') : selectedShippingRegion?.label || shippingConfig?.defaultMethodName || t('checkout.toasts.kp47hk2');
   const shippingEta = isPortal
-    ? 'خلال 3-5 أيام عمل'
-    : selectedShippingRegion?.eta || shippingConfig?.eta || 'اختر المحافظة أولًا لعرض الموعد المتوقع';
+    ? t('checkout.ui.kxt8czz') : selectedShippingRegion?.eta || shippingConfig?.eta || t('checkout.toasts.k7u7eom');
   const shippingSavings = !isPortal && shippingEnabled && (shippingConfig?.freeShippingThreshold || 0) > 0 && subtotal >= shippingConfig.freeShippingThreshold
     ? estimatedShippingFee
     : 0;
@@ -164,7 +164,7 @@ export default function Checkout() {
         shippingFee: shipping,
         shippingDiscount: shippingSavings,
         carrierCost: estimatedShippingFee,
-        shippingMethod: shippingConfig?.defaultMethodName || 'توصيل قياسي',
+        shippingMethod: shippingConfig?.defaultMethodName || t('checkout.toasts.kble1bt'),
         provider: shippingConfig?.provider || 'local',
         zoneCode: selectedShippingRegion?.code || '',
         zoneLabel: selectedShippingRegion?.label || form.governorate || '',
@@ -214,27 +214,26 @@ export default function Checkout() {
     {
       key: 'items',
       icon: ShoppingBag,
-      title: 'جاهزية الطلب',
+      title: t('checkout.ui.kldvx1f'),
       value: `${itemCount} قطعة`,
       detail: buyNowItem
-        ? 'شراء مباشر من صفحة المنتج بدون المرور على السلة'
-        : `${normalizedCheckoutItems.length} منتجًا جاهزًا للمراجعة النهائية`,
+        ? t('checkout.ui.k2v6hyf') : `${normalizedCheckoutItems.length} منتجًا جاهزًا للمراجعة النهائية`,
     },
     {
       key: 'reviews',
       icon: ShieldCheck,
-      title: 'ثقة العملاء',
-      value: checkoutReviewSnapshot.reviewCount > 0 ? `${checkoutAverageRating.toFixed(1)} / 5` : 'جاري التحديث',
+      title: t('checkout.ui.k6mn75l'),
+      value: checkoutReviewSnapshot.reviewCount > 0 ? `${checkoutAverageRating.toFixed(1)} / 5` : t('checkout.ui.k3bo9ss'),
       detail: checkoutReviewSnapshot.reviewCount > 0
         ? `${checkoutReviewSnapshot.reviewCount} تقييم متاح على العناصر المختارة`
-        : 'سيظهر متوسط التقييم هنا عند توفر مراجعات معتمدة للعناصر المختارة',
+        : t('checkout.ui.kprfohj'),
     },
     {
       key: 'shipping',
       icon: Truck,
-      title: 'التوصيل المتوقع',
+      title: t('checkout.ui.kvulsz3'),
       value: shippingEta,
-      detail: !isPortal ? shippingRegionLabel : 'يظهر الموعد المتوقع قبل تأكيد الطلب',
+      detail: !isPortal ? shippingRegionLabel : t('checkout.ui.ktnmsl6'),
     },
   ];
   const branchRoutingNote = isPortal
@@ -288,12 +287,12 @@ export default function Checkout() {
       const missingGovernorate = !isPortal && shippingEnabled && !form.governorate.trim();
 
       if (missingName || missingPhone || missingAddress || missingGovernorate) {
-        notify.error(isPortal ? 'الرجاء إدخال الاسم ورقم الهاتف' : 'الرجاء إدخال الاسم ورقم الهاتف وعنوان التوصيل');
+        notify.error(isPortal ? t('checkout.ui.k9aypm1') : t('checkout.ui.kflab4h'));
         return;
       }
     }
     if (false && currentStep === 0 && (!form.customerName || !form.phone)) {
-      notify.error('الرجاء إدخال الاسم ورقم الهاتف');
+      notify.error(t('checkout.toasts.k9aypm1'));
       return;
     }
     if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
@@ -315,7 +314,7 @@ export default function Checkout() {
       governorate: '',
       city: '',
     }));
-    notify.success('تم مسح البيانات المحفوظة من هذا الجهاز');
+    notify.success(t('checkout.toasts.kt6w1mu'));
   };
 
   const handleSubmit = async () => {
@@ -336,7 +335,7 @@ export default function Checkout() {
         });
 
         clearCart();
-        notify.success('تم استلام طلبك بنجاح');
+        notify.success(t('checkout.toasts.kieohf7'));
         navigate('/portal/dashboard');
 
       } else {
@@ -472,7 +471,7 @@ export default function Checkout() {
       }
     } catch (err) {
       console.error(err);
-      notify.error(err.response?.data?.message || 'فشل إنشاء الطلب');
+      notify.error(err.response?.data?.message || t('checkout.toasts.ku1n6gs'));
     } finally {
       setLoading(false);
     }
@@ -483,12 +482,11 @@ export default function Checkout() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12" dir="rtl">
         <EmptyState
           icon={ShoppingBag}
-          title={isPortal ? 'سلة البوابة فارغة الآن' : 'سلة المتجر فارغة الآن'}
+          title={isPortal ? t('checkout.ui.kjtr22s') : 'سلة المتجر فارغة الآن'}
           description={isPortal
-            ? 'أضف منتجات إلى السلة أولًا ثم ارجع لإتمام الطلب من هذه الصفحة.'
-            : 'لم يتم العثور على عناصر جاهزة للشراء. ابدأ من صفحات المنتجات ثم ارجع لإتمام الطلب.'}
+            ? t('checkout.ui.kf6kwhx') : 'لم يتم العثور على عناصر جاهزة للشراء. ابدأ من صفحات المنتجات ثم ارجع لإتمام الطلب.'}
           action={{
-            label: isPortal ? 'تصفح منتجات البوابة' : 'العودة إلى المتجر',
+            label: isPortal ? t('checkout.ui.kkypjra') : t('checkout.ui.kj9qcvd'),
             onClick: () => navigate(isPortal ? '/portal/products' : storefrontPath('/products')),
             variant: 'primary',
             size: 'md',
@@ -522,7 +520,7 @@ export default function Checkout() {
             <Card className="p-8 border-transparent shadow-xl rounded-[2.5rem] animate-slide-up">
               <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
                 <User className="w-6 h-6 text-indigo-500" />
-                بيانات العميل
+                {t('checkout.ui.kixub7j')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {!isPortal && (
@@ -531,31 +529,31 @@ export default function Checkout() {
                     <div className="text-right">
                       {savedGuestProfile && (
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-200 bg-white/80 px-3 py-2">
-                          <p className="text-xs font-bold text-emerald-700">تم تعبئة آخر بيانات محفوظة لتسريع الطلب.</p>
+                          <p className="text-xs font-bold text-emerald-700">{t('checkout.ui.k7c0xhn')}</p>
                           <button
                             type="button"
                             onClick={handleClearSavedGuestProfile}
                             className="text-xs font-black text-emerald-800 transition-colors hover:text-emerald-950"
                           >
-                            مسح البيانات المحفوظة
+                            {t('checkout.ui.kv3rz51')}
                           </button>
                         </div>
                       )}
-                      <p className="font-black text-emerald-900">إتمام الطلب لا يحتاج إلى تسجيل حساب.</p>
-                      <p className="text-sm text-emerald-700 mt-1">اكتب بيانات الاستلام فقط، وسنستخدمها لتأكيد الطلب وتتبع الشحنة بشكل مباشر.</p>
+                      <p className="font-black text-emerald-900">{t('checkout.ui.k8birtr')}</p>
+                      <p className="text-sm text-emerald-700 mt-1">{t('checkout.ui.kuz8qy2')}</p>
                     </div>
                   </div>
                 )}
                 <Input
-                  label="الاسم الكامل *"
-                  placeholder="مثال: أحمد محمد"
+                  label={t('checkout.form.k5aunny')}
+                  placeholder={t('checkout.placeholders.k1bxfqt')}
                   value={form.customerName}
                   onChange={(e) => setForm({ ...form, customerName: e.target.value })}
                   className="md:col-span-1"
                   disabled={isPortal}
                 />
                 <Input
-                  label="رقم الهاتف *"
+                  label={t('checkout.form.k6l9xqi')}
                   type="tel"
                   placeholder="01xxxxxxxxx"
                   value={form.phone}
@@ -564,7 +562,7 @@ export default function Checkout() {
                   disabled={isPortal}
                 />
                 <Input
-                  label="البريد الإلكتروني (اختياري)"
+                  label={t('checkout.form.ksoj2gb')}
                   type="email"
                   placeholder="name@example.com"
                   value={form.email}
@@ -574,13 +572,13 @@ export default function Checkout() {
                 {!isPortal && (
                   <>
                     <div className="md:col-span-1">
-                      <label className="block text-sm font-bold text-gray-600 mb-2">المحافظة *</label>
+                      <label className="block text-sm font-bold text-gray-600 mb-2">{t('checkout.ui.khsbk5i')}</label>
                       <select
                         value={form.governorate}
                         onChange={(e) => setForm({ ...form, governorate: e.target.value })}
                         className="w-full rounded-2xl bg-gray-50 border-2 border-transparent px-4 py-4 text-sm focus:border-indigo-500 focus:bg-white transition-all"
                       >
-                        <option value="">اختر المحافظة</option>
+                        <option value="">{t('checkout.ui.kp47hk2')}</option>
                         {(shippingConfig?.zones || []).map((region) => (
                           <option key={region.code} value={region.code}>
                             {region.label}
@@ -589,8 +587,8 @@ export default function Checkout() {
                       </select>
                     </div>
                     <Input
-                      label="المنطقة / المدينة (اختياري)"
-                      placeholder="مثال: مدينة نصر"
+                      label={t('checkout.form.kuqbibx')}
+                      placeholder={t('checkout.placeholders.k24d9gc')}
                       value={form.city}
                       onChange={(e) => setForm({ ...form, city: e.target.value })}
                       className="md:col-span-1"
@@ -598,9 +596,9 @@ export default function Checkout() {
                   </>
                 )}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-gray-600 mb-2">عنوان التوصيل المقابل للعقار بالتفصيل *</label>
+                  <label className="block text-sm font-bold text-gray-600 mb-2">{t('checkout.ui.kkzu4bj')}</label>
                   <textarea
-                    placeholder="رقم العقار، اسم الشارع، المحافظة..."
+                    placeholder={t('checkout.placeholders.kctbebp')}
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     className="w-full h-32 px-4 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white transition-all resize-none"
@@ -610,7 +608,7 @@ export default function Checkout() {
                   <div className="md:col-span-2 rounded-3xl border border-indigo-100 bg-indigo-50/70 p-5">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="text-right">
-                        <p className="text-sm font-black text-indigo-900">معاينة الشحن قبل الدفع</p>
+                        <p className="text-sm font-black text-indigo-900">{t('checkout.ui.kt60dou')}</p>
                         <p className="mt-1 text-sm text-indigo-700">
                           {selectedShippingRegion
                             ? `${selectedShippingRegion.label}${form.city ? ` - ${form.city}` : ''}`
@@ -619,8 +617,8 @@ export default function Checkout() {
                         <p className="mt-1 text-xs font-medium text-indigo-600">{shippingEta}</p>
                       </div>
                       <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-sm">
-                        <p className="text-[11px] font-black text-indigo-400">التوصيل المتوقع</p>
-                        <p className="mt-1 text-lg font-black text-indigo-700">{shipping === 0 ? 'مجاني' : `${shipping} ج.م`}</p>
+                        <p className="text-[11px] font-black text-indigo-400">{t('checkout.ui.kvulsz3')}</p>
+                        <p className="mt-1 text-lg font-black text-indigo-700">{shipping === 0 ? t('checkout.ui.kpbg75w') : `${shipping} ج.م`}</p>
                         {shippingSavings > 0 && (
                           <p className="mt-1 text-[11px] font-bold text-emerald-600">تم تفعيل الشحن المجاني بدلًا من {estimatedShippingFee} ج.م</p>
                         )}
@@ -637,7 +635,7 @@ export default function Checkout() {
               <Card className="p-8 border-transparent shadow-xl rounded-[2.5rem]">
                 <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
                   <Truck className="w-6 h-6 text-indigo-500" />
-                  خيار الشحن
+                  {t('checkout.ui.kiy4agm')}
                 </h2>
                 <div className="space-y-4">
                   <div className="p-5 rounded-2xl border-2 border-indigo-500 bg-indigo-50/30 flex items-center justify-between">
@@ -648,7 +646,7 @@ export default function Checkout() {
                         <p className="text-sm text-gray-500">{shippingEta}</p>
                       </div>
                     </div>
-                    <span className="font-black text-indigo-600">{shipping === 0 ? 'مجاني' : `${shipping} ج.م`}</span>
+                    <span className="font-black text-indigo-600">{shipping === 0 ? t('checkout.ui.kpbg75w') : `${shipping} ج.م`}</span>
                   </div>
                   {!isPortal && shippingSavings > 0 && (
                     <p className="text-xs font-bold text-emerald-600">طلبك فعّل الشحن المجاني، وتم إسقاط {estimatedShippingFee} ج.م من تكلفة التوصيل.</p>
@@ -659,7 +657,7 @@ export default function Checkout() {
               <Card className="p-8 border-transparent shadow-xl rounded-[2.5rem]">
                 <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
                   <CreditCard className="w-6 h-6 text-indigo-500" />
-                  طريقة الدفع
+                  {t('checkout.ui.kfj3di7')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {isPortal ? (
@@ -668,7 +666,7 @@ export default function Checkout() {
                       className={`p-6 rounded-3xl border-2 text-right transition-all group ${form.paymentMethod === 'credit' ? 'border-primary-500 bg-primary-50 ring-4 ring-primary-50' : 'border-gray-100 hover:border-primary-200'}`}
                     >
                       <Wallet className={`w-8 h-8 mb-4 ${form.paymentMethod === 'credit' ? 'text-primary-600' : 'text-gray-400'}`} />
-                      <h4 className="font-black text-lg mb-1">خصم من الرصيد</h4>
+                      <h4 className="font-black text-lg mb-1">{t('checkout.ui.kuf602r')}</h4>
                       <p className="text-xs text-gray-500">رصيدك: {customer?.balance?.toLocaleString()} ج.م</p>
                     </button>
                   ) : (
@@ -679,8 +677,8 @@ export default function Checkout() {
                           className={`p-6 rounded-3xl border-2 text-right transition-all ${form.paymentMethod === 'cash' ? 'border-indigo-600 bg-indigo-50 ring-4 ring-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}
                         >
                           <Wallet className={`w-8 h-8 mb-4 ${form.paymentMethod === 'cash' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                          <h4 className="font-black text-lg mb-1">الدفع عند الاستلام</h4>
-                          <p className="text-xs text-gray-500">ادفع نقداً عند باب منزلك</p>
+                          <h4 className="font-black text-lg mb-1">{t('checkout.ui.kmshmet')}</h4>
+                          <p className="text-xs text-gray-500">{t('checkout.ui.kgbbg7m')}</p>
                         </button>
                       )}
                       <button
@@ -688,8 +686,8 @@ export default function Checkout() {
                         className={`p-6 rounded-3xl border-2 text-right transition-all ${form.paymentMethod === 'online' ? 'border-indigo-600 bg-indigo-50 ring-4 ring-indigo-50' : 'border-gray-100 hover:border-indigo-200'}`}
                       >
                         <Lock className={`w-8 h-8 mb-4 ${form.paymentMethod === 'online' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                        <h4 className="font-black text-lg mb-1">بطاقة بنكية / محفظة</h4>
-                        <p className="text-xs text-gray-500">ادفع الآن بأمان تام</p>
+                        <h4 className="font-black text-lg mb-1">{t('checkout.ui.kjlj4po')}</h4>
+                        <p className="text-xs text-gray-500">{t('checkout.ui.khxkj5a')}</p>
                       </button>
                     </>
                   )}
@@ -702,28 +700,28 @@ export default function Checkout() {
             <Card className="p-8 border-transparent shadow-xl rounded-[2.5rem] animate-slide-up">
               <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
                 <CheckCircle className="w-6 h-6 text-indigo-500" />
-                مراجعة نهائية
+                {t('checkout.ui.k3j9d4y')}
               </h2>
               <div className="space-y-6">
                 <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">توصيل إلى</h4>
+                    <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">{t('checkout.ui.kasxuzp')}</h4>
                     <p className="font-bold text-gray-900 dark:text-gray-100">{form.customerName}</p>
                     <p className="text-sm text-gray-500">{form.address}</p>
                     <p className="text-sm text-gray-500">{form.phone}</p>
                     {!isPortal && (
                       <>
                         <p className="text-sm text-gray-500">
-                          {selectedShippingRegion?.label || 'بدون تحديد محافظة'}{form.city ? ` - ${form.city}` : ''}
+                          {selectedShippingRegion?.label || t('checkout.toasts.krvpkeb')}{form.city ? ` - ${form.city}` : ''}
                         </p>
                         <p className="text-xs font-bold text-indigo-600">{shippingEta}</p>
                       </>
                     )}
                   </div>
                   <div>
-                    <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">طريقة الدفع</h4>
+                    <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">{t('checkout.ui.kfj3di7')}</h4>
                     <p className="font-bold text-gray-900 dark:text-gray-100">
-                      {form.paymentMethod === 'cash' ? 'الدفع عند الاستلام' : form.paymentMethod === 'credit' ? 'رصيد المحفظة' : 'دفع إلكتروني'}
+                      {form.paymentMethod === 'cash' ? t('checkout.ui.kmshmet') : form.paymentMethod === 'credit' ? t('checkout.ui.kxf0jhy') : 'دفع إلكتروني'}
                     </p>
                   </div>
                 </div>
@@ -745,9 +743,9 @@ export default function Checkout() {
                 </div>
 
                 <div className="mt-8">
-                  <label className="block text-sm font-bold text-gray-600 mb-2">هل لديك أي ملاحظات أخرى؟</label>
+                  <label className="block text-sm font-bold text-gray-600 mb-2">{t('checkout.ui.k67knam')}</label>
                   <textarea
-                    placeholder="مثال: يرجى الاتصال قبل الوصول بـ 15 دقيقة"
+                    placeholder={t('checkout.placeholders.k38qu37')}
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
                     className="w-full h-24 px-4 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-indigo-500 transition-all resize-none"
@@ -762,13 +760,13 @@ export default function Checkout() {
             {currentStep > 0 && (
               <Button variant="ghost" className="px-10" onClick={prevStep}>
                 <ChevronRight className="w-5 h-5 ml-2" />
-                السابق
+                {t('checkout.ui.kab8zyt')}
               </Button>
             )}
             <div className="mr-auto">
               {currentStep < STEPS.length - 1 ? (
                 <Button className="px-12 h-14" onClick={nextStep}>
-                  المتابعة
+                  {t('checkout.ui.ksg3zm5')}
                   <ChevronLeft className="w-5 h-5 mr-2" />
                 </Button>
               ) : (
@@ -779,7 +777,7 @@ export default function Checkout() {
                   disabled={isPortal && customer && total > (customer.balance || 0)}
                 >
                   <CheckCircle className="w-5 h-5 ml-2" />
-                  تأكيد وطلب الآن
+                  {t('checkout.ui.k3s40hv')}
                 </Button>
               )}
             </div>
@@ -791,16 +789,16 @@ export default function Checkout() {
           <div className="sticky top-28 space-y-6">
             <Card className="p-8 border-transparent shadow-xl rounded-[2.5rem] bg-indigo-900 text-white overflow-hidden relative">
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-              <h3 className="text-xl font-black mb-8 relative">ملخص الطلب</h3>
+              <h3 className="text-xl font-black mb-8 relative">{t('checkout.ui.ksv7g78')}</h3>
 
               <div className="space-y-4 mb-8 relative">
                 <div className="flex justify-between text-indigo-200">
-                  <span className="font-medium">المجموع الفرعي</span>
+                  <span className="font-medium">{t('checkout.ui.k2jgdjo')}</span>
                   <span className="font-bold">{subtotal.toLocaleString()} ج.م</span>
                 </div>
                 <div className="flex justify-between text-indigo-200">
-                  <span className="font-medium">تكلفة الشحن</span>
-                  <span className="font-bold">{shipping === 0 ? 'مجاني' : `${shipping} ج.م`}</span>
+                  <span className="font-medium">{t('checkout.ui.kydnnlp')}</span>
+                  <span className="font-bold">{shipping === 0 ? t('checkout.ui.kpbg75w') : `${shipping} ج.م`}</span>
                 </div>
                 {!isPortal && (
                   <div className="flex justify-between text-[11px] text-indigo-300">
@@ -810,28 +808,28 @@ export default function Checkout() {
                 )}
                 {volumeDiscount > 0 && (
                   <div className="flex justify-between text-emerald-200">
-                    <span className="font-medium">خصم الكمية</span>
+                    <span className="font-medium">{t('checkout.ui.ko4zkow')}</span>
                     <span className="font-bold">-{volumeDiscount.toLocaleString()} ج.م</span>
                   </div>
                 )}
                 {discount > 0 && (
                   <div className="flex justify-between text-emerald-200">
-                    <span className="font-medium">خصم الكوبون</span>
+                    <span className="font-medium">{t('checkout.ui.kx1n20y')}</span>
                     <span className="font-bold">-{discount.toLocaleString()} ج.م</span>
                   </div>
                 )}
                 <div className="h-px bg-white/20 my-4" />
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest mb-1">الإجمالي النهائي</p>
-                    <p className="text-4xl font-black">{total.toLocaleString()} <span className="text-sm font-medium">ج.م</span></p>
+                    <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest mb-1">{t('checkout.ui.kwg5kx3')}</p>
+                    <p className="text-4xl font-black">{total.toLocaleString()} <span className="text-sm font-medium">{t('checkout.ui.kwlxf')}</span></p>
                   </div>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-white/10 flex items-center gap-3 opacity-80">
                 <ShieldCheck className="w-5 h-5" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">ضمان حماية المشتري مفعّل</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">{t('checkout.ui.k2fgvul')}</span>
               </div>
             </Card>
 
@@ -852,11 +850,11 @@ export default function Checkout() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col items-center text-center">
                 <Lock className="w-6 h-6 text-emerald-500 mb-2" />
-                <span className="text-[10px] font-black uppercase text-gray-400">دفع آمن</span>
+                <span className="text-[10px] font-black uppercase text-gray-400">{t('checkout.ui.k8qk17u')}</span>
               </div>
               <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col items-center text-center">
                 <Truck className="w-6 h-6 text-amber-500 mb-2" />
-                <span className="text-[10px] font-black uppercase text-gray-400">تتبع طلبك</span>
+                <span className="text-[10px] font-black uppercase text-gray-400">{t('checkout.ui.kw4l0p5')}</span>
               </div>
             </div></div>)}
 

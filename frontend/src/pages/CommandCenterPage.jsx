@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Target, TrendingUp, AlertTriangle, Package, Truck, Users, Calendar,
   DollarSign, Award, ChevronLeft, RefreshCw, Zap, BarChart3, Heart,
@@ -14,6 +15,7 @@ import BranchSettlementModal from '../components/BranchSettlementModal';
 const RISK_COLORS = { low: '#10b981', medium: '#f59e0b', high: '#ef4444', blocked: '#991b1b' };
 
 export default function CommandCenterPage() {
+  const { t } = useTranslation('admin');
   const [commandData, setCommandData] = useState(null);
   const [healthData, setHealthData] = useState(null);
   const [cashFlow, setCashFlow] = useState(null);
@@ -43,7 +45,7 @@ export default function CommandCenterPage() {
       setCashFlow(cashRes.data.data);
       setAchievements(achRes.data.data);
       setSmartAssistant(smartRes.data.data?.suggestions || []);
-    } catch { toast.error('خطأ في تحميل البيانات'); }
+    } catch { toast.error(t('command_center_page.toasts.kalmpu2')); }
     finally { setLoading(false); }
   };
 
@@ -59,11 +61,11 @@ export default function CommandCenterPage() {
           <Target className="w-6 h-6" />
         </div>
         <div className="flex-1">
-          <h2 className="text-xl font-black">مركز القيادة</h2>
+          <h2 className="text-xl font-black">{t('command_center_page.ui.ke17ui1')}</h2>
           <p className="text-xs text-gray-400">ماذا تفعل اليوم؟ — {new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <button onClick={() => setShowSettlement(true)} className="px-4 py-2.5 rounded-xl bg-primary-600 text-white font-bold text-sm shadow-lg shadow-primary-600/20 hover:bg-primary-700 transition-colors">
-          تصفية الوردية
+          {t('command_center_page.ui.kl4mvb1')}
         </button>
         <button onClick={loadAll} className="app-surface rounded-xl p-2.5 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
           <RefreshCw className="w-4 h-4" />
@@ -78,13 +80,13 @@ export default function CommandCenterPage() {
             <div className="absolute -left-8 -top-8 w-32 h-32 bg-gradient-to-br from-primary-500/20 to-violet-500/20 rounded-full blur-2xl" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-gray-400">صحة النشاط</span>
+                <span className="text-xs font-bold text-gray-400">{t('command_center_page.ui.kohhloq')}</span>
                 <span className="text-2xl">{healthData.emoji}</span>
               </div>
               <div className="text-5xl font-black mb-1" style={{ color: healthData.score >= 70 ? '#10b981' : healthData.score >= 50 ? '#f59e0b' : '#ef4444' }}>
                 {healthData.score}
               </div>
-              <p className="text-xs text-gray-400">من 100</p>
+              <p className="text-xs text-gray-400">{t('command_center_page.ui.k34pv5e')}</p>
               <div className="mt-3 space-y-1">
                 {['collection', 'customers', 'inventory', 'profit'].map((k) => (
                   <div key={k} className="flex items-center gap-2">
@@ -131,7 +133,7 @@ export default function CommandCenterPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-black text-amber-600">{commandData.summary.lowStockCount}</p>
-                  <p className="text-[10px] text-gray-400">منتج يحتاج إعادة تخزين</p>
+                  <p className="text-[10px] text-gray-400">{t('command_center_page.ui.k16uum2')}</p>
                 </div>
               </div>
             </Card>
@@ -144,7 +146,7 @@ export default function CommandCenterPage() {
         <Card className="app-surface p-5">
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="w-5 h-5 text-amber-500" />
-            <h3 className="font-bold">اقتراحات ذكية</h3>
+            <h3 className="font-bold">{t('command_center_page.ui.kwj7gbd')}</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {commandData.suggestions.map((s, i) => (
@@ -153,7 +155,7 @@ export default function CommandCenterPage() {
                   <span className="text-2xl">{s.icon}</span>
                   <div className="flex-1">
                     <p className="text-sm font-semibold leading-relaxed">{s.text}</p>
-                    {s.priority === 'high' && <Badge variant="danger" className="mt-2">أولوية عالية</Badge>}
+                    {s.priority === 'high' && <Badge variant="danger" className="mt-2">{t('command_center_page.ui.k7kelnh')}</Badge>}
                   </div>
                 </div>
               </div>
@@ -172,7 +174,7 @@ export default function CommandCenterPage() {
             <div className="bg-primary-100 dark:bg-primary-900/50 p-2 rounded-xl">
               <Lightbulb className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
-            <h3 className="font-bold text-lg text-primary-900 dark:text-primary-100 tracking-tight">مساعد PayQusta الذكي</h3>
+            <h3 className="font-bold text-lg text-primary-900 dark:text-primary-100 tracking-tight">{t('command_center_page.ui.kdutkjj')}</h3>
             <span className="text-xs bg-primary-500 text-white px-2 py-0.5 rounded-full font-bold ml-auto animate-pulse">AI Powered</span>
           </div>
 
@@ -185,10 +187,10 @@ export default function CommandCenterPage() {
                   <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{alert.message}</p>
                 </div>
                 {alert.type === 'urgent' && (
-                  <Badge variant="danger" className="self-center">عاجل</Badge>
+                  <Badge variant="danger" className="self-center">{t('command_center_page.ui.kt6p0m')}</Badge>
                 )}
                 {alert.type === 'warning' && (
-                  <Badge variant="warning" className="self-center">تنبيه</Badge>
+                  <Badge variant="warning" className="self-center">{t('command_center_page.ui.kox2dmx')}</Badge>
                 )}
               </div>
             ))}
@@ -199,9 +201,9 @@ export default function CommandCenterPage() {
       {/* Tabs */}
       <div className="app-surface-muted flex gap-2 rounded-2xl p-1">
         {[
-          { key: 'overview', label: 'التحصيل', icon: DollarSign },
-          { key: 'cashflow', label: 'التدفق النقدي', icon: TrendingUp },
-          { key: 'achievements', label: 'الإنجازات', icon: Award },
+          { key: 'overview', label: t('command_center_page.ui.kzbzajz'), icon: DollarSign },
+          { key: 'cashflow', label: t('command_center_page.ui.khtrlbj'), icon: TrendingUp },
+          { key: 'achievements', label: t('command_center_page.ui.kbczxbw'), icon: Award },
         ].map((tab) => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === tab.key ? 'app-surface text-primary-600 shadow-sm dark:text-primary-300' : 'app-text-soft hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
@@ -220,7 +222,7 @@ export default function CommandCenterPage() {
               <Calendar className="w-4 h-4 text-primary-500" /> مستحقة اليوم ({commandData.collectionsToday?.length || 0})
             </h4>
             {(commandData.collectionsToday?.length || 0) === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">لا توجد أقساط مستحقة اليوم ✨</p>
+              <p className="text-sm text-gray-400 text-center py-6">{t('command_center_page.ui.krdmngo')}</p>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {commandData.collectionsToday.map((c, i) => (
@@ -246,7 +248,7 @@ export default function CommandCenterPage() {
               <AlertTriangle className="w-4 h-4 text-red-500" /> متأخرة ({commandData.collectionsOverdue?.length || 0})
             </h4>
             {(commandData.collectionsOverdue?.length || 0) === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">لا توجد متأخرات — ممتاز! 🎉</p>
+              <p className="text-sm text-gray-400 text-center py-6">{t('command_center_page.ui.kfv2eev')}</p>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {commandData.collectionsOverdue.map((c, i) => (
@@ -259,7 +261,7 @@ export default function CommandCenterPage() {
                     <div className="text-left">
                       <p className="font-extrabold text-red-600">{fmt(c.amount)} ج.م</p>
                       <Badge variant={c.customer?.creditEngine?.riskLevel === 'high' ? 'danger' : 'warning'}>
-                        {c.customer?.creditEngine?.riskLevel === 'high' ? 'خطر' : 'متوسط'}
+                        {c.customer?.creditEngine?.riskLevel === 'high' ? t('command_center_page.ui.kxoco') : 'متوسط'}
                       </Badge>
                     </div>
                   </div>
@@ -301,7 +303,7 @@ export default function CommandCenterPage() {
               <Package className="w-4 h-4 text-amber-500" /> مخزون منخفض ({commandData.lowStockProducts?.length || 0})
             </h4>
             {(commandData.lowStockProducts?.length || 0) === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">المخزون جيد ✅</p>
+              <p className="text-sm text-gray-400 text-center py-6">{t('command_center_page.ui.keg6ebk')}</p>
             ) : (
               <div className="space-y-2">
                 {commandData.lowStockProducts.slice(0, 6).map((p, i) => (
@@ -314,7 +316,7 @@ export default function CommandCenterPage() {
                       </p>
                     </div>
                     <Badge variant={p.status === 'out_of_stock' ? 'danger' : 'warning'}>
-                      {p.status === 'out_of_stock' ? 'نفذ' : `${p.quantity || 0} قطعة`}
+                      {p.status === 'out_of_stock' ? t('command_center_page.ui.ky6dx') : `${p.quantity || 0} قطعة`}
                     </Badge>
                   </div>
                 ))}
@@ -328,7 +330,7 @@ export default function CommandCenterPage() {
               <ShieldAlert className="w-4 h-4 text-red-500" /> عملاء عالي المخاطر ({commandData.highRiskCustomers?.length || 0})
             </h4>
             {(commandData.highRiskCustomers?.length || 0) === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">لا يوجد عملاء عالي المخاطر</p>
+              <p className="text-sm text-gray-400 text-center py-6">{t('command_center_page.ui.ks45ean')}</p>
             ) : (
               <div className="space-y-2">
                 {commandData.highRiskCustomers.map((c, i) => (
@@ -340,7 +342,7 @@ export default function CommandCenterPage() {
                       <p className="font-semibold text-sm truncate">{c.name}</p>
                       <p className="text-[10px] text-gray-400">مستحق: {fmt(c.financials?.outstandingBalance)} ج.م</p>
                     </div>
-                    <Link to={`/customers`} className="text-xs text-primary-500 font-semibold">التفاصيل</Link>
+                    <Link to={`/customers`} className="text-xs text-primary-500 font-semibold">{t('command_center_page.ui.ku5ftfg')}</Link>
                   </div>
                 ))}
               </div>
@@ -356,17 +358,17 @@ export default function CommandCenterPage() {
             <Card className="p-4 text-center border-2 border-emerald-100 dark:border-emerald-500/20">
               <ArrowUpRight className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
               <p className="text-2xl font-black text-emerald-600">{fmt(cashFlow.summary.totalExpectedIncome)}</p>
-              <p className="text-xs text-gray-400">متوقع دخول (30 يوم)</p>
+              <p className="text-xs text-gray-400">{t('command_center_page.ui.kreujqc')}</p>
             </Card>
             <Card className="p-4 text-center border-2 border-red-100 dark:border-red-500/20">
               <ArrowDownRight className="w-5 h-5 text-red-500 mx-auto mb-2" />
               <p className="text-2xl font-black text-red-600">{fmt(cashFlow.summary.totalExpectedExpenses)}</p>
-              <p className="text-xs text-gray-400">متوقع خروج (30 يوم)</p>
+              <p className="text-xs text-gray-400">{t('command_center_page.ui.k96qoxc')}</p>
             </Card>
             <Card className={`p-4 text-center border-2 ${cashFlow.summary.netCashFlow >= 0 ? 'border-emerald-100 dark:border-emerald-500/20' : 'border-red-100 dark:border-red-500/20'}`}>
               <TrendingUp className={`w-5 h-5 mx-auto mb-2 ${cashFlow.summary.netCashFlow >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
               <p className={`text-2xl font-black ${cashFlow.summary.netCashFlow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{fmt(cashFlow.summary.netCashFlow)}</p>
-              <p className="text-xs text-gray-400">صافي التدفق</p>
+              <p className="text-xs text-gray-400">{t('command_center_page.ui.kaai52g')}</p>
             </Card>
           </div>
 
@@ -384,7 +386,7 @@ export default function CommandCenterPage() {
 
           {/* Chart */}
           <Card className="p-5">
-            <h4 className="font-bold text-sm mb-4">التدفق النقدي المتوقع (30 يوم)</h4>
+            <h4 className="font-bold text-sm mb-4">{t('command_center_page.ui.k3hg1n5')}</h4>
             <ResponsiveContainer width="100%" height={280}>
               <AreaChart data={cashFlow.dailyForecast}>
                 <defs>
@@ -412,7 +414,7 @@ export default function CommandCenterPage() {
           {/* Progress */}
           <Card className="p-5">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-bold">تقدمك</h4>
+              <h4 className="font-bold">{t('command_center_page.ui.kowzyr9')}</h4>
               <span className="text-2xl font-black text-primary-500">{achievements.stats.progress}%</span>
             </div>
             <div className="h-3 rounded-full bg-black/[0.06] dark:bg-white/[0.08] overflow-hidden mb-3">
@@ -423,22 +425,22 @@ export default function CommandCenterPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card className="p-4 text-center"><p className="text-2xl font-black">{achievements.stats.invoiceCount}</p><p className="text-[10px] text-gray-400">فاتورة</p></Card>
-            <Card className="p-4 text-center"><p className="text-2xl font-black">{fmt(achievements.stats.totalSales)}</p><p className="text-[10px] text-gray-400">مبيعات</p></Card>
-            <Card className="p-4 text-center"><p className="text-2xl font-black">{achievements.stats.customerCount}</p><p className="text-[10px] text-gray-400">عميل</p></Card>
-            <Card className="p-4 text-center"><p className="text-2xl font-black">{achievements.stats.daysSinceStart}</p><p className="text-[10px] text-gray-400">يوم نشاط</p></Card>
+            <Card className="p-4 text-center"><p className="text-2xl font-black">{achievements.stats.invoiceCount}</p><p className="text-[10px] text-gray-400">{t('command_center_page.ui.k1ju2v0')}</p></Card>
+            <Card className="p-4 text-center"><p className="text-2xl font-black">{fmt(achievements.stats.totalSales)}</p><p className="text-[10px] text-gray-400">{t('command_center_page.ui.k3h4h91')}</p></Card>
+            <Card className="p-4 text-center"><p className="text-2xl font-black">{achievements.stats.customerCount}</p><p className="text-[10px] text-gray-400">{t('command_center_page.ui.kt7bza')}</p></Card>
+            <Card className="p-4 text-center"><p className="text-2xl font-black">{achievements.stats.daysSinceStart}</p><p className="text-[10px] text-gray-400">{t('command_center_page.ui.kl192hj')}</p></Card>
           </div>
 
           {/* Achievements Grid */}
           <Card className="p-5">
-            <h4 className="font-bold mb-4">الإنجازات</h4>
+            <h4 className="font-bold mb-4">{t('command_center_page.ui.kbczxbw')}</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {achievements.achievements.map((a) => (
                 <div key={a.id} className={`p-4 rounded-xl text-center transition-all ${a.unlocked ? 'bg-primary-50 dark:bg-primary-500/10 border-2 border-primary-200 dark:border-primary-500/30' : 'app-surface-muted opacity-50'}`}>
                   <span className="text-3xl block mb-2">{a.icon}</span>
                   <p className="font-bold text-xs">{a.name}</p>
                   <p className="text-[10px] text-gray-400 mt-1">{a.description}</p>
-                  {a.unlocked && <Badge variant="success" className="mt-2">مفتوح</Badge>}
+                  {a.unlocked && <Badge variant="success" className="mt-2">{t('command_center_page.ui.kpbto4z')}</Badge>}
                 </div>
               ))}
             </div>

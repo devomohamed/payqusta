@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Boxes,
@@ -15,56 +16,56 @@ import { api } from '../store';
 import { Badge, LoadingSpinner } from '../components/UI';
 
 const FEATURE_LABELS = {
-  advanced_reports: 'تقارير متقدمة ومؤشرات تشغيل',
-  pos: 'نظام نقطة بيع وكاشير',
-  whatsapp_notifications: 'إشعارات وفواتير عبر واتساب',
-  multi_branch: 'إدارة أكثر من فرع',
-  api_access: 'تكاملات وربط API',
-  barcode_scanner: 'باركود وماسح ضوئي',
-  loyalty_program: 'نقاط وولاء للعملاء',
-  customer_portal: 'بوابة عملاء بعد الشراء',
-  inventory_management: 'إدارة مخزون متقدمة',
+  advanced_reports: t('public_seo_topic_page.ui.k4y6azi'),
+  pos: t('public_seo_topic_page.ui.klui6u2'),
+  whatsapp_notifications: t('public_seo_topic_page.ui.k3my6q1'),
+  multi_branch: t('public_seo_topic_page.ui.knvzntz'),
+  api_access: t('public_seo_topic_page.ui.kzag26a'),
+  barcode_scanner: t('public_seo_topic_page.ui.k3lo8g6'),
+  loyalty_program: t('public_seo_topic_page.ui.k4vd6dg'),
+  customer_portal: t('public_seo_topic_page.ui.kc6rpj0'),
+  inventory_management: t('public_seo_topic_page.ui.kpv48uy'),
 };
 
 const PLAN_LIMIT_LABELS = [
-  { key: 'maxBranches', label: 'الفروع' },
-  { key: 'maxUsers', label: 'المستخدمون' },
-  { key: 'maxProducts', label: 'المنتجات' },
-  { key: 'maxCustomers', label: 'العملاء' },
+  { key: 'maxBranches', label: t('public_seo_topic_page.ui.kaaztz6') },
+  { key: 'maxUsers', label: t('public_seo_topic_page.ui.kdirwj') },
+  { key: 'maxProducts', label: t('public_seo_topic_page.ui.ks0nri5') },
+  { key: 'maxCustomers', label: t('public_seo_topic_page.ui.kzgg8kr') },
 ];
 
 const DEMO_STEPS = [
   {
-    title: 'ابدأ من البيع والفاتورة',
-    description: 'راجع كيف تتحرك الفاتورة والمدفوع والمتبقي بدل أن تكون شاشة البيع منفصلة عن المتابعة.',
+    title: t('public_seo_topic_page.ui.k7kq8p'),
+    description: t('public_seo_topic_page.ui.kfnd56n'),
     to: '/sales-management',
     icon: Receipt,
   },
   {
-    title: 'راجع تأثير البيع على المخزون',
-    description: 'افهم كيف ترتبط الكميات، التنبيهات، والمنتجات بالحركة اليومية داخل النشاط.',
+    title: t('public_seo_topic_page.ui.khu5g1q'),
+    description: t('public_seo_topic_page.ui.ktdmvaz'),
     to: '/inventory-management',
     icon: Boxes,
   },
   {
-    title: 'شاهد المتجر والطلب والتتبع',
-    description: 'انتقل من الواجهة العامة إلى الطلب والتتبع لتقييم التجربة من منظور العميل.',
+    title: t('public_seo_topic_page.ui.k2sn3pc'),
+    description: t('public_seo_topic_page.ui.k5hm7x3'),
     to: '/ecommerce-platform',
     icon: MonitorSmartphone,
   },
   {
-    title: 'اختم القرار بمراجعة الباقات',
-    description: 'بعد فهم القيمة العملية، ارجع إلى صفحة الأسعار لاختيار الباقة الأنسب لمرحلتك.',
+    title: t('public_seo_topic_page.ui.kiphvsq'),
+    description: t('public_seo_topic_page.ui.kiho4bo'),
     to: '/pricing',
     icon: CreditCard,
   },
 ];
 
 const DEMO_CHECKLIST = [
-  'هل يمكن للفريق إصدار فاتورة ومتابعة المدفوع من نفس المسار؟',
-  'هل المخزون يتأثر تلقائيًا بالحركة بدل المعالجة اليدوية لاحقًا؟',
-  'هل المتجر العام والطلب والتتبع واضحان للعميل على الموبايل؟',
-  'هل الباقة التي ستختارها تغطي حجم المنتجات والعملاء والفروع لديك؟',
+  t('public_seo_topic_page.ui.kiwsuum'),
+  t('public_seo_topic_page.ui.kzqqzk'),
+  t('public_seo_topic_page.ui.k9r5cu5'),
+  t('public_seo_topic_page.ui.kedgz8u'),
 ];
 
 function formatPrice(value, currency = 'EGP') {
@@ -82,7 +83,7 @@ function getPlanFeatures(plan) {
 }
 
 function getPlanLimitValue(value) {
-  if (value === -1) return 'غير محدود';
+  if (value === -1) return t('public_seo_topic_page.ui.ksz808h');
   if (value === undefined || value === null || value === '') return '-';
   return String(value);
 }
@@ -97,10 +98,10 @@ function PricingSection({ plans, loading, error }) {
     <section className="app-surface mt-10 rounded-[2rem] p-6 sm:p-8">
       <div className="flex flex-col gap-4 text-right lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الباقات الفعلية</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">اختر الباقة بناءً على حجم التشغيل لا على اسمها فقط</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.ke89o3t')}</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.krw3lsn')}</h2>
           <p className="app-text-soft mt-3 max-w-3xl text-base leading-8">
-            هذه الباقات تُسحب من النظام نفسه حتى تكون الصفحة العامة مرتبطة بما سيجده العميل فعليًا بعد التسجيل.
+            {t('public_seo_topic_page.ui.kvy2n2g')}
           </p>
         </div>
         <div className="flex flex-wrap justify-end gap-3">
@@ -108,13 +109,13 @@ function PricingSection({ plans, loading, error }) {
             to="/demo"
             className="app-surface-muted rounded-full px-5 py-3 text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
           >
-            راجع الديمو أولًا
+            {t('public_seo_topic_page.ui.kyg01pv')}
           </Link>
           <Link
             to="/login?mode=register"
             className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
           >
-            ابدأ الحساب
+            {t('public_seo_topic_page.ui.kkvj629')}
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </div>
@@ -130,7 +131,7 @@ function PricingSection({ plans, loading, error }) {
         </div>
       ) : activePlans.length === 0 ? (
         <div className="app-surface-muted mt-8 rounded-[1.75rem] p-5 text-right text-sm font-bold leading-7 text-slate-700 dark:text-slate-100">
-          لا توجد باقات منشورة حاليًا. يمكنك متابعة الديمو ثم إنشاء الحساب للتجربة الأولية.
+          {t('public_seo_topic_page.ui.kdqojf')}
         </div>
       ) : (
         <div className="mt-8 grid gap-5 xl:grid-cols-4 md:grid-cols-2">
@@ -148,21 +149,21 @@ function PricingSection({ plans, loading, error }) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="text-left">
-                    {isPopular && <Badge variant="success">الأكثر شيوعًا</Badge>}
+                    {isPopular && <Badge variant="success">{t('public_seo_topic_page.ui.keykkps')}</Badge>}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-950 dark:text-white">{plan?.name || 'باقة'}</h3>
-                    <p className="app-text-soft mt-2 text-sm leading-7">{plan?.description || 'باقة تشغيل جاهزة للنشاط التجاري.'}</p>
+                    <h3 className="text-2xl font-black text-slate-950 dark:text-white">{plan?.name || t('public_seo_topic_page.toasts.ksvuqu')}</h3>
+                    <p className="app-text-soft mt-2 text-sm leading-7">{plan?.description || t('public_seo_topic_page.toasts.kxyn7vm')}</p>
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-[1.5rem] bg-slate-950 p-5 text-white">
-                  <p className="text-sm font-bold text-white/70">السعر</p>
+                  <p className="text-sm font-bold text-white/70">{t('public_seo_topic_page.ui.kovdxm6')}</p>
                   <p className="mt-2 text-3xl font-black">
-                    {price <= 0 ? 'مجانًا' : formatPrice(price, plan?.currency || 'EGP')}
+                    {price <= 0 ? t('public_seo_topic_page.ui.k3iplky') : formatPrice(price, plan?.currency || 'EGP')}
                   </p>
                   <p className="mt-1 text-xs font-bold text-white/70">
-                    {price <= 0 ? 'للبداية والتجربة الأولية' : `لكل ${plan?.billingCycle === 'yearly' ? 'سنة' : 'شهر'}`}
+                    {price <= 0 ? t('public_seo_topic_page.ui.kv8sa6r') : `لكل ${plan?.billingCycle === 'yearly' ? t('public_seo_topic_page.ui.kxseu') : 'شهر'}`}
                   </p>
                 </div>
 
@@ -176,7 +177,7 @@ function PricingSection({ plans, loading, error }) {
                 </div>
 
                 <div className="mt-5 flex-1">
-                  <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أبرز ما داخل الباقة</p>
+                  <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.k2ez85t')}</p>
                   <div className="mt-3 grid gap-3">
                     {features.length > 0 ? features.map((feature) => (
                       <div key={feature} className="flex items-start justify-end gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
@@ -185,7 +186,7 @@ function PricingSection({ plans, loading, error }) {
                       </div>
                     )) : (
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold leading-7 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100">
-                        الباقة تشمل التجهيز الأساسي للتشغيل ويمكن توسيعها بحسب الخطة المعتمدة داخل المنصة.
+                        {t('public_seo_topic_page.ui.kg5fem2')}
                       </div>
                     )}
                   </div>
@@ -196,14 +197,14 @@ function PricingSection({ plans, loading, error }) {
                     to={`/login?mode=register${plan?._id ? `&plan=${plan._id}` : ''}`}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
                   >
-                    ابدأ بهذه الباقة
+                    {t('public_seo_topic_page.ui.knevvdu')}
                     <ArrowLeft className="h-4 w-4" />
                   </Link>
                   <Link
                     to="/demo"
                     className="app-surface-muted rounded-full px-5 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
                   >
-                    شاهد الديمو
+                    {t('public_seo_topic_page.ui.k5uekyo')}
                   </Link>
                 </div>
               </article>
@@ -220,8 +221,8 @@ function DemoSection() {
     <>
       <section className="app-surface mt-10 rounded-[2rem] p-6 sm:p-8">
         <div className="text-right">
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">مسار تجربة واضح</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">جرّب المنصة كقرار تجاري لا كعرض واجهات فقط</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.kw16372')}</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.k9cw68b')}</h2>
           <p className="app-text-soft mt-3 max-w-3xl text-base leading-8">
             إذا أردت تقييم PayQusta بسرعة، امشِ في هذا التسلسل. بهذه الطريقة ستعرف هل المنصة تناسب طريقتك في العمل فعلًا أم لا.
           </p>
@@ -252,7 +253,7 @@ function DemoSection() {
 
       <section className="mt-10 grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
         <div className="app-surface rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ما الذي يجب أن تراه أثناء التقييم؟</p>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.kig1yk8')}</p>
           <div className="mt-5 grid gap-3">
             {DEMO_CHECKLIST.map((item) => (
               <div key={item} className="flex items-start justify-end gap-3 rounded-2xl border border-white bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
@@ -266,9 +267,9 @@ function DemoSection() {
         <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-black text-amber-200">
             <Sparkles className="h-3.5 w-3.5" />
-            نتيجة التقييم الجيد
+            {t('public_seo_topic_page.ui.kh4lpk7')}
           </div>
-          <h2 className="mt-5 text-3xl font-black leading-tight">إذا اقتنعت خلال 15 إلى 20 دقيقة، انتقل مباشرة إلى الحساب والباقات</h2>
+          <h2 className="mt-5 text-3xl font-black leading-tight">{t('public_seo_topic_page.ui.k821hzf')}</h2>
           <p className="mt-3 text-sm leading-7 text-slate-300">
             الهدف من هذه الصفحة أن تختصر التشتت: افهم البيع، راجع المخزون، شاهد تجربة العميل، ثم اختر الباقة المناسبة وابدأ على بيانات نشاطك.
           </p>
@@ -277,13 +278,13 @@ function DemoSection() {
               to="/pricing"
               className="rounded-full border border-white/15 px-6 py-3 text-center text-sm font-black text-white transition-colors hover:bg-white/10"
             >
-              الأسعار والباقات
+              {t('public_seo_topic_page.ui.kr550tn')}
             </Link>
             <Link
               to="/login?mode=register"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:-translate-y-0.5"
             >
-              ابدأ الحساب الآن
+              {t('public_seo_topic_page.ui.kwfqrce')}
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>
@@ -294,6 +295,7 @@ function DemoSection() {
 }
 
 export default function PublicSeoTopicPage() {
+  const { t } = useTranslation('admin');
   const location = useLocation();
   const page = findSeoLandingPage(location.pathname);
   const isPricingPage = location.pathname === '/pricing';
@@ -316,7 +318,7 @@ export default function PublicSeoTopicPage() {
         setPlans(Array.isArray(response?.data?.data) ? response.data.data : []);
       } catch (error) {
         if (cancelled) return;
-        setPlansError('تعذر تحميل الباقات الآن. يمكنك متابعة الديمو أو إنشاء الحساب، ثم مراجعة الباقة من داخل المنصة.');
+        setPlansError(t('public_seo_topic_page.ui.kh1je09'));
       } finally {
         if (!cancelled) setPlansLoading(false);
       }
@@ -336,7 +338,7 @@ export default function PublicSeoTopicPage() {
   const Icon = page.icon;
   const relatedPages = (page.relatedPaths || []).map((path) => findSeoLandingPage(path)).filter(Boolean);
   const secondaryCtaLink = isPricingPage ? '/demo' : '/pricing';
-  const secondaryCtaLabel = isPricingPage ? 'شاهد الديمو' : 'الأسعار والباقات';
+  const secondaryCtaLabel = isPricingPage ? t('public_seo_topic_page.ui.k5uekyo') : t('public_seo_topic_page.ui.kr550tn');
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
@@ -352,7 +354,7 @@ export default function PublicSeoTopicPage() {
               to="/login?mode=register"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition-transform hover:-translate-y-0.5"
             >
-              ابدأ حسابك
+              {t('public_seo_topic_page.ui.khqnfld')}
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <Link
@@ -368,8 +370,8 @@ export default function PublicSeoTopicPage() {
           <div className="inline-flex rounded-2xl bg-white/10 p-3 text-white">
             <Icon className="h-6 w-6" />
           </div>
-          <p className="mt-4 text-sm font-black uppercase tracking-[0.18em] text-amber-300">كيف تظهر القيمة في التشغيل اليومي؟</p>
-          <h2 className="mt-3 text-3xl font-black leading-tight">كيف يظهر الأثر في يوم العمل؟</h2>
+          <p className="mt-4 text-sm font-black uppercase tracking-[0.18em] text-amber-300">{t('public_seo_topic_page.ui.kcce1ze')}</p>
+          <h2 className="mt-3 text-3xl font-black leading-tight">{t('public_seo_topic_page.ui.ks0dpa')}</h2>
           <div className="mt-5 grid gap-3">
             {page.proofPoints.map((point) => (
               <div key={point} className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 text-sm font-bold leading-7 text-white/90">
@@ -382,8 +384,8 @@ export default function PublicSeoTopicPage() {
 
       <section className="mt-10">
         <div className="text-right">
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أمثلة من الاستخدام اليومي</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">مشاهد عملية يفهم منها العميل كيف تخدمه المنصة</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.k5ad8nn')}</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.k8eqqbv')}</h2>
         </div>
 
         <div className="mt-6 grid gap-5 md:grid-cols-3">
@@ -399,8 +401,8 @@ export default function PublicSeoTopicPage() {
       <section className="app-surface mt-10 rounded-[2rem] bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-6 text-right sm:p-8 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20">
         <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-start">
           <div>
-            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">ما الذي ستجده داخل المنصة؟</p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">قدرات واضحة مرتبطة بنتيجة عملية</h2>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.k6azaft')}</p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.k43sl4g')}</h2>
             <p className="app-text-soft mt-3 text-base leading-8">
               هذه القدرات مرتبطة بما يحتاجه النشاط فعليًا أثناء العمل: سرعة، وضوح، ومتابعة يمكن الاعتماد عليها يومًا بعد يوم.
             </p>
@@ -414,7 +416,7 @@ export default function PublicSeoTopicPage() {
           </div>
 
           <div>
-            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">لماذا يختارها أصحاب الأنشطة؟</p>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.kzfr4q8')}</p>
             <div className="mt-4 grid gap-3">
               {page.outcomes.map((item) => (
                 <div key={item} className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-bold leading-7 text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:shadow-none">
@@ -431,8 +433,8 @@ export default function PublicSeoTopicPage() {
 
       <section className="mt-10">
         <div className="text-right">
-          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">أسئلة قبل القرار</p>
-          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">إجابات مباشرة تساعد الزائر على فهم المنصة بسرعة</h2>
+          <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.kj7o4xp')}</p>
+          <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.kpa2gpt')}</h2>
         </div>
 
         <div className="mt-6 grid gap-4">
@@ -453,20 +455,20 @@ export default function PublicSeoTopicPage() {
                 to="/pricing"
                 className="app-surface-muted rounded-full px-6 py-3 text-center text-sm font-black text-slate-800 transition-colors hover:bg-white dark:text-slate-100 dark:hover:bg-white/10"
               >
-                الأسعار والباقات
+                {t('public_seo_topic_page.ui.kr550tn')}
               </Link>
               <Link
                 to="/login?mode=register"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15"
               >
-                ابدأ الآن
+                {t('public_seo_topic_page.ui.kl6w4j0')}
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </div>
           </div>
           <div className="order-1 sm:order-2">
-            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">صفحات مرتبطة</p>
-            <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">إذا كان هذا الجزء هو الأقرب لاحتياجك، فهذه المسارات تكمل الصورة</h2>
+            <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_seo_topic_page.ui.kh4xhig')}</p>
+            <h2 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.kt42glr')}</h2>
           </div>
         </div>
 
@@ -493,8 +495,8 @@ export default function PublicSeoTopicPage() {
       <section className="mt-10 rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6 text-right dark:border-emerald-400/20 dark:bg-emerald-400/10 sm:p-8">
         <div className="grid gap-4 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-emerald-700">الخلاصة</p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">خلاصة واضحة قبل مشاهدة الديمو أو بدء الحساب</h2>
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-emerald-700">{t('public_seo_topic_page.ui.kzekuq0')}</p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950 dark:text-white">{t('public_seo_topic_page.ui.kpc9alp')}</h2>
             <p className="app-text-soft mt-3 text-base leading-8">
               إذا كانت طريقة العمل هنا قريبة من احتياجك، فالخطوة التالية هي مشاهدة الديمو أو بدء الحساب لتقييم المنصة على بياناتك أنت.
             </p>

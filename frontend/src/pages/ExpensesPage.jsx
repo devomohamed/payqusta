@@ -6,6 +6,7 @@ import { notify } from '../components/AnimatedNotification';
 import { expensesApi } from '../store';
 import { Card, Button, Badge, EmptyState, Modal, LoadingSpinner } from '../components/UI';
 import Pagination from '../components/Pagination';
+import { useTranslation } from 'react-i18next';
 
 const CATEGORY_COLORS = {
   rent: '#6366f1', salaries: '#10b981', utilities: '#f59e0b', supplies: '#ec4899',
@@ -18,6 +19,7 @@ const CATEGORY_LABELS = {
 import { format } from 'date-fns';
 
 export default function ExpensesPage() {
+  const { t } = useTranslation('admin');
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -43,7 +45,7 @@ export default function ExpensesPage() {
       const res = await expensesApi.getAll({ page, limit: 12, ...filter });
       setExpenses(res.data.data || []);
       setTotal(res.data.pagination?.total || 0);
-    } catch { toast.error('خطأ في تحميل المصروفات'); }
+    } catch { toast.error(t('expenses_page.toasts.kg7fnnv')); }
     finally { setLoading(false); }
   };
 
@@ -63,37 +65,37 @@ export default function ExpensesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.amount) return toast.error('العنوان والمبلغ مطلوبين');
+    if (!form.title || !form.amount) return toast.error(t('expenses_page.toasts.kbaui1'));
     try {
       if (editItem) {
         await expensesApi.update(editItem._id, { ...form, amount: parseFloat(form.amount) });
-        toast.success('تم تحديث المصروف');
+        toast.success(t('expenses_page.toasts.kgjjgor'));
       } else {
         await expensesApi.create({ ...form, amount: parseFloat(form.amount) });
-        toast.success('تم إضافة المصروف');
+        toast.success(t('expenses_page.toasts.k1fxbpm'));
       }
       closeModal();
       loadExpenses();
       loadSummary();
-    } catch (err) { toast.error(err.response?.data?.message || 'خطأ'); }
+    } catch (err) { toast.error(err.response?.data?.message || t('expenses_page.toasts.kxoca')); }
   };
 
   const handleDelete = async (id) => {
     notify.custom({
       type: 'error',
-      title: 'تأكيد الحذف',
-      message: 'هل تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.',
+      title: t('expenses_page.ui.kksqseo'),
+      message: t('expenses_page.ui.k4lwu5a'),
       duration: 10000,
       action: {
-        label: 'تأكيد الحذف',
+        label: t('expenses_page.ui.kksqseo'),
         onClick: async () => {
           try {
             await expensesApi.delete(id);
-            notify.success('تم حذف المصروف بنجاح', 'تم الحذف');
+            notify.success(t('expenses_page.ui.k927smi'), t('expenses_page.ui.kwtu2as'));
             loadExpenses();
             loadSummary();
           } catch (err) {
-            notify.error('فشل حذف المصروف', 'خطأ في الحذف');
+            notify.error(t('expenses_page.ui.kfijioc'), t('expenses_page.ui.kw4gt8w'));
           }
         },
       },
@@ -119,15 +121,15 @@ export default function ExpensesPage() {
   const fmt = (n) => (n || 0).toLocaleString('ar-EG');
 
   const exportCSV = () => {
-    if (expenses.length === 0) return toast.error('لا توجد بيانات');
-    const headers = ['العنوان', 'الفئة', 'المبلغ', 'التاريخ', 'طريقة الدفع'];
+    if (expenses.length === 0) return toast.error(t('expenses_page.toasts.km3iafu'));
+    const headers = ['العنوان', t('expenses_page.ui.kove7jb'), t('expenses_page.ui.kaaxgsq'), t('expenses_page.ui.kzbvdnf'), 'طريقة الدفع'];
     const rows = expenses.map(e => [e.title, CATEGORY_LABELS[e.category] || e.category, e.amount, new Date(e.date).toLocaleDateString('ar-EG'), e.paymentMethod]);
     const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'expenses.csv'; a.click();
     URL.revokeObjectURL(url);
-    toast.success('تم التصدير');
+    toast.success(t('expenses_page.toasts.kar2h4n'));
   };
 
   const pieData = summary?.byCategory?.map(c => ({ name: CATEGORY_LABELS[c._id] || c._id, value: c.total, color: CATEGORY_COLORS[c._id] || '#6b7280' })) || [];
@@ -141,25 +143,25 @@ export default function ExpensesPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
               <Receipt className="h-3.5 w-3.5" />
-              مراقبة المصروفات والتكاليف
+              {t('expenses_page.ui.knzfjzu')}
             </div>
-            <h1 className="mt-4 text-2xl font-black sm:text-3xl">المصروفات</h1>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">{t('expenses_page.ui.ko4ileo')}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
-              تتبع الإنفاق اليومي والتشغيلي بصريًا مع قراءة أسرع على الهاتف وملخص أوضح للاتجاه المالي.
+              {t('expenses_page.ui.k1a5cvu')}
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[470px]">
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">إجمالي الفترة</p>
+              <p className="text-xs font-bold text-white/65">{t('expenses_page.ui.kfgn17z')}</p>
               <p className="mt-2 text-lg font-black">{fmt(summary?.total)} ج.م</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">عدد المصروفات</p>
+              <p className="text-xs font-bold text-white/65">{t('expenses_page.ui.kp6qelj')}</p>
               <p className="mt-2 text-2xl font-black">{fmt(summary?.count)}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-sm">
-              <p className="text-xs font-bold text-white/65">النتائج الحالية</p>
+              <p className="text-xs font-bold text-white/65">{t('expenses_page.ui.knwhkmw')}</p>
               <p className="mt-2 text-lg font-black">{fmt(total)} سجل ظاهر</p>
             </div>
           </div>
@@ -181,15 +183,15 @@ export default function ExpensesPage() {
           <Card className="app-surface-muted p-4 border-2 border-rose-100 dark:border-rose-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-400">إجمالي الشهر</p>
-                <p className="text-2xl font-black text-rose-600">{fmt(summary.total)}<span className="text-sm mr-1">ج.م</span></p>
+                <p className="text-xs text-gray-400">{t('expenses_page.ui.k7detkg')}</p>
+                <p className="text-2xl font-black text-rose-600">{fmt(summary.total)}<span className="text-sm mr-1">{t('expenses_page.ui.kwlxf')}</span></p>
               </div>
               <TrendingDown className="w-8 h-8 text-rose-300" />
             </div>
             <p className="text-[10px] text-gray-400 mt-1">{summary.count} مصروف</p>
           </Card>
           <Card className="app-surface-muted p-4">
-            <p className="text-xs text-gray-400 mb-2">توزيع حسب الفئة</p>
+            <p className="text-xs text-gray-400 mb-2">{t('expenses_page.ui.kv2piac')}</p>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={120}>
                 <PieChart>
@@ -202,14 +204,14 @@ export default function ExpensesPage() {
             ) : (
               <EmptyState
                 icon={TrendingDown}
-                title="لا توجد بيانات"
+                title={t('expenses_page.titles.km3iafu')}
                 description="سيظهر توزيع المصروفات هنا بعد تسجيل بيانات كافية."
                 className="py-4"
               />
             )}
           </Card>
           <Card className="app-surface-muted p-4">
-            <p className="text-xs text-gray-400 mb-2">أعلى الفئات</p>
+            <p className="text-xs text-gray-400 mb-2">{t('expenses_page.ui.kd2uooa')}</p>
             <div className="space-y-2">
               {(summary.byCategory || []).slice(0, 3).map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -226,13 +228,13 @@ export default function ExpensesPage() {
       {/* Filters */}
       <Card className="app-surface-muted p-4 sm:p-5">
         <div className="mb-4">
-          <p className="text-sm font-black text-gray-900 dark:text-white">فلاتر المصروفات</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">اختر الفئة أو راجع الفترة الحالية بسرعة من الهاتف.</p>
+          <p className="text-sm font-black text-gray-900 dark:text-white">{t('expenses_page.ui.k2tk7hn')}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('expenses_page.ui.k6c6166')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <select value={filter.category} onChange={(e) => { setFilter({ ...filter, category: e.target.value }); setPage(1); }}
             className="app-surface rounded-xl border-2 border-transparent px-3 py-2 text-sm">
-            <option value="">كل الفئات</option>
+            <option value="">{t('expenses_page.ui.ki151rw')}</option>
             {categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
           </select>
           {filter.category && (
@@ -248,9 +250,9 @@ export default function ExpensesPage() {
         {expenses.length === 0 ? (
           <EmptyState
             icon={Receipt}
-            title="لا توجد مصروفات"
+            title={t('expenses_page.titles.keyt6sb')}
             description="ابدأ بإضافة أول مصروف ليظهر السجل والتحليلات هنا."
-            action={{ label: 'إضافة مصروف', onClick: () => setShowModal(true) }}
+            action={{ label: t('expenses_page.ui.ktcii1k'), onClick: () => setShowModal(true) }}
             className="px-4"
           />
         ) : (
@@ -264,11 +266,11 @@ export default function ExpensesPage() {
                   <p className="font-bold text-sm">{exp.title}</p>
                   <p className="text-[10px] text-gray-400">
                     {CATEGORY_LABELS[exp.category] || exp.category} · {new Date(exp.date).toLocaleDateString('ar-EG')}
-                    {exp.isRecurring && <Badge variant="info" className="mr-2">متكرر</Badge>}
+                    {exp.isRecurring && <Badge variant="info" className="mr-2">{t('expenses_page.ui.kpbfhfi')}</Badge>}
                   </p>
                 </div>
                 <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
-                  <p className="text-lg font-extrabold text-rose-600">{fmt(exp.amount)}<span className="text-xs mr-0.5">ج.م</span></p>
+                  <p className="text-lg font-extrabold text-rose-600">{fmt(exp.amount)}<span className="text-xs mr-0.5">{t('expenses_page.ui.kwlxf')}</span></p>
                   <div className="flex gap-1">
                     <button onClick={() => openEdit(exp)} className="p-2 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 transition-colors"><Edit2 className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(exp._id)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -283,64 +285,64 @@ export default function ExpensesPage() {
 
       {/* Modal */}
       {showModal && (
-        <Modal onClose={closeModal} title={editItem ? 'تعديل مصروف' : 'إضافة مصروف'}>
+        <Modal onClose={closeModal} title={editItem ? t('expenses_page.ui.k3g7mb8') : 'إضافة مصروف'}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-gray-500 mb-1 block">العنوان *</label>
-              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="مثال: إيجار المحل"
+              <label className="text-xs font-bold text-gray-500 mb-1 block">{t('expenses_page.ui.kl7uz8n')}</label>
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t('expenses_page.placeholders.kw9vh21')}
                 className="app-surface w-full rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" required />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1 block">الفئة</label>
+                <label className="text-xs font-bold text-gray-500 mb-1 block">{t('expenses_page.ui.kove7jb')}</label>
                 <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
                   className="app-surface w-full rounded-xl border-2 border-transparent px-3 py-2.5 text-sm">
                   {categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1 block">المبلغ *</label>
+                <label className="text-xs font-bold text-gray-500 mb-1 block">{t('expenses_page.ui.ksgprcw')}</label>
                 <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0"
                   className="app-surface w-full rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" required min="0" step="0.01" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1 block">التاريخ</label>
+                <label className="text-xs font-bold text-gray-500 mb-1 block">{t('expenses_page.ui.kzbvdnf')}</label>
                 <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="app-surface w-full rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-500 mb-1 block">طريقة الدفع</label>
+                <label className="text-xs font-bold text-gray-500 mb-1 block">{t('expenses_page.ui.kfj3di7')}</label>
                 <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
                   className="app-surface w-full rounded-xl border-2 border-transparent px-3 py-2.5 text-sm">
-                  <option value="cash">نقد</option>
-                  <option value="bank">تحويل بنكي</option>
-                  <option value="card">بطاقة</option>
+                  <option value="cash">{t('expenses_page.ui.ky6er')}</option>
+                  <option value="bank">{t('expenses_page.ui.kpd74me')}</option>
+                  <option value="card">{t('expenses_page.ui.kovp6ov')}</option>
                 </select>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <input type="checkbox" id="recurring" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} className="w-4 h-4 rounded" />
-              <label htmlFor="recurring" className="text-sm">مصروف متكرر</label>
+              <label htmlFor="recurring" className="text-sm">{t('expenses_page.ui.ko0cpxk')}</label>
               {form.isRecurring && (
                 <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}
                   className="app-surface rounded-lg border border-transparent px-2 py-1 text-xs">
-                  <option value="daily">يومي</option>
-                  <option value="weekly">أسبوعي</option>
-                  <option value="monthly">شهري</option>
-                  <option value="yearly">سنوي</option>
+                  <option value="daily">{t('expenses_page.ui.kti8v7')}</option>
+                  <option value="weekly">{t('expenses_page.ui.kcgyblr')}</option>
+                  <option value="monthly">{t('expenses_page.ui.kt45xo')}</option>
+                  <option value="yearly">{t('expenses_page.ui.kt3ir9')}</option>
                 </select>
               )}
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500 mb-1 block">ملاحظات</label>
+              <label className="text-xs font-bold text-gray-500 mb-1 block">{t('expenses_page.ui.notes')}</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2}
                 className="app-surface w-full resize-none rounded-xl border-2 border-transparent px-4 py-2.5 text-sm" />
             </div>
             <div className="flex gap-2 pt-2">
-              <Button type="submit" className="flex-1">{editItem ? 'حفظ التعديلات' : 'إضافة المصروف'}</Button>
-              <Button type="button" variant="outline" onClick={closeModal}>إلغاء</Button>
+              <Button type="submit" className="flex-1">{editItem ? t('expenses_page.ui.km6ld24') : 'إضافة المصروف'}</Button>
+              <Button type="button" variant="outline" onClick={closeModal}>{t('expenses_page.ui.cancel')}</Button>
             </div>
           </form>
         </Modal>

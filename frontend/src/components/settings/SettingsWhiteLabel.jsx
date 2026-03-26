@@ -4,8 +4,10 @@ import { useAuthStore, useThemeStore, api } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMapper';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsWhiteLabel() {
+  const { t } = useTranslation('admin');
     const { tenant, getMe } = useAuthStore();
     const { dark, toggleTheme } = useThemeStore();
     const [saving, setSaving] = useState(false);
@@ -39,7 +41,7 @@ export default function SettingsWhiteLabel() {
     const isDomainValid = !hasDomain || /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(normalizedDomain);
     const domainStatus = hasDomain ? (tenant?.customDomainStatus || 'pending') : 'not_configured';
     const domainStatusLabel = {
-        not_configured: 'غير مفعّل',
+        not_configured: t('settings_white_label.ui.ksyv0un'),
         pending: 'Pending DNS',
         connected: 'Connected',
     }[domainStatus] || 'Pending DNS';
@@ -54,7 +56,7 @@ export default function SettingsWhiteLabel() {
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.size > 20 * 1024 * 1024) {
-            notify.error('حجم الشعار يجب ألا يتجاوز 20MB');
+            notify.error(t('settings_white_label.toasts.k8q32f4'));
             return;
         }
 
@@ -73,11 +75,11 @@ export default function SettingsWhiteLabel() {
             if (logoUrl) {
                 setForm(prev => ({ ...prev, logo: logoUrl }));
                 setLogoPreview(logoUrl);
-                notify.success('تم رفع الشعار بنجاح ✓');
+                notify.success(t('settings_white_label.toasts.k9vap9t'));
                 getMe();
             }
         } catch (err) {
-            notify.error(getUserFriendlyErrorMessage(err, 'فشل رفع الشعار'));
+            notify.error(getUserFriendlyErrorMessage(err, t('settings_white_label.toasts.kyo1itu')));
             setLogoPreview(form.logo || null);
         } finally {
             setUploadingLogo(false);
@@ -101,10 +103,10 @@ export default function SettingsWhiteLabel() {
                 secondaryColor: form.secondaryColor,
                 customDomain: normalizedDomain,
             });
-            notify.success('تم حفظ إعدادات الهوية البصرية بنجاح');
+            notify.success(t('settings_white_label.toasts.knmnezy'));
             getMe();
         } catch (err) {
-            notify.error(getUserFriendlyErrorMessage(err, 'فشل حفظ الإعدادات'));
+            notify.error(getUserFriendlyErrorMessage(err, t('settings_white_label.toasts.ksjcjia')));
         } finally {
             setSaving(false);
         }
@@ -119,7 +121,7 @@ export default function SettingsWhiteLabel() {
                 </div>
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">White-label والهوية البصرية</h2>
-                    <p className="text-sm text-subtle">خصص شعارك وألوانك لتمييز متجرك</p>
+                    <p className="text-sm text-subtle">{t('settings_white_label.ui.kaeimzf')}</p>
                 </div>
             </div>
 
@@ -136,7 +138,7 @@ export default function SettingsWhiteLabel() {
                         {uploadingLogo ? (
                             <div className="flex flex-col items-center text-primary-500">
                                 <Loader2 className="w-8 h-8 animate-spin mb-1" />
-                                <p className="text-xs">جار الرفع...</p>
+                                <p className="text-xs">{t('settings_white_label.ui.kwi30s')}</p>
                             </div>
                         ) : logoPreview ? (
                             <>
@@ -148,7 +150,7 @@ export default function SettingsWhiteLabel() {
                         ) : (
                             <div className="text-center text-muted">
                                 <Upload className="w-6 h-6 mx-auto mb-1" />
-                                <p className="text-xs">رفع شعار</p>
+                                <p className="text-xs">{t('settings_white_label.ui.kqmr0nu')}</p>
                             </div>
                         )}
                     </div>
@@ -182,7 +184,7 @@ export default function SettingsWhiteLabel() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">اللون الأساسي (Primary)</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{t('settings_white_label.ui.kcujd7p')}</label>
                         <div className="flex items-center gap-3">
                             <input
                                 type="color"
@@ -199,7 +201,7 @@ export default function SettingsWhiteLabel() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">اللون الثانوي (Secondary)</label>
+                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">{t('settings_white_label.ui.ktsqg0f')}</label>
                         <div className="flex items-center gap-3">
                             <input
                                 type="color"
@@ -219,7 +221,7 @@ export default function SettingsWhiteLabel() {
 
                 {/* Color preview */}
                 <div className="mt-6 p-4 rounded-xl border border-gray-100 dark:border-white/5">
-                    <p className="text-xs text-muted mb-3">معاينة الألوان:</p>
+                    <p className="text-xs text-muted mb-3">{t('settings_white_label.ui.kxrrhmf')}</p>
                     <div className="flex items-center gap-3">
                         <div className="h-10 flex-1 rounded-lg" style={{ backgroundColor: form.primaryColor }}></div>
                         <div className="h-10 flex-1 rounded-lg" style={{ backgroundColor: form.secondaryColor }}></div>
@@ -239,15 +241,15 @@ export default function SettingsWhiteLabel() {
                     </span>
                 </div>
                 <div className="text-sm text-subtle mb-4 space-y-2 bg-white dark:bg-gray-950/50 p-4 rounded-lg border border-gray-100 dark:border-white/5 text-right">
-                    <p className="font-bold text-gray-900 dark:text-gray-100">الفرق بين رابط المتجر والنطاق المخصص:</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-100">{t('settings_white_label.ui.kc4plb4')}</p>
                     <ul className="list-disc list-inside pr-2 space-y-1 text-xs leading-relaxed">
-                        <li><strong className="text-primary-600 dark:text-primary-400">رابط المتجر الأساسي (Subdomain):</strong> يتم ضبطه من شاشة <strong className="text-gray-700 dark:text-gray-300">"إعدادات المتجر الأساسية"</strong>، ويكون مجانياً (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">shop.payqusta.com</span>).</li>
-                        <li><strong className="text-pink-600 dark:text-pink-400">النطاق المخصص (Custom Domain):</strong> مدفوع تشتريه من شركة خارجية (مثل GoDaddy) ليكون باسم شركتك (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">www.myshop.com</span>).</li>
+                        <li><strong className="text-primary-600 dark:text-primary-400">{t('settings_white_label.ui.k7id1uu')}</strong> يتم ضبطه من شاشة <strong className="text-gray-700 dark:text-gray-300">"إعدادات المتجر الأساسية"</strong>{t('settings_white_label.ui.kk7um70')} <span dir="ltr" className="font-mono text-[10px] ml-1">shop.payqusta.com</span>).</li>
+                        <li><strong className="text-pink-600 dark:text-pink-400">{t('settings_white_label.ui.kw5xo9t')}</strong> مدفوع تشتريه من شركة خارجية (مثل GoDaddy) ليكون باسم شركتك (مثال: <span dir="ltr" className="font-mono text-[10px] ml-1">www.myshop.com</span>).</li>
                     </ul>
-                    <p className="text-xs pt-2 mt-2 border-t border-gray-100 dark:border-white/10">لربط نطاقك المخصص بنجاح، يجب توجيه <b>CNAME Record</b> من لوحة تحكم النطاق الخاص بك إلى هذا الخادم ثم حفظ رابط النطاق هنا بدون <span dir="ltr" className="font-mono ml-1">http://</span>.</p>
+                    <p className="text-xs pt-2 mt-2 border-t border-gray-100 dark:border-white/10">{t('settings_white_label.ui.kmdvhfa')} <b>CNAME Record</b> من لوحة تحكم النطاق الخاص بك إلى هذا الخادم ثم حفظ رابط النطاق هنا بدون <span dir="ltr" className="font-mono ml-1">http://</span>.</p>
                 </div>
                 <Input
-                    label="النطاق المخصص"
+                    label={t('settings_white_label.form.krpt20z')}
                     value={form.customDomain}
                     onChange={(e) => {
                         const value = e.target.value;
@@ -275,16 +277,16 @@ export default function SettingsWhiteLabel() {
                     <Palette className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">المظهر</h2>
-                    <p className="text-xs text-subtle">تخصيص واجهة التطبيق العامة</p>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('settings_white_label.ui.kaax4va')}</h2>
+                    <p className="text-xs text-subtle">{t('settings_white_label.ui.k3s0a4y')}</p>
                 </div>
             </div>
 
             {/* Dark Mode Toggle */}
             <div className="p-4 rounded-xl border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950 flex items-center justify-between">
                 <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">الوضع الليلي</h3>
-                    <p className="text-sm text-subtle">تبديل بين الفاتح والداكن</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white">{t('settings_white_label.ui.ku9as1n')}</h3>
+                    <p className="text-sm text-subtle">{t('settings_white_label.ui.kh7escp')}</p>
                 </div>
                 <button
                     onClick={toggleTheme}
@@ -297,7 +299,7 @@ export default function SettingsWhiteLabel() {
             {/* Save */}
             <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10">
                 <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>
-                    حفظ إعدادات الهوية
+                    {t('settings_white_label.ui.kr4fw25')}
                 </Button>
             </div>
         </div>

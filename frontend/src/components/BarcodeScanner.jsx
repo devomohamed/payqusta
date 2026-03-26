@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, Camera, CheckCircle, Flashlight, ScanLine, Upload, X } from 'lucide-react';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { Button, Input } from './UI';
@@ -11,6 +12,7 @@ function createScanPayload(value, format = 'UNKNOWN') {
 }
 
 export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
+  const { t } = useTranslation('admin');
   const [manualCode, setManualCode] = useState('');
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
@@ -47,7 +49,7 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
   const handleBarcodeScan = useCallback((payload) => {
     const normalizedPayload = createScanPayload(payload?.value ?? payload, payload?.format);
     if (!normalizedPayload.value) return;
-    setSuccess(`تم مسح: ${normalizedPayload.value}`);
+    setSuccess(t('barcode_scanner.scan_success', { code: normalizedPayload.value }));
     setError('');
     stopCameraScanning();
     onScan(normalizedPayload);
@@ -75,7 +77,7 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
           return;
         }
         if (scanError && !(scanError instanceof NotFoundException)) {
-          setError('تعذر قراءة الباركود من الكاميرا');
+          setError(t('barcode_scanner.errors.camera_read_failed'));
         }
       });
 
@@ -85,10 +87,10 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
       const capabilities = track?.getCapabilities?.();
       setTorchSupported(Boolean(capabilities?.torch));
     } catch (_) {
-      setError('لا يمكن الوصول إلى الكاميرا. تأكد من منح الإذن للمتصفح.');
+      setError(t('barcode_scanner.errors.camera_access_denied'));
       stopCameraScanning();
     }
-  }, [handleBarcodeScan, stopCameraScanning]);
+  }, [handleBarcodeScan, stopCameraScanning, t]);
 
   const toggleTorch = useCallback(async () => {
     const track = activeTrackRef.current;
@@ -98,14 +100,14 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
       await track.applyConstraints({ advanced: [{ torch: nextTorch }] });
       setTorchEnabled(nextTorch);
     } catch (_) {
-      setError('الكشاف غير مدعوم على هذا الجهاز أو المتصفح');
+      setError(t('barcode_scanner.errors.torch_unsupported'));
     }
-  }, [torchEnabled]);
+  }, [t, torchEnabled]);
 
   const handleManualSubmit = (event) => {
     event.preventDefault();
     if (manualCode.trim().length < 3) {
-      setError('الباركود يجب أن يكون 3 أحرف على الأقل');
+      setError(t('barcode_scanner.errors.min_length'));
       return;
     }
     handleBarcodeScan({ value: manualCode, format: 'UNKNOWN' });
@@ -131,7 +133,7 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
         format: result.getBarcodeFormat?.() || 'UNKNOWN',
       });
     } catch (_) {
-      setError('لم يتم العثور على باركود واضح داخل الصورة');
+      setError(t('barcode_scanner.errors.image_not_found'));
     }
   };
 
@@ -170,7 +172,7 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
         <div className="flex items-center justify-between border-b border-gray-100 p-4">
           <div className="flex items-center gap-2">
             <ScanLine className="h-5 w-5 text-primary-500" />
-            <h3 className="font-bold">مسح الباركود</h3>
+            <h3 className="font-bold">{t('barcode_scanner.title')}</h3>
           </div>
           <button onClick={onClose} className="rounded-xl p-2 hover:bg-gray-100">
             <X className="h-5 w-5" />
@@ -204,12 +206,12 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
             <div className="grid grid-cols-2 gap-3">
               <Button type="button" onClick={startCameraScanning} className="h-16 justify-center rounded-2xl">
                 <Camera className="ml-2 h-5 w-5" />
-                مسح بالكاميرا
+                {t('barcode_scanner.actions.scan_camera')}
               </Button>
               <label className="flex h-16 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 font-semibold text-gray-600 transition-colors hover:border-primary-400 hover:bg-primary-50">
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 <Upload className="ml-2 h-5 w-5" />
-                رفع صورة
+                {t('barcode_scanner.actions.upload_image')}
               </label>
             </div>
           )}
@@ -218,12 +220,12 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
             <div className="grid grid-cols-2 gap-3">
               <Button type="button" variant="ghost" onClick={stopCameraScanning} className="rounded-2xl">
                 <X className="ml-2 h-4 w-4" />
-                إيقاف
+                {t('barcode_scanner.actions.stop')}
               </Button>
               {torchSupported ? (
                 <Button type="button" variant={torchEnabled ? 'primary' : 'outline'} onClick={toggleTorch} className="rounded-2xl">
                   <Flashlight className="ml-2 h-4 w-4" />
-                  تشغيل الفلاش
+                  {t('barcode_scanner.actions.toggle_flash')}
                 </Button>
               ) : <div />}
             </div>
@@ -235,15 +237,15 @@ export default function BarcodeScanner({ onScan, onClose, autoFocus = true }) {
               className="flex-1"
               value={manualCode}
               onChange={(event) => setManualCode(event.target.value)}
-              placeholder="أدخل الباركود..."
+              placeholder={t('barcode_scanner.placeholders.enter_barcode')}
               inputMode="text"
               dir="ltr"
             />
-            <Button type="submit" className="min-w-[5.5rem] rounded-2xl">إضافة</Button>
+            <Button type="submit" className="min-w-[5.5rem] rounded-2xl">{t('barcode_scanner.actions.add')}</Button>
           </form>
 
           <div className="rounded-2xl bg-gray-50 p-3 text-xs text-gray-500">
-            يدعم الكاميرا، قارئ USB keyboard، الإدخال اليدوي، ورفع صورة من الجهاز.
+            {t('barcode_scanner.hint')}
           </div>
         </div>
       </div>

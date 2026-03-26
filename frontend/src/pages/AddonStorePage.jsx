@@ -3,8 +3,10 @@ import { ShoppingBag, Star, Zap, CheckCircle } from 'lucide-react';
 import { api, useAuthStore } from '../store';
 import { LoadingSpinner, Button, Badge, EmptyState } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
+import { useTranslation } from 'react-i18next';
 
 export default function AddonStorePage() {
+  const { t } = useTranslation('admin');
   const { tenant, getMe } = useAuthStore();
   const [addons, setAddons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ export default function AddonStorePage() {
       const res = await api.get('/addons');
       setAddons(res.data.data || []);
     } catch (err) {
-      notify.error('فشل جلب الإضافات من المتجر');
+      notify.error(t('addon_store_page.toasts.kcrvh5c'));
     } finally {
       setLoading(false);
     }
@@ -27,7 +29,7 @@ export default function AddonStorePage() {
 
   const handlePurchase = async (addon) => {
     if (tenant?.addons?.includes(addon.key)) {
-      return notify.info('أنت تمتلك هذه الإضافة بالفعل');
+      return notify.info(t('addon_store_page.toasts.k136k0j'));
     }
 
     setProcessing(addon._id);
@@ -38,7 +40,7 @@ export default function AddonStorePage() {
         getMe();
       }
     } catch (err) {
-      notify.error(err.response?.data?.message || 'فشلت عملية الشراء');
+      notify.error(err.response?.data?.message || t('addon_store_page.toasts.ksb9iak'));
     } finally {
       setProcessing(null);
     }
@@ -53,9 +55,9 @@ export default function AddonStorePage() {
           <div className="mb-4 inline-flex items-center justify-center rounded-xl bg-white/20 p-2 backdrop-blur-sm">
             <ShoppingBag className="h-6 w-6 text-white" />
           </div>
-          <h1 className="mb-4 text-3xl font-bold md:text-4xl">متجر الإضافات (Add-ons)</h1>
+          <h1 className="mb-4 text-3xl font-bold md:text-4xl">{t('addon_store_page.ui.kqstqza')}</h1>
           <p className="text-lg text-purple-100">
-            قم بتوسيع قدرات متجرك من خلال الميزات والتقارير المتقدمة المصممة خصيصًا لنمو عملك.
+            {t('addon_store_page.ui.kkuvfct')}
           </p>
         </div>
       </div>
@@ -65,7 +67,7 @@ export default function AddonStorePage() {
           <div className="col-span-full">
             <EmptyState
               icon={ShoppingBag}
-              title="لا توجد إضافات متاحة حاليًا"
+              title={t('addon_store_page.titles.k3iagpa')}
               description="ستظهر الإضافات الجاهزة للتفعيل هنا بمجرد إتاحتها لمتجرك."
             />
           </div>
@@ -110,10 +112,10 @@ export default function AddonStorePage() {
                 <div className="mt-auto flex flex-col gap-4 border-t border-gray-100 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <span className="text-2xl font-bold">
-                      {addon.price === 0 ? 'مجانا' : `${addon.price} ${addon.currency}`}
+                      {addon.price === 0 ? t('addon_store_page.ui.kpbg74x') : `${addon.price} ${addon.currency}`}
                     </span>
                     {addon.price > 0 && (
-                      <span className="block text-xs text-gray-400">تدفع مرة واحدة</span>
+                      <span className="block text-xs text-gray-400">{t('addon_store_page.ui.kvncbk2')}</span>
                     )}
                   </div>
 
@@ -124,7 +126,7 @@ export default function AddonStorePage() {
                     variant={isOwned ? 'outline' : 'primary'}
                     className={`w-full sm:w-auto ${!isOwned ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white' : ''}`}
                   >
-                    {isOwned ? 'مفعّل' : 'شراء الآن'}
+                    {isOwned ? t('addon_store_page.ui.kpbtzhs') : 'شراء الآن'}
                   </Button>
                 </div>
               </div>

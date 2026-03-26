@@ -7,8 +7,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cloud, CloudOff, RefreshCw, CheckCircle, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import syncService from '../services/SyncService';
+import { useTranslation } from 'react-i18next';
 
 export default function SyncNotification() {
+  const { t } = useTranslation('admin');
   const [syncStatus, setSyncStatus] = useState({
     isOnline: navigator.onLine,
     isSyncing: false,
@@ -88,8 +90,8 @@ export default function SyncNotification() {
         return {
           icon: RefreshCw,
           gradient: 'from-blue-500 via-cyan-500 to-teal-500',
-          text: 'جاري المزامنة...',
-          description: syncStatus.pendingCount > 0 ? `${syncStatus.pendingCount} عناصر في الانتظار` : 'جاري تحديث البيانات',
+          text: t('sync_notification.ui.kjln7d5'),
+          description: syncStatus.pendingCount > 0 ? `${syncStatus.pendingCount} عناصر في الانتظار` : t('sync_notification.ui.k6dw9s0'),
           animate: true,
           pulse: true,
         };
@@ -98,7 +100,7 @@ export default function SyncNotification() {
         return {
           icon: CheckCircle,
           gradient: 'from-emerald-500 via-green-500 to-teal-500',
-          text: 'تمت المزامنة بنجاح! ✅',
+          text: t('sync_notification.ui.kdgn1qi'),
           description: syncStatus.lastSyncTime ? `آخر تحديث: ${new Date(syncStatus.lastSyncTime).toLocaleTimeString('ar-EG')}` : '',
           animate: false,
           pulse: false,
@@ -108,8 +110,8 @@ export default function SyncNotification() {
         return {
           icon: AlertCircle,
           gradient: 'from-rose-500 via-red-500 to-pink-500',
-          text: 'فشلت المزامنة',
-          description: 'سيتم إعادة المحاولة تلقائياً',
+          text: t('sync_notification.ui.keaaupe'),
+          description: t('sync_notification.ui.kvmx5x'),
           animate: false,
           pulse: true,
         };
@@ -118,8 +120,8 @@ export default function SyncNotification() {
         return {
           icon: WifiOff,
           gradient: 'from-amber-500 via-orange-500 to-red-500',
-          text: 'غير متصل بالإنترنت',
-          description: 'ستتم المزامنة عند عودة الاتصال',
+          text: t('sync_notification.ui.kjqtkqk'),
+          description: t('sync_notification.ui.k547iow'),
           animate: false,
           pulse: true,
         };
@@ -128,8 +130,8 @@ export default function SyncNotification() {
         return {
           icon: Wifi,
           gradient: 'from-green-500 via-emerald-500 to-teal-500',
-          text: 'عاد الاتصال! 🎉',
-          description: 'جاري المزامنة...',
+          text: t('sync_notification.ui.k4jkitd'),
+          description: t('sync_notification.ui.kjln7d5'),
           animate: false,
           pulse: false,
         };
@@ -139,7 +141,7 @@ export default function SyncNotification() {
           icon: Cloud,
           gradient: 'from-violet-500 via-purple-500 to-fuchsia-500',
           text: `${syncStatus.pendingCount} عناصر تنتظر المزامنة`,
-          description: 'قم بالاتصال بالإنترنت للمزامنة',
+          description: t('sync_notification.ui.kxnwqdm'),
           animate: false,
           pulse: true,
         };
@@ -148,7 +150,7 @@ export default function SyncNotification() {
         return {
           icon: CheckCircle,
           gradient: 'from-cyan-500 via-sky-500 to-blue-500',
-          text: 'تمت المزامنة',
+          text: t('sync_notification.ui.kajcs04'),
           description: '',
           animate: false,
           pulse: false,

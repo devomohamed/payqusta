@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../store';
+import { useTranslation } from 'react-i18next';
 import {
   Users,
   TrendingUp,
@@ -15,6 +16,7 @@ import toast from 'react-hot-toast';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
 
 const CollectorDashboard = () => {
+  const { t } = useTranslation('admin');
   const [collectors, setCollectors] = useState([]);
   const [selectedCollector, setSelectedCollector] = useState(null);
   const [stats, setStats] = useState(null);
@@ -39,7 +41,7 @@ const CollectorDashboard = () => {
         setSelectedCollector(data.data[0]);
       }
     } catch (error) {
-      toast.error('فشل تحميل المحصلين');
+      toast.error(t('collector_dashboard.toasts.k7g6wpp'));
     } finally {
       setLoading(false);
     }
@@ -67,10 +69,10 @@ const CollectorDashboard = () => {
       {/* Header */}
       <div className="app-surface-muted rounded-3xl p-5">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          لوحة المحصلين الميدانيين
+          {t('collector_dashboard.ui.kk2t1xy')}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          مراقبة أداء المحصلين في الوقت الفعلي
+          {t('collector_dashboard.ui.kv5mbsh')}
         </p>
       </div>
 
@@ -94,7 +96,7 @@ const CollectorDashboard = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 dark:text-white truncate">
-                  {collector.user?.name || 'محصل'}
+                  {collector.user?.name || t('collector_dashboard.toasts.ktehiv')}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {collector.isActive ? '🟢 نشط' : '🔴 غير نشط'}
@@ -104,13 +106,13 @@ const CollectorDashboard = () => {
 
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">التحصيل اليوم</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('collector_dashboard.ui.kmpkwav')}</span>
                 <span className="font-bold text-gray-900 dark:text-white">
                   {collector.stats?.totalCollected?.toLocaleString() || 0} ج.م
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">معدل النجاح</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('collector_dashboard.ui.kgi89a8')}</span>
                 <span className="font-bold text-green-600">
                   {collector.successRate || 0}%
                 </span>
@@ -129,48 +131,48 @@ const CollectorDashboard = () => {
             <div className="rounded-3xl bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <DollarSign size={32} className="opacity-80" />
-                <span className="text-green-100 text-sm">إجمالي التحصيل</span>
+                <span className="text-green-100 text-sm">{t('collector_dashboard.ui.ki8jjnm')}</span>
               </div>
               <div className="text-3xl font-bold mb-1">
                 {selectedCollector.stats?.totalCollected?.toLocaleString() || 0}
               </div>
-              <p className="text-green-100 text-sm">جنيه مصري</p>
+              <p className="text-green-100 text-sm">{t('collector_dashboard.ui.kda49v6')}</p>
             </div>
 
             {/* Total Visits */}
             <div className="rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <MapPin size={32} className="opacity-80" />
-                <span className="text-blue-100 text-sm">إجمالي الزيارات</span>
+                <span className="text-blue-100 text-sm">{t('collector_dashboard.ui.k744303')}</span>
               </div>
               <div className="text-3xl font-bold mb-1">
                 {selectedCollector.stats?.totalVisits || 0}
               </div>
-              <p className="text-blue-100 text-sm">زيارة</p>
+              <p className="text-blue-100 text-sm">{t('collector_dashboard.ui.kp1j8yv')}</p>
             </div>
 
             {/* Success Rate */}
             <div className="rounded-3xl bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <TrendingUp size={32} className="opacity-80" />
-                <span className="text-purple-100 text-sm">معدل النجاح</span>
+                <span className="text-purple-100 text-sm">{t('collector_dashboard.ui.kgi89a8')}</span>
               </div>
               <div className="text-3xl font-bold mb-1">
                 {selectedCollector.successRate || 0}%
               </div>
-              <p className="text-purple-100 text-sm">من الزيارات</p>
+              <p className="text-purple-100 text-sm">{t('collector_dashboard.ui.k1n8tc1')}</p>
             </div>
 
             {/* Distance Traveled */}
             <div className="rounded-3xl bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-4">
                 <MapPin size={32} className="opacity-80" />
-                <span className="text-orange-100 text-sm">المسافة المقطوعة</span>
+                <span className="text-orange-100 text-sm">{t('collector_dashboard.ui.k46ej61')}</span>
               </div>
               <div className="text-3xl font-bold mb-1">
                 {((selectedCollector.stats?.totalDistance || 0) / 1000).toFixed(1)}
               </div>
-              <p className="text-orange-100 text-sm">كيلومتر</p>
+              <p className="text-orange-100 text-sm">{t('collector_dashboard.ui.kndgugx')}</p>
             </div>
           </div>
 
@@ -178,33 +180,33 @@ const CollectorDashboard = () => {
           {stats.todayPerformance && (
             <div className="app-surface rounded-3xl p-6">
               <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-                أداء اليوم
+                {t('collector_dashboard.ui.kcc81ww')}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">المهام المعينة</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.k5whd6v')}</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {stats.todayPerformance.tasksAssigned || 0}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">المهام المكتملة</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.ku9bchq')}</p>
                   <p className="text-2xl font-bold text-green-600">
                     {stats.todayPerformance.tasksCompleted || 0}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">المبلغ المحصل</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kirhpwe')}</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {stats.todayPerformance.amountCollected?.toLocaleString() || 0} ج.م
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">تقدم الهدف</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kdvplai')}</p>
                   <div className="flex items-end gap-2">
                     <p className="text-2xl font-bold text-purple-600">
                       {stats.todayPerformance.targetProgress || 0}%
@@ -226,40 +228,40 @@ const CollectorDashboard = () => {
           {/* Collector Info */}
           <div className="app-surface rounded-3xl p-6">
             <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-              معلومات المحصل
+              {t('collector_dashboard.ui.kh2gwlg')}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">الاسم</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kovdol8')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {selectedCollector.user?.name || '-'}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">الهاتف</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kaaw86k')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {selectedCollector.user?.phone || '-'}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">المناطق المعينة</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kfb4tcg')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {selectedCollector.assignedRegions?.join(', ') || 'غير محدد'}
+                  {selectedCollector.assignedRegions?.join(', ') || t('collector_dashboard.toasts.k5xt5xj')}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">الهدف اليومي</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.knvlwik')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {selectedCollector.dailyTarget?.toLocaleString() || 0} ج.م
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">آخر نشاط</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kvbkk5j')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {selectedCollector.stats?.lastActive
                     ? new Date(selectedCollector.stats.lastActive).toLocaleString('ar-EG')
@@ -269,7 +271,7 @@ const CollectorDashboard = () => {
               </div>
 
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">الحالة</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('collector_dashboard.ui.kabct8k')}</p>
                 <span className={`
                   inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium
                   ${selectedCollector.isActive

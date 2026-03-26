@@ -11,8 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { confirm } from '../components/ConfirmDialog';
 
 export default function CategoriesPage() {
-    const { can } = useAuthStore();
-    const { t } = useTranslation();
+    const { t } = useTranslation('admin');
+        const { can } = useAuthStore();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -39,13 +39,13 @@ export default function CategoriesPage() {
             const data = res.data.data || [];
 
             // Add a virtual "Uncategorized" category if it doesn't exist in the tree
-            const defaultCat = data.find(c => c.name === 'بدون تصنيف' || c.name === 'بدون قسم' || c.isDefault);
+            const defaultCat = data.find(c => c.name === t('categories_page.ui.kpyx615') || c.name === t('categories_page.ui.kmn6v53') || c.isDefault);
             if (!defaultCat) {
                 data.push({
                     _id: 'uncategorized',
-                    name: 'منتجات أخرى / بدون قسم',
+                    name: t('categories_page.ui.kllccrx'),
                     icon: DEFAULT_CATEGORY_ICON,
-                    description: 'المنتجات التي لم يتم تحديد قسم لها.',
+                    description: t('categories_page.ui.k6wug8p'),
                     children: []
                 });
             }
@@ -58,7 +58,7 @@ export default function CategoriesPage() {
                 setSelectedCategoryId(data[0]._id);
             }
         } catch {
-            toast.error('خطأ في تحميل الأقسام');
+            toast.error(t('categories_page.toasts.k1vaig0'));
         } finally {
             setLoading(false);
         }
@@ -135,8 +135,8 @@ export default function CategoriesPage() {
     };
 
     const handleSave = async () => {
-        if (!form.name) return toast.error('يرجى إدخال اسم القسم');
-        if (sectionMode === 'child' && !form.parent) return toast.error('اختر القسم الرئيسي أولاً');
+        if (!form.name) return toast.error(t('categories_page.toasts.kqwr711'));
+        if (sectionMode === 'child' && !form.parent) return toast.error(t('categories_page.toasts.k6seaa1'));
         setSaving(true);
         try {
             const payload = {
@@ -146,17 +146,17 @@ export default function CategoriesPage() {
 
             if (editId) {
                 await categoriesApi.update(editId, payload);
-                toast.success('تم تحديث القسم');
+                toast.success(t('categories_page.toasts.k3a5y9'));
             } else {
                 const res = await categoriesApi.create(payload);
-                toast.success('تم إضافة القسم');
+                toast.success(t('categories_page.toasts.k1em20g'));
                 // Auto-select new category
                 if (res.data.data?._id) setSelectedCategoryId(res.data.data._id);
             }
             setShowModal(false);
             loadData();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'خطأ في الحفظ');
+            toast.error(err.response?.data?.message || t('categories_page.toasts.kw4gtna'));
         } finally {
             setSaving(false);
         }
@@ -164,15 +164,15 @@ export default function CategoriesPage() {
 
     const handleDelete = async (id) => {
         if (!id) return;
-        const ok = await confirm.delete('هل أنت متأكد من حذف هذا القسم؟ سيتم فك ارتباط المنتجات التابعة له.');
+        const ok = await confirm.delete(t('categories_page.ui.kueqhi5'));
         if (!ok) return;
         try {
             await categoriesApi.delete(id);
-            toast.success('تم حذف القسم');
+            toast.success(t('categories_page.toasts.kivi9kg'));
             if (selectedCategoryId === id) setSelectedCategoryId(null);
             loadData();
         } catch {
-            toast.error('خطأ في الحذف');
+            toast.error(t('categories_page.toasts.kw4gt8w'));
         }
     };
 
@@ -259,9 +259,9 @@ export default function CategoriesPage() {
                 <div className="flex-1 min-w-0">
                     <h1 className="text-2xl font-black font-mona text-gray-800 dark:text-white flex items-center gap-3 mb-1">
                         <FolderTree className="w-8 h-8 text-primary-500" />
-                        إدارة الأقسام
+                        {t('categories_page.ui.kxkuhbe')}
                     </h1>
-                    <p className="text-sm text-gray-500">اختر قسمًا من القائمة لإدارته واستعراض المنتجات المرتبطة به.</p>
+                    <p className="text-sm text-gray-500">{t('categories_page.ui.kay3rqa')}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
@@ -271,7 +271,7 @@ export default function CategoriesPage() {
                             onClick={() => openAdd()}
                             className="bg-primary-500 hover:bg-primary-600 text-white shadow-lg shadow-primary-500/20 px-6 py-3.5 rounded-2xl font-black"
                         >
-                            إضافة قسم جديد
+                            {t('categories_page.ui.kd5p0x6')}
                         </Button>
                     )}
 
@@ -286,8 +286,8 @@ export default function CategoriesPage() {
                             <div className="flex items-center gap-3">
                                 <span className="text-2xl">{selectedCategory?.icon || DEFAULT_CATEGORY_ICON}</span>
                                 <div className="text-right">
-                                    <p className="text-[10px] uppercase font-black text-primary-500 tracking-widest leading-none mb-1 text-right">القسم المختار</p>
-                                    <p className="font-bold text-gray-800 dark:text-white leading-none truncate max-w-[120px] text-right">{selectedCategory?.name || 'اختر قسم...'}</p>
+                                    <p className="text-[10px] uppercase font-black text-primary-500 tracking-widest leading-none mb-1 text-right">{t('categories_page.ui.kdz403f')}</p>
+                                    <p className="font-bold text-gray-800 dark:text-white leading-none truncate max-w-[120px] text-right">{selectedCategory?.name || t('categories_page.toasts.krwd7zg')}</p>
                                 </div>
                             </div>
                             <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isTreeOpen ? 'rotate-180 text-primary-500' : ''}`} />
@@ -307,7 +307,7 @@ export default function CategoriesPage() {
                                             autoFocus
                                             value={treeSearch}
                                             onChange={e => setTreeSearch(e.target.value)}
-                                            placeholder="بحث سريـع..."
+                                            placeholder={t('categories_page.placeholders.kglf77h')}
                                             className="w-full pr-10 pl-4 py-3 rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 text-sm focus:border-primary-500 transition-all outline-none"
                                         />
                                     </div>
@@ -332,26 +332,26 @@ export default function CategoriesPage() {
                             <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-primary-500/20 mb-4 transform group-hover:scale-105 transition-transform">
                                 {selectedCategory?.icon || DEFAULT_CATEGORY_ICON}
                             </div>
-                            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{selectedCategory?.name || 'اختر قسم'}</h2>
-                            <p className="text-sm text-gray-500 mb-6">{selectedCategory?.description || 'لا يوجد وصف لهذا القسم.'}</p>
+                            <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-2">{selectedCategory?.name || t('categories_page.toasts.k9mzwqm')}</h2>
+                            <p className="text-sm text-gray-500 mb-6">{selectedCategory?.description || t('categories_page.toasts.kccibov')}</p>
 
                             <div className="grid grid-cols-2 gap-3 w-full">
                                 <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">المنتجات</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('categories_page.ui.ks0nri5')}</p>
                                     <p className="text-xl font-black text-primary-500">{categoryProducts.length}</p>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">الفرعية</p>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('categories_page.ui.kzceuvp')}</p>
                                     <p className="text-xl font-black text-blue-500">{selectedCategory?.children?.length || 0}</p>
                                 </div>
                             </div>
 
                             <div className="mt-6 flex flex-wrap justify-center gap-2">
                                 {can('products', 'update') && (
-                                    <Button size="sm" variant="ghost" icon={<Edit className="w-4 h-4" />} onClick={() => openEdit(selectedCategory)}>تعديل البيانات</Button>
+                                    <Button size="sm" variant="ghost" icon={<Edit className="w-4 h-4" />} onClick={() => openEdit(selectedCategory)}>{t('categories_page.ui.k2kzqjd')}</Button>
                                 )}
                                 {can('products', 'delete') && (
-                                    <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDelete(selectedCategoryId)}>حذف</Button>
+                                    <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDelete(selectedCategoryId)}>{t('categories_page.ui.delete')}</Button>
                                 )}
                             </div>
                         </div>
@@ -359,7 +359,7 @@ export default function CategoriesPage() {
 
                     {selectedCategory?.parent && (
                         <Card className="p-5 border-2 border-primary-500/10 bg-primary-50/10 dark:bg-primary-500/5">
-                            <p className="text-[10px] font-black text-primary-500 uppercase tracking-widest mb-2 text-right">تابـــع لـ</p>
+                            <p className="text-[10px] font-black text-primary-500 uppercase tracking-widest mb-2 text-right">{t('categories_page.ui.ka0n9co')}</p>
                             <div
                                 onClick={() => setSelectedCategoryId(selectedCategory.parent._id || selectedCategory.parent)}
                                 className="flex items-center gap-3 cursor-pointer group"
@@ -369,9 +369,9 @@ export default function CategoriesPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="font-bold text-gray-800 dark:text-white group-hover:text-primary-500 transition-colors text-right">
-                                        {categories.find(c => c._id === (selectedCategory.parent._id || selectedCategory.parent))?.name || 'قسم رئيسي'}
+                                        {categories.find(c => c._id === (selectedCategory.parent._id || selectedCategory.parent))?.name || t('categories_page.toasts.k1hda1s')}
                                     </p>
-                                    <p className="text-[10px] text-gray-400">اضغط للذهاب للأصل</p>
+                                    <p className="text-[10px] text-gray-400">{t('categories_page.ui.kpndr2')}</p>
                                 </div>
                             </div>
                         </Card>
@@ -383,7 +383,7 @@ export default function CategoriesPage() {
                     <div className="flex items-center justify-between mb-4 px-2">
                         <h3 className="font-black text-gray-800 dark:text-white flex items-center gap-2">
                             <Package className="w-5 h-5 text-primary-500" />
-                            المنتجات في هذا القسم
+                            {t('categories_page.ui.kjhns1n')}
                         </h3>
                         <Badge variant="info">مجموع: {categoryProducts.length}</Badge>
                     </div>
@@ -394,7 +394,7 @@ export default function CategoriesPage() {
                         ) : categoryProducts.length === 0 ? (
                             <EmptyState
                                 icon={<Package className="w-16 h-16 opacity-20" />}
-                                title="لا توجد منتجات"
+                                title={t('categories_page.titles.k8fd1p4')}
                                 description="هذا القسم لا يحتوي على منتجات حاليًا. يمكنك إضافة منتجات جديدة من صفحة المنتجات."
                             />
                         ) : (
@@ -424,7 +424,7 @@ export default function CategoriesPage() {
                                                 <div className="flex items-center justify-between">
                                                     <p className="text-xs font-bold text-primary-500">{p.price?.toLocaleString()} EGP</p>
                                                     <Badge variant={p.stock?.quantity > 0 ? 'success' : 'danger'} className="text-[9px] px-1 py-0">
-                                                        {p.stock?.quantity || 0} {p.unit || 'قطعة'}
+                                                        {p.stock?.quantity || 0} {p.unit || t('categories_page.toasts.ktcs1x')}
                                                     </Badge>
                                                 </div>
                                             </div>
@@ -437,7 +437,7 @@ export default function CategoriesPage() {
                 </div>
             </div>
 
-            <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل القسم' : 'إضافة قسم جديد'}>
+            <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? t('categories_page.ui.k2zzpf5') : 'إضافة قسم جديد'}>
                 <div className="space-y-5">
                     <div className="rounded-3xl border border-primary-500/15 bg-gradient-to-br from-primary-950 via-slate-900 to-slate-950 px-4 py-4 text-white shadow-2xl">
                         <div className="flex items-start gap-3">
@@ -447,29 +447,28 @@ export default function CategoriesPage() {
                             <div className="flex-1 text-right">
                                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-primary-100">
                                     <Sparkles className="h-3.5 w-3.5" />
-                                    اقتراح ذكي للأيقونة
+                                    {t('categories_page.ui.kj7a1rj')}
                                 </div>
                                 <p className="mt-2 text-sm font-bold leading-6 text-white">
                                     يتم اقتراح أيقونة مناسبة تلقائيًا حسب اسم القسم، ويمكنك تعديلها أو اختيار واحدة من الاقتراحات بالأسفل.
                                 </p>
                                 <p className="mt-1 text-xs text-slate-300">
                                     {isChildSection
-                                        ? 'سيُحفظ هذا العنصر كقسم فرعي داخل قسم رئيسي.'
-                                        : 'سيظهر هذا العنصر كقسم رئيسي ويمكنك إضافة أقسام فرعية داخله لاحقًا.'}
+                                        ? t('categories_page.ui.kwqmixg') : 'سيظهر هذا العنصر كقسم رئيسي ويمكنك إضافة أقسام فرعية داخله لاحقًا.'}
                                 </p>
                             </div>
                         </div>
                     </div>
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-1">
-                            <Input label="أيقونة" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder={DEFAULT_CATEGORY_ICON} />
+                            <Input label={t('categories_page.form.kc3ug0g')} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder={DEFAULT_CATEGORY_ICON} />
                         </div>
                         <div className="col-span-3">
                             <Input
-                                label="اسم القسم *"
+                                label={t('categories_page.form.kygdgre')}
                                 value={form.name}
                                 onChange={(e) => handleNameChange(e.target.value)}
-                                placeholder="مثال: إلكترونيات، ملابس، حريمي..."
+                                placeholder={t('categories_page.placeholders.kwdbkcp')}
                             />
                         </div>
                     </div>
@@ -483,34 +482,34 @@ export default function CategoriesPage() {
                             }}
                             className={`rounded-2xl border px-4 py-3 text-right transition-all ${!isChildSection ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'}`}
                         >
-                            <p className="text-sm font-black">قسم رئيسي</p>
-                            <p className="mt-1 text-[11px]">يظهر كقسم أساسي في المتجر.</p>
+                            <p className="text-sm font-black">{t('categories_page.ui.k1hda1s')}</p>
+                            <p className="mt-1 text-[11px]">{t('categories_page.ui.kcs9o6v')}</p>
                         </button>
                         <button
                             type="button"
                             onClick={() => setSectionMode('child')}
                             className={`rounded-2xl border px-4 py-3 text-right transition-all ${isChildSection ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm shadow-primary-500/10' : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:text-primary-600'}`}
                         >
-                            <p className="text-sm font-black">قسم فرعي</p>
-                            <p className="mt-1 text-[11px]">يرتبط بقسم رئيسي موجود.</p>
+                            <p className="text-sm font-black">{t('categories_page.ui.kkkdjkj')}</p>
+                            <p className="mt-1 text-[11px]">{t('categories_page.ui.ky3h19k')}</p>
                         </button>
                     </div>
 
                     {isChildSection ? (
                         <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
                             <CategorySelector
-                                label="القسم الرئيسي *"
+                                label={t('categories_page.form.ki5kzf4')}
                                 value={form.parent}
                                 onChange={(val) => setForm({ ...form, parent: val })}
                                 categories={availableParents}
-                                placeholder="اختر القسم الرئيسي الذي سيتبع له هذا القسم"
+                                placeholder={t('categories_page.placeholders.kx8w841')}
                             />
                         </div>
                     ) : (
                         <div className="rounded-2xl border border-emerald-500/10 bg-emerald-50/70 px-4 py-3 text-right">
-                            <p className="text-sm font-black text-emerald-700">هذا قسم رئيسي</p>
+                            <p className="text-sm font-black text-emerald-700">{t('categories_page.ui.kub296m')}</p>
                             <p className="mt-1 text-xs leading-5 text-emerald-700/80">
-                                بعد الحفظ يمكنك إضافة أقسام فرعية داخله مثل شاشات، لابتوبات، حريمي، رجالي، أطفال وغيرها.
+                                {t('categories_page.ui.kltvefp')}
                             </p>
                         </div>
                     )}
@@ -518,8 +517,8 @@ export default function CategoriesPage() {
                     <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-gray-900/40">
                         <div className="mb-3 flex items-center justify-between">
                             <div className="text-right">
-                                <p className="text-sm font-black text-gray-800 dark:text-white">أيقونات مقترحة</p>
-                                <p className="text-[11px] text-gray-500">اختيارات أكثر وضوحًا حسب نوع القسم.</p>
+                                <p className="text-sm font-black text-gray-800 dark:text-white">{t('categories_page.ui.kceg4f8')}</p>
+                                <p className="text-[11px] text-gray-500">{t('categories_page.ui.kghqq01')}</p>
                             </div>
                             <Sparkles className="h-4 w-4 text-primary-500" />
                         </div>
@@ -538,17 +537,17 @@ export default function CategoriesPage() {
                     </div>
 
                     <TextArea
-                        label="وصف مختصر (اختياري)"
+                        label={t('categories_page.form.kb3kyfd')}
                         value={form.description}
                         onChange={(e) => setForm({ ...form, description: e.target.value })}
-                        placeholder="أضف وصفًا مختصرًا يوضح محتوى هذا القسم للعميل..."
+                        placeholder={t('categories_page.placeholders.k4ff536')}
                         rows={3}
                     />
                 </div>
 
                 <div className="mt-8 flex justify-end gap-3">
-                    <Button variant="ghost" onClick={() => setShowModal(false)}>إلغاء</Button>
-                    <Button icon={<Check className="w-4 h-4" />} onClick={handleSave} loading={saving}>{editId ? 'تحديث' : 'حفظ'}</Button>
+                    <Button variant="ghost" onClick={() => setShowModal(false)}>{t('categories_page.ui.cancel')}</Button>
+                    <Button icon={<Check className="w-4 h-4" />} onClick={handleSave} loading={saving}>{editId ? t('categories_page.ui.kowmk4t') : 'حفظ'}</Button>
                 </div>
             </Modal>
 

@@ -4,26 +4,31 @@ import { ArrowRight, CreditCard, Mail, MapPin, PhoneCall, ShieldCheck, Store, Tr
 import { Card } from '../components/UI';
 import { storefrontPath } from '../utils/storefrontHost';
 import { loadStorefrontSettings } from './storefrontDataClient';
+import { useTranslation } from 'react-i18next';
 
-const HIGHLIGHTS = [
-  {
-    icon: ShieldCheck,
-    title: 'شراء بدون تعقيد',
-    desc: 'الطلب متاح مباشرة كضيف، بدون أي خطوات إضافية أو إجبار على إنشاء حساب.',
-  },
-  {
-    icon: Truck,
-    title: 'توصيل موثوق',
-    desc: 'نراجع كل طلب قبل الشحن، مع متابعة واضحة وسريعة حتى الاستلام.',
-  },
-  {
-    icon: CreditCard,
-    title: 'دفع مرن',
-    desc: 'اختر طريقة الدفع الأنسب لك بين الدفع عند الاستلام أو الدفع الإلكتروني.',
-  },
-];
+function getHighlights(t) {
+  return [
+    {
+      icon: ShieldCheck,
+      title: t('storefront_about.ui.kq1q6ka'),
+      desc: t('storefront_about.ui.kyzs82h'),
+    },
+    {
+      icon: Truck,
+      title: t('storefront_about.ui.kbjru25'),
+      desc: t('storefront_about.ui.kjdpm31'),
+    },
+    {
+      icon: CreditCard,
+      title: t('storefront_about.ui.k8qkqox'),
+      desc: t('storefront_about.ui.k9nt3yf'),
+    },
+  ];
+}
 
 export default function StorefrontAbout() {
+  const { t } = useTranslation('admin');
+  const highlights = getHighlights(t);
   const [settings, setSettings] = useState(null);
 
   useEffect(() => {
@@ -49,8 +54,8 @@ export default function StorefrontAbout() {
     };
   }, []);
 
-  const storeName = settings?.store?.name || settings?.tenant?.name || 'متجرنا';
-  const storeAddress = settings?.store?.address || 'نوفر تجربة شراء مرنة وسريعة تركّز على راحة العميل من أول تصفح وحتى الاستلام.';
+  const storeName = settings?.store?.name || settings?.tenant?.name || t('storefront_about.toasts.k3hormz');
+  const storeAddress = settings?.store?.address || t('storefront_about.toasts.k7cjky4');
   const storePhone = settings?.store?.phone?.trim() || '';
   const storeEmail = settings?.store?.email?.trim() || '';
 
@@ -64,7 +69,7 @@ export default function StorefrontAbout() {
               <Store className="w-4 h-4" />
               عن {storeName}
             </div>
-            <h1 className="text-4xl md:text-5xl font-black leading-tight">متجر مبني لتجربة شراء واضحة، سريعة، ومريحة من أول زيارة.</h1>
+            <h1 className="text-4xl md:text-5xl font-black leading-tight">{t('storefront_about.ui.kgzl7sq')}</h1>
             <p className="text-base md:text-lg text-slate-300 leading-8">
               نركز على إن العميل يقدر يشتري مباشرة، يتابع طلبه بسهولة، ويتواصل مع المتجر وقت ما يحتاج بدون ما نحوله لخطوات غير ضرورية.
             </p>
@@ -72,11 +77,11 @@ export default function StorefrontAbout() {
 
           <div className="flex flex-wrap gap-3">
             <Link to={storefrontPath('/products')} className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-slate-950 font-bold hover:bg-slate-100 transition-colors">
-              تصفح المنتجات
+              {t('storefront_about.ui.k5ctpqs')}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to={storefrontPath('/track-order')} className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border border-white/20 text-white font-bold hover:bg-white/10 transition-colors">
-              تتبع طلبك
+              {t('storefront_about.ui.kw4l0p5')}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -84,7 +89,7 @@ export default function StorefrontAbout() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        {HIGHLIGHTS.map((item) => (
+        {highlights.map((item) => (
           <Card key={item.title} className="p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm text-right">
             <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 flex items-center justify-center mb-4">
               <item.icon className="w-6 h-6" />
@@ -97,16 +102,16 @@ export default function StorefrontAbout() {
 
       <section className="grid gap-6 lg:grid-cols-[1.25fr,0.75fr]">
         <Card className="p-7 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm text-right">
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-4">كيف بنشتغل</h2>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-4">{t('storefront_about.ui.khgehz8')}</h2>
           <p className="text-gray-600 dark:text-gray-300 leading-8 mb-5">
             {storeName} مصمم ليخلي العميل يركز على المنتج والطلب نفسه. لذلك خففنا أي خطوات غير ضرورية داخل المتجر العام، وخلينا الشراء، المتابعة، والتواصل كلها متاحة بشكل مباشر.
           </p>
           <div className="space-y-3">
             {[
-              'إتمام الطلب كضيف بدون طلب تسجيل دخول.',
-              'صفحة تتبع عامة لمتابعة حالة الطلب بسهولة.',
-              'معلومات تواصل واضحة داخل المتجر.',
-              'واجهة نظيفة تركز على المنتجات والثقة في الشراء.',
+              t('storefront_about.ui.kom50si'),
+              t('storefront_about.ui.kun53cn'),
+              t('storefront_about.ui.k6s3yre'),
+              t('storefront_about.ui.kcdqmtw'),
             ].map((point) => (
               <div key={point} className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 rounded-full bg-primary-500 flex-shrink-0" />
@@ -117,12 +122,12 @@ export default function StorefrontAbout() {
         </Card>
 
         <Card className="p-7 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm text-right">
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-4">بيانات المتجر</h2>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-4">{t('storefront_about.ui.kiy1ear')}</h2>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <Store className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-gray-400">اسم المتجر</p>
+                <p className="text-xs font-bold text-gray-400">{t('storefront_about.ui.kcmv4b6')}</p>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{storeName}</p>
               </div>
             </div>
@@ -130,7 +135,7 @@ export default function StorefrontAbout() {
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-gray-400">العنوان</p>
+                <p className="text-xs font-bold text-gray-400">{t('storefront_about.ui.kzgfilf')}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-300 leading-7">{storeAddress}</p>
               </div>
             </div>
@@ -139,7 +144,7 @@ export default function StorefrontAbout() {
               <a href={`tel:${storePhone}`} className="flex items-start gap-3 hover:text-primary-600 transition-colors">
                 <PhoneCall className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-gray-400">الهاتف</p>
+                  <p className="text-xs font-bold text-gray-400">{t('storefront_about.ui.kaaw86k')}</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{storePhone}</p>
                 </div>
               </a>
@@ -149,7 +154,7 @@ export default function StorefrontAbout() {
               <a href={`mailto:${storeEmail}`} className="flex items-start gap-3 hover:text-primary-600 transition-colors">
                 <Mail className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-gray-400">البريد الإلكتروني</p>
+                  <p className="text-xs font-bold text-gray-400">{t('storefront_about.ui.k8lvosz')}</p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">{storeEmail}</p>
                 </div>
               </a>

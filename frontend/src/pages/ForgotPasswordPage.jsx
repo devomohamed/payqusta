@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import { api, useThemeStore } from '../store';
 import { Button, Input } from '../components/UI';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
+import { useTranslation } from 'react-i18next';
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation('admin');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -17,7 +19,7 @@ export default function ForgotPasswordPage() {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail) {
-      return toast.error('البريد الإلكتروني مطلوب');
+      return toast.error(t('forgot_password_page.toasts.ke9siij'));
     }
 
     const isPortal = window.location.pathname.startsWith('/portal');
@@ -25,11 +27,11 @@ export default function ForgotPasswordPage() {
     try {
       const endpoint = isPortal ? '/portal/forgot-password' : '/auth/forgot-password';
       const res = await api.post(endpoint, { email: normalizedEmail });
-      toast.success(res.data.message || 'تم إرسال رابط إعادة تعيين كلمة المرور');
+      toast.success(res.data.message || t('forgot_password_page.toasts.kffg0eh'));
       setEmail(normalizedEmail);
       setSent(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'حدث خطأ');
+      toast.error(err.response?.data?.message || t('forgot_password_page.toasts.ktcqm3h'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-extrabold mb-2">تم الإرسال! ✉️</h2>
+            <h2 className="text-2xl font-extrabold mb-2">{t('forgot_password_page.ui.ke47ztz')}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               تم إرسال رابط إعادة تعيين كلمة المرور إلى<br />
               <strong className="text-primary-600 dark:text-primary-400">{email}</strong>
@@ -63,7 +65,7 @@ export default function ForgotPasswordPage() {
               className="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
             >
               <ArrowRight className="w-4 h-4" />
-              <span>العودة لتسجيل الدخول</span>
+              <span>{t('forgot_password_page.ui.kwowikb')}</span>
             </Link>
             <div className="mt-6 flex justify-center">
               <ThemeModeSwitcher compact />
@@ -83,10 +85,10 @@ export default function ForgotPasswordPage() {
             <Mail className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-            نسيت كلمة المرور؟
+            {t('forgot_password_page.ui.k4vxvol')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين
+            {t('forgot_password_page.ui.kjskrm5')}
           </p>
         </div>
 
@@ -95,7 +97,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                البريد الإلكتروني
+                {t('forgot_password_page.ui.k8lvosz')}
               </label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -111,7 +113,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             <Button type="submit" loading={loading} className="w-full">
-              إرسال رابط إعادة التعيين
+              {t('forgot_password_page.ui.kd6zgqg')}
             </Button>
 
             <div className="text-center">
@@ -120,7 +122,7 @@ export default function ForgotPasswordPage() {
                 className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
                 <ArrowRight className="w-4 h-4" />
-                <span>تذكرت كلمة المرور؟ سجل الدخول</span>
+                <span>{t('forgot_password_page.ui.kloddu7')}</span>
               </Link>
             </div>
           </form>

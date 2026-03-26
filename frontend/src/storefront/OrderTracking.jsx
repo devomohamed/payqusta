@@ -4,23 +4,25 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../store';
 import { notify } from '../components/AnimatedNotification';
 import { Button } from '../components/UI';
+import { useTranslation } from 'react-i18next';
 import {
   loadGuestOrderTracking,
   saveGuestOrderTracking,
 } from './guestOrderTracking';
 
 const STATUS_CONFIG = {
-  pending: { icon: Clock, label: 'قيد الانتظار', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/10', bar: 'bg-amber-400', step: 1 },
+  pending: { icon: Clock, label: 'قيد المراجعة', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/10', bar: 'bg-amber-400', step: 1 },
   confirmed: { icon: CheckCircle, label: 'تم التأكيد', color: 'text-sky-500', bg: 'bg-sky-50 dark:bg-sky-900/10', bar: 'bg-sky-400', step: 2 },
-  processing: { icon: Package, label: 'جاري التجهيز', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/10', bar: 'bg-blue-400', step: 2 },
-  shipped: { icon: Truck, label: 'في الطريق إليك', color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/10', bar: 'bg-purple-400', step: 3 },
-  delivered: { icon: CheckCircle, label: 'تم التوصيل', color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/10', bar: 'bg-green-400', step: 4 },
+  processing: { icon: Package, label: 'قيد التجهيز', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/10', bar: 'bg-blue-400', step: 2 },
+  shipped: { icon: Truck, label: 'تم الشحن', color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/10', bar: 'bg-purple-400', step: 3 },
+  delivered: { icon: CheckCircle, label: 'تم التسليم', color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/10', bar: 'bg-green-400', step: 4 },
   cancelled: { icon: XCircle, label: 'ملغي', color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/10', bar: 'bg-red-400', step: 0 },
 };
 
-const STEPS = ['استلام الطلب', 'تأكيد وتجهيز', 'الشحن', 'التسليم'];
+const STEPS = ['استلام الطلب', 'تمت المعالجة', 'خرج للشحن', 'التسليم'];
 
 export default function OrderTracking() {
+  const { t } = useTranslation('admin');
   const [searchParams] = useSearchParams();
   const storedTracking = loadGuestOrderTracking();
   const [orderNumber, setOrderNumber] = useState(searchParams.get('orderNumber') || storedTracking?.orderNumber || '');
@@ -31,7 +33,7 @@ export default function OrderTracking() {
 
   const runTrackRequest = async (nextOrderNumber, nextToken) => {
     if (!nextOrderNumber.trim() || !nextToken.trim()) {
-      notify.error('يرجى إدخال رقم الطلب ورمز التتبع');
+      notify.error(t('order_tracking.toasts.ka5er2p'));
       return;
     }
 
@@ -58,7 +60,7 @@ export default function OrderTracking() {
       if (err.response?.status === 404) {
         setNotFound(true);
       } else {
-        notify.error(err.response?.data?.message || 'حدث خطأ أثناء تتبع الطلب');
+        notify.error(err.response?.data?.message || t('order_tracking.toasts.kcgr9o'));
       }
     } finally {
       setLoading(false);
@@ -89,34 +91,34 @@ export default function OrderTracking() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100 dark:bg-primary-900/20">
           <Package className="h-8 w-8 text-primary-600" />
         </div>
-        <h1 className="mb-2 text-3xl font-black text-gray-900 dark:text-white">تتبع طلبك</h1>
-        <p className="text-gray-500">استخدم رقم الطلب ورمز التتبع الآمن الذي حصلت عليه بعد إتمام الشراء.</p>
+        <h1 className="mb-2 text-3xl font-black text-gray-900 dark:text-white">{t('order_tracking.ui.kw4l0p5')}</h1>
+        <p className="text-gray-500">{t('order_tracking.ui.ksck429')}</p>
       </div>
 
       <form onSubmit={handleTrack} className="mb-8 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
         <div>
-          <label className="mb-1.5 block text-sm font-bold text-gray-700 dark:text-gray-300">رقم الطلب</label>
+          <label className="mb-1.5 block text-sm font-bold text-gray-700 dark:text-gray-300">{t('order_tracking.ui.kig6vo2')}</label>
           <div className="relative">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
-              placeholder="مثال: INV-123456"
+              placeholder={t('order_tracking.placeholders.keuqww8')}
               className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm text-gray-900 dark:text-gray-100 transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700"
             />
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-bold text-gray-700 dark:text-gray-300">رمز التتبع الآمن</label>
+          <label className="mb-1.5 block text-sm font-bold text-gray-700 dark:text-gray-300">{t('order_tracking.ui.klk7eeu')}</label>
           <div className="relative">
             <ShieldCheck className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={trackingToken}
               onChange={(e) => setTrackingToken(e.target.value)}
-              placeholder="ألصق رمز التتبع أو افتح الرابط الذي تم حفظه بعد الشراء"
+              placeholder={t('order_tracking.placeholders.kkeuwfz')}
               className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50 py-3 pl-4 pr-10 text-sm text-gray-900 transition-colors focus:border-primary-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -132,7 +134,7 @@ export default function OrderTracking() {
           ) : (
             <>
               <Search className="h-4 w-4" />
-              تتبع الطلب
+              {t('order_tracking.ui.k1rb74h')}
             </>
           )}
         </button>
@@ -141,8 +143,8 @@ export default function OrderTracking() {
       {notFound && (
         <div className="rounded-3xl border border-orange-100 bg-orange-50 py-12 text-center animate-fade-in dark:border-orange-800 dark:bg-orange-900/10">
           <XCircle className="mx-auto mb-3 h-12 w-12 text-orange-400" />
-          <p className="mb-1 font-black text-gray-800 dark:text-white">تعذر العثور على الطلب</p>
-          <p className="text-sm text-gray-500">تأكد من رقم الطلب ورمز التتبع ثم حاول مرة أخرى.</p>
+          <p className="mb-1 font-black text-gray-800 dark:text-white">{t('order_tracking.ui.kqdae4k')}</p>
+          <p className="text-sm text-gray-500">{t('order_tracking.ui.kjjrkza')}</p>
         </div>
       )}
 
@@ -154,11 +156,11 @@ export default function OrderTracking() {
                 <StatusIcon className={`h-7 w-7 ${status.color}`} />
               </div>
               <div>
-                <p className="mb-0.5 text-xs font-medium text-gray-500">حالة الطلب</p>
+                <p className="mb-0.5 text-xs font-medium text-gray-500">{t('order_tracking.ui.kb3578d')}</p>
                 <p className={`text-xl font-black ${status.color}`}>{status.label}</p>
               </div>
               <div className="mr-auto text-right">
-                <p className="text-xs text-gray-400">رقم الطلب</p>
+                <p className="text-xs text-gray-400">{t('order_tracking.ui.kig6vo2')}</p>
                 <p className="font-black text-gray-900 dark:text-white">{order.orderNumber}</p>
               </div>
             </div>
@@ -203,10 +205,10 @@ export default function OrderTracking() {
           </div>
 
           <div className="space-y-3 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="text-sm font-black uppercase tracking-wide text-gray-500">تفاصيل الطلب</h3>
+            <h3 className="text-sm font-black uppercase tracking-wide text-gray-500">{t('order_tracking.ui.ka7ru1p')}</h3>
             {[
               {
-                label: 'تاريخ الطلب',
+                label: t('order_tracking.ui.kxykv9y'),
                 value: order.createdAt
                   ? new Date(order.createdAt).toLocaleDateString('ar-EG', {
                       year: 'numeric',
@@ -215,10 +217,10 @@ export default function OrderTracking() {
                     })
                   : '—',
               },
-              { label: 'الإجمالي', value: `${Number(order.totalAmount || order.total || 0).toLocaleString()} ج.م` },
-              { label: 'طريقة الدفع', value: order.paymentMethod || '—' },
+              { label: t('order_tracking.ui.krh6w30'), value: `${Number(order.totalAmount || order.total || 0).toLocaleString()} ج.م` },
+              { label: t('order_tracking.ui.kfj3di7'), value: order.paymentMethod || '—' },
               {
-                label: 'عنوان التوصيل',
+                label: t('order_tracking.ui.khh2jv2'),
                 value:
                   [
                     order.shippingAddress?.governorate,
@@ -238,22 +240,22 @@ export default function OrderTracking() {
 
           {hasShipmentDetails && (
             <div className="space-y-3 rounded-3xl border border-primary-100 bg-primary-50/60 p-5 shadow-sm dark:border-primary-900/30 dark:bg-primary-900/10">
-              <h3 className="text-sm font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">تفاصيل الشحن</h3>
+              <h3 className="text-sm font-black uppercase tracking-wide text-primary-700 dark:text-primary-300">{t('order_tracking.ui.ka7rran')}</h3>
               {order.shippingMethod ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">وسيلة الشحن</span>
+                  <span className="text-sm text-gray-500">{t('order_tracking.ui.krmcqvo')}</span>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">{order.shippingMethod}</span>
                 </div>
               ) : null}
               {order.trackingNumber ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">رقم التتبع</span>
+                  <span className="text-sm text-gray-500">{t('order_tracking.ui.k3os116')}</span>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">{order.trackingNumber}</span>
                 </div>
               ) : null}
               {order.estimatedDeliveryDate ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">موعد متوقع</span>
+                  <span className="text-sm text-gray-500">{t('order_tracking.ui.k3bxnv1')}</span>
                   <span className="text-sm font-bold text-gray-900 dark:text-white">
                     {new Date(order.estimatedDeliveryDate).toLocaleDateString('ar-EG', {
                       year: 'numeric',
@@ -270,7 +272,7 @@ export default function OrderTracking() {
                   className="w-full"
                   onClick={() => window.open(order.trackingUrl, '_blank', 'noopener,noreferrer')}
                 >
-                  فتح رابط شركة الشحن
+                  {t('order_tracking.ui.kcih5yq')}
                 </Button>
               ) : null}
             </div>

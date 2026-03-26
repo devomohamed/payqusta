@@ -3,8 +3,10 @@ import { Search, Package, Check, Loader2 } from 'lucide-react';
 import { Modal, Input, Card, Badge, LoadingSpinner, EmptyState } from './UI';
 import { productsApi } from '../store';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductSearchModal({ open, onClose, onSelect }) {
+    const { t } = useTranslation('admin');
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function ProductSearchModal({ open, onClose, onSelect }) {
                 }
             } catch (err) {
                 if (!controller.signal.aborted) {
-                    toast.error('خطأ في البحث');
+                    toast.error(t('product_search_modal.toasts.kw4gpg8'));
                 }
             } finally {
                 if (!controller.signal.aborted) {
@@ -61,12 +63,12 @@ export default function ProductSearchModal({ open, onClose, onSelect }) {
     }, [query]);
 
     return (
-        <Modal open={open} onClose={onClose} title="البحث عن منتج لاستيراد البيانات" size="lg">
+        <Modal open={open} onClose={onClose} title={t('product_search_modal.titles.kec5kbt')} size="lg">
             <div className="space-y-4">
                 <div className="relative">
                     <Input
                         autoFocus
-                        placeholder="ابحث باسم المنتج أو الباركود..."
+                        placeholder={t('product_search_modal.placeholders.kozw53k')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         icon={<Search className="w-4 h-4" />}
@@ -103,7 +105,7 @@ export default function ProductSearchModal({ open, onClose, onSelect }) {
                                         {p.name || '—'}
                                     </h4>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                        SKU: {p.sku || '—'} · {typeof p.category === 'object' ? p.category?.name : p.category || 'بدون قسم'}
+                                        SKU: {p.sku || '—'} · {typeof p.category === 'object' ? p.category?.name : p.category || t('product_search_modal.toasts.kmn6v53')}
                                     </p>
                                 </div>
                                 <div className="text-right flex-shrink-0">
@@ -125,7 +127,7 @@ export default function ProductSearchModal({ open, onClose, onSelect }) {
                         <Package className="w-4 h-4 text-amber-600" />
                     </div>
                     <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                        💡 <strong>نصيحة:</strong> اختيار منتج موجود سيقوم بتعبئة كافة البيانات (الاسم، القسم، الوصف، السعر، والتكلفة) تلقائياً لتوفير وقتك.
+                        💡 <strong>{t('product_search_modal.ui.k45b5c3')}</strong> اختيار منتج موجود سيقوم بتعبئة كافة البيانات (الاسم، القسم، الوصف، السعر، والتكلفة) تلقائياً لتوفير وقتك.
                     </p>
                 </div>
             </div>

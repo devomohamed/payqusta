@@ -1,0 +1,246 @@
+{
+  "generatedAt": "2026-03-27T16:36:06.100Z",
+  "remainingFiles": 118,
+  "top": [
+    {
+      "file": "frontend/src/pages/SupplierPurchaseInvoicesPage.jsx",
+      "count": 37
+    },
+    {
+      "file": "frontend/src/components/products/ProductMediaStep.jsx",
+      "count": 28
+    },
+    {
+      "file": "frontend/src/pages/InvoicesPage.jsx",
+      "count": 26
+    },
+    {
+      "file": "frontend/src/pages/BusinessReportsPage.jsx",
+      "count": 25
+    },
+    {
+      "file": "frontend/src/pages/ReportsPage.jsx",
+      "count": 22
+    },
+    {
+      "file": "frontend/src/storefront/ProductDetails.jsx",
+      "count": 20
+    },
+    {
+      "file": "frontend/src/components/ProductDetailModal.jsx",
+      "count": 17
+    },
+    {
+      "file": "frontend/src/storefront/ShoppingCart.jsx",
+      "count": 17
+    },
+    {
+      "file": "frontend/src/pages/CommandCenterPage.jsx",
+      "count": 16
+    },
+    {
+      "file": "frontend/src/components/PaymentLinkGenerator.jsx",
+      "count": 15
+    },
+    {
+      "file": "frontend/src/pages/FinancialsPage.jsx",
+      "count": 15
+    },
+    {
+      "file": "frontend/src/storefront/Checkout.jsx",
+      "count": 15
+    },
+    {
+      "file": "frontend/src/pages/InstallmentsDashboardPage.jsx",
+      "count": 14
+    },
+    {
+      "file": "frontend/src/pages/QuickSalePage.jsx",
+      "count": 14
+    },
+    {
+      "file": "frontend/src/pages/DashboardPage.jsx",
+      "count": 13
+    },
+    {
+      "file": "frontend/src/pages/AdminDashboardPage.jsx",
+      "count": 12
+    },
+    {
+      "file": "frontend/src/pages/BackupRestorePage.jsx",
+      "count": 12
+    },
+    {
+      "file": "frontend/src/pages/PaymentAnalyticsPage.jsx",
+      "count": 12
+    },
+    {
+      "file": "frontend/src/pages/SupplierAgingReportPage.jsx",
+      "count": 12
+    },
+    {
+      "file": "frontend/src/storefront/StorefrontHome.jsx",
+      "count": 12
+    },
+    {
+      "file": "frontend/src/components/products/ProductBasicsStep.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/components/RouteMetadata.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/pages/AgingReportPage.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/pages/PortalOrdersAdminPage.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/pages/ReferralPage.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/pages/ReturnsManagementPage.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/pages/TenantManagementPage.jsx",
+      "count": 11
+    },
+    {
+      "file": "frontend/src/components/settings/SettingsWhatsApp.jsx",
+      "count": 10
+    },
+    {
+      "file": "frontend/src/pages/AdminAuditLogsPage.jsx",
+      "count": 10
+    },
+    {
+      "file": "frontend/src/pages/AdminStatisticsPage.jsx",
+      "count": 10
+    },
+    {
+      "file": "frontend/src/pages/ProductsPage.jsx",
+      "count": 10
+    },
+    {
+      "file": "frontend/src/pages/ExpensesPage.jsx",
+      "count": 9
+    },
+    {
+      "file": "frontend/src/pages/PublicLandingPage.jsx",
+      "count": 9
+    },
+    {
+      "file": "frontend/src/pages/PurchaseOrdersPage.jsx",
+      "count": 9
+    },
+    {
+      "file": "frontend/src/pages/ShiftManagementPage.jsx",
+      "count": 9
+    },
+    {
+      "file": "frontend/src/storefront/OrderConfirmation.jsx",
+      "count": 9
+    },
+    {
+      "file": "frontend/src/storefront/ProductCatalog.jsx",
+      "count": 9
+    },
+    {
+      "file": "frontend/src/components/products/ProductPricingStep.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/components/settings/SettingsWhiteLabel.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/pages/CouponsPage.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/pages/CustomersPage.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/pages/ImportDataPage.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/pages/MarketingPage.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/pages/StaffPerformancePage.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/pages/SupportMessagesPage.jsx",
+      "count": 8
+    },
+    {
+      "file": "frontend/src/components/ProductImportModal.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/pages/BranchManagement.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/pages/KYCReviewPage.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/pages/PublicContactPage.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/pages/SuppliersPage.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/portal/PortalCheckout.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/storefront/StorefrontLayout.jsx",
+      "count": 7
+    },
+    {
+      "file": "frontend/src/pages/BranchDashboardPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/CashDrawerPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/ForgotPasswordPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/OnboardingPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/PublicLeadsPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/PublicTermsPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/PurchaseReturnsPage.jsx",
+      "count": 6
+    },
+    {
+      "file": "frontend/src/pages/RevenueAnalyticsPage.jsx",
+      "count": 6
+    }
+  ]
+}

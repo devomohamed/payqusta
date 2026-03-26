@@ -1,677 +1,884 @@
 {
-    "nav": {
-        "home": "Home",
-        "orders": "My Orders",
-        "invoices": "My Invoices",
-        "returns": "Returns",
-        "points": "Points",
-        "reviews": "My Reviews",
-        "calculator": "Installment Calculator",
-        "documents": "Documents",
-        "addresses": "Addresses",
-        "cart": "Cart",
-        "profile": "My Account"
+  "nav": {
+    "home": "Home",
+    "orders": "My Orders",
+    "invoices": "My Invoices",
+    "returns": "Returns",
+    "points": "Points",
+    "reviews": "My Reviews",
+    "calculator": "Installment Calculator",
+    "documents": "Documents",
+    "addresses": "Addresses",
+    "cart": "Cart",
+    "profile": "My Account",
+    "store": "Store"
+  },
+  "home": {
+    "loading_store": "Preparing Store...",
+    "search_placeholder": "What are you looking for today?",
+    "search_products_cats": "Search for products, categories...",
+    "popular_searches": "Popular Searches",
+    "offers": "Offers",
+    "new_items": "New",
+    "browse_by_category": "Browse by Category",
+    "press_enter_to_search": "Press Enter to search for",
+    "exclusive_offers": "Exclusive Offers",
+    "mega_sales": "Mega Sales Season",
+    "hero_subtitle": "Use your available balance and enjoy flexible installments.",
+    "shop_now": "Shop Now",
+    "purchasing_power": "Available Purchasing Power",
+    "used": "Used:",
+    "total_limit": "Total Limit:",
+    "loyalty_points": "Loyalty Points",
+    "tier": "Tier:",
+    "tier_vip": "VIP Elite",
+    "tier_gold": "Gold",
+    "tier_silver": "Silver",
+    "tier_classic": "Classic",
+    "daily_reward": "Daily Login Reward",
+    "daily_reward_short": "Daily Reward",
+    "points_label": "Points",
+    "max_tier": "Maximum Tier Reached",
+    "points_to_upgrade": "{{points}} points left to upgrade",
+    "browse_categories": "Browse Categories",
+    "view_all": "View All",
+    "no_categories": "No categories available",
+    "quick_actions": {
+      "my_orders": "My Orders",
+      "wishlist": "Wishlist",
+      "statement": "Statement",
+      "support": "Support"
     },
-    "home": {
-        "loading_store": "Preparing Store...",
-        "search_placeholder": "What are you looking for today?",
-        "search_products_cats": "Search for products, categories...",
-        "popular_searches": "Popular Searches",
-        "offers": "Offers",
-        "new_items": "New",
-        "browse_by_category": "Browse by Category",
-        "press_enter_to_search": "Press Enter to search for",
-        "exclusive_offers": "Exclusive Offers",
-        "mega_sales": "Mega Sales Season",
-        "hero_subtitle": "Use your available balance and enjoy flexible installments.",
-        "shop_now": "Shop Now",
-        "purchasing_power": "Available Purchasing Power",
-        "used": "Used:",
-        "total_limit": "Total Limit:",
-        "loyalty_points": "Loyalty Points",
-        "tier": "Tier:",
-        "tier_vip": "VIP Elite",
-        "tier_gold": "Gold",
-        "tier_silver": "Silver",
-        "tier_classic": "Classic",
-        "daily_reward": "Daily Login Reward",
-        "daily_reward_short": "Daily Reward",
-        "points_label": "Points",
-        "max_tier": "Maximum Tier Reached",
-        "points_to_upgrade": "{{points}} points left to upgrade",
-        "browse_categories": "Browse Categories",
-        "view_all": "View All",
-        "no_categories": "No categories available",
-        "quick_actions": {
-            "my_orders": "My Orders",
-            "wishlist": "Wishlist",
-            "statement": "Statement",
-            "support": "Support"
-        },
-        "featured_products": "Featured Products",
-        "view_more": "View More",
-        "no_products": "No products available currently",
-        "view_all_products": "View All Products",
-        "alerts": {
-            "overdue_installments": "Overdue Installments!",
-            "payment_reminder": "Payment Reminder",
-            "overdue_desc": "Please pay your overdue installments to avoid late fees.",
-            "reminder_desc": "You have upcoming installments that need to be paid.",
-            "installment_due": "Installment Due",
-            "pay_installments_now": "Pay Installments Now"
-        }
-    },
-    "checkout": {
-        "title": "Checkout",
-        "steps": {
-            "shipping": "Shipping Details",
-            "review": "Review Order",
-            "done": "Done"
-        },
-        "errors": {
-            "name_required": "Name is required",
-            "phone_required": "Phone number is required",
-            "address_required": "Detailed address is required",
-            "gov_required": "Choose governorate",
-            "empty_cart": "Cart is empty",
-            "signature_required": "Please provide electronic signature",
-            "checkout_failed": "Failed to create order",
-            "generic_error": "An error occurred, try again"
-        },
-        "coupon": {
-            "applied": "Coupon applied! You saved {{amount}} EGP",
-            "title": "Discount Coupon",
-            "discount": "{{amount}} EGP discount",
-            "placeholder": "Enter discount code",
-            "apply": "Apply"
-        },
-        "shipping": {
-            "insufficient_balance": "Insufficient Balance",
-            "available_balance": "Available Balance:",
-            "order_total": "Order:",
-            "personal_info": "Receiver Info",
-            "full_name": "Full Name *",
-            "full_name_placeholder": "Receiver Name",
-            "phone": "Phone Number *",
-            "phone_placeholder": "01XXXXXXXXX",
-            "address_title": "Shipping Address",
-            "governorate": "Governorate *",
-            "choose_gov": "Choose Governorate",
-            "city": "City / Area",
-            "city_placeholder": "City or Neighborhood",
-            "address_details": "Detailed Address *",
-            "address_placeholder": "Street, building, floor, apartment...",
-            "notes": "Delivery Notes",
-            "notes_placeholder": "Any special instructions for courier..."
-        },
-        "review": {
-            "products": "Products ({{count}})",
-            "qty": "Quantity: {{count}}",
-            "subtotal": "Subtotal",
-            "discount_label": "Discount ({{code}})",
-            "total": "Total",
-            "delivery_details": "Delivery Details",
-            "receiver": "Receiver",
-            "phone": "Phone",
-            "governorate": "Governorate",
-            "address": "Address",
-            "notes": "Notes"
-        },
-        "payment": {
-            "title": "Payment Method",
-            "cash": "Cash on Delivery",
-            "deferred": "Deferred (Installments)",
-            "months_label": "Choose Installment Plan (Months)",
-            "monthly_install": "Approximate Monthly Installment:",
-            "monthly_amount": "{{amount}} EGP / month",
-            "insufficient_install": "Your current balance ({{amount}} EGP) is insufficient for this method.",
-            "cash_notice": "Full amount ({{amount}} EGP) will be paid on delivery"
-        },
-        "documents_warning": {
-            "title": "Basic Account Documents",
-            "desc": "Your account has no documents. Please upload them (e.g. ID card) to purchase via installments."
-        },
-        "signature": {
-            "title": "Electronic Signature",
-            "desc": "I declare my full consent to the entered details and agree to the deferred payment terms.",
-            "placeholder": "Type your full name here to sign"
-        },
-        "buttons": {
-            "review_order": "Review Order",
-            "confirm_order": "Confirm Order",
-            "edit_shipping": "Edit Shipping Details"
-        },
-        "success": {
-            "title": "Order Received! 🎉",
-            "order_number": "Order Number",
-            "address": "Address",
-            "phone": "Phone",
-            "total": "Total",
-            "saved": "(Saved {{amount}})",
-            "contact_soon": "Our team will contact you soon to confirm",
-            "track_orders": "Track Orders",
-            "continue_shopping": "Continue Shopping"
-        }
-    },
-    "login": {
-        "title_portal": "Customer",
-        "title_customers": "Portal",
-        "subtitle": "Track your balance, purchases, and installments",
-        "tabs": {
-            "login": "Login",
-            "register": "New Account",
-            "activate": "Activate Account"
-        },
-        "form": {
-            "phone": "Phone Number",
-            "phone_registered": "Registered Phone",
-            "phone_registered_placeholder": "Phone registered with the seller",
-            "phone_placeholder": "01xxxxxxxxx",
-            "password": "Password",
-            "password_new": "New Password",
-            "password_placeholder": "••••••",
-            "password_min": "Min. 6 characters",
-            "confirm_password": "Confirm Password",
-            "confirm_password_placeholder": "Re-enter password",
-            "store_code": "Store Code",
-            "store_code_placeholder": "e.g., my-store",
-            "store_code_ask": "Ask your seller",
-            "fullname": "Full Name",
-            "fullname_placeholder": "e.g., John Doe"
-        },
-        "buttons": {
-            "login": "Login",
-            "logging_in": "Logging in...",
-            "register": "Create Account",
-            "registering": "Creating account...",
-            "activate": "Activate My Account",
-            "activating": "Activating...",
-            "light_mode": "Light Mode",
-            "dark_mode": "Dark Mode"
-        },
-        "messages": {
-            "login_success": "Logged in successfully",
-            "register_success": "Account created successfully",
-            "activate_success": "Account activated successfully",
-            "password_mismatch": "Passwords do not match",
-            "password_length": "Password must be at least 6 characters",
-            "activate_hint": "If the seller has already added you as a customer, you can activate your account here using your registered phone number and creating a new password."
-        }
-    },
-    "profile": {
-        "tiers": {
-            "bronze": "Bronze",
-            "silver": "Silver",
-            "gold": "Gold",
-            "platinum": "Platinum",
-            "customer": "{{tier}} Customer"
-        },
-        "sections": {
-            "info": "My Info",
-            "addresses": "Addresses",
-            "password": "Security",
-            "points": "Points",
-            "settings": "Settings"
-        },
-        "statement_link": "Account Statement",
-        "statement_desc": "View your transaction history",
-        "form": {
-            "name": "Name",
-            "phone": "Phone Number",
-            "change_phone": "Change Number",
-            "phone_otp": "An OTP code will be sent to confirm the change soon.",
-            "email": "Email",
-            "email_placeholder": "example@email.com",
-            "dob": "Date of Birth",
-            "gender": "Gender",
-            "gender_unset": "Not specified",
-            "gender_male": "Male",
-            "gender_female": "Female",
-            "whatsapp": "WhatsApp (optional)",
-            "whatsapp_placeholder": "If different from main phone",
-            "bio": "About Me",
-            "bio_placeholder": "Write a short bio about yourself...",
-            "profile_photo": "Profile Photo",
-            "photo_hint": "PNG, JPG, GIF up to 2MB",
-            "save": "Save Changes"
-        },
-        "password": {
-            "current": "Current Password",
-            "new": "New Password",
-            "confirm": "Confirm New Password",
-            "confirm_placeholder": "Re-enter password",
-            "min_chars": "Min. 6 characters",
-            "change": "Change Password",
-            "mismatch": "Passwords do not match",
-            "length_error": "Password must be at least 6 characters",
-            "success": "Password changed successfully"
-        },
-        "points": {
-            "balance": "Points Balance",
-            "available": "Points Available",
-            "no_data": "Failed to load points data",
-            "tier_level": "Membership Level",
-            "total_purchases": "Total Purchases: {{amount}} EGP",
-            "remaining_upgrade": "{{amount}} EGP left to upgrade",
-            "invoices_count": "Total Invoices",
-            "earned_points": "Points Earned",
-            "badges": "Badges"
-        },
-        "addresses_page": {
-            "title": "Manage Addresses",
-            "desc": "Add and edit your delivery addresses for easier shopping.",
-            "go_to": "Go to Addresses"
-        },
-        "settings": {
-            "offers_title": "Offers Notifications",
-            "offers_desc": "Receive notifications about discounts and new offers",
-            "orders_title": "Order Notifications",
-            "orders_desc": "Get notified about order and shipping status updates"
-        },
-        "messages": {
-            "image_size": "Image size must be less than 2MB",
-            "update_success": "Profile updated successfully"
-        }
-    },
-    "orders": {
-        "title": "My Orders",
-        "order_count": "{{count}} orders",
-        "order_num": "Order #{{num}}",
-        "statuses": {
-            "pending": "Pending Review",
-            "confirmed": "Confirmed",
-            "processing": "Processing",
-            "shipped": "Shipped",
-            "delivered": "Delivered",
-            "cancelled": "Cancelled"
-        },
-        "payment_statuses": {
-            "paid": "Paid",
-            "partial": "Partial",
-            "pending": "Pending",
-            "overdue": "Overdue"
-        },
-        "tracking": {
-            "receive": "Order Received",
-            "confirm": "Order Confirmed",
-            "prepare": "Preparing",
-            "ship": "Shipping",
-            "deliver": "Delivery",
-            "title": "Track Order",
-            "step_done": "Completed successfully"
-        },
-        "filters": {
-            "all": "All",
-            "confirmed": "Confirmed",
-            "shipped": "Shipped",
-            "delivered": "Delivered",
-            "cancelled": "Cancelled"
-        },
-        "total": "Total",
-        "paid": "Paid",
-        "remaining": "Remaining",
-        "details": "Details",
-        "reorder": "Reorder",
-        "cancel_order": "Cancel Order",
-        "cancel_confirm": "Are you sure you want to cancel this order?",
-        "cancel_success": "Order cancelled successfully",
-        "products": "Products",
-        "qty": "Qty: {{qty}} × {{price}} EGP",
-        "empty_title": "No Orders",
-        "empty_message": "You haven't placed any orders yet."
-    },
-    "invoices": {
-        "title": "My Invoices",
-        "invoice_count": "{{count}} invoices",
-        "invoice_num": "Invoice #{{num}}",
-        "statuses": {
-            "paid": "Paid",
-            "partial": "Partial",
-            "pending": "Pending",
-            "overdue": "Overdue"
-        },
-        "filters": {
-            "all": "All",
-            "paid": "Paid",
-            "partial": "Partial",
-            "pending": "Pending",
-            "overdue": "Overdue"
-        },
-        "total": "Total",
-        "paid_amount": "Paid",
-        "remaining": "Remaining",
-        "product_count": "{{count}} products",
-        "view_details": "View Details",
-        "date": "Date",
-        "status": "Status",
-        "download_fail": "Failed to download invoice",
-        "pay_invoice": "Pay Invoice #{{num}}",
-        "remaining_amount": "Remaining Amount",
-        "pay_amount_label": "Amount to Pay",
-        "payment_method": "Payment Method",
-        "cash": "Cash",
-        "card": "Card",
-        "transfer": "Transfer",
-        "notes_optional": "Notes (optional)",
-        "notes_placeholder": "Any notes...",
-        "invalid_amount": "Please enter a valid amount",
-        "pay_success": "Payment successful!",
-        "pay_fail": "Payment failed",
-        "paying": "Processing payment...",
-        "confirm_pay": "Confirm Payment ({{amount}} EGP)",
-        "pay_now": "Pay Amount ({{amount}} EGP)",
-        "products": "Products",
-        "product": "Product",
-        "quantity": "Quantity",
-        "price": "Price",
-        "installments": "Installment Schedule",
-        "installment_num": "Installment {{num}}",
-        "installment_paid": "Paid",
-        "installment_overdue": "Overdue",
-        "installment_upcoming": "Upcoming",
-        "notes": "Notes",
-        "return_request": "Return Product Request",
-        "return_title": "Return Request",
-        "purchased_qty": "Purchased quantity: {{qty}}",
-        "return_qty": "Quantity to Return",
-        "return_reason": "Return Reason",
-        "reason_defective": "Defective",
-        "reason_wrong": "Wrong Item",
-        "reason_changed_mind": "Changed My Mind",
-        "reason_other": "Other",
-        "additional_notes": "Additional Notes",
-        "explain_issue": "Explain the issue in detail...",
-        "sending": "Sending...",
-        "confirm_return": "Confirm Return Request",
-        "return_success": "Return request submitted successfully",
-        "empty_title": "No Invoices",
-        "empty_message": "You haven't made any purchases yet."
-    },
-    "products": {
-        "title": "Products",
-        "search_placeholder": "Search for a product, brand...",
-        "no_results_title": "No Products Found",
-        "no_results_search": "No results matching your search for \"{{query}}\"",
-        "no_results_category": "No products available in this category currently",
-        "view_all": "View All Products",
-        "load_more": "Load More",
-        "out_of_stock": "Out of Stock"
-    },
-    "statement": {
-        "title": "Account Statement",
-        "subtitle": "Your complete financial transaction history",
-        "download_pdf": "Download PDF",
-        "download_fail": "Failed to download file",
-        "downloading": "Downloading account statement...",
-        "load_fail": "Failed to load account statement",
-        "retry": "Retry",
-        "ranges": {
-            "week": "Week",
-            "month": "Month",
-            "3months": "3 Months",
-            "6months": "6 Months",
-            "year": "Year"
-        },
-        "from_date": "From Date",
-        "to_date": "To Date",
-        "all_transactions": "All Transactions",
-        "balance_owed": "Amount Owed",
-        "balance_credit": "Credit Balance",
-        "balance_clear": "Settled",
-        "purchases": "Purchases",
-        "payments": "Payments",
-        "transactions": "Transactions",
-        "transaction_unit": "transactions",
-        "ledger_title": "Transaction Log ({{count}})",
-        "empty_title": "No transactions in this period",
-        "empty_message": "Try selecting a wider date range",
-        "entry_type": "Transaction Type",
-        "entry_payment": "✅ Payment",
-        "entry_purchase": "🛒 Purchase",
-        "entry_date": "Date",
-        "amount": "Amount",
-        "balance_after": "Balance After",
-        "balance_label": "Balance: {{amount}}",
-        "reference": "Reference Number",
-        "footer_from": "Account statement from",
-        "footer_to": "to",
-        "footer_by": "• Generated by"
-    },
-    "wishlist": {
-        "title": "Wishlist",
-        "product_count": "{{count}} products",
-        "removed": "Removed from wishlist",
-        "added_to_cart": "Added to cart",
-        "add_to_cart": "Add to Cart",
-        "out_of_stock": "Out of Stock",
-        "empty_title": "Wishlist is Empty",
-        "empty_message": "Save products you like here",
-        "browse": "Browse Products"
-    },
-    "reviews": {
-        "title": "My Reviews",
-        "new_review": "New Review",
-        "cancel": "Cancel",
-        "add_review": "Add Your Review",
-        "type_store": "Store Review",
-        "type_service": "Service Quality",
-        "rating_label": "Rating *",
-        "rating_1": "Very Bad",
-        "rating_2": "Bad",
-        "rating_3": "Acceptable",
-        "rating_4": "Good",
-        "rating_5": "Excellent",
-        "rating_select": "Select your rating",
-        "review_title": "Review Title (optional)",
-        "title_placeholder": "e.g., Great experience...",
-        "review_body": "Review Details *",
-        "body_placeholder": "Share your experience with the store...",
-        "submitting": "Submitting...",
-        "submit": "Submit Review",
-        "rating_required": "Please select a rating",
-        "body_required": "Please write your review",
-        "submit_success": "Your review has been submitted successfully",
-        "verified": "Verified Purchase",
-        "status_approved": "Published",
-        "status_rejected": "Rejected",
-        "status_pending": "Pending Review",
-        "product_label": "Product: {{name}}",
-        "store_reply": "Store Reply",
-        "empty_title": "No Reviews Yet",
-        "empty_message": "Share your experience with the store"
-    },
-    "notifications": {
-        "title": "Notifications",
-        "mark_all_read": "Mark All Read",
-        "time_now": "Just now",
-        "time_minutes": "{{count}} min ago",
-        "time_hours": "{{count}} hr ago",
-        "time_days": "{{count}} days ago",
-        "empty_title": "No Notifications",
-        "empty_message": "You'll be notified of any new updates"
-    },
-    "support": {
-        "title": "Support",
-        "subtitle": "How can we help you today?",
-        "tabs": {
-            "new": "New Message",
-            "tickets": "My Tickets"
-        },
-        "types": {
-            "inquiry": "General Inquiry",
-            "order": "Order Issue",
-            "payment": "Payment Issue",
-            "complaint": "Complaint"
-        },
-        "form": {
-            "subject": "Subject *",
-            "subject_placeholder": "Your message subject...",
-            "message": "Your Message *",
-            "message_placeholder": "Write your message with as much detail as possible...",
-            "fill_all": "Please fill in all fields",
-            "send": "Send Message"
-        },
-        "sent_title": "Message Sent!",
-        "sent_subtitle": "We'll get back to you soon",
-        "contact_direct": "Or contact us directly:",
-        "send_another": "Send Another Message",
-        "ticket_statuses": {
-            "replied": "Replied",
-            "closed": "Closed",
-            "open": "Open"
-        },
-        "view_chat": "View Conversation",
-        "empty_title": "No Previous Messages",
-        "empty_message": "Any message you send to support will appear here so you can follow up on replies."
-    },
-    "addresses": {
-        "title": "Address Book",
-        "subtitle": "Manage your delivery addresses.",
-        "add": "Add Address",
-        "add_new": "Add New Address",
-        "edit": "Edit Address",
-        "default": "Default",
-        "zip": "Zip Code: {{code}}",
-        "empty": "No saved addresses",
-        "label_field": "Address Label",
-        "label_placeholder": "Home, Work...",
-        "street_field": "Street Address",
-        "street_placeholder": "Street name, building number...",
-        "city_field": "City",
-        "state_field": "State / Region",
-        "set_default": "Set as default address",
-        "saving": "Saving...",
-        "save": "Add Address",
-        "update": "Update Address",
-        "add_success": "Address added successfully",
-        "update_success": "Address updated successfully",
-        "delete_confirm": "Are you sure you want to delete this address?",
-        "delete_success": "Address deleted"
-    },
-    "productDetails": {
-        "not_found": "Product Not Found",
-        "not_found_desc": "Sorry, we couldn't find the requested product. It may have been deleted or the link is incorrect.",
-        "back_to_shop": "Back to Shopping",
-        "general": "General",
-        "warranty": "Dealer Warranty",
-        "fast_shipping": "Fast Shipping",
-        "return_14": "14-Day Returns",
-        "choose_specs": "Choose Specifications:",
-        "description": "Description",
-        "no_description": "No description available for this product.",
-        "read_more": "Read More",
-        "related": "You May Also Like",
-        "view_all": "View All",
-        "out_of_stock": "Out of Stock",
-        "add_to_cart": "Add to Cart ({{total}})",
-        "save_25": "Save 25%"
-    },
-    "supportChat": {
-        "not_found": "Ticket Not Found",
-        "not_found_desc": "This ticket doesn't exist or has been deleted.",
-        "back_to_support": "Back to Support",
-        "closed": "Closed",
-        "open": "Open",
-        "closed_message": "This ticket is closed. If you have another inquiry, please open a new ticket.",
-        "reply_placeholder": "Type your reply here...",
-        "support_team": "Support Team"
-    },
-    "returns": {
-        "title": "Return & Exchange Requests",
-        "subtitle": "Track the status of your return requests.",
-        "from_invoices": "You can submit a return request from the",
-        "invoices_link": "Invoices",
-        "statuses": {
-            "approved": "Approved",
-            "rejected": "Rejected",
-            "completed": "Completed",
-            "pending": "Under Review"
-        },
-        "unknown_product": "Unknown Product",
-        "qty_invoice": "Qty: {{qty}} • Invoice #{{num}}",
-        "request_date": "Request Date:",
-        "reason_label": "Reason:",
-        "reasons": {
-            "defective": "Defective",
-            "wrong_item": "Wrong Item",
-            "changed_mind": "Changed Mind",
-            "other": "Other"
-        },
-        "store_notes": "Store Notes:",
-        "empty_title": "No Previous Return Requests",
-        "empty_message": "You can submit a return request from the invoices page.",
-        "browse_invoices": "Browse Invoices"
-    },
-    "pointsHistory": {
-        "title": "Points History",
-        "subtitle": "Track your points and rewards",
-        "current_balance": "Current Points Balance",
-        "total_earned": "Total Earned",
-        "total_redeemed": "Total Redeemed",
-        "filter": "Filter:",
-        "filter_all": "All",
-        "filter_earned": "Earned",
-        "filter_redeemed": "Redeemed",
-        "type_earn": "Points Earned",
-        "type_redeem": "Points Redeemed",
-        "type_activity": "Activity",
-        "reasons": {
-            "purchase": "Product Purchase",
-            "referral": "Friend Referral",
-            "birthday": "Birthday Gift",
-            "reward": "Special Reward",
-            "discount": "Discount Redemption",
-            "gift": "Gift Redemption",
-            "cashback": "Cashback"
-        },
-        "date_unavailable": "Unavailable",
-        "empty_title": "No Records",
-        "empty_all": "You haven't had any points activity yet",
-        "empty_earned": "You haven't earned any points yet",
-        "empty_redeemed": "You haven't redeemed any points yet",
-        "how_to_earn": "How to Earn More Points?",
-        "tip_purchase": "Earn 1 point for every 10 EGP spent",
-        "tip_events": "Special rewards during events and seasonal offers",
-        "tip_redeem": "Redeem your points for discounts or valuable gifts"
-    },
-    "installmentCalc": {
-        "title": "Installment Calculator",
-        "subtitle": "Easily calculate your monthly installments based on amount and down payment.",
-        "total_amount": "Total Amount *",
-        "amount_placeholder": "e.g. 5000",
-        "down_payment": "Down Payment (optional)",
-        "down_placeholder": "e.g. 1000",
-        "duration": "Installment Duration",
-        "months": "{{count}} Months",
-        "months_singular": "{{count}} Month",
-        "result_title": "Estimated Result",
-        "finance_amount": "Finance Amount (after down payment)",
-        "admin_fee": "Admin Fee",
-        "duration_label": "Installment Duration",
-        "monthly_label": "Expected Monthly Installment",
-        "disclaimer": "* This is an estimate and may vary slightly during actual implementation based on store policy."
-    },
-    "layout": {
-        "main_menu": "Main Menu",
-        "more": "More",
-        "cart_title": "Shopping Cart",
-        "cart_count": "{{count}} items",
-        "cart_empty": "Cart is Empty",
-        "cart_empty_desc": "Browse products and start shopping now",
-        "browse_store": "Browse Store",
-        "free_shipping": "Free Shipping!",
-        "free_shipping_desc": "Add products worth {{amount}} EGP more to get free shipping",
-        "quantity": "Qty: {{count}}",
-        "subtotal": "Subtotal",
-        "checkout": "Checkout",
-        "wishlist": "Wishlist",
-        "notifications": "Notifications",
-        "cart": "Shopping Cart",
-        "light_mode": "Switch to Light Mode",
-        "dark_mode": "Switch to Dark Mode",
-        "logout": "Logout",
-        "home": "Home",
-        "close_cart": "Close Cart",
-        "remove_from_cart": "Remove from Cart"
+    "featured_products": "Featured Products",
+    "view_more": "View More",
+    "no_products": "No products available currently",
+    "view_all_products": "View All Products",
+    "alerts": {
+      "overdue_installments": "Overdue Installments!",
+      "payment_reminder": "Payment Reminder",
+      "overdue_desc": "Please pay your overdue installments to avoid late fees.",
+      "reminder_desc": "You have upcoming installments that need to be paid.",
+      "installment_due": "Installment Due",
+      "pay_installments_now": "Pay Installments Now"
     }
+  },
+  "checkout": {
+    "title": "Checkout",
+    "steps": {
+      "shipping": "Shipping Details",
+      "review": "Review Order",
+      "done": "Done"
+    },
+    "errors": {
+      "name_required": "Name is required",
+      "phone_required": "Phone number is required",
+      "address_required": "Detailed address is required",
+      "gov_required": "Choose governorate",
+      "empty_cart": "Cart is empty",
+      "signature_required": "Please provide electronic signature",
+      "checkout_failed": "Failed to create order",
+      "generic_error": "An error occurred, try again"
+    },
+    "coupon": {
+      "applied": "Coupon applied! You saved {{amount}} EGP",
+      "title": "Discount Coupon",
+      "discount": "{{amount}} EGP discount",
+      "placeholder": "Enter discount code",
+      "apply": "Apply"
+    },
+    "shipping": {
+      "insufficient_balance": "Insufficient Balance",
+      "available_balance": "Available Balance:",
+      "order_total": "Order:",
+      "personal_info": "Receiver Info",
+      "full_name": "Full Name *",
+      "full_name_placeholder": "Receiver Name",
+      "phone": "Phone Number *",
+      "phone_placeholder": "01XXXXXXXXX",
+      "address_title": "Shipping Address",
+      "governorate": "Governorate *",
+      "choose_gov": "Choose Governorate",
+      "city": "City / Area",
+      "city_placeholder": "City or Neighborhood",
+      "address_details": "Detailed Address *",
+      "address_placeholder": "Street, building, floor, apartment...",
+      "notes": "Delivery Notes",
+      "notes_placeholder": "Any special instructions for courier..."
+    },
+    "review": {
+      "products": "Products ({{count}})",
+      "qty": "Quantity: {{count}}",
+      "subtotal": "Subtotal",
+      "discount_label": "Discount ({{code}})",
+      "total": "Total",
+      "delivery_details": "Delivery Details",
+      "receiver": "Receiver",
+      "phone": "Phone",
+      "governorate": "Governorate",
+      "address": "Address",
+      "notes": "Notes"
+    },
+    "payment": {
+      "title": "Payment Method",
+      "cash": "Cash on Delivery",
+      "deferred": "Deferred (Installments)",
+      "months_label": "Choose Installment Plan (Months)",
+      "monthly_install": "Approximate Monthly Installment:",
+      "monthly_amount": "{{amount}} EGP / month",
+      "insufficient_install": "Your current balance ({{amount}} EGP) is insufficient for this method.",
+      "cash_notice": "Full amount ({{amount}} EGP) will be paid on delivery"
+    },
+    "documents_warning": {
+      "title": "Basic Account Documents",
+      "desc": "Your account has no documents. Please upload them (e.g. ID card) to purchase via installments."
+    },
+    "signature": {
+      "title": "Electronic Signature",
+      "desc": "I declare my full consent to the entered details and agree to the deferred payment terms.",
+      "placeholder": "Type your full name here to sign"
+    },
+    "buttons": {
+      "review_order": "Review Order",
+      "confirm_order": "Confirm Order",
+      "edit_shipping": "Edit Shipping Details"
+    },
+    "success": {
+      "title": "Order Received! 🎉",
+      "order_number": "Order Number",
+      "address": "Address",
+      "phone": "Phone",
+      "total": "Total",
+      "saved": "(Saved {{amount}})",
+      "contact_soon": "Our team will contact you soon to confirm",
+      "track_orders": "Track Orders",
+      "continue_shopping": "Continue Shopping"
+    }
+  },
+  "login": {
+    "title_portal": "Customer",
+    "title_customers": "Portal",
+    "subtitle": "Track your balance, purchases, and installments",
+    "tabs": {
+      "login": "Login",
+      "register": "New Account",
+      "activate": "Activate Account"
+    },
+    "form": {
+      "phone": "Phone Number",
+      "phone_registered": "Registered Phone",
+      "phone_registered_placeholder": "Phone registered with the seller",
+      "email": "Email",
+      "email_or_phone": "Email or phone",
+      "phone_placeholder": "01xxxxxxxxx",
+      "password": "Password",
+      "password_new": "New Password",
+      "password_placeholder": "••••••",
+      "password_min": "Min. 6 characters",
+      "confirm_password": "Confirm Password",
+      "confirm_password_placeholder": "Re-enter password",
+      "forgot_password": "Forgot password?",
+      "identifier_placeholder": "example@email.com or 01XXXXXXXXX",
+      "store_code": "Store Code",
+      "store_code_placeholder": "e.g., my-store",
+      "store_code_ask": "Ask your seller",
+      "fullname": "Full Name",
+      "fullname_placeholder": "e.g., John Doe"
+    },
+    "buttons": {
+      "login": "Login",
+      "logging_in": "Logging in...",
+      "register": "Create Account",
+      "registering": "Creating account...",
+      "activate": "Activate My Account",
+      "activating": "Activating...",
+      "light_mode": "Light Mode",
+      "dark_mode": "Dark Mode"
+    },
+    "messages": {
+      "login_success": "Logged in successfully",
+      "register_success": "Account created successfully",
+      "activate_success": "Account activated successfully",
+      "password_mismatch": "Passwords do not match",
+      "password_length": "Password must be at least 6 characters",
+      "activate_hint": "If the seller has already added you as a customer, you can activate your account here using your registered phone number and creating a new password."
+    }
+  },
+  "profile": {
+    "tiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "customer": "{{tier}} Customer"
+    },
+    "sections": {
+      "info": "My Info",
+      "addresses": "Addresses",
+      "password": "Security",
+      "points": "Points",
+      "settings": "Settings"
+    },
+    "statement_link": "Account Statement",
+    "statement_desc": "View your transaction history",
+    "form": {
+      "name": "Name",
+      "phone": "Phone Number",
+      "change_phone": "Change Number",
+      "phone_otp": "An OTP code will be sent to confirm the change soon.",
+      "email": "Email",
+      "email_placeholder": "example@email.com",
+      "dob": "Date of Birth",
+      "gender": "Gender",
+      "gender_unset": "Not specified",
+      "gender_male": "Male",
+      "gender_female": "Female",
+      "whatsapp": "WhatsApp (optional)",
+      "whatsapp_placeholder": "If different from main phone",
+      "bio": "About Me",
+      "bio_placeholder": "Write a short bio about yourself...",
+      "profile_photo": "Profile Photo",
+      "photo_hint": "PNG, JPG, GIF up to 2MB",
+      "save": "Save Changes"
+    },
+    "password": {
+      "current": "Current Password",
+      "new": "New Password",
+      "confirm": "Confirm New Password",
+      "confirm_placeholder": "Re-enter password",
+      "min_chars": "Min. 6 characters",
+      "change": "Change Password",
+      "mismatch": "Passwords do not match",
+      "length_error": "Password must be at least 6 characters",
+      "success": "Password changed successfully"
+    },
+    "points": {
+      "balance": "Points Balance",
+      "available": "Points Available",
+      "no_data": "Failed to load points data",
+      "tier_level": "Membership Level",
+      "total_purchases": "Total Purchases: {{amount}} EGP",
+      "remaining_upgrade": "{{amount}} EGP left to upgrade",
+      "invoices_count": "Total Invoices",
+      "earned_points": "Points Earned",
+      "badges": "Badges"
+    },
+    "addresses_page": {
+      "title": "Manage Addresses",
+      "desc": "Add and edit your delivery addresses for easier shopping.",
+      "go_to": "Go to Addresses"
+    },
+    "settings": {
+      "offers_title": "Offers Notifications",
+      "offers_desc": "Receive notifications about discounts and new offers",
+      "orders_title": "Order Notifications",
+      "orders_desc": "Get notified about order and shipping status updates"
+    },
+    "messages": {
+      "image_size": "Image size must be less than 2MB",
+      "update_success": "Profile updated successfully"
+    }
+  },
+  "orders": {
+    "title": "My Orders",
+    "order_count": "{{count}} orders",
+    "loading_details": "Loading order details...",
+    "order_num": "Order #{{num}}",
+    "statuses": {
+      "pending": "Pending Review",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "payment_statuses": {
+      "paid": "Paid",
+      "partial": "Partial",
+      "pending": "Pending",
+      "overdue": "Overdue"
+    },
+    "tracking": {
+      "receive": "Order Received",
+      "confirm": "Order Confirmed",
+      "prepare": "Preparing",
+      "ship": "Shipping",
+      "deliver": "Delivery",
+      "title": "Track Order",
+      "step_done": "Completed successfully"
+    },
+    "filters": {
+      "all": "All",
+      "confirmed": "Confirmed",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "total": "Total",
+    "paid": "Paid",
+    "remaining": "Remaining",
+    "details": "Details",
+    "reorder": "Reorder",
+    "cancel_order": "Cancel Order",
+    "cancel_confirm": "Are you sure you want to cancel this order?",
+    "cancel_success": "Order cancelled successfully",
+    "products": "Products",
+    "qty": "Qty: {{qty}} × {{price}} EGP",
+    "empty_title": "No Orders",
+    "empty_message": "You haven't placed any orders yet."
+  },
+  "invoices": {
+    "title": "My Invoices",
+    "invoice_count": "{{count}} invoices",
+    "invoice_num": "Invoice #{{num}}",
+    "statuses": {
+      "paid": "Paid",
+      "partial": "Partial",
+      "pending": "Pending",
+      "overdue": "Overdue"
+    },
+    "filters": {
+      "all": "All",
+      "paid": "Paid",
+      "partial": "Partial",
+      "pending": "Pending",
+      "overdue": "Overdue"
+    },
+    "total": "Total",
+    "paid_amount": "Paid",
+    "remaining": "Remaining",
+    "product_count": "{{count}} products",
+    "view_details": "View Details",
+    "date": "Date",
+    "status": "Status",
+    "download_fail": "Failed to download invoice",
+    "pay_invoice": "Pay Invoice #{{num}}",
+    "remaining_amount": "Remaining Amount",
+    "pay_amount_label": "Amount to Pay",
+    "payment_method": "Payment Method",
+    "cash": "Cash",
+    "card": "Card",
+    "transfer": "Transfer",
+    "notes_optional": "Notes (optional)",
+    "notes_placeholder": "Any notes...",
+    "invalid_amount": "Please enter a valid amount",
+    "pay_success": "Payment successful!",
+    "pay_fail": "Payment failed",
+    "paying": "Processing payment...",
+    "confirm_pay": "Confirm Payment ({{amount}} EGP)",
+    "pay_now": "Pay Amount ({{amount}} EGP)",
+    "products": "Products",
+    "product": "Product",
+    "quantity": "Quantity",
+    "price": "Price",
+    "installments": "Installment Schedule",
+    "installment_num": "Installment {{num}}",
+    "installment_paid": "Paid",
+    "installment_overdue": "Overdue",
+    "installment_upcoming": "Upcoming",
+    "notes": "Notes",
+    "return_request": "Return Product Request",
+    "return_title": "Return Request",
+    "purchased_qty": "Purchased quantity: {{qty}}",
+    "return_qty": "Quantity to Return",
+    "return_reason": "Return Reason",
+    "reason_defective": "Defective",
+    "reason_wrong": "Wrong Item",
+    "reason_changed_mind": "Changed My Mind",
+    "reason_other": "Other",
+    "additional_notes": "Additional Notes",
+    "explain_issue": "Explain the issue in detail...",
+    "sending": "Sending...",
+    "confirm_return": "Confirm Return Request",
+    "return_success": "Return request submitted successfully",
+    "empty_title": "No Invoices",
+    "empty_message": "You haven't made any purchases yet."
+  },
+  "products": {
+    "title": "Products",
+    "search_placeholder": "Search for a product, brand...",
+    "no_results_title": "No Products Found",
+    "no_results_search": "No results matching your search for \"{{query}}\"",
+    "no_results_category": "No products available in this category currently",
+    "view_all": "View All Products",
+    "load_more": "Load More",
+    "out_of_stock": "Out of Stock"
+  },
+  "statement": {
+    "title": "Account Statement",
+    "subtitle": "Your complete financial transaction history",
+    "download_pdf": "Download PDF",
+    "download_fail": "Failed to download file",
+    "downloading": "Downloading account statement...",
+    "load_fail": "Failed to load account statement",
+    "retry": "Retry",
+    "ranges": {
+      "week": "Week",
+      "month": "Month",
+      "3months": "3 Months",
+      "6months": "6 Months",
+      "year": "Year"
+    },
+    "from_date": "From Date",
+    "to_date": "To Date",
+    "all_transactions": "All Transactions",
+    "balance_owed": "Amount Owed",
+    "balance_credit": "Credit Balance",
+    "balance_clear": "Settled",
+    "purchases": "Purchases",
+    "payments": "Payments",
+    "transactions": "Transactions",
+    "transaction_unit": "transactions",
+    "ledger_title": "Transaction Log ({{count}})",
+    "empty_title": "No transactions in this period",
+    "empty_message": "Try selecting a wider date range",
+    "entry_type": "Transaction Type",
+    "entry_payment": "✅ Payment",
+    "entry_purchase": "🛒 Purchase",
+    "entry_date": "Date",
+    "amount": "Amount",
+    "balance_after": "Balance After",
+    "balance_label": "Balance: {{amount}}",
+    "reference": "Reference Number",
+    "footer_from": "Account statement from",
+    "footer_to": "to",
+    "footer_by": "• Generated by"
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "product_count": "{{count}} products",
+    "removed": "Removed from wishlist",
+    "added_to_cart": "Added to cart",
+    "add_to_cart": "Add to Cart",
+    "out_of_stock": "Out of Stock",
+    "empty_title": "Wishlist is Empty",
+    "empty_message": "Save products you like here",
+    "browse": "Browse Products"
+  },
+  "reviews": {
+    "title": "My Reviews",
+    "new_review": "New Review",
+    "cancel": "Cancel",
+    "add_review": "Add Your Review",
+    "type_store": "Store Review",
+    "type_service": "Service Quality",
+    "rating_label": "Rating *",
+    "rating_1": "Very Bad",
+    "rating_2": "Bad",
+    "rating_3": "Acceptable",
+    "rating_4": "Good",
+    "rating_5": "Excellent",
+    "rating_select": "Select your rating",
+    "review_title": "Review Title (optional)",
+    "title_placeholder": "e.g., Great experience...",
+    "review_body": "Review Details *",
+    "body_placeholder": "Share your experience with the store...",
+    "submitting": "Submitting...",
+    "submit": "Submit Review",
+    "rating_required": "Please select a rating",
+    "body_required": "Please write your review",
+    "submit_success": "Your review has been submitted successfully",
+    "verified": "Verified Purchase",
+    "status_approved": "Published",
+    "status_rejected": "Rejected",
+    "status_pending": "Pending Review",
+    "product_label": "Product: {{name}}",
+    "store_reply": "Store Reply",
+    "empty_title": "No Reviews Yet",
+    "empty_message": "Share your experience with the store"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "mark_all_read": "Mark All Read",
+    "time_now": "Just now",
+    "time_minutes": "{{count}} min ago",
+    "time_hours": "{{count}} hr ago",
+    "time_days": "{{count}} days ago",
+    "empty_title": "No Notifications",
+    "empty_message": "You'll be notified of any new updates"
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "How can we help you today?",
+    "tabs": {
+      "new": "New Message",
+      "tickets": "My Tickets"
+    },
+    "types": {
+      "inquiry": "General Inquiry",
+      "order": "Order Issue",
+      "payment": "Payment Issue",
+      "complaint": "Complaint"
+    },
+    "form": {
+      "subject": "Subject *",
+      "subject_placeholder": "Your message subject...",
+      "message": "Your Message *",
+      "message_placeholder": "Write your message with as much detail as possible...",
+      "fill_all": "Please fill in all fields",
+      "send": "Send Message"
+    },
+    "sent_title": "Message Sent!",
+    "sent_subtitle": "We'll get back to you soon",
+    "contact_direct": "Or contact us directly:",
+    "send_another": "Send Another Message",
+    "ticket_statuses": {
+      "replied": "Replied",
+      "closed": "Closed",
+      "open": "Open"
+    },
+    "view_chat": "View Conversation",
+    "empty_title": "No Previous Messages",
+    "empty_message": "Any message you send to support will appear here so you can follow up on replies."
+  },
+  "addresses": {
+    "title": "Address Book",
+    "subtitle": "Manage your delivery addresses.",
+    "add": "Add Address",
+    "add_new": "Add New Address",
+    "edit": "Edit Address",
+    "default": "Default",
+    "zip": "Zip Code: {{code}}",
+    "zip_field": "Zip code",
+    "zip_placeholder": "Enter zip code if available",
+    "empty": "No saved addresses",
+    "label_field": "Address Label",
+    "label_placeholder": "Home, Work...",
+    "street_field": "Street Address",
+    "street_placeholder": "Street name, building number...",
+    "city_field": "City",
+    "state_field": "State / Region",
+    "set_default": "Set as default address",
+    "saving": "Saving...",
+    "save": "Add Address",
+    "update": "Update Address",
+    "add_success": "Address added successfully",
+    "update_success": "Address updated successfully",
+    "delete_confirm": "Are you sure you want to delete this address?",
+    "delete_success": "Address deleted"
+  },
+  "productDetails": {
+    "not_found": "Product Not Found",
+    "not_found_desc": "Sorry, we couldn't find the requested product. It may have been deleted or the link is incorrect.",
+    "back_to_shop": "Back to Shopping",
+    "general": "General",
+    "warranty": "Dealer Warranty",
+    "fast_shipping": "Fast Shipping",
+    "return_14": "14-Day Returns",
+    "choose_specs": "Choose Specifications:",
+    "description": "Description",
+    "no_description": "No description available for this product.",
+    "read_more": "Read More",
+    "related": "You May Also Like",
+    "view_all": "View All",
+    "out_of_stock": "Out of Stock",
+    "add_to_cart": "Add to Cart ({{total}})",
+    "save_25": "Save 25%"
+  },
+  "supportChat": {
+    "not_found": "Ticket Not Found",
+    "not_found_desc": "This ticket doesn't exist or has been deleted.",
+    "back_to_support": "Back to Support",
+    "closed": "Closed",
+    "open": "Open",
+    "closed_message": "This ticket is closed. If you have another inquiry, please open a new ticket.",
+    "reply_placeholder": "Type your reply here...",
+    "support_team": "Support Team"
+  },
+  "returns": {
+    "title": "Return & Exchange Requests",
+    "subtitle": "Track the status of your return requests.",
+    "from_invoices": "You can submit a return request from the",
+    "invoices_link": "Invoices",
+    "statuses": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "completed": "Completed",
+      "pending": "Under Review"
+    },
+    "unknown_product": "Unknown Product",
+    "qty_invoice": "Qty: {{qty}} • Invoice #{{num}}",
+    "request_date": "Request Date:",
+    "reason_label": "Reason:",
+    "reasons": {
+      "defective": "Defective",
+      "wrong_item": "Wrong Item",
+      "changed_mind": "Changed Mind",
+      "other": "Other"
+    },
+    "store_notes": "Store Notes:",
+    "empty_title": "No Previous Return Requests",
+    "empty_message": "You can submit a return request from the invoices page.",
+    "browse_invoices": "Browse Invoices"
+  },
+  "pointsHistory": {
+    "title": "Points History",
+    "subtitle": "Track your points and rewards",
+    "current_balance": "Current Points Balance",
+    "total_earned": "Total Earned",
+    "total_redeemed": "Total Redeemed",
+    "filter": "Filter:",
+    "filter_all": "All",
+    "filter_earned": "Earned",
+    "filter_redeemed": "Redeemed",
+    "type_earn": "Points Earned",
+    "type_redeem": "Points Redeemed",
+    "type_activity": "Activity",
+    "reasons": {
+      "purchase": "Product Purchase",
+      "referral": "Friend Referral",
+      "birthday": "Birthday Gift",
+      "reward": "Special Reward",
+      "discount": "Discount Redemption",
+      "gift": "Gift Redemption",
+      "cashback": "Cashback"
+    },
+    "date_unavailable": "Unavailable",
+    "empty_title": "No Records",
+    "empty_all": "You haven't had any points activity yet",
+    "empty_earned": "You haven't earned any points yet",
+    "empty_redeemed": "You haven't redeemed any points yet",
+    "how_to_earn": "How to Earn More Points?",
+    "tip_purchase": "Earn 1 point for every 10 EGP spent",
+    "tip_events": "Special rewards during events and seasonal offers",
+    "tip_redeem": "Redeem your points for discounts or valuable gifts"
+  },
+  "installmentCalc": {
+    "title": "Installment Calculator",
+    "subtitle": "Easily calculate your monthly installments based on amount and down payment.",
+    "total_amount": "Total Amount *",
+    "amount_placeholder": "e.g. 5000",
+    "down_payment": "Down Payment (optional)",
+    "down_placeholder": "e.g. 1000",
+    "duration": "Installment Duration",
+    "months": "{{count}} Months",
+    "months_singular": "{{count}} Month",
+    "result_title": "Estimated Result",
+    "finance_amount": "Finance Amount (after down payment)",
+    "admin_fee": "Admin Fee",
+    "duration_label": "Installment Duration",
+    "monthly_label": "Expected Monthly Installment",
+    "disclaimer": "* This is an estimate and may vary slightly during actual implementation based on store policy."
+  },
+  "layout": {
+    "main_menu": "Main Menu",
+    "more": "More",
+    "more_actions": "More actions",
+    "cart_title": "Shopping Cart",
+    "cart_count": "{{count}} items",
+    "cart_empty": "Cart is Empty",
+    "cart_empty_desc": "Browse products and start shopping now",
+    "browse_store": "Browse Store",
+    "free_shipping": "Free Shipping!",
+    "free_shipping_desc": "Add products worth {{amount}} EGP more to get free shipping",
+    "quantity": "Qty: {{count}}",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "wishlist": "Wishlist",
+    "notifications": "Notifications",
+    "cart": "Shopping Cart",
+    "light_mode": "Switch to Light Mode",
+    "dark_mode": "Switch to Dark Mode",
+    "back_to_store": "Back to store",
+    "logout": "Logout",
+    "home": "Home",
+    "close_cart": "Close Cart",
+    "remove_from_cart": "Remove from Cart"
+  },
+  "portal_orders_admin_page": {
+    "toasts": {
+      "k2qfpyq": "فشل تحميل الطلبات",
+      "kyosw45": "تم تحديث حالة الطلب",
+      "kjwcs3i": "فشل تحديث الحالة"
+    },
+    "placeholders": {
+      "k7zksoh": "بحث باسم العميل أو رقم الطلب..."
+    },
+    "titles": {
+      "kk4v7to": "لا توجد طلبات",
+      "k3y9kzm": "عرض التفاصيل",
+      "kydksq7": "إنشاء شحنة",
+      "kd5n2wc": "تحديث الشحنة",
+      "kuqz2jx": "إلغاء الطلب",
+      "k3nhhbd": "لا توجد بيانات توصيل"
+    },
+    "ui": {
+      "kf0jky8": "الطلبات التي أرسلها العملاء من بوابتهم",
+      "kig6vo2": "رقم الطلب",
+      "kab4izh": "العميل",
+      "kzcgj78": "التوصيل",
+      "kzbvdnf": "التاريخ",
+      "krh6w30": "الإجمالي",
+      "kabct8k": "الحالة",
+      "k5a5wt5": "إجراءات",
+      "kwlxf": "ج.م",
+      "kovdol8": "الاسم",
+      "ku7pslo": "التليفون",
+      "kza6ps0": "المستلم",
+      "kseg3bk": "المحافظة",
+      "kzgfilf": "العنوان",
+      "notes": "ملاحظات",
+      "krmcqvo": "وسيلة الشحن",
+      "k3os116": "رقم التتبع",
+      "ke7gqic": "حالة شركة الشحن",
+      "k3bxnv1": "موعد متوقع",
+      "kkobf6x": "الاسترداد والإلغاء",
+      "kl1zpa2": "حالة الاسترداد",
+      "kh8ks6k": "المبلغ المطلوب رده",
+      "kbrs3jf": "سبب الإلغاء",
+      "kua4x18": "ملاحظات:",
+      "kexeo1r": "التوقيع الإلكتروني الإلزامي (للشراء الآجل)",
+      "kdacimn": "سجل الحالة",
+      "kd5n2wc": "تحديث الشحنة",
+      "k59fy6t": "معالجة الاسترداد",
+      "ke75icz": "فتح رابط التتبع",
+      "kiqcjsb": "أقر العميل بصحة البيانات وبالموافقة على شروط الدفع الآجل بالتفويض التالي:"
+    }
+  },
+  "portal_checkout": {
+    "ui": {
+      "kovdy34": "الشحن",
+      "krmcqvo": "وسيلة الشحن",
+      "k3bxnv1": "موعد متوقع"
+    }
+  },
+  "portal_documents": {
+    "toasts": {
+      "k7jzp4": "حجم الملف يجب أن يكون أقل من 20 ميجابايت",
+      "k4nb84g": "تم رفع المستند بنجاح",
+      "krafdku": "يجب رفع الصورة الأمامية للبطاقة",
+      "kh4jgrp": "يجب رفع الصورة الخلفية للبطاقة",
+      "kq8jcg1": "تم حذف المستند"
+    },
+    "form": {
+      "kgqfwfh": "الوجه الأمامي",
+      "kmdmwt2": "الوجه الخلفي",
+      "koveb8l": "الملف"
+    },
+    "titles": {
+      "keho2d6": "حذف المستند"
+    },
+    "ui": {
+      "k3w83r": "حالة التوثيق",
+      "kw5zmev": "تم رفض المستند",
+      "ksf7zo2": "جاري الرفع...",
+      "kwxmgos": "توثيق الحساب والمستندات",
+      "kmdmwt2": "الوجه الخلفي",
+      "k126pdo": "جاري الفحص السحابي والرفع...",
+      "kbc4m1": "المصادقة ورفع البطاقة"
+    }
+  },
+  "portal_home": {
+    "placeholders": {
+      "kcm2i7c": "ابحث عن منتجات، أقسام..."
+    }
+  },
+  "portal_invoices": {
+    "toasts": {
+      "k5rmkl8": "تم إنشاء رابط الدفع — أكمل عملية الدفع في النافذة الجديدة"
+    },
+    "ui": {
+      "kdfapok": "المبلغ المتبقي",
+      "keq8s7l": "اختر طريقة الدفع",
+      "k66jpo7": "ستُفتح صفحة الدفع في نافذة جديدة آمنة"
+    }
+  },
+  "portal_orders": {
+    "ui": {
+      "keqv6gy": "الاسترداد والمرتجعات",
+      "kibxyl": "حالة المرتجع",
+      "kl1zpa2": "حالة الاسترداد",
+      "kbrs3jf": "سبب الإلغاء"
+    }
+  },
+  "portal_payment_result": {
+    "ui": {
+      "kvfxozd": "تم الدفع بنجاح",
+      "kv3ba5x": "شكراً لك. تم استلام دفعتك وتحديث حالة الفاتورة. قد يستغرق ظهور التحديث بضع دقائق.",
+      "khf0na2": "فشلت عملية الدفع",
+      "ku180qx": "عذراً، لم نتمكن من إتمام عملية الدفع. يرجى المحاولة مرة أخرى أو استخدام طريقة دفع مختلفة.",
+      "k3f58qd": "العودة للفواتير",
+      "kx2j17e": "الرئيسية"
+    }
+  },
+  "portal_profile": {
+    "toasts": {
+      "kss0j13": "لا يوجد بريد إلكتروني أو رقم هاتف مسجل"
+    },
+    "ui": {
+      "kdf5b4o": "إعدادات الأمان",
+      "ksfqhpi": "لتغيير كلمة المرور الخاصة بك، سنقوم بإرسال رابط آمن إلى بريدك الإلكتروني أو رقم هاتفك المسجل:",
+      "kcatskd": "تم إرسال الرابط",
+      "kd6zgqg": "إرسال رابط إعادة التعيين",
+      "k1gtstz": "تحقق من صندوق الوارد الخاص بك الآن"
+    }
+  },
+  "portal_returns": {
+    "ui": {
+      "kl1zpa2": "حالة الاسترداد",
+      "k9mklcc": "إعادة للمخزون",
+      "kb3578d": "حالة الطلب"
+    }
+  },
+  "portal_cart_drawer": {
+    "ui": {
+      "kwlxf": "ج.م"
+    }
+  },
+  "portal_header": {
+    "ui": {
+      "kwlxf": "ج.م",
+      "ke76d02": "الوضع التلقائي"
+    }
+  },
+  "portal_empty_state": {
+    "ui": {
+      "km3iafu": "لا توجد بيانات"
+    }
+  },
+  "portal_addresses": {
+    "ui": {
+      "k5t65xc": "الرمز البريدي",
+      "kf068gm": "أدخل الرمز البريدي إن وجد",
+      "kove2d7": "العمل"
+    }
+  },
+  "portal_installment_calculator": {
+    "ui": {
+      "kwlxf": "ج.م",
+      "kt46gs": "شهور"
+    }
+  },
+  "portal_product_details": {
+    "ui": {
+      "kwlxf": "ج.م"
+    }
+  },
+  "portal_products": {
+    "ui": {
+      "kzc348i": "الفلاتر",
+      "ksvtb2": "الكل",
+      "kxfn5c1": "جميع حالات المخزون",
+      "kdikiip": "متاح فقط",
+      "kyumew0": "غير متاح فقط",
+      "kt5jnr2": "جميع الأسعار",
+      "kv1r1o4": "أقل من 500 ج.م",
+      "k225abl": "من 500 إلى 2000 ج.م",
+      "kcn3jsq": "أكثر من 2000 ج.م",
+      "kabj35p": "الأحدث",
+      "ko83hlu": "السعر: من الأقل للأعلى",
+      "kbmk8l4": "السعر: من الأعلى للأقل",
+      "kn75j42": "الاسم: أ-ي",
+      "kfo5smq": "إعادة تعيين الفلاتر"
+    }
+  },
+  "portal_statement": {
+    "ui": {
+      "kwlxf": "ج.م"
+    }
+  },
+  "portal_wishlist": {
+    "ui": {
+      "kwlxf": "ج.م"
+    }
+  }
 }

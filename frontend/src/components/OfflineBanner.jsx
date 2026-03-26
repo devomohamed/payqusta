@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WifiOff, Wifi, RefreshCw, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useNetworkStore from '../store/networkStore';
@@ -11,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 const OfflineBanner = () => {
+  const { t } = useTranslation('admin');
   const {
     isOnline,
     isSyncing,
@@ -33,8 +35,8 @@ const OfflineBanner = () => {
         show: true,
         icon: WifiOff,
         gradient: 'from-orange-500 to-red-500',
-        text: 'غير متصل',
-        subtext: pendingCount > 0 ? `${pendingCount} عملية معلقة` : 'وضع عدم الاتصال',
+        text: t('offline_banner.status.offline'),
+        subtext: pendingCount > 0 ? t('offline_banner.status.pending', { count: pendingCount }) : t('offline_banner.status.offline_mode'),
         showButton: false,
       };
     }
@@ -44,8 +46,8 @@ const OfflineBanner = () => {
         show: true,
         icon: RefreshCw,
         gradient: 'from-blue-500 to-cyan-500',
-        text: 'جاري المزامنة...',
-        subtext: 'تحديث البيانات',
+        text: t('offline_banner.status.syncing'),
+        subtext: t('offline_banner.status.updating'),
         showButton: false,
         animate: true,
       };
@@ -56,8 +58,8 @@ const OfflineBanner = () => {
         show: true,
         icon: Clock,
         gradient: 'from-amber-500 to-orange-500',
-        text: `${pendingCount} عملية منتظرة`,
-        subtext: 'انقر للمزامنة',
+        text: t('offline_banner.status.pending_waiting', { count: pendingCount }),
+        subtext: t('offline_banner.status.tap_to_sync'),
         showButton: true,
       };
     }
@@ -67,8 +69,8 @@ const OfflineBanner = () => {
         show: true,
         icon: AlertCircle,
         gradient: 'from-red-500 to-rose-500',
-        text: 'فشلت المزامنة',
-        subtext: 'انقر للمحاولة مجدداً',
+        text: t('offline_banner.status.sync_failed'),
+        subtext: t('offline_banner.status.tap_retry'),
         showButton: true,
       };
     }

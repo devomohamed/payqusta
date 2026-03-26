@@ -4,16 +4,17 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import toast from 'react-hot-toast';
 import { dashboardApi } from '../store';
 import { Card, Badge, LoadingSpinner } from '../components/UI';
+import { useTranslation } from 'react-i18next';
 
 const TABS = [
-  { key: 'profit', label: 'ذكاء الأرباح', icon: TrendingUp },
-  { key: 'risk', label: 'تقييم المخاطر', icon: Shield },
-  { key: 'collections', label: 'جدول التحصيل', icon: Calendar },
+  { key: 'profit', label: 'الربحية', icon: TrendingUp },
+  { key: 'risk', label: 'المخاطر', icon: Shield },
+  { key: 'collections', label: 'التحصيلات', icon: Calendar },
 ];
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 const RISK_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
-const RISK_LABELS = { high: 'مرتفع 🔴', medium: 'متوسط 🟡', low: 'منخفض 🟢' };
+const RISK_LABELS = { high: 'مرتفع', medium: 'متوسط', low: 'منخفض' };
 const COLLECTION_STYLES = {
   red: {
     badge: 'bg-red-50 text-red-500 dark:bg-red-500/10',
@@ -30,6 +31,7 @@ const COLLECTION_STYLES = {
 };
 
 export default function ReportsPage() {
+  const { t } = useTranslation('admin');
   const [activeTab, setActiveTab] = useState('profit');
   const [profitData, setProfitData] = useState(null);
   const [riskData, setRiskData] = useState(null);
@@ -49,7 +51,7 @@ export default function ReportsPage() {
         const res = await dashboardApi.getDailyCollections();
         setCollectionsData(res.data.data);
       }
-    } catch { toast.error('خطأ في تحميل التقارير'); }
+    } catch { toast.error(t('reports_page.toasts.k9ry8it')); }
     finally { setLoading(false); }
   };
 
@@ -58,32 +60,32 @@ export default function ReportsPage() {
   const fmt = (n) => (n || 0).toLocaleString('ar-EG');
 
   const exportCSV = (data, filename) => {
-    if (!data || data.length === 0) return toast.error('لا توجد بيانات للتصدير');
+    if (!data || data.length === 0) return toast.error(t('reports_page.toasts.k50ye8f'));
     const headers = Object.keys(data[0]);
     const csv = '\uFEFF' + [headers.join(','), ...data.map((row) => headers.map((h) => `"${row[h] ?? ''}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `${filename}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success('تم تصدير التقرير ✅');
+    toast.success(t('reports_page.toasts.kh8ghqm'));
   };
 
   const reportHighlights = activeTab === 'profit'
     ? [
-      { label: 'أقوى طريقة دفع', value: profitData?.revenueByMethod?.[0]?._id === 'cash' ? 'نقد' : profitData?.revenueByMethod?.[0]?._id === 'installment' ? 'أقساط' : profitData?.revenueByMethod?.[0]?._id === 'deferred' ? 'آجل' : '—' },
-      { label: 'أفضل العملاء', value: `${profitData?.profitableCustomers?.length || 0}` },
-      { label: 'منتجات رابحة', value: `${profitData?.profitableProducts?.length || 0}` },
+      { label: t('reports_page.ui.kp4duoy'), value: profitData?.revenueByMethod?.[0]?._id === 'cash' ? t('reports_page.ui.ky6er') : profitData?.revenueByMethod?.[0]?._id === 'installment' ? t('reports_page.ui.kot5guc') : profitData?.revenueByMethod?.[0]?._id === 'deferred' ? t('reports_page.ui.kxf7e') : '—' },
+      { label: t('reports_page.ui.k7epg75'), value: `${profitData?.profitableCustomers?.length || 0}` },
+      { label: t('reports_page.ui.k47robw'), value: `${profitData?.profitableProducts?.length || 0}` },
     ]
     : activeTab === 'risk'
       ? [
-        { label: 'مخاطر مرتفعة', value: `${riskData?.summary?.high || 0}` },
-        { label: 'مخاطر متوسطة', value: `${riskData?.summary?.medium || 0}` },
-        { label: 'إجمالي المستحقات', value: `${fmt(riskData?.summary?.totalOutstanding)} ج.م` },
+        { label: t('reports_page.ui.kuhy951'), value: `${riskData?.summary?.high || 0}` },
+        { label: t('reports_page.ui.kul9y46'), value: `${riskData?.summary?.medium || 0}` },
+        { label: t('reports_page.ui.k8n6al6'), value: `${fmt(riskData?.summary?.totalOutstanding)} ج.م` },
       ]
       : [
-        { label: 'متأخرات', value: `${fmt(collectionsData?.overdue?.total)} ج.م` },
-        { label: 'اليوم', value: `${fmt(collectionsData?.today?.total)} ج.م` },
-        { label: 'هذا الأسبوع', value: `${fmt(collectionsData?.week?.total)} ج.م` },
+        { label: t('reports_page.ui.kxywrto'), value: `${fmt(collectionsData?.overdue?.total)} ج.م` },
+        { label: t('reports_page.ui.kovef1m'), value: `${fmt(collectionsData?.today?.total)} ج.م` },
+        { label: t('reports_page.ui.kahs1jq'), value: `${fmt(collectionsData?.week?.total)} ج.م` },
       ];
 
   return (
@@ -93,11 +95,11 @@ export default function ReportsPage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black">
               <BarChart3 className="h-3.5 w-3.5" />
-              مركز ذكاء الأعمال
+              {t('reports_page.ui.kc848wx')}
             </div>
-            <h1 className="mt-4 text-2xl font-black sm:text-3xl">التقارير والتحليلات</h1>
+            <h1 className="mt-4 text-2xl font-black sm:text-3xl">{t('reports_page.ui.kj2v8rx')}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
-              راقب الربحية والمخاطر والتحصيل من واجهة أخف على الموبايل مع تبويبات أوضح وقراءة أسرع للبيانات.
+              {t('reports_page.ui.kkd2rz0')}
             </p>
           </div>
 
@@ -138,7 +140,7 @@ export default function ReportsPage() {
                 {(profitData.revenueByMethod || []).map((m) => (
                   <Card key={m._id} className="app-surface-muted p-5 text-center transition-transform duration-200 motion-safe:hover:-translate-y-0.5">
                     <p className="text-xs text-gray-400 dark:text-white/60 mb-1">{m._id === 'cash' ? '💵 نقد' : m._id === 'installment' ? '📅 أقساط' : '⏳ آجل'}</p>
-                    <p className="text-2xl font-black text-primary-500">{fmt(m.total)} <span className="text-sm">ج.م</span></p>
+                    <p className="text-2xl font-black text-primary-500">{fmt(m.total)} <span className="text-sm">{t('reports_page.ui.kwlxf')}</span></p>
                     <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{m.count} فاتورة · محصّل: {fmt(m.collected)}</p>
                   </Card>
                 ))}
@@ -203,22 +205,22 @@ export default function ReportsPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="truncate text-sm font-black text-gray-900 dark:text-white">{c.name}</p>
-                            {c.tier === 'vip' ? <Badge variant="warning">⭐ VIP</Badge> : c.tier === 'premium' ? <Badge variant="success">Premium</Badge> : <Badge variant="gray">عادي</Badge>}
+                            {c.tier === 'vip' ? <Badge variant="warning">⭐ VIP</Badge> : c.tier === 'premium' ? <Badge variant="success">Premium</Badge> : <Badge variant="gray">{t('reports_page.ui.kt6p3d')}</Badge>}
                           </div>
-                          <p className="mt-1 text-[11px] text-gray-400 dark:text-white/50">{c.phone || 'بدون هاتف'}</p>
+                          <p className="mt-1 text-[11px] text-gray-400 dark:text-white/50">{c.phone || t('reports_page.toasts.k8cap02')}</p>
                         </div>
                       </div>
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/60">
-                          <p className="text-[10px] text-gray-400">المشتريات</p>
+                          <p className="text-[10px] text-gray-400">{t('reports_page.ui.kopt9za')}</p>
                           <p className="mt-1 text-xs font-black text-gray-900 dark:text-white">{fmt(c.totalSpent)}</p>
                         </div>
                         <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/60">
-                          <p className="text-[10px] text-gray-400">المدفوع</p>
+                          <p className="text-[10px] text-gray-400">{t('reports_page.ui.kza8sl1')}</p>
                           <p className="mt-1 text-xs font-black text-emerald-500">{fmt(c.totalPaid)}</p>
                         </div>
                         <div className="rounded-xl bg-white px-2 py-2 text-center dark:bg-gray-900/60">
-                          <p className="text-[10px] text-gray-400">الفواتير</p>
+                          <p className="text-[10px] text-gray-400">{t('reports_page.ui.ktvslhu')}</p>
                           <p className="mt-1 text-xs font-black text-primary-600">{c.invoiceCount}</p>
                         </div>
                       </div>
@@ -228,14 +230,14 @@ export default function ReportsPage() {
                 <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-sm">
                     <thead><tr className="border-b border-gray-100/80 dark:border-white/10">
-                      {['', 'العميل', 'الحالة', 'المشتريات', 'المدفوع', 'الفواتير'].map((h) => <th key={h} className="px-3 py-2 text-right text-xs font-bold text-gray-400">{h}</th>)}
+                      {['', t('reports_page.ui.kab4izh'), t('reports_page.ui.kabct8k'), t('reports_page.ui.kopt9za'), t('reports_page.ui.kza8sl1'), 'الفواتير'].map((h) => <th key={h} className="px-3 py-2 text-right text-xs font-bold text-gray-400">{h}</th>)}
                     </tr></thead>
                     <tbody>
                       {(profitData.profitableCustomers || []).map((c, i) => (
                         <tr key={i} className="border-b border-gray-100/70 transition-colors hover:bg-black/[0.02] dark:border-white/5 dark:hover:bg-white/[0.03]">
                           <td className="px-3 py-2.5"><span className={`w-6 h-6 inline-flex items-center justify-center rounded-md text-[10px] font-black ${i < 3 ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-white/60'}`}>{i + 1}</span></td>
                           <td className="px-3 py-2.5"><p className="font-bold text-gray-900 dark:text-white">{c.name}</p><p className="text-[10px] text-gray-400 dark:text-white/50">{c.phone}</p></td>
-                          <td className="px-3 py-2.5">{c.tier === 'vip' ? <Badge variant="warning">⭐ VIP</Badge> : c.tier === 'premium' ? <Badge variant="success">Premium</Badge> : <Badge variant="gray">عادي</Badge>}</td>
+                          <td className="px-3 py-2.5">{c.tier === 'vip' ? <Badge variant="warning">⭐ VIP</Badge> : c.tier === 'premium' ? <Badge variant="success">Premium</Badge> : <Badge variant="gray">{t('reports_page.ui.kt6p3d')}</Badge>}</td>
                           <td className="px-3 py-2.5 font-bold text-gray-900 dark:text-white">{fmt(c.totalSpent)} ج.م</td>
                           <td className="px-3 py-2.5 font-bold text-emerald-500">{fmt(c.totalPaid)} ج.م</td>
                           <td className="px-3 py-2.5 text-center text-gray-900 dark:text-white">{c.invoiceCount}</td>
@@ -254,33 +256,33 @@ export default function ReportsPage() {
               {/* Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <Card className="app-surface-muted p-4 text-center border-2 border-red-100 dark:border-red-500/20">
-                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">مخاطر مرتفعة</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">{t('reports_page.ui.kuhy951')}</p>
                   <p className="text-3xl font-black text-red-500">{riskData.summary?.high || 0}</p>
                 </Card>
                 <Card className="app-surface-muted p-4 text-center border-2 border-amber-100 dark:border-amber-500/20">
-                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">مخاطر متوسطة</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">{t('reports_page.ui.kul9y46')}</p>
                   <p className="text-3xl font-black text-amber-500">{riskData.summary?.medium || 0}</p>
                 </Card>
                 <Card className="app-surface-muted p-4 text-center border-2 border-emerald-100 dark:border-emerald-500/20">
-                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">مخاطر منخفضة</p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">{t('reports_page.ui.ku6c0sx')}</p>
                   <p className="text-3xl font-black text-emerald-500">{riskData.summary?.low || 0}</p>
                 </Card>
                 <Card className="app-surface-muted p-4 text-center">
-                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">إجمالي المستحقات</p>
-                  <p className="text-xl font-black text-primary-500">{fmt(riskData.summary?.totalOutstanding)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p>
+                  <p className="text-[10px] text-gray-400 dark:text-white/60 mb-1">{t('reports_page.ui.k8n6al6')}</p>
+                  <p className="text-xl font-black text-primary-500">{fmt(riskData.summary?.totalOutstanding)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">{t('reports_page.ui.kwlxf')}</span></p>
                 </Card>
               </div>
 
               {/* Risk Chart */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <Card className="app-surface-muted p-5 col-span-1">
-                  <h4 className="font-bold text-sm mb-3">توزيع المخاطر</h4>
+                  <h4 className="font-bold text-sm mb-3">{t('reports_page.ui.kt57q3i')}</h4>
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
                       <Pie data={[
-                        { name: 'مرتفع', value: riskData.summary?.high || 0 },
-                        { name: 'متوسط', value: riskData.summary?.medium || 0 },
-                        { name: 'منخفض', value: riskData.summary?.low || 0 },
+                        { name: t('reports_page.ui.kpbjg6u'), value: riskData.summary?.high || 0 },
+                        { name: t('reports_page.ui.kpbfl6v'), value: riskData.summary?.medium || 0 },
+                        { name: t('reports_page.ui.kpbwxvm'), value: riskData.summary?.low || 0 },
                       ]} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" paddingAngle={5}>
                         <Cell fill="#ef4444" /><Cell fill="#f59e0b" /><Cell fill="#10b981" />
                       </Pie>
@@ -292,7 +294,7 @@ export default function ReportsPage() {
 
                 <Card className="p-5 col-span-2">
                   <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h4 className="font-bold text-sm">تقييم العملاء</h4>
+                    <h4 className="font-bold text-sm">{t('reports_page.ui.k9oo6qq')}</h4>
                     <button onClick={() => exportCSV(riskData.customers?.map((c) => ({ الاسم: c.name, الهاتف: c.phone, 'درجة المخاطر': c.riskScore, المستوى: RISK_LABELS[c.riskLevel], المستحق: c.outstandingBalance, 'نسبة السداد%': c.paymentRatio, 'فواتير متأخرة': c.overdueInvoices })), 'risk-report')}
                       className="flex items-center gap-1 self-start rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-500/10">
                       <Download className="w-3.5 h-3.5" /> تصدير
@@ -335,21 +337,21 @@ export default function ReportsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="app-surface-muted p-4 border-2 border-red-100 dark:border-red-500/20">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-xs text-gray-400 dark:text-white/60">متأخرة</p><p className="text-2xl font-black text-red-500">{fmt(collectionsData.overdue?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p></div>
+                    <div><p className="text-xs text-gray-400 dark:text-white/60">{t('reports_page.ui.k3hiy14')}</p><p className="text-2xl font-black text-red-500">{fmt(collectionsData.overdue?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">{t('reports_page.ui.kwlxf')}</span></p></div>
                     <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-red-500" /></div>
                   </div>
                   <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{collectionsData.overdue?.items?.length || 0} قسط</p>
                 </Card>
                 <Card className="app-surface-muted p-4 border-2 border-primary-100 dark:border-primary-500/20">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-xs text-gray-400 dark:text-white/60">مستحقة اليوم</p><p className="text-2xl font-black text-primary-500">{fmt(collectionsData.today?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p></div>
+                    <div><p className="text-xs text-gray-400 dark:text-white/60">{t('reports_page.ui.kfdwama')}</p><p className="text-2xl font-black text-primary-500">{fmt(collectionsData.today?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">{t('reports_page.ui.kwlxf')}</span></p></div>
                     <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/10 flex items-center justify-center"><Calendar className="w-5 h-5 text-primary-500" /></div>
                   </div>
                   <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{collectionsData.today?.items?.length || 0} قسط</p>
                 </Card>
                 <Card className="app-surface-muted p-4 border-2 border-amber-100 dark:border-amber-500/20">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-xs text-gray-400 dark:text-white/60">هذا الأسبوع</p><p className="text-2xl font-black text-amber-500">{fmt(collectionsData.week?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">ج.م</span></p></div>
+                    <div><p className="text-xs text-gray-400 dark:text-white/60">{t('reports_page.ui.kahs1jq')}</p><p className="text-2xl font-black text-amber-500">{fmt(collectionsData.week?.total)}<span className="text-xs mr-1 text-gray-400 dark:text-white/40">{t('reports_page.ui.kwlxf')}</span></p></div>
                     <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center"><DollarSign className="w-5 h-5 text-amber-500" /></div>
                   </div>
                   <p className="text-[10px] text-gray-400 dark:text-white/50 mt-1">{collectionsData.week?.items?.length || 0} قسط</p>
@@ -371,7 +373,7 @@ export default function ReportsPage() {
                     )}
                   </div>
                   {(section.items?.length || 0) === 0 ? (
-                    <p className="text-center text-sm text-gray-400 py-4">لا توجد أقساط</p>
+                    <p className="text-center text-sm text-gray-400 py-4">{t('reports_page.ui.kjtua5e')}</p>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {section.items.map((item, idx) => (

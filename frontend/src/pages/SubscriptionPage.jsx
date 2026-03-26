@@ -5,20 +5,25 @@ import { api, subscriptionApi } from '../store';
 import toast from 'react-hot-toast';
 import { Modal, Button, Badge } from '../components/UI';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
+import { useTranslation } from 'react-i18next';
 
-const FEATURE_TRANSLATIONS = {
-  advanced_reports: 'تقارير ومبيعات متقدمة',
-  pos: 'نظام نقاط البيع (POS / كاشير)',
-  whatsapp_notifications: 'إرسال فواتير وإشعارات عبر واتس آب',
-  multi_branch: 'إدارة أكثر من فرع بذكاء',
-  api_access: 'ربط برمجي مع تطبيقات خارجية (API)',
-  barcode_scanner: 'دعم الباركود والماسح الضوئي',
-  loyalty_program: 'برنامج الولاء ونقاط العملاء',
-  customer_portal: 'بوابة إلكترونية لعملائك لتتبع الفواتير',
-  inventory_management: 'إدارة متقدمة للمخزون وجرد المستودع',
-};
+function getFeatureTranslations(t) {
+  return {
+    advanced_reports: t('subscription_page.ui.kf0wyvk'),
+    pos: t('subscription_page.ui.kg09qul'),
+    whatsapp_notifications: t('subscription_page.ui.kk41b4y'),
+    multi_branch: t('subscription_page.ui.keppiwi'),
+    api_access: t('subscription_page.ui.kgwcyo6'),
+    barcode_scanner: t('subscription_page.ui.k1q2iwo'),
+    loyalty_program: t('subscription_page.ui.ks5d2l1'),
+    customer_portal: t('subscription_page.ui.kmla8xl'),
+    inventory_management: t('subscription_page.ui.kwou1i1'),
+  };
+}
 
 export default function SubscriptionPage() {
+  const { t } = useTranslation('admin');
+  const featureTranslations = useMemo(() => getFeatureTranslations(t), [t]);
   const [plans, setPlans] = useState([]);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -80,7 +85,7 @@ export default function SubscriptionPage() {
       setAvailableMethods(available);
       if (available.length > 0) setSelectedGateway(available[0]);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'فشل تحميل بيانات الاشتراك');
+      toast.error(error?.response?.data?.message || t('subscription_page.toasts.kbe9zxy'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +110,7 @@ export default function SubscriptionPage() {
 
   const handleSubscribe = async (planId) => {
     if (!selectedGateway) {
-      toast.error('لا توجد طريقة دفع متاحة. تواصل مع صاحب النظام.');
+      toast.error(t('subscription_page.toasts.kipjngm'));
       return;
     }
 
@@ -119,7 +124,7 @@ export default function SubscriptionPage() {
 
       const paymentLink = res.data?.data?.paymentLink;
       if (!paymentLink) {
-        toast.error(res.data?.message || 'فشل إنشاء رابط الدفع');
+        toast.error(res.data?.message || t('subscription_page.toasts.ktuw6a7'));
         return;
       }
 
@@ -127,7 +132,7 @@ export default function SubscriptionPage() {
         setManualPaymentInfo({
           ...res.data?.data,
           planId,
-          gatewayName: selectedGateway === 'instapay' ? 'إنستا باي (InstaPay)' : 'فودافون كاش',
+          gatewayName: selectedGateway === 'instapay' ? t('subscription_page.ui.kaooxty') : t('subscription_page.ui.kt931rk'),
         });
       } else {
         toast.success(`تم اختيار ${selectedGateway}... جاري التحويل`);
@@ -136,7 +141,7 @@ export default function SubscriptionPage() {
         }, 1000);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'فشل الاتصال ببوابة الدفع');
+      toast.error(error?.response?.data?.message || t('subscription_page.toasts.kyqqqav'));
     } finally {
       setIsProcessing(false);
     }
@@ -146,7 +151,7 @@ export default function SubscriptionPage() {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 20 * 1024 * 1024) {
-        toast.warning('حجم صورة التحويل يجب ألا يتجاوز 20MB');
+        toast.warning(t('subscription_page.toasts.k1b2myp'));
         return;
       }
       setReceiptFile(file);
@@ -160,7 +165,7 @@ export default function SubscriptionPage() {
 
   const handleSubmitReceipt = async () => {
     if (!receiptBase64) {
-      toast.error('الرجاء إرفاق صورة الإيصال أولاً');
+      toast.error(t('subscription_page.toasts.kp35qxw'));
       return;
     }
 
@@ -171,12 +176,12 @@ export default function SubscriptionPage() {
         gateway: manualPaymentInfo.gateway,
         receiptImage: receiptBase64,
       });
-      toast.success('تم رفع الإيصال بنجاح. سنراجع الطلب ونفعل الاشتراك قريبًا.', { duration: 5000 });
+      toast.success(t('subscription_page.ui.knfsvfu'), { duration: 5000 });
       setManualPaymentInfo(null);
       setReceiptFile(null);
       setReceiptBase64('');
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'فشل رفع الإيصال');
+      toast.error(error?.response?.data?.message || t('subscription_page.toasts.k90onbe'));
     } finally {
       setIsSubmittingReceipt(false);
     }
@@ -194,12 +199,12 @@ export default function SubscriptionPage() {
     <div className="min-h-screen bg-gray-50/30 dark:bg-gray-950/30 app-text-soft">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 sm:mb-16 px-2">
-          <h2 className="text-xs sm:text-sm font-bold text-indigo-600 dark:text-indigo-400 tracking-[0.2em] uppercase mb-3">خطط الاشتراك المميزة</h2>
+          <h2 className="text-xs sm:text-sm font-bold text-indigo-600 dark:text-indigo-400 tracking-[0.2em] uppercase mb-3">{t('subscription_page.ui.kq006ar')}</h2>
           <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
-            استثمر في <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">نجاح تجارتك</span>
+            استثمر في <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{t('subscription_page.ui.kjhvmv')}</span>
           </p>
           <p className="mt-4 text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
-            اختر الباقة التي تناسب تطلعاتك. يمكنك الترقية أو التغيير في أي وقت بكل سهولة.
+            {t('subscription_page.ui.k2n3irj')}
           </p>
         </div>
 
@@ -209,7 +214,7 @@ export default function SubscriptionPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
                   <Sparkles className="h-3.5 w-3.5" />
-                  الباقة المختارة من الموقع
+                  {t('subscription_page.ui.k6p568e')}
                 </div>
                 <h3 className="mt-3 text-2xl font-black text-gray-900 dark:text-white">{selectedPlan.name}</h3>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300">
@@ -217,12 +222,12 @@ export default function SubscriptionPage() {
                 </p>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-sm ring-1 ring-amber-100 dark:bg-gray-900 dark:ring-amber-900/30">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">السعر الحالي</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">{t('subscription_page.ui.k8o50xd')}</p>
                 <p className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-300">
                   {(Number(selectedPlan.price || 0)).toLocaleString('ar-EG')} {selectedPlan.currency || 'EGP'}
                 </p>
                 <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  {selectedPlan.billingCycle === 'yearly' ? 'خطة سنوية' : 'خطة شهرية'}
+                  {selectedPlan.billingCycle === 'yearly' ? t('subscription_page.ui.kjk7fqs') : 'خطة شهرية'}
                 </p>
               </div>
             </div>
@@ -238,17 +243,17 @@ export default function SubscriptionPage() {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                  باقتك الحالية النشطة
+                  {t('subscription_page.ui.kpbha39')}
                 </h3>
               </div>
               <p className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 uppercase">
-                {currentSubscription.plan?.name || 'فترة تجريبية'}
+                {currentSubscription.plan?.name || t('subscription_page.toasts.kmuro43')}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-widest">حالة الاشتراك</p>
+              <p className="text-xs text-gray-400 uppercase font-bold tracking-widest">{t('subscription_page.ui.k1ml38u')}</p>
               <Badge variant={currentSubscription.status === 'active' ? 'success' : 'warning'} className="mt-1">
-                {currentSubscription.status === 'active' ? 'نشط' : 'منتهي الصلاحية'}
+                {currentSubscription.status === 'active' ? t('subscription_page.ui.ky62x') : 'منتهي الصلاحية'}
               </Badge>
             </div>
           </div>
@@ -259,13 +264,13 @@ export default function SubscriptionPage() {
             <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
               <CreditCard className="w-5 h-5" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">اختر طريقة الدفع المفضلة</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{t('subscription_page.ui.k7586y9')}</h3>
           </div>
 
           {enabledMethods.length === 0 && (
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30">
               <AlertCircle className="w-5 h-5" />
-              <p className="text-sm font-medium">لا تتوفر طرق دفع حاليًا. يرجى مراجعة الإدارة.</p>
+              <p className="text-sm font-medium">{t('subscription_page.ui.kx6hykd')}</p>
             </div>
           )}
 
@@ -291,7 +296,7 @@ export default function SubscriptionPage() {
                     {method.label}
                   </div>
                   <div className="text-xs text-gray-400 font-medium opacity-80">
-                    {method.account || method.number || 'دفع أوتوماتيكي سريع'}
+                    {method.account || method.number || t('subscription_page.toasts.kvr33iw')}
                   </div>
                 </button>
               ))}
@@ -308,7 +313,7 @@ export default function SubscriptionPage() {
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
             >
-              دفع شهري
+              {t('subscription_page.ui.kd8vm63')}
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
@@ -317,9 +322,9 @@ export default function SubscriptionPage() {
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
             >
-              دفع سنوي
+              {t('subscription_page.ui.kd8w9ci')}
               <span className="absolute -top-3 -right-3 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black animate-bounce">
-                وفر 20%
+                {t('subscription_page.ui.kkdm4m7')}
               </span>
             </button>
           </div>
@@ -346,7 +351,7 @@ export default function SubscriptionPage() {
                 {(isPopular || isSelectedPlan) && (
                   <div className="absolute -top-4 left-0 right-0 flex justify-center">
                     <span className={`rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm ${isSelectedPlan ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-indigo-500 to-purple-600'}`}>
-                      {isSelectedPlan ? 'الباقة المختارة' : 'الأكثر شيوعًا'}
+                      {isSelectedPlan ? t('subscription_page.ui.ku84s1k') : 'الأكثر شيوعًا'}
                     </span>
                   </div>
                 )}
@@ -374,36 +379,36 @@ export default function SubscriptionPage() {
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs text-gray-400">
-                    {billingCycle === 'yearly' ? 'تُدفع سنويًا (وفر 20%)' : 'تُدفع شهريًا'}
+                    {billingCycle === 'yearly' ? t('subscription_page.ui.kofhb0h') : 'تُدفع شهريًا'}
                   </p>
                 </div>
 
                 {plan.limits && (
                   <div className="mb-3 rounded-xl app-surface-muted border border-gray-200/60 dark:border-white/10 p-3">
-                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">تفاصيل الاستخدام</h4>
+                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">{t('subscription_page.ui.kjs99dt')}</h4>
                     <div className="grid grid-cols-2 gap-1.5">
                       <div className="app-surface flex flex-col items-center p-1.5 rounded-lg shadow-sm">
-                        <span className="text-[10px] text-gray-400 mb-0.5">الفروع</span>
+                        <span className="text-[10px] text-gray-400 mb-0.5">{t('subscription_page.ui.kaaztz6')}</span>
                         <span className="text-sm font-bold text-gray-900 dark:text-white">
                           {plan.limits.maxBranches === -1 ? '∞' : plan.limits.maxBranches}
                         </span>
                       </div>
                       <div className="app-surface flex flex-col items-center p-1.5 rounded-lg shadow-sm">
-                        <span className="text-[10px] text-gray-400 mb-0.5">المستخدمين</span>
+                        <span className="text-[10px] text-gray-400 mb-0.5">{t('subscription_page.ui.kdiry9')}</span>
                         <span className="text-sm font-bold text-gray-900 dark:text-white">
                           {plan.limits.maxUsers === -1 ? '∞' : plan.limits.maxUsers}
                         </span>
                       </div>
                       <div className="app-surface flex flex-col items-center p-1.5 rounded-lg shadow-sm">
-                        <span className="text-[10px] text-gray-400 mb-0.5">المنتجات</span>
+                        <span className="text-[10px] text-gray-400 mb-0.5">{t('subscription_page.ui.ks0nri5')}</span>
                         <span className="text-sm font-bold text-gray-900 dark:text-white">
-                          {plan.limits.maxProducts === -1 ? 'غير محدود' : plan.limits.maxProducts}
+                          {plan.limits.maxProducts === -1 ? t('subscription_page.ui.ksz808h') : plan.limits.maxProducts}
                         </span>
                       </div>
                       <div className="app-surface flex flex-col items-center p-1.5 rounded-lg shadow-sm">
-                        <span className="text-[10px] text-gray-400 mb-0.5">العملاء</span>
+                        <span className="text-[10px] text-gray-400 mb-0.5">{t('subscription_page.ui.kzgg8kr')}</span>
                         <span className="text-sm font-bold text-gray-900 dark:text-white">
-                          {plan.limits.maxCustomers === -1 ? 'غير محدود' : plan.limits.maxCustomers}
+                          {plan.limits.maxCustomers === -1 ? t('subscription_page.ui.ksz808h') : plan.limits.maxCustomers}
                         </span>
                       </div>
                     </div>
@@ -411,7 +416,7 @@ export default function SubscriptionPage() {
                 )}
 
                 <div className="flex-1">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">كل ما تحتاجه:</h4>
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{t('subscription_page.ui.k18whc0')}</h4>
                   <ul className="space-y-1.5">
                     {(plan.features || []).map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2">
@@ -420,7 +425,7 @@ export default function SubscriptionPage() {
                           <Check className={`relative h-4 w-4 ${isSelectedPlan ? 'text-amber-600 dark:text-amber-300' : isPopular ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`} />
                         </div>
                         <p className="text-xs font-medium text-gray-700 dark:text-gray-200 leading-snug">
-                          {FEATURE_TRANSLATIONS[feature] || feature}
+                          {featureTranslations[feature] || feature}
                         </p>
                       </li>
                     ))}
@@ -442,9 +447,9 @@ export default function SubscriptionPage() {
                   {isProcessing === plan._id ? (
                     <span className="flex items-center justify-center gap-2">
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      جاري التوجيه...
+                      {t('subscription_page.ui.kn2mm0c')}
                     </span>
-                  ) : isCurrentPlan ? 'باقتك الحالية' : isSelectedPlan ? 'أكمل هذه الباقة' : 'اشترك الآن'}
+                  ) : isCurrentPlan ? t('subscription_page.ui.k7xe3bc') : isSelectedPlan ? t('subscription_page.ui.koo9c1y') : 'اشترك الآن'}
                 </button>
               </div>
             );
@@ -458,7 +463,7 @@ export default function SubscriptionPage() {
             setReceiptFile(null);
             setReceiptBase64('');
           }}
-          title="تعليمات الدفع اليدوي ورفع الإيصال"
+          title={t('subscription_page.titles.k2mie5m')}
           size="md"
         >
           {manualPaymentInfo && (
@@ -475,9 +480,9 @@ export default function SubscriptionPage() {
                   onClick={() => {
                     const num = manualPaymentInfo.paymentMeta?.account || manualPaymentInfo.paymentMeta?.number;
                     navigator.clipboard.writeText(num);
-                    toast.success('تم نسخ الرقم بنجاح');
+                    toast.success(t('subscription_page.toasts.kl82yzr'));
                   }}
-                  title="اضغط للنسخ"
+                  title={t('subscription_page.titles.k2vhdlf')}
                 >
                   <span>{manualPaymentInfo.paymentMeta?.account || manualPaymentInfo.paymentMeta?.number}</span>
                   <Copy className="w-5 h-5 text-indigo-400" />
@@ -485,9 +490,9 @@ export default function SubscriptionPage() {
               </div>
 
               <div className="pt-4">
-                <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">إرفاق صورة الإيصال (Screenshot) *</h4>
+                <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{t('subscription_page.ui.ktbzo6e')}</h4>
                 <p className="text-xs text-gray-500 mb-3">
-                  بعد إتمام التحويل، يرجى رفع صورة أو لقطة شاشة توضح نجاح العملية وتأكيد المبلغ.
+                  {t('subscription_page.ui.kamthfn')}
                 </p>
 
                 <div
@@ -507,8 +512,8 @@ export default function SubscriptionPage() {
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
                       <UploadCloud className="w-8 h-8" />
-                      <span className="text-sm font-medium">اضغط لاختيار صورة الإيصال</span>
-                      <span className="text-xs">يدعم: JPG, PNG, WEBP (بحد أقصى 20 م.ب)</span>
+                      <span className="text-sm font-medium">{t('subscription_page.ui.kow8606')}</span>
+                      <span className="text-xs">{t('subscription_page.ui.kxvxueg')}</span>
                     </div>
                   )}
                   <input
@@ -531,7 +536,7 @@ export default function SubscriptionPage() {
                     setReceiptBase64('');
                   }}
                 >
-                  إلغاء
+                  {t('subscription_page.ui.cancel')}
                 </Button>
                 <Button
                   className="flex-1"
@@ -539,7 +544,7 @@ export default function SubscriptionPage() {
                   disabled={!receiptBase64}
                   onClick={handleSubmitReceipt}
                 >
-                  إرسال الإيصال للتأكيد
+                  {t('subscription_page.ui.krjts3')}
                 </Button>
               </div>
             </div>

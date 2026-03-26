@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Store,
   User,
@@ -23,22 +24,26 @@ const SettingsWhiteLabel = lazy(() => import('../components/settings/SettingsWhi
 const SettingsNotificationChannels = lazy(() => import('../components/settings/SettingsNotificationChannels'));
 const SettingsSystem = lazy(() => import('../components/settings/SettingsSystem'));
 
-const ALL_TABS = [
-  { id: 'profile', label: 'حسابي', description: 'المعلومات الشخصية والأمان', icon: User, adminOnly: false },
-  { id: 'store', label: 'المتجر', description: 'إعدادات المنشأة', icon: Store, adminOnly: true },
-  { id: 'users', label: 'المستخدمون', description: 'صلاحيات ومدراء النظام', icon: Users, adminOnly: true },
-  { id: 'installments', label: 'الأقساط', description: 'سياسات الدفع والتقسيط', icon: CreditCard, adminOnly: true },
-  { id: 'whitelabel', label: 'الهوية البصرية', description: 'تخصيص ألوان وشعار المنصة', icon: Palette, adminOnly: true },
-  { id: 'whatsapp', label: 'واتساب', description: 'ربط وإعداد رسائل واتساب', icon: MessageCircle, adminOnly: true, superOnly: true },
-  { id: 'notifications', label: 'الإشعارات', description: 'قنوات التنبيه والرسائل', icon: BellRing, adminOnly: true },
-  { id: 'system', label: 'حالة النظام', description: 'تحديثات ومعلومات النظام', icon: Globe, adminOnly: false },
-];
+function getAllTabs(t) {
+  return [
+    { id: 'profile', label: t('settings_page.ui.koydl43'), description: t('settings_page.ui.kph005m'), icon: User, adminOnly: false },
+    { id: 'store', label: t('settings_page.ui.kaaxfw9'), description: t('settings_page.ui.k9mdtni'), icon: Store, adminOnly: true },
+    { id: 'users', label: t('settings_page.ui.kdirwj'), description: t('settings_page.ui.k6y3nn8'), icon: Users, adminOnly: true },
+    { id: 'installments', label: t('settings_page.ui.kz8i2sn'), description: t('settings_page.ui.k6bx67n'), icon: CreditCard, adminOnly: true },
+    { id: 'whitelabel', label: t('settings_page.ui.kivmqxp'), description: t('settings_page.ui.kubf45j'), icon: Palette, adminOnly: true },
+    { id: 'whatsapp', label: t('settings_page.ui.k4v4zt5'), description: t('settings_page.ui.kjenzmz'), icon: MessageCircle, adminOnly: true, superOnly: true },
+    { id: 'notifications', label: t('settings_page.ui.k31c17e'), description: t('settings_page.ui.k2lxm7p'), icon: BellRing, adminOnly: true },
+    { id: 'system', label: t('settings_page.ui.kbftok2'), description: t('settings_page.ui.kiy4csr'), icon: Globe, adminOnly: false },
+  ];
+}
 
 export default function SettingsPage() {
+  const { t } = useTranslation('admin');
+  const allTabs = getAllTabs(t);
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabs = ALL_TABS.filter((tab) => {
+  const tabs = allTabs.filter((tab) => {
     if (tab.superOnly && !user?.isSuperAdmin) return false;
     if (tab.adminOnly && !(user?.role === 'admin' || user?.isSuperAdmin)) return false;
     return true;
@@ -71,16 +76,16 @@ export default function SettingsPage() {
       {/* Header Section */}
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">الإعدادات</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{t('settings_page.ui.k5925rd')}</h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
-            إدارة تفضيلات حسابك، إعدادات النظام، والتحكم في تجربة الاستخدام بشكل كامل.
+            {t('settings_page.ui.k18leer')}
           </p>
         </div>
         
         {/* Theme Widget */}
         <div className="flex items-center gap-3 app-surface rounded-2xl p-2 pr-4 shadow-sm border border-gray-100 dark:border-white/5 w-fit">
           <div className="hidden sm:block">
-            <p className="text-xs font-bold text-gray-900 dark:text-white">مظهر النظام</p>
+            <p className="text-xs font-bold text-gray-900 dark:text-white">{t('settings_page.ui.k99evk')}</p>
           </div>
           <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 hidden sm:block mx-1"></div>
           <ThemeModeSwitcher compact={true} />

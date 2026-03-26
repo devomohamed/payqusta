@@ -4,5 +4,50 @@
     "logout": "Logout",
     "save": "Save",
     "cancel": "Cancel",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "locale": "en-US",
+    "notifications": {
+        "success_title": "Success",
+        "error_title": "Error",
+        "warning_title": "Warning",
+        "info_title": "Info"
+    },
+    "activation": {
+        "loading": "Loading activation page...",
+        "invalid_title": "Activation link is no longer valid",
+        "invalid_sub": "Please request a new invitation from the store team.",
+        "back_home": "Back to home",
+        "lang": {
+            "english": "English",
+            "arabic": "Arabic"
+        },
+        "brand": "Brand",
+        "welcome": "Welcome to {{brand}}",
+        "subtitle": "Set your password to activate your branded workspace managed via PayQusta.",
+        "account": "Account",
+        "team_invite": "Team invitation",
+        "customer_portal": "Customer portal access",
+        "fallback_title": "Smart fallback active",
+        "fallback_desc": "Your account is secured with enterprise-grade encryption and branded specifically for this store.",
+        "done_title": "Activation Complete",
+        "done_sub": "Your account is now active. Redirecting you...",
+        "redirecting": "Redirecting",
+        "step_title": "Secure Access",
+        "step_heading": "Create your password",
+        "pass_label": "New Password",
+        "pass_placeholder": "At least 8 characters",
+        "confirm_label": "Confirm Password",
+        "confirm_placeholder": "Repeat your password",
+        "form": {
+            "access_for": "You are activating access for {{brand}}."
+        },
+        "support": "Support",
+        "activating": "Activating...",
+        "activate_btn": "Activate Account",
+        "powered_by": "Powered by",
+        "validation": {
+            "password_min": "Password must be at least 8 characters",
+            "password_mismatch": "Passwords do not match"
+        }
+    }
 }

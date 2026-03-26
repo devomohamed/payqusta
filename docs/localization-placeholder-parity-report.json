@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-03-27T12:28:02.462Z",
+  "strictMode": true,
+  "scope": "frontend/public/locales/{en,ar}/*.json",
+  "totals": {
+    "namespacePairs": 4,
+    "keysCompared": 786,
+    "keysWithPlaceholderData": 55,
+    "issues": 0,
+    "highRisk": 0
+  },
+  "issues": [],
+  "highRiskKeys": []
+}

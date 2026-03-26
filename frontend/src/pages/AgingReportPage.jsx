@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Calendar, Users, TrendingUp, AlertTriangle, Clock, DollarSign,
   Download, Filter, ChevronDown, ChevronUp, Printer, FileSpreadsheet,
@@ -9,14 +10,15 @@ import { api } from '../store';
 import { Card, Button, Badge, EmptyState, Input, LoadingSpinner } from '../components/UI';
 import Pagination from '../components/Pagination';
 
-// Aging buckets configuration
-const AGING_BUCKETS = [
-  { key: 'current', label: 'الحالي', range: '0-30', days: [0, 30], color: 'emerald' },
-  { key: 'days31_60', label: '31-60 يوم', range: '31-60', days: [31, 60], color: 'amber' },
-  { key: 'days61_90', label: '61-90 يوم', range: '61-90', days: [61, 90], color: 'orange' },
-  { key: 'days91_120', label: '91-120 يوم', range: '91-120', days: [91, 120], color: 'red' },
-  { key: 'over120', label: '+120 يوم', range: '120+', days: [121, Infinity], color: 'rose' },
-];
+function getAgingBuckets(t) {
+  return [
+    { key: 'current', label: t('aging_report_page.ui.kabct7n'), range: '0-30', days: [0, 30], color: 'emerald' },
+    { key: 'days31_60', label: '31-60 يوم', range: '31-60', days: [31, 60], color: 'amber' },
+    { key: 'days61_90', label: '61-90 يوم', range: '61-90', days: [61, 90], color: 'orange' },
+    { key: 'days91_120', label: '91-120 يوم', range: '91-120', days: [91, 120], color: 'red' },
+    { key: 'over120', label: '+120 يوم', range: '120+', days: [121, Infinity], color: 'rose' },
+  ];
+}
 
 const BUCKET_STYLES = {
   current: {
@@ -52,6 +54,8 @@ const BUCKET_STYLES = {
 };
 
 export default function AgingReportPage() {
+  const { t } = useTranslation('admin');
+  const agingBuckets = useMemo(() => getAgingBuckets(t), [t]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -79,7 +83,7 @@ export default function AgingReportPage() {
       
       setCustomers(customersWithAging);
     } catch (err) {
-      toast.error('خطأ في تحميل البيانات');
+      toast.error(t('aging_report_page.toasts.kalmpu2'));
     } finally {
       setLoading(false);
     }
@@ -227,7 +231,7 @@ export default function AgingReportPage() {
 
   // Export to Excel
   const exportToExcel = () => {
-    const headers = ['العميل', 'الهاتف', 'الإجمالي', 'الحالي', '31-60 يوم', '61-90 يوم', '91-120 يوم', '+120 يوم'];
+    const headers = ['العميل', t('aging_report_page.ui.kaaw86k'), t('aging_report_page.ui.krh6w30'), t('aging_report_page.ui.kabct7n'), '31-60 يوم', '61-90 يوم', '91-120 يوم', '+120 يوم'];
     const rows = filteredCustomers.map(c => [
       c.name,
       c.phone,
@@ -249,7 +253,7 @@ export default function AgingReportPage() {
     a.href = url;
     a.download = `تقرير_أعمار_الديون_${new Date().toLocaleDateString('ar-EG')}.csv`;
     a.click();
-    toast.success('تم تصدير التقرير ✅');
+    toast.success(t('aging_report_page.toasts.kh8ghqm'));
   };
 
   // Print report
@@ -267,20 +271,20 @@ export default function AgingReportPage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-500/80">Receivables Aging</p>
-              <h1 className="text-2xl font-extrabold">تقرير أعمار الديون</h1>
-              <p className="max-w-2xl text-sm leading-7 text-gray-400">تحليل عمر المديونيات حسب الفترة الزمنية مع فرز وتصفية أوضح على الهاتف.</p>
+              <h1 className="text-2xl font-extrabold">{t('aging_report_page.ui.kylbqg3')}</h1>
+              <p className="max-w-2xl text-sm leading-7 text-gray-400">{t('aging_report_page.ui.k6jzync')}</p>
             </div>
           </div>
 
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button variant="outline" onClick={fetchAgingData} icon={<RefreshCw className="w-4 h-4" />} className="w-full sm:w-auto">
-              تحديث
+              {t('aging_report_page.ui.update')}
             </Button>
             <Button variant="outline" onClick={printReport} icon={<Printer className="w-4 h-4" />} className="w-full sm:w-auto">
-              طباعة
+              {t('aging_report_page.ui.print')}
             </Button>
             <Button onClick={exportToExcel} icon={<FileSpreadsheet className="w-4 h-4" />} className="w-full sm:w-auto">
-              تصدير Excel
+              {t('aging_report_page.ui.k2idb32')}
             </Button>
           </div>
         </div>
@@ -291,13 +295,13 @@ export default function AgingReportPage() {
         <Card className="app-surface-muted p-4">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-slate-500" />
-            <span className="text-xs text-gray-500">إجمالي المديونية</span>
+            <span className="text-xs text-gray-500">{t('aging_report_page.ui.ka1a0q9')}</span>
           </div>
           <p className="text-xl font-bold">{fmt(summary.totalOutstanding)}</p>
           <p className="text-xs text-gray-400">{summary.customersCount} عميل</p>
         </Card>
 
-        {AGING_BUCKETS.map((bucket) => (
+        {agingBuckets.map((bucket) => (
           <Card 
             key={bucket.key}
             className={`app-surface-muted cursor-pointer p-4 transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${filterBucket === bucket.key ? `ring-2 ${BUCKET_STYLES[bucket.key]?.ring}` : ''}`}
@@ -321,10 +325,10 @@ export default function AgingReportPage() {
       <Card className="app-surface rounded-3xl p-6">
         <h3 className="font-bold mb-4 flex items-center gap-2">
           <PieChart className="w-5 h-5 text-primary-500" />
-          توزيع المديونيات حسب العمر
+          {t('aging_report_page.ui.knuseel')}
         </h3>
         <div className="flex items-center gap-4 flex-wrap">
-          {AGING_BUCKETS.map((bucket) => {
+          {agingBuckets.map((bucket) => {
             const percentage = (summary[bucket.key] / summary.totalOutstanding) * 100 || 0;
             return (
               <div key={bucket.key} className="flex items-center gap-2">
@@ -347,7 +351,7 @@ export default function AgingReportPage() {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <Input
-              placeholder="بحث بالاسم أو الهاتف..."
+              placeholder={t('aging_report_page.placeholders.kfyg5an')}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               icon={<Filter className="w-4 h-4" />}
@@ -358,8 +362,8 @@ export default function AgingReportPage() {
             onChange={(e) => { setFilterBucket(e.target.value); setPage(1); }}
             className="app-surface rounded-xl border border-transparent px-4 py-2"
           >
-            <option value="all">كل الفترات</option>
-            {AGING_BUCKETS.map((bucket) => (
+            <option value="all">{t('aging_report_page.ui.k99mpan')}</option>
+            {agingBuckets.map((bucket) => (
               <option key={bucket.key} value={bucket.key}>{bucket.label}</option>
             ))}
           </select>
@@ -375,9 +379,9 @@ export default function AgingReportPage() {
         ) : filteredCustomers.length === 0 ? (
           <EmptyState
             icon={Clock}
-            title="لا توجد مديونيات"
+            title={t('aging_report_page.titles.kwlfd1t')}
             description="لم يتم العثور على عملاء لديهم أرصدة مستحقة ضمن الفلاتر الحالية."
-            action={search || filterBucket !== 'all' ? { label: 'إعادة ضبط الفلاتر', onClick: () => { setSearch(''); setFilterBucket('all'); setPage(1); } } : null}
+            action={search || filterBucket !== 'all' ? { label: t('aging_report_page.ui.kr8yv4w'), onClick: () => { setSearch(''); setFilterBucket('all'); setPage(1); } } : null}
             className="px-4"
           />
         ) : (
@@ -399,7 +403,7 @@ export default function AgingReportPage() {
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    {AGING_BUCKETS.map((bucket) => (
+                    {agingBuckets.map((bucket) => (
                       <div key={bucket.key} className="rounded-2xl bg-black/[0.03] p-3 text-center dark:bg-white/[0.04]">
                         <p className="text-[11px] text-gray-400">{bucket.label}</p>
                         <p className={`mt-1 font-bold ${BUCKET_STYLES[bucket.key]?.text}`}>
@@ -411,11 +415,11 @@ export default function AgingReportPage() {
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-gray-400">متوسط أيام السداد</p>
+                      <p className="text-gray-400">{t('aging_report_page.ui.k1iirc3')}</p>
                       <p className="mt-1 font-bold">{customer.paymentBehavior?.avgPaymentDays || 0} يوم</p>
                     </div>
                     <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                      <p className="text-gray-400">الحد الائتماني</p>
+                      <p className="text-gray-400">{t('aging_report_page.ui.k9zpd1v')}</p>
                       <p className="mt-1 font-bold">{fmt(customer.financials?.creditLimit)} ج.م</p>
                     </div>
                   </div>
@@ -428,12 +432,12 @@ export default function AgingReportPage() {
                 <thead className="app-surface-muted">
                   <tr>
                     <th className="px-4 py-3 text-right font-semibold cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]" onClick={() => toggleSort('name')}>
-                      <div className="flex items-center gap-1">العميل <SortIcon field="name" /></div>
+                      <div className="flex items-center gap-1">{t('aging_report_page.ui.kab4izh')} <SortIcon field="name" /></div>
                     </th>
                     <th className="px-4 py-3 text-center font-semibold cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]" onClick={() => toggleSort('outstanding')}>
-                      <div className="flex items-center justify-center gap-1">الإجمالي <SortIcon field="outstanding" /></div>
+                      <div className="flex items-center justify-center gap-1">{t('aging_report_page.ui.krh6w30')} <SortIcon field="outstanding" /></div>
                     </th>
-                    {AGING_BUCKETS.map((bucket) => (
+                    {agingBuckets.map((bucket) => (
                       <th 
                         key={bucket.key}
                         className={`px-4 py-3 text-center font-semibold cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${BUCKET_STYLES[bucket.key]?.text}`}
@@ -444,7 +448,7 @@ export default function AgingReportPage() {
                         </div>
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-center font-semibold">الإجراءات</th>
+                    <th className="px-4 py-3 text-center font-semibold">{t('aging_report_page.ui.kvfmk6')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -467,7 +471,7 @@ export default function AgingReportPage() {
                         <td className="px-4 py-3 text-center font-bold">
                           {fmt(customer.financials?.outstandingBalance)} ج.م
                         </td>
-                        {AGING_BUCKETS.map((bucket) => (
+                        {agingBuckets.map((bucket) => (
                           <td key={bucket.key} className={`px-4 py-3 text-center font-medium ${BUCKET_STYLES[bucket.key]?.text}`}>
                             {customer.aging?.[bucket.key] > 0 ? fmt(customer.aging[bucket.key]) : '-'}
                           </td>
@@ -477,14 +481,14 @@ export default function AgingReportPage() {
                             <button
                               onClick={() => setExpandedCustomer(expandedCustomer === customer._id ? null : customer._id)}
                               className="rounded-lg p-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
-                              title="عرض التفاصيل"
+                              title={t('aging_report_page.titles.k3y9kzm')}
                             >
                               <Eye className="w-4 h-4 text-gray-500" />
                             </button>
                             <a
                               href={`tel:${customer.phone}`}
                               className="p-2 hover:bg-green-50 text-green-500 rounded-lg transition-colors"
-                              title="اتصال"
+                              title={t('aging_report_page.titles.kouxd0v')}
                             >
                               <Phone className="w-4 h-4" />
                             </a>
@@ -496,19 +500,19 @@ export default function AgingReportPage() {
                           <td colSpan={8} className="px-4 py-4 bg-gray-50 dark:bg-gray-800/50">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                               <div>
-                                <p className="text-xs text-gray-400">متوسط أيام السداد</p>
+                                <p className="text-xs text-gray-400">{t('aging_report_page.ui.k1iirc3')}</p>
                                 <p className="font-bold">{customer.paymentBehavior?.avgPaymentDays || 0} يوم</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-400">إجمالي المشتريات</p>
+                                <p className="text-xs text-gray-400">{t('aging_report_page.ui.k861ybb')}</p>
                                 <p className="font-bold">{fmt(customer.financials?.totalPurchases)} ج.م</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-400">إجمالي المدفوع</p>
+                                <p className="text-xs text-gray-400">{t('aging_report_page.ui.khtnkti')}</p>
                                 <p className="font-bold text-emerald-600">{fmt(customer.financials?.totalPaid)} ج.م</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-400">الحد الائتماني</p>
+                                <p className="text-xs text-gray-400">{t('aging_report_page.ui.k9zpd1v')}</p>
                                 <p className="font-bold">{fmt(customer.financials?.creditLimit)} ج.م</p>
                               </div>
                             </div>
@@ -522,7 +526,7 @@ export default function AgingReportPage() {
                   <tr>
                     <td className="px-4 py-3 text-right">الإجمالي ({filteredCustomers.length} عميل)</td>
                     <td className="px-4 py-3 text-center">{fmt(summary.totalOutstanding)} ج.م</td>
-                    {AGING_BUCKETS.map((bucket) => (
+                    {agingBuckets.map((bucket) => (
                       <td key={bucket.key} className={`px-4 py-3 text-center ${BUCKET_STYLES[bucket.key]?.text}`}>
                         {fmt(summary[bucket.key])}
                       </td>

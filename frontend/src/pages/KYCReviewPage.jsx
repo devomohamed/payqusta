@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FileText, Search, CheckCircle, XCircle, Clock, Eye, RefreshCw,
   User, Phone, CreditCard, Shield, Image, AlertTriangle
@@ -7,21 +8,28 @@ import { useAuthStore, api as globalApi } from '../store';
 import { Card, LoadingSpinner, EmptyState, Modal } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 
-const STATUS_CONFIG = {
-  pending: { label: 'قيد المراجعة', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
-  approved: { label: 'مقبول', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
-  rejected: { label: 'مرفوض', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
-};
+function getStatusConfig(t) {
+  return {
+    pending: { label: t('k_y_c_review_page.ui.khwh8k7'), color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
+    approved: { label: t('k_y_c_review_page.ui.kpbu9nr'), color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
+    rejected: { label: t('k_y_c_review_page.ui.kpbjxer'), color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
+  };
+}
 
-const TYPE_LABELS = {
-  national_id: { label: 'البطاقة الشخصية', icon: CreditCard },
-  passport: { label: 'جواز السفر', icon: Shield },
-  utility_bill: { label: 'فاتورة خدمات', icon: FileText },
-  contract: { label: 'عقد', icon: FileText },
-  other: { label: 'مستند آخر', icon: FileText },
-};
+function getTypeLabels(t) {
+  return {
+    national_id: { label: t('k_y_c_review_page.ui.kh2wjmp'), icon: CreditCard },
+    passport: { label: t('k_y_c_review_page.ui.ksvmhl9'), icon: Shield },
+    utility_bill: { label: t('k_y_c_review_page.ui.ka3wj31'), icon: FileText },
+    contract: { label: t('k_y_c_review_page.ui.kxwrq'), icon: FileText },
+    other: { label: t('k_y_c_review_page.ui.ko5okdy'), icon: FileText },
+  };
+}
 
 export default function KYCReviewPage() {
+  const { t } = useTranslation('admin');
+  const statusConfig = useMemo(() => getStatusConfig(t), [t]);
+  const typeLabels = useMemo(() => getTypeLabels(t), [t]);
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -45,7 +53,7 @@ export default function KYCReviewPage() {
       setDocuments(payload.documents || []);
       setStats(payload.stats || {});
     } catch {
-      notify.error('فشل تحميل المستندات');
+      notify.error(t('k_y_c_review_page.toasts.kf6d9xk'));
     } finally {
       setLoading(false);
     }
@@ -57,20 +65,20 @@ export default function KYCReviewPage() {
     setActionLoading(true);
     try {
       await api('patch', `/manage/documents/${customerId}/${docId}`, { status, rejectionReason: reason });
-      notify.success(status === 'approved' ? 'تمت الموافقة على المستند' : 'تم رفض المستند');
+      notify.success(status === 'approved' ? t('k_y_c_review_page.ui.ktb1e0') : t('k_y_c_review_page.ui.kw5zmev'));
       load();
       setViewDoc(null);
       setShowRejectModal(null);
       setRejectReason('');
     } catch {
-      notify.error('فشل التحديث');
+      notify.error(t('k_y_c_review_page.toasts.k1mzp4v'));
     } finally {
       setActionLoading(false);
     }
   };
 
   const StatusBadge = ({ status }) => {
-    const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+    const cfg = statusConfig[status] || statusConfig.pending;
     const Icon = cfg.icon;
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.color}`}>
@@ -88,7 +96,7 @@ export default function KYCReviewPage() {
           <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             <Shield className="w-6 h-6 text-indigo-500" /> مراجعة مستندات العملاء
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">مراجعة والموافقة على مستندات التحقق من الهوية (KYC)</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('k_y_c_review_page.ui.k9jcdtk')}</p>
         </div>
         <button onClick={load} className="app-surface flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
           <RefreshCw className="w-4 h-4" /> تحديث
@@ -98,9 +106,9 @@ export default function KYCReviewPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'قيد المراجعة', count: stats.pending || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'pending' },
-          { label: 'مقبول', count: stats.approved || 0, color: 'text-green-600 bg-green-50 dark:bg-green-900/20', filter: 'approved' },
-          { label: 'مرفوض', count: stats.rejected || 0, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', filter: 'rejected' },
+          { label: t('k_y_c_review_page.ui.khwh8k7'), count: stats.pending || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'pending' },
+          { label: t('k_y_c_review_page.ui.kpbu9nr'), count: stats.approved || 0, color: 'text-green-600 bg-green-50 dark:bg-green-900/20', filter: 'approved' },
+          { label: t('k_y_c_review_page.ui.kpbjxer'), count: stats.rejected || 0, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', filter: 'rejected' },
         ].map((s) => (
           <button
             key={s.filter}
@@ -117,13 +125,13 @@ export default function KYCReviewPage() {
       {loading ? <LoadingSpinner /> : documents.length === 0 ? (
         <EmptyState
           icon={<FileText className="w-12 h-12 text-gray-300" />}
-          title="لا توجد مستندات"
-          description={statusFilter ? 'لا توجد مستندات بهذه الحالة' : 'لم يتم رفع أي مستندات بعد'}
+          title={t('k_y_c_review_page.titles.kdwtqiu')}
+          description={statusFilter ? t('k_y_c_review_page.ui.knaijbg') : 'لم يتم رفع أي مستندات بعد'}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {documents.map((doc) => {
-            const typeInfo = TYPE_LABELS[doc.type] || TYPE_LABELS.other;
+            const typeInfo = typeLabels[doc.type] || typeLabels.other;
             const TypeIcon = typeInfo.icon;
             return (
               <Card key={doc._id} className="app-surface overflow-hidden border-0 rounded-3xl shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
@@ -202,7 +210,7 @@ export default function KYCReviewPage() {
       )}
 
       {/* View Document Modal */}
-      <Modal open={!!viewDoc} onClose={() => setViewDoc(null)} title="عرض المستند" size="lg">
+      <Modal open={!!viewDoc} onClose={() => setViewDoc(null)} title={t('k_y_c_review_page.titles.kphdezq')} size="lg">
         {viewDoc && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -222,18 +230,18 @@ export default function KYCReviewPage() {
             <div className={`app-surface-muted rounded-2xl overflow-hidden flex ${viewDoc.backUrl ? 'flex-col lg:flex-row' : 'items-center'} justify-center min-h-[300px] gap-4 p-4`}>
               {viewDoc.url?.startsWith('data:image') || viewDoc.url?.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                 <div className="flex-1 flex flex-col items-center">
-                  {viewDoc.backUrl && <span className="text-xs font-bold text-gray-500 mb-2">الوجه الأمامي</span>}
+                  {viewDoc.backUrl && <span className="text-xs font-bold text-gray-500 mb-2">{t('k_y_c_review_page.ui.kgqfwfh')}</span>}
                   <img src={viewDoc.url} alt="Front Document" className="max-w-full max-h-[400px] object-contain rounded-xl shadow-sm border border-gray-200" />
                 </div>
               ) : viewDoc.url?.startsWith('data:application/pdf') || viewDoc.url?.endsWith('.pdf') ? (
                 <div className="flex-1 flex flex-col items-center p-8">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                  <a href={viewDoc.url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline text-sm font-bold">عرض مستند PDF الأمامي</a>
+                  <a href={viewDoc.url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline text-sm font-bold">{t('k_y_c_review_page.ui.koso9oe')}</a>
                 </div>
               ) : (
                 <div className="flex-1 text-center p-8">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">تم رفع المستند</p>
+                  <p className="text-sm text-gray-500">{t('k_y_c_review_page.ui.kk7wf64')}</p>
                 </div>
               )}
 
@@ -246,13 +254,13 @@ export default function KYCReviewPage() {
 
                   {viewDoc.backUrl?.startsWith('data:image') || viewDoc.backUrl?.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                     <div className="flex-1 flex flex-col items-center">
-                      <span className="text-xs font-bold text-gray-500 mb-2">الوجه الخلفي</span>
+                      <span className="text-xs font-bold text-gray-500 mb-2">{t('k_y_c_review_page.ui.kmdmwt2')}</span>
                       <img src={viewDoc.backUrl} alt="Back Document" className="max-w-full max-h-[400px] object-contain rounded-xl shadow-sm border border-gray-200" />
                     </div>
                   ) : (
                     <div className="flex-1 flex flex-col items-center p-8">
                       <FileText className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                      <a href={viewDoc.backUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline text-sm font-bold">عرض المستند الخلفي</a>
+                      <a href={viewDoc.backUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline text-sm font-bold">{t('k_y_c_review_page.ui.k7iv6q2')}</a>
                     </div>
                   )}
                 </>
@@ -260,7 +268,7 @@ export default function KYCReviewPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm text-gray-500">
-              <span>النوع: <strong>{TYPE_LABELS[viewDoc.type]?.label || viewDoc.type}</strong></span>
+              <span>{t('k_y_c_review_page.ui.kaaw7j4')} <strong>{typeLabels[viewDoc.type]?.label || viewDoc.type}</strong></span>
               <span>تاريخ الرفع: {new Date(viewDoc.uploadedAt).toLocaleString('ar-EG')}</span>
             </div>
 
@@ -286,13 +294,13 @@ export default function KYCReviewPage() {
       </Modal>
 
       {/* Reject Modal */}
-      <Modal open={!!showRejectModal} onClose={() => { setShowRejectModal(null); setRejectReason(''); }} title="رفض المستند" size="sm">
+      <Modal open={!!showRejectModal} onClose={() => { setShowRejectModal(null); setRejectReason(''); }} title={t('k_y_c_review_page.titles.k1v2z8y')} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">يرجى كتابة سبب الرفض ليتم إبلاغ العميل</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('k_y_c_review_page.ui.kfkmos1')}</p>
           <textarea
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="مثال: الصورة غير واضحة، يرجى إعادة الرفع..."
+            placeholder={t('k_y_c_review_page.placeholders.kugo1o8')}
             className="app-surface w-full p-3 rounded-xl border border-transparent text-sm resize-none h-24 outline-none transition focus:border-red-300 focus:ring-2 focus:ring-red-400/20 dark:focus:border-red-500/40"
           />
           <div className="flex gap-3">
@@ -301,13 +309,13 @@ export default function KYCReviewPage() {
               disabled={actionLoading}
               className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition disabled:opacity-50"
             >
-              تأكيد الرفض
+              {t('k_y_c_review_page.ui.kksqvrs')}
             </button>
             <button
               onClick={() => { setShowRejectModal(null); setRejectReason(''); }}
               className="app-surface flex-1 py-3 rounded-xl font-bold text-sm transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
             >
-              إلغاء
+              {t('k_y_c_review_page.ui.cancel')}
             </button>
           </div>
         </div>

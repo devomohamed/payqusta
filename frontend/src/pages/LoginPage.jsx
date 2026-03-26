@@ -6,14 +6,16 @@ import { api, useAuthStore, useThemeStore } from '../store';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
 import { Input } from '../components/UI';
+import { useTranslation } from 'react-i18next';
 
 function formatPlanPrice(plan) {
   const price = Number(plan?.price || 0);
-  if (price <= 0) return 'مجانًا';
+  if (price <= 0) return t('login_page.ui.k3iplky');
   return `${price.toLocaleString('ar-EG')} ${plan?.currency || 'EGP'}`;
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation('admin');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
@@ -89,7 +91,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(identifier, password);
-      toast.success('تم تسجيل الدخول بنجاح!');
+      toast.success(t('login_page.toasts.kie1h2r'));
 
       const { user } = useAuthStore.getState();
       if (user?.isSuperAdmin) {
@@ -98,7 +100,7 @@ export default function LoginPage() {
         navigate(getPostAuthPath());
       }
     } catch (err) {
-      toast.error(err.message || 'خطأ في تسجيل الدخول');
+      toast.error(err.message || t('login_page.toasts.k1j5swc'));
     }
   };
 
@@ -112,10 +114,10 @@ export default function LoginPage() {
         password,
         storeName: registerData.storeName,
       });
-      toast.success('تم إنشاء الحساب بنجاح!');
+      toast.success(t('login_page.toasts.kb5osfj'));
       navigate(getPostAuthPath());
     } catch (err) {
-      toast.error(err.message || 'خطأ في إنشاء الحساب');
+      toast.error(err.message || t('login_page.toasts.k5viv60'));
     }
   };
 
@@ -132,7 +134,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-black text-gray-900 dark:text-white mt-2">
             Pay<span className="text-primary-500">Qusta</span>
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">نظام إدارة المبيعات والأقساط الذكي</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t('login_page.ui.k86ztcc')}</p>
         </div>
 
         {(selectedPlanId || loadingSelectedPlan) && (
@@ -142,9 +144,9 @@ export default function LoginPage() {
                 <Zap className="h-5 w-5" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-primary-600 dark:text-primary-300">الباقة المختارة</p>
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-primary-600 dark:text-primary-300">{t('login_page.ui.ku84s1k')}</p>
                 {loadingSelectedPlan ? (
-                  <p className="mt-2 text-sm font-semibold text-gray-500 dark:text-gray-400">جارٍ تحميل تفاصيل الباقة...</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-500 dark:text-gray-400">{t('login_page.ui.k6bmnl5')}</p>
                 ) : selectedPlan ? (
                   <>
                     <div className="mt-2 flex items-center justify-between gap-3">
@@ -154,16 +156,16 @@ export default function LoginPage() {
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                      {selectedPlan.description || 'سننقلك مباشرة إلى صفحة الاشتراك بعد إتمام الدخول أو إنشاء الحساب.'}
+                      {selectedPlan.description || t('login_page.toasts.kct9od3')}
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span>بعد المتابعة سنفتح لك صفحة الاشتراك على هذه الباقة مباشرة.</span>
+                      <span>{t('login_page.ui.ktx1rn5')}</span>
                     </div>
                   </>
                 ) : (
                   <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                    تم التقاط اختيار الباقة، وسنوجهك إلى صفحة الاشتراكات بعد المتابعة لإكمال الدفع أو التفعيل.
+                    {t('login_page.ui.kkr5xwc')}
                   </p>
                 )}
               </div>
@@ -176,7 +178,7 @@ export default function LoginPage() {
             {isRegister && (
               <>
                 <div className="mb-4">
-                  <label htmlFor="register-name" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">الاسم الكامل</label>
+                  <label htmlFor="register-name" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login_page.ui.k4t5mis')}</label>
                   <input
                     id="register-name"
                     name="name"
@@ -184,12 +186,12 @@ export default function LoginPage() {
                     value={registerData.name}
                     onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                     className={authInputClass}
-                    placeholder="مثال: محمد أحمد"
+                    placeholder={t('login_page.placeholders.kkkw8zr')}
                     required
                   />
                 </div>
                 <div className="mb-4">
-                  <label htmlFor="register-store-name" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">اسم المتجر</label>
+                  <label htmlFor="register-store-name" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login_page.ui.kcmv4b6')}</label>
                   <input
                     id="register-store-name"
                     name="storeName"
@@ -197,12 +199,12 @@ export default function LoginPage() {
                     value={registerData.storeName}
                     onChange={(e) => setRegisterData({ ...registerData, storeName: e.target.value })}
                     className={authInputClass}
-                    placeholder="مثال: إلكترونيات المعادي"
+                    placeholder={t('login_page.placeholders.kyp2mhu')}
                     required
                   />
                 </div>
                 <div className="mb-4">
-                  <label htmlFor="register-phone" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">رقم الهاتف</label>
+                  <label htmlFor="register-phone" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{t('login_page.ui.k3pahhc')}</label>
                   <input
                     id="register-phone"
                     name="phone"
@@ -219,7 +221,7 @@ export default function LoginPage() {
 
             <div className="mb-4">
               <label htmlFor="auth-identifier" className="block text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1.5">
-                {isRegister ? 'البريد الإلكتروني' : 'البريد الإلكتروني أو رقم الهاتف'}
+                {isRegister ? t('login_page.ui.k8lvosz') : 'البريد الإلكتروني أو رقم الهاتف'}
               </label>
               <input
                 id="auth-identifier"
@@ -236,7 +238,7 @@ export default function LoginPage() {
 
             <div className="mb-4">
               <Input
-                label="كلمة المرور"
+                label={t('login_page.form.k81krw3')}
                 id="auth-password"
                 name="password"
                 type="password"
@@ -255,7 +257,7 @@ export default function LoginPage() {
                   to="/forgot-password"
                   className="text-sm text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors"
                 >
-                  نسيت كلمة المرور؟
+                  {t('login_page.ui.k4vxvol')}
                 </Link>
               </div>
             )}
@@ -268,12 +270,12 @@ export default function LoginPage() {
               {loading ? (
                 <span className="inline-flex items-center gap-2">
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  جاري المعالجة...
+                  {t('login_page.ui.kvsybop')}
                 </span>
               ) : isRegister ? (
-                selectedPlanId ? 'إنشاء الحساب والمتابعة للباقات' : 'إنشاء حساب جديد'
+                selectedPlanId ? t('login_page.ui.kepuqfs') : t('login_page.ui.koxotoy')
               ) : (
-                selectedPlanId ? 'تسجيل الدخول والمتابعة' : 'تسجيل الدخول'
+                selectedPlanId ? t('login_page.ui.k93tiie') : t('login_page.ui.k32w7dx')
               )}
             </button>
           </form>
@@ -283,7 +285,7 @@ export default function LoginPage() {
               onClick={() => setIsRegister(!isRegister)}
               className="text-sm text-primary-500 hover:text-primary-600 font-semibold"
             >
-              {isRegister ? 'لديك حساب بالفعل؟ سجل دخول' : 'ليس لديك حساب؟ أنشئ حساب جديد'}
+              {isRegister ? t('login_page.ui.koezrqj') : 'ليس لديك حساب؟ أنشئ حساب جديد'}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   TrendingUp,
   DollarSign,
@@ -27,28 +28,35 @@ const safeNum = (val, decimals = 2) => {
   return isNaN(num) ? (0).toFixed(decimals) : num.toFixed(decimals);
 };
 
-const REPORT_TYPES = [
-  { id: 'sales', name: 'تقرير المبيعات', icon: TrendingUp, color: 'bg-blue-500' },
-  { id: 'profit', name: 'تقرير الأرباح', icon: DollarSign, color: 'bg-green-500' },
-  { id: 'inventory', name: 'تقرير المخزون', icon: Package, color: 'bg-purple-500' },
-  { id: 'customers', name: 'تقرير العملاء', icon: Users, color: 'bg-orange-500' },
-  { id: 'products', name: 'أداء المنتجات', icon: BarChart3, color: 'bg-pink-500' },
-];
+function getReportTypes(t) {
+  return [
+    { id: 'sales', name: t('business_reports_page.ui.kwzrbhu'), icon: TrendingUp, color: 'bg-blue-500' },
+    { id: 'profit', name: t('business_reports_page.ui.kjrd0j'), icon: DollarSign, color: 'bg-green-500' },
+    { id: 'inventory', name: t('business_reports_page.ui.k12eoga'), icon: Package, color: 'bg-purple-500' },
+    { id: 'customers', name: t('business_reports_page.ui.kw86k5'), icon: Users, color: 'bg-orange-500' },
+    { id: 'products', name: t('business_reports_page.ui.kow6wkj'), icon: BarChart3, color: 'bg-pink-500' },
+  ];
+}
 
-const DATE_RANGES = [
-  { id: 'today', name: 'اليوم', getDates: () => ({ start: new Date(), end: new Date() }) },
-  { id: 'week', name: 'آخر 7 أيام', getDates: () => ({ start: subDays(new Date(), 7), end: new Date() }) },
-  { id: 'month', name: 'هذا الشهر', getDates: () => ({ start: startOfMonth(new Date()), end: endOfMonth(new Date()) }) },
-  { id: 'lastMonth', name: 'الشهر الماضي', getDates: () => ({ start: startOfMonth(subMonths(new Date(), 1)), end: endOfMonth(subMonths(new Date(), 1)) }) },
-  { id: 'quarter', name: 'آخر 3 شهور', getDates: () => ({ start: subMonths(new Date(), 3), end: new Date() }) },
-  { id: 'custom', name: 'فترة مخصصة', getDates: () => null },
-];
+function getDateRanges(t) {
+  return [
+    { id: 'today', name: t('business_reports_page.ui.kovef1m'), getDates: () => ({ start: new Date(), end: new Date() }) },
+    { id: 'week', name: t('business_reports_page.ui.kuley1j'), getDates: () => ({ start: subDays(new Date(), 7), end: new Date() }) },
+    { id: 'month', name: t('business_reports_page.ui.kze6jsv'), getDates: () => ({ start: startOfMonth(new Date()), end: endOfMonth(new Date()) }) },
+    { id: 'lastMonth', name: t('business_reports_page.ui.k47lnke'), getDates: () => ({ start: startOfMonth(subMonths(new Date(), 1)), end: endOfMonth(subMonths(new Date(), 1)) }) },
+    { id: 'quarter', name: t('business_reports_page.ui.kwhamak'), getDates: () => ({ start: subMonths(new Date(), 3), end: new Date() }) },
+    { id: 'custom', name: t('business_reports_page.ui.kjj72w1'), getDates: () => null },
+  ];
+}
 
 const ITEMS_PER_PAGE = 10;
 
 export default function BusinessReportsPage() {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const { tenant } = useAuthStore();
+  const reportTypes = useMemo(() => getReportTypes(t), [t]);
+  const dateRanges = useMemo(() => getDateRanges(t), [t]);
   const [selectedReport, setSelectedReport] = useState('sales');
   const [selectedRange, setSelectedRange] = useState('month');
   const [customStart, setCustomStart] = useState('');
@@ -80,7 +88,7 @@ export default function BusinessReportsPage() {
       if (!customStart || !customEnd) return null;
       return { start: new Date(customStart), end: new Date(customEnd) };
     }
-    const range = DATE_RANGES.find(r => r.id === selectedRange);
+    const range = dateRanges.find(r => r.id === selectedRange);
     return range?.getDates();
   };
 
@@ -138,12 +146,12 @@ export default function BusinessReportsPage() {
       setReportData(res.data.data);
 
       if (!res.data.data || Object.keys(res.data.data).length === 0) {
-        notify.warning('لا توجد بيانات متاحة لهذه الفترة', 'لا توجد بيانات');
+        notify.warning(t('business_reports_page.ui.kwniq8o'), t('business_reports_page.ui.km3iafu'));
       }
     } catch (err) {
       console.error('Report Error:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'فشل تحميل التقرير';
-      notify.error(errorMessage, 'فشل تحميل التقرير');
+      const errorMessage = err.response?.data?.message || err.message || t('business_reports_page.toasts.k2xm44w');
+      notify.error(errorMessage, t('business_reports_page.ui.k2xm44w'));
       setReportData(null);
     } finally {
       setLoading(false);
@@ -152,7 +160,7 @@ export default function BusinessReportsPage() {
 
   const handleExport = async () => {
     try {
-      notify.info('جاري تصدير التقرير...', 'تصدير');
+      notify.info(t('business_reports_page.ui.kd3esb8'), t('business_reports_page.ui.kowro17'));
 
       const dates = getDateRange();
       const params = {
@@ -195,15 +203,15 @@ export default function BusinessReportsPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      notify.success('تم تصدير التقرير بنجاح!', 'تم التصدير');
+      notify.success(t('business_reports_page.ui.k6074n8'), t('business_reports_page.ui.kar2h4n'));
     } catch (err) {
       console.error('Export error:', err);
-      notify.error(err.response?.data?.message || 'فشل تصدير التقرير', 'فشل التصدير');
+      notify.error(err.response?.data?.message || t('business_reports_page.toasts.ksdas4f'), t('business_reports_page.ui.k1mul8h'));
     }
   };
 
   const handlePrint = () => {
-    const reportName = REPORT_TYPES.find(r => r.id === selectedReport)?.name || 'تقرير';
+    const reportName = reportTypes.find(r => r.id === selectedReport)?.name || t('business_reports_page.toasts.kox00cg');
     const printContent = printRef.current;
     if (!printContent) return;
 
@@ -255,7 +263,7 @@ export default function BusinessReportsPage() {
     }, 500);
   };
 
-  const reportType = REPORT_TYPES.find(r => r.id === selectedReport);
+  const reportType = reportTypes.find(r => r.id === selectedReport);
   const Icon = reportType?.icon || BarChart3;
 
   return (
@@ -267,8 +275,8 @@ export default function BusinessReportsPage() {
             <Icon className="w-6 h-6" />
           </div>
           <div>
-            <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>التقارير التجارية</h1>
-            <p className={`${dark ? 'text-gray-400' : 'text-gray-500'}`}>تقارير شاملة وتحليلات مفصلة</p>
+            <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.kekksou')}</h1>
+            <p className={`${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('business_reports_page.ui.koamzos')}</p>
           </div>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
@@ -277,7 +285,7 @@ export default function BusinessReportsPage() {
             className="app-surface flex items-center justify-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
           >
             <Filter className="w-4 h-4" />
-            الفلاتر
+            {t('business_reports_page.ui.kzc348i')}
           </button>
           <button
             onClick={handlePrint}
@@ -285,7 +293,7 @@ export default function BusinessReportsPage() {
             className="app-surface flex items-center justify-center gap-2 rounded-xl px-4 py-2 transition-colors hover:bg-black/[0.02] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/[0.03]"
           >
             <Printer className="w-4 h-4" />
-            طباعة / PDF
+            {t('business_reports_page.ui.k4xz6ex')}
           </button>
           <button
             onClick={handleExport}
@@ -293,14 +301,14 @@ export default function BusinessReportsPage() {
             className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            تصدير Excel
+            {t('business_reports_page.ui.k2idb32')}
           </button>
         </div>
       </div>
 
       {/* Report Type Selection */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        {REPORT_TYPES.map(report => {
+        {reportTypes.map(report => {
           const ReportIcon = report.icon;
           return (
             <motion.button
@@ -326,10 +334,10 @@ export default function BusinessReportsPage() {
       <div className="app-surface-muted rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calendar className={`w-4 h-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
-          <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفترة الزمنية</span>
+          <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.khvb9jn')}</span>
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
-          {DATE_RANGES.map(range => (
+          {dateRanges.map(range => (
             <button
               key={range.id}
               onClick={() => setSelectedRange(range.id)}
@@ -363,7 +371,7 @@ export default function BusinessReportsPage() {
               onClick={loadReport}
               className="col-span-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              تطبيق
+              {t('business_reports_page.ui.kowsstv')}
             </button>
           </div>
         )}
@@ -376,11 +384,11 @@ export default function BusinessReportsPage() {
           animate={{ opacity: 1, height: 'auto' }}
           className="app-surface-muted rounded-2xl p-4"
         >
-          <h3 className={`text-sm font-medium mb-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>فلاتر متقدمة</h3>
+          <h3 className={`text-sm font-medium mb-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kk7rzw5')}</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {selectedReport === 'sales' && (
               <div>
-                <label className={`block text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>تجميع حسب</label>
+                <label className={`block text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{t('business_reports_page.ui.kex7qcs')}</label>
                 <select
                   value={groupBy}
                   onChange={e => {
@@ -389,10 +397,10 @@ export default function BusinessReportsPage() {
                   }}
                   className="app-surface w-full rounded-xl border border-transparent px-3 py-2"
                 >
-                  <option value="day">يوم</option>
-                  <option value="week">أسبوع</option>
-                  <option value="month">شهر</option>
-                  <option value="year">سنة</option>
+                  <option value="day">{t('business_reports_page.ui.ky9jb')}</option>
+                  <option value="week">{t('business_reports_page.ui.kosvoo9')}</option>
+                  <option value="month">{t('business_reports_page.ui.kxt6m')}</option>
+                  <option value="year">{t('business_reports_page.ui.kxseu')}</option>
                 </select>
               </div>
             )}
@@ -408,13 +416,13 @@ export default function BusinessReportsPage() {
                   }}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
-                <label className={`text-sm ${dark ? 'text-gray-300' : 'text-gray-700'}`}>مخزون منخفض فقط</label>
+                <label className={`text-sm ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.k6zsk3l')}</label>
               </div>
             )}
 
             {selectedReport === 'customers' && (
               <div>
-                <label className={`block text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>الحد الأدنى للمشتريات</label>
+                <label className={`block text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{t('business_reports_page.ui.kpqrzic')}</label>
                 <input
                   type="number"
                   min="0"
@@ -440,7 +448,7 @@ export default function BusinessReportsPage() {
               <Lock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
             <h2 className={`text-2xl font-bold mb-3 ${dark ? 'text-white' : 'text-gray-900'}`}>
-              ميزة التقارير المتقدمة مقفلة
+              {t('business_reports_page.ui.kcrapfy')}
             </h2>
             <p className={`mb-8 ${dark ? 'text-gray-400' : 'text-gray-600'} leading-relaxed`}>
               هذا التقرير هو جزء من حزمة "التقارير المتقدمة". يرجى ترقية حسابك أو شراء الإضافة من متجر الإضافات للاستمتاع بتحليلات معمقة وفلاتر متقدمة لعملك.
@@ -450,14 +458,14 @@ export default function BusinessReportsPage() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <Package className="w-5 h-5" />
-              الذهاب لمتجر الإضافات (Add-ons)
+              {t('business_reports_page.ui.km0x27l')}
             </Link>
           </div>
         </div>
       ) : loading ? (
         <div className="app-surface rounded-[2rem] p-12 py-24 text-center flex flex-col items-center justify-center">
           <AnimatedBrandLogo size="lg" className="mx-auto mb-4" />
-          <p className={dark ? 'text-gray-400' : 'text-gray-500'}>جاري تحميل التقرير...</p>
+          <p className={dark ? 'text-gray-400' : 'text-gray-500'}>{t('business_reports_page.ui.ks1739')}</p>
         </div>
       ) : reportData ? (
         <div className="space-y-6" ref={printRef}>
@@ -470,7 +478,7 @@ export default function BusinessReportsPage() {
       ) : (
         <div className="app-surface rounded-[2rem] p-12 text-center">
           <PieChart className={`w-16 h-16 mx-auto mb-4 ${dark ? 'text-gray-600' : 'text-gray-300'}`} />
-          <p className={dark ? 'text-gray-400' : 'text-gray-500'}>اختر فترة زمنية لعرض التقرير</p>
+          <p className={dark ? 'text-gray-400' : 'text-gray-500'}>{t('business_reports_page.ui.kt99igo')}</p>
         </div>
       )}
     </div>
@@ -547,6 +555,7 @@ function Pagination({ currentPage, totalPages, onPageChange, dark }) {
 // ========== Report Views ==========
 
 function SalesReportView({ data }) {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const [page, setPage] = useState(1);
   const items = data?.salesByPeriod || [];
@@ -556,26 +565,26 @@ function SalesReportView({ data }) {
   return (
     <>
       <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard title="إجمالي الفواتير" value={data?.summary?.totalInvoices || 0} icon={BarChart3} color="bg-blue-500" dark={dark} />
-        <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
-        <SummaryCard title="إجمالي الأرباح" value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-purple-500" dark={dark} />
-        <SummaryCard title="معدل التحصيل" value={`${safeNum(data?.summary?.collectionRate)}%`} icon={PieChart} color="bg-orange-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.ke6opdr')} value={data?.summary?.totalInvoices || 0} icon={BarChart3} color="bg-blue-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.ktvonbd')} value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kicbucu')} value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-purple-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kewovag')} value={`${safeNum(data?.summary?.collectionRate)}%`} icon={PieChart} color="bg-orange-500" dark={dark} />
       </div>
 
       <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>المبيعات حسب الفترة</h3>
+          <h3 className={`text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.kcee7gq')}</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{items.length} سجل</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفترة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>عدد الفواتير</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الإيرادات</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>المدفوع</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الأرباح</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaazzqa')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.ki77kph')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kdbxbne')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kza8sl1')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kz86zur')}</th>
               </tr>
             </thead>
             <tbody>
@@ -596,7 +605,7 @@ function SalesReportView({ data }) {
 
       {(data?.topCustomers || []).length > 0 && (
         <div className="app-surface rounded-3xl p-6">
-          <h3 className={`section-title text-lg font-semibold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>أفضل العملاء</h3>
+          <h3 className={`section-title text-lg font-semibold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.k7epg75')}</h3>
           <div className="space-y-2">
             {(data?.topCustomers || []).slice(0, 10).map((customer, idx) => (
               <div key={idx} className={`flex items-center justify-between p-3 rounded-lg ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}>
@@ -618,6 +627,7 @@ function SalesReportView({ data }) {
 }
 
 function ProfitReportView({ data }) {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const [catPage, setCatPage] = useState(1);
   const [prodPage, setProdPage] = useState(1);
@@ -632,27 +642,27 @@ function ProfitReportView({ data }) {
   return (
     <>
       <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-blue-500" dark={dark} />
-        <SummaryCard title="إجمالي التكاليف" value={`${safeNum(data?.summary?.totalCost)} جنيه`} icon={TrendingUp} color="bg-red-500" dark={dark} />
-        <SummaryCard title="صافي الأرباح" value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-green-500" dark={dark} />
-        <SummaryCard title="هامش الربح" value={`${safeNum(data?.summary?.profitMargin)}%`} icon={PieChart} color="bg-purple-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.ktvonbd')} value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-blue-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.k37wymz')} value={`${safeNum(data?.summary?.totalCost)} جنيه`} icon={TrendingUp} color="bg-red-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kytcd26')} value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-green-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kp72kvs')} value={`${safeNum(data?.summary?.profitMargin)}%`} icon={PieChart} color="bg-purple-500" dark={dark} />
       </div>
 
       <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>الأرباح حسب الفئة</h3>
+          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.k4zkx2k')}</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{categories.length} فئة</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفئة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الإيرادات</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>التكاليف</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الأرباح</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>هامش الربح</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الكمية</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kove7jb')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kdbxbne')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.ku6jpqi')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kz86zur')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kp72kvs')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaay54y')}</th>
               </tr>
             </thead>
             <tbody>
@@ -674,18 +684,18 @@ function ProfitReportView({ data }) {
 
       <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>أفضل المنتجات ربحاً</h3>
+          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.k1htwr3')}</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{products.length} منتج</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>المنتج</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaawv6o')}</th>
                 <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>SKU</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفئة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الأرباح</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>هامش الربح</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kove7jb')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kz86zur')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kp72kvs')}</th>
               </tr>
             </thead>
             <tbody>
@@ -708,6 +718,7 @@ function ProfitReportView({ data }) {
 }
 
 function InventoryReportView({ data }) {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const [page, setPage] = useState(1);
   const items = data?.items || [];
@@ -717,28 +728,28 @@ function InventoryReportView({ data }) {
   return (
     <>
       <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard title="إجمالي المنتجات" value={data?.summary?.totalProducts || 0} icon={Package} color="bg-blue-500" dark={dark} />
-        <SummaryCard title="إجمالي العناصر" value={data?.summary?.totalItems || 0} icon={BarChart3} color="bg-green-500" dark={dark} />
-        <SummaryCard title="قيمة المخزون" value={`${safeNum(data?.summary?.totalValue)} جنيه`} icon={DollarSign} color="bg-purple-500" dark={dark} />
-        <SummaryCard title="نفذ من المخزون" value={data?.summary?.stockLevels?.outOfStock || 0} icon={Package} color="bg-red-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kg1tjdg')} value={data?.summary?.totalProducts || 0} icon={Package} color="bg-blue-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.khzuyzc')} value={data?.summary?.totalItems || 0} icon={BarChart3} color="bg-green-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.k3ma4dm')} value={`${safeNum(data?.summary?.totalValue)} جنيه`} icon={DollarSign} color="bg-purple-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kcza6u')} value={data?.summary?.stockLevels?.outOfStock || 0} icon={Package} color="bg-red-500" dark={dark} />
       </div>
 
       <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>تفاصيل المخزون</h3>
+          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.kfftwcp')}</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{items.length} منتج</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>المنتج</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaawv6o')}</th>
                 <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>SKU</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفئة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الكمية</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الحد الأدنى</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>القيمة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الحالة</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kove7jb')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaay54y')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.k9nku4t')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaayojb')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kabct8k')}</th>
               </tr>
             </thead>
             <tbody>
@@ -757,7 +768,7 @@ function InventoryReportView({ data }) {
                       item.status === 'lowStock' ? 'badge-yellow bg-yellow-100 text-yellow-800' :
                         'badge-green bg-green-100 text-green-800'
                       }`}>
-                      {item.status === 'outOfStock' ? 'نفذ' : item.status === 'lowStock' ? 'منخفض' : 'طبيعي'}
+                      {item.status === 'outOfStock' ? t('business_reports_page.ui.ky6dx') : item.status === 'lowStock' ? t('business_reports_page.ui.kpbwxvm') : 'طبيعي'}
                     </span>
                   </td>
                 </tr>
@@ -772,6 +783,7 @@ function InventoryReportView({ data }) {
 }
 
 function CustomerReportView({ data }) {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const [page, setPage] = useState(1);
   const customers = data?.customers || [];
@@ -781,28 +793,28 @@ function CustomerReportView({ data }) {
   return (
     <>
       <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard title="إجمالي العملاء" value={data?.summary?.totalCustomers || 0} icon={Users} color="bg-blue-500" dark={dark} />
-        <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
-        <SummaryCard title="المستحقات" value={`${safeNum(data?.summary?.totalOutstanding)} جنيه`} icon={TrendingUp} color="bg-orange-500" dark={dark} />
-        <SummaryCard title="متوسط قيمة العميل" value={`${safeNum(data?.summary?.averageCustomerValue)} جنيه`} icon={BarChart3} color="bg-purple-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.khzv0t8')} value={data?.summary?.totalCustomers || 0} icon={Users} color="bg-blue-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.ktvonbd')} value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kp6xm95')} value={`${safeNum(data?.summary?.totalOutstanding)} جنيه`} icon={TrendingUp} color="bg-orange-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.k4ld5b2')} value={`${safeNum(data?.summary?.averageCustomerValue)} جنيه`} icon={BarChart3} color="bg-purple-500" dark={dark} />
       </div>
 
       <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>تفاصيل العملاء</h3>
+          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.kf9negk')}</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{customers.length} عميل</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الاسم</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الهاتف</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>عدد الفواتير</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>إجمالي المشتريات</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>المتبقي</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>نسبة الدفع</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>متوسط الفاتورة</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kovdol8')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaaw86k')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.ki77kph')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.k861ybb')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kzaci6q')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.ksdqq4o')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.k4dnvf2')}</th>
               </tr>
             </thead>
             <tbody>
@@ -827,6 +839,7 @@ function CustomerReportView({ data }) {
 }
 
 function ProductPerformanceView({ data }) {
+  const { t } = useTranslation('admin');
   const { dark } = useThemeStore();
   const [page, setPage] = useState(1);
   const products = data?.topByRevenue || [];
@@ -836,27 +849,27 @@ function ProductPerformanceView({ data }) {
   return (
     <>
       <div className="summary-grid grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard title="منتجات مباعة" value={data?.summary?.totalProductsSold || 0} icon={Package} color="bg-blue-500" dark={dark} />
-        <SummaryCard title="إجمالي الإيرادات" value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
-        <SummaryCard title="إجمالي الأرباح" value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-purple-500" dark={dark} />
-        <SummaryCard title="الكمية المباعة" value={data?.summary?.totalQuantitySold || 0} icon={BarChart3} color="bg-orange-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.k3wr5xi')} value={data?.summary?.totalProductsSold || 0} icon={Package} color="bg-blue-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.ktvonbd')} value={`${safeNum(data?.summary?.totalRevenue)} جنيه`} icon={DollarSign} color="bg-green-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.kicbucu')} value={`${safeNum(data?.summary?.totalProfit)} جنيه`} icon={TrendingUp} color="bg-purple-500" dark={dark} />
+        <SummaryCard title={t('business_reports_page.titles.k8uvc6j')} value={data?.summary?.totalQuantitySold || 0} icon={BarChart3} color="bg-orange-500" dark={dark} />
       </div>
 
       <div className="app-surface rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>الأفضل من حيث الإيرادات</h3>
+          <h3 className={`section-title text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{t('business_reports_page.ui.k1kuxls')}</h3>
           <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{products.length} منتج</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>المنتج</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kaawv6o')}</th>
                 <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>SKU</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الفئة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الكمية المباعة</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الإيرادات</th>
-                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>الأرباح</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kove7jb')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.k8uvc6j')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kdbxbne')}</th>
+                <th className={`text-right py-3 px-4 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('business_reports_page.ui.kz86zur')}</th>
               </tr>
             </thead>
             <tbody>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bell, Check, CheckCheck, Trash2, Clock, AlertTriangle, CreditCard,
   FileText, Package, Truck, UserPlus, Star, Store, CheckCircle, AlertCircle,
@@ -33,6 +34,7 @@ const colorMap = {
 };
 
 export default function NotificationsPage() {
+  const { t } = useTranslation('admin');
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function NotificationsPage() {
       const { data } = await api.get('/notifications', { params });
       setNotifications(data.data || []);
     } catch (e) {
-      notify.error('فشل تحميل الإشعارات');
+      notify.error(t('notifications_page.toasts.kd1gsxz'));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export default function NotificationsPage() {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (e) {
-      notify.error('فشل تحديث الإشعار');
+      notify.error(t('notifications_page.toasts.kmj6jnv'));
     }
   };
 
@@ -89,7 +91,7 @@ export default function NotificationsPage() {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (e) {
-      notify.error('فشل تحديث الإشعارات');
+      notify.error(t('notifications_page.toasts.kadmxeg'));
     }
   };
 
@@ -98,7 +100,7 @@ export default function NotificationsPage() {
       await api.delete(`/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
     } catch (e) {
-      notify.error('فشل حذف الإشعار');
+      notify.error(t('notifications_page.toasts.kf0xlty'));
     }
   };
 
@@ -111,7 +113,7 @@ export default function NotificationsPage() {
     const now = new Date();
     const d = new Date(date);
     const diff = Math.floor((now - d) / 1000);
-    if (diff < 60) return 'الآن';
+    if (diff < 60) return t('notifications_page.ui.ksvsip');
     if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
     if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`;
     if (diff < 604800) return `منذ ${Math.floor(diff / 86400)} يوم`;
@@ -126,8 +128,8 @@ export default function NotificationsPage() {
             <Bell className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold">الإشعارات</h1>
-            <p className="text-sm text-gray-500">كل تنبيهات النظام في مكان واحد</p>
+            <h1 className="text-xl font-extrabold">{t('notifications_page.ui.k31c17e')}</h1>
+            <p className="text-sm text-gray-500">{t('notifications_page.ui.kwk864t')}</p>
           </div>
         </div>
         <div className="app-surface flex items-center gap-2 rounded-2xl p-1">
@@ -138,7 +140,7 @@ export default function NotificationsPage() {
                 : 'text-gray-600 hover:bg-black/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.04]'
               }`}
           >
-            الكل
+            {t('notifications_page.ui.ksvtb2')}
           </button>
           <button
             onClick={() => setFilter('unread')}
@@ -147,14 +149,14 @@ export default function NotificationsPage() {
                 : 'text-gray-600 hover:bg-black/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.04]'
               }`}
           >
-            غير مقروء
+            {t('notifications_page.ui.ksyuk1e')}
           </button>
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
               className="rounded-xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600 transition-all duration-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
             >
-              تحديد الكل كمقروء
+              {t('notifications_page.ui.kcrq1j7')}
             </button>
           )}
         </div>
@@ -168,9 +170,9 @@ export default function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <EmptyState
             icon={Bell}
-            title="لا توجد إشعارات حاليًا"
+            title={t('notifications_page.titles.kvskjbb')}
             description="بمجرد وجود تنبيهات أو تحديثات جديدة ستظهر لك هنا."
-            action={{ label: 'العودة للوحة التحكم', onClick: () => navigate('/dashboard') }}
+            action={{ label: t('notifications_page.ui.kcnfwzc'), onClick: () => navigate('/dashboard') }}
             className="px-4"
           />
         ) : (
@@ -209,7 +211,7 @@ export default function NotificationsPage() {
                           markAsRead(notification._id);
                         }}
                         className="rounded-xl p-2 transition-colors duration-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
-                        title="تحديد كمقروء"
+                        title={t('notifications_page.titles.kc0wcn')}
                       >
                         <Check className="w-4 h-4 text-primary-600" />
                       </button>
@@ -220,7 +222,7 @@ export default function NotificationsPage() {
                         deleteNotification(notification._id);
                       }}
                       className="rounded-xl p-2 transition-colors duration-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
-                      title="حذف"
+                      title={t('notifications_page.titles.delete')}
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </button>

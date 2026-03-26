@@ -4,8 +4,10 @@ import { useAuthStore, api } from '../../store';
 import { Button, Input } from '../UI';
 import { notify } from '../AnimatedNotification';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMapper';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsInstallments() {
+  const { t } = useTranslation('admin');
   const { tenant, getMe } = useAuthStore();
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,10 +41,10 @@ export default function SettingsInstallments() {
         enabled,
         installmentConfigs: installmentConfigs.filter(c => c.months > 0),
       });
-      notify.success('تم حفظ إعدادات الأقساط');
+      notify.success(t('settings_installments.toasts.kkulo4s'));
       getMe();
     } catch (err) {
-      notify.error(getUserFriendlyErrorMessage(err, 'فشل في حفظ الإعدادات'));
+      notify.error(getUserFriendlyErrorMessage(err, t('settings_installments.toasts.kf2qp2z')));
     } finally {
       setSaving(false);
     }
@@ -55,8 +57,8 @@ export default function SettingsInstallments() {
           <CreditCard className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">إعدادات الأقساط</h2>
-          <p className="text-sm text-subtle">تخصيص خيارات التقسيط</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('settings_installments.ui.ka55eer')}</h2>
+          <p className="text-sm text-subtle">{t('settings_installments.ui.kaldxl4')}</p>
         </div>
       </div>
 
@@ -69,8 +71,8 @@ export default function SettingsInstallments() {
             className="w-5 h-5 rounded text-primary-600 focus:ring-primary-500"
           />
           <div className="flex flex-col">
-            <span className="font-bold text-gray-900 dark:text-gray-100">تفعيل حاسبة الأقساط للمتجر</span>
-            <span className="text-xs text-subtle">عند تفعيل هذا الخيار ستظهر حاسبة الأقساط في صفحة تفاصيل المنتج.</span>
+            <span className="font-bold text-gray-900 dark:text-gray-100">{t('settings_installments.ui.k79wer7')}</span>
+            <span className="text-xs text-subtle">{t('settings_installments.ui.k6ha8ez')}</span>
           </div>
         </label>
       </div>
@@ -78,24 +80,24 @@ export default function SettingsInstallments() {
       <div className={`space-y-4 transition-opacity duration-300 ${!enabled ? 'opacity-50 pointer-events-none' : ''}`}>
         {installmentConfigs.map((config, idx) => (
           <div key={idx} className="p-4 rounded-xl bg-gray-50/50 dark:bg-slate-950 border border-gray-100 dark:border-white/5 grid grid-cols-1 md:grid-cols-4 gap-4 items-end shadow-sm">
-            <Input label="عدد الأشهر" type="number" value={config.months} onChange={(e) => {
+            <Input label={t('settings_installments.form.khftwf5')} type="number" value={config.months} onChange={(e) => {
               const newConfigs = [...installmentConfigs];
               newConfigs[idx].months = parseInt(e.target.value) || 0;
               setInstallmentConfigs(newConfigs);
             }} />
-            <Input label="الحد الأدنى (ج.م)" type="number" value={config.minAmount} onChange={(e) => {
+            <Input label={t('settings_installments.form.krrlxgl')} type="number" value={config.minAmount} onChange={(e) => {
               const newConfigs = [...installmentConfigs];
               newConfigs[idx].minAmount = parseInt(e.target.value) || 0;
               setInstallmentConfigs(newConfigs);
             }} />
-            <Input label="نسبة الفائدة %" type="number" value={config.interestRate} onChange={(e) => {
+            <Input label={t('settings_installments.form.krsilww')} type="number" value={config.interestRate} onChange={(e) => {
               const newConfigs = [...installmentConfigs];
               newConfigs[idx].interestRate = parseFloat(e.target.value) || 0;
               setInstallmentConfigs(newConfigs);
             }} />
             <Button variant="ghost" size="sm" onClick={() => {
               setInstallmentConfigs(installmentConfigs.filter((_, i) => i !== idx));
-            }}>حذف</Button>
+            }}>{t('settings_installments.ui.delete')}</Button>
           </div>
         ))}
       </div>
@@ -106,7 +108,7 @@ export default function SettingsInstallments() {
 
       <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-white/10">
         <Button onClick={handleSave} loading={saving} icon={<Save className="w-4 h-4" />}>
-          حفظ التعديلات
+          {t('settings_installments.ui.km6ld24')}
         </Button>
       </div>
     </div>

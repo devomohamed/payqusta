@@ -6,8 +6,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Download, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const InstallPrompt = () => {
+  const { t } = useTranslation('admin');
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -119,7 +121,7 @@ const InstallPrompt = () => {
             <button
               onClick={handleDismiss}
               className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
-              aria-label="Close"
+              aria-label={t('install_prompt.actions.close')}
             >
               <X size={20} />
             </button>
@@ -129,9 +131,9 @@ const InstallPrompt = () => {
                 <Smartphone size={32} />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg mb-1">ثبت التطبيق</h3>
+                <h3 className="font-bold text-lg mb-1">{t('install_prompt.title')}</h3>
                 <p className="text-blue-50 text-sm leading-relaxed">
-                  احصل على تجربة أسرع وأفضل مع تطبيق PayQusta
+                  {t('install_prompt.subtitle')}
                 </p>
               </div>
             </div>
@@ -141,15 +143,15 @@ const InstallPrompt = () => {
           <div className="px-6 pb-4 space-y-2">
             <div className="flex items-center gap-2 text-sm text-blue-50">
               <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              <span>يعمل بدون إنترنت</span>
+              <span>{t('install_prompt.features.offline')}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-blue-50">
               <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              <span>تحميل فوري وسريع</span>
+              <span>{t('install_prompt.features.fast')}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-blue-50">
               <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              <span>إشعارات فورية</span>
+              <span>{t('install_prompt.features.notifications')}</span>
             </div>
           </div>
 
@@ -159,14 +161,14 @@ const InstallPrompt = () => {
               onClick={handleDismiss}
               className="flex-1 px-4 py-2.5 rounded-lg text-white/90 hover:bg-white/10 transition-colors font-medium text-sm"
             >
-              لاحقاً
+              {t('install_prompt.actions.later')}
             </button>
             <button
               onClick={handleInstall}
               className="flex-1 px-4 py-2.5 rounded-lg bg-white text-blue-600 hover:bg-blue-50 transition-colors font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
             >
               <Download size={18} />
-              ثبت الآن
+              {t('install_prompt.actions.install_now')}
             </button>
           </div>
         </div>

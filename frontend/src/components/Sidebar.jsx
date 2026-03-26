@@ -232,9 +232,9 @@ export default function Sidebar({ open, onClose }) {
             </div>
             <NavItem to="/super-admin/plans" icon={Crown} label={t('sidebar.plan_management')} tone="amber" />
             <NavItem to="/super-admin/requests" icon={FileText} label={t('sidebar.subscription_requests')} tone="amber" />
-            <NavItem to="/super-admin/leads" icon={MessageCircle} label="Public Leads" tone="amber" />
+            <NavItem to="/super-admin/leads" icon={MessageCircle} label={t('sidebar.public_leads')} tone="amber" />
             <NavItem to="/tenant-management" icon={Building2} label={t('sidebar.store_management')} tone="amber" />
-            <NavItem to="/super-admin/notifications" icon={Bell} label="Platform Notifications" tone="amber" />
+            <NavItem to="/super-admin/notifications" icon={Bell} label={t('sidebar.platform_notifications')} tone="amber" />
             <div className="my-3 border-t border-gray-200 dark:border-gray-700"></div>
           </>
         )}
@@ -284,7 +284,7 @@ export default function Sidebar({ open, onClose }) {
               onClick={() => setSalesOpen(!salesOpen)}
               icon={Zap}
               tone="amber"
-              label="المبيعات"
+              label={t('sidebar.form.ksgkw32')}
             />
             <div className={`overflow-hidden transition-all duration-200 ${salesOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
@@ -297,8 +297,8 @@ export default function Sidebar({ open, onClose }) {
                 {(can('invoices', 'read') || isSystemSuperAdmin) && (
                   <>
                     <SubNavItem to="/invoices" icon={FileText} label={t('sidebar.invoices')} tone="slate" />
-                    <SubNavItem to="/installments" icon={Clock} label="دفتر الأقساط والآجل" tone="slate" />
-                    <SubNavItem to="/shift" icon={Clock} label="إدارة الورديات" tone="slate" />
+                    <SubNavItem to="/installments" icon={Clock} label={t('sidebar.form.k1tt7ij')} tone="slate" />
+                    <SubNavItem to="/shift" icon={Clock} label={t('sidebar.form.k7967td')} tone="slate" />
                   </>
                 )}
               </div>
@@ -322,11 +322,11 @@ export default function Sidebar({ open, onClose }) {
                 {(can('products', 'read') || isSystemSuperAdmin) && (
                   <>
                     <SubNavItem to="/products" icon={Boxes} label={t('sidebar.all_products')} tone="emerald" end />
-                    <SubNavItem to="/products?action=add" icon={Plus} label="إضافة منتج" tone="emerald" />
-                    <SubNavItem to="/categories" icon={FolderTree} label="الأقسام" tone="emerald" />
-                    <SubNavItem to="/stock-search" icon={Search} label="بحث عن توفر منتج" tone="emerald" />
+                    <SubNavItem to="/products?action=add" icon={Plus} label={t('sidebar.form.kq5gbc5')} tone="emerald" />
+                    <SubNavItem to="/categories" icon={FolderTree} label={t('sidebar.form.kz8i2t1')} tone="emerald" />
+                    <SubNavItem to="/stock-search" icon={Search} label={t('sidebar.form.k93n9tw')} tone="emerald" />
                     <SubNavItem to="/low-stock" icon={AlertTriangle} label={t('sidebar.low_stock')} tone="emerald" />
-                    <SubNavItem to="/stocktake" icon={CheckSquare} label="الجرد الشامل" tone="emerald" />
+                    <SubNavItem to="/stocktake" icon={CheckSquare} label={t('sidebar.form.khipq72')} tone="emerald" />
                   </>
                 )}
                 {(can('stock_adjustments', 'read') || isSystemSuperAdmin) && (
@@ -350,9 +350,9 @@ export default function Sidebar({ open, onClose }) {
             <div className={`overflow-hidden transition-all duration-200 ${suppliersOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
                 <SubNavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} tone="slate" />
-                <SubNavItem to="/purchase-orders" icon={ShoppingCart} label="أوامر الشراء" tone="slate" />
-                <SubNavItem to="/supplier-purchase-invoices" icon={Receipt} label="فواتير مشتريات المورد" tone="slate" />
-                <SubNavItem to="/purchase-returns" icon={RefreshCcw} label="مرتجعات الشراء" tone="slate" />
+                <SubNavItem to="/purchase-orders" icon={ShoppingCart} label={t('sidebar.form.ktlj32y')} tone="slate" />
+                <SubNavItem to="/supplier-purchase-invoices" icon={Receipt} label={t('sidebar.form.k2kled2')} tone="slate" />
+                <SubNavItem to="/purchase-returns" icon={RefreshCcw} label={t('sidebar.form.kj45kme')} tone="slate" />
               </div>
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function Sidebar({ open, onClose }) {
             onClick={() => setPortalOpen(!portalOpen)}
             icon={ShoppingBag}
             tone="violet"
-            label="البوابة"
+            label={t('sidebar.form.kzbcmsr')}
           />
           <div className={`overflow-hidden transition-all duration-200 ${portalOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
@@ -397,7 +397,7 @@ export default function Sidebar({ open, onClose }) {
               <div className="p-1.5 bg-white/20 rounded-lg">
                 <Store className="w-5 h-5 flex-shrink-0" />
               </div>
-              <span className="flex-1">تصفح متجري</span>
+              <span className="flex-1">{t('sidebar.ui.k17zto7')}</span>
             </a>
           </div>
         )}
@@ -410,7 +410,7 @@ export default function Sidebar({ open, onClose }) {
               onClick={() => setStoreOpen(!storeOpen)}
               icon={Building2}
               tone="teal"
-              label="إدارة المتجر"
+              label={t('sidebar.form.kjfhfle')}
             />
             <div className={`overflow-hidden transition-all duration-200 ${storeOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
               <div className="space-y-1 py-1">
@@ -421,7 +421,7 @@ export default function Sidebar({ open, onClose }) {
                   <>
                     <SubNavItem to="/branches" icon={Building2} label={t('sidebar.branches')} tone="teal" />
                     <SubNavItem to="/cameras" icon={Video} label={t('sidebar.live_monitoring')} tone="teal" />
-                    <SubNavItem to="/admin-shifts" icon={Clock} label="مراقبة ورديات الفروع" tone="teal" />
+                    <SubNavItem to="/admin-shifts" icon={Clock} label={t('sidebar.form.k31qkgx')} tone="teal" />
                     <SubNavItem to="/subscriptions" icon={Crown} label={t('sidebar.subscriptions')} tone="teal" />
                   </>
                 )}
@@ -451,12 +451,12 @@ export default function Sidebar({ open, onClose }) {
                 ) : (
                   <>
                     <SubNavItem to="/reports" icon={PieChart} label={t('sidebar.general_reports')} tone="rose" />
-                    <SubNavItem to="/financials" icon={DollarSign} label="المالية والأرباح" tone="rose" />
-                    <SubNavItem to="/staff-performance" icon={Award} label="أداء الموظفين" tone="rose" />
+                    <SubNavItem to="/financials" icon={DollarSign} label={t('sidebar.form.khw4hav')} tone="rose" />
+                    <SubNavItem to="/staff-performance" icon={Award} label={t('sidebar.form.koutx4x')} tone="rose" />
                     <SubNavItem to="/business-reports" icon={TrendingUp} label={t('sidebar.business_reports')} tone="rose" />
                     <SubNavItem to="/aging-report" icon={Clock} label={t('sidebar.debt_aging')} tone="rose" />
-                    <SubNavItem to="/supplier-aging-report" icon={Truck} label="أعمار ديون الموردين" tone="rose" />
-                    <SubNavItem to="/admin/audit-logs" icon={Shield} label="سجلات الأمان" tone="rose" />
+                    <SubNavItem to="/supplier-aging-report" icon={Truck} label={t('sidebar.form.ky0zc2u')} tone="rose" />
+                    <SubNavItem to="/admin/audit-logs" icon={Shield} label={t('sidebar.form.kgsm1tc')} tone="rose" />
                   </>
                 )}
               </div>
@@ -479,7 +479,7 @@ export default function Sidebar({ open, onClose }) {
               />
               <div className={`overflow-hidden transition-all duration-200 ${toolsOpen ? 'max-h-60 mt-1' : 'max-h-0'}`}>
                 <div className="space-y-1 py-1">
-                  <SubNavItem to="/onboarding" icon={CheckSquare} label="الإعداد الأولي" tone="cyan" />
+                  <SubNavItem to="/onboarding" icon={CheckSquare} label={t('sidebar.form.ksdk4f6')} tone="cyan" />
                   <SubNavItem to="/import" icon={Upload} label={t('sidebar.import_data')} tone="cyan" />
                   <SubNavItem to="/backup" icon={Database} label={t('sidebar.backup')} tone="cyan" />
                 </div>

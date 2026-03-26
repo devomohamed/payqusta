@@ -89,25 +89,25 @@ const normalizeExternalUrl = (rawValue) => {
 const getImageUploadErrorMessage = (error, t) => {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return t('editor.image_upload_offline', {
-      defaultValue: 'لا يمكن رفع الصورة أثناء عدم الاتصال بالإنترنت',
+      defaultValue: t('rich_text_editor.ui.knw08i'),
     });
   }
 
   if (error?.code === 'ERR_NETWORK' || /network error/i.test(String(error?.message || ''))) {
     return t('editor.image_upload_network_error', {
-      defaultValue: 'تعذر رفع الصورة بسبب مشكلة في الاتصال بالشبكة',
+      defaultValue: t('rich_text_editor.ui.klue0w5'),
     });
   }
 
   if (error?.code === 'ECONNABORTED' || /timeout/i.test(String(error?.message || ''))) {
     return t('editor.image_upload_timeout', {
-      defaultValue: 'استغرق رفع الصورة وقتًا أطول من اللازم. جرب صورة أصغر حجمًا',
+      defaultValue: t('rich_text_editor.ui.kjfwu0j'),
     });
   }
 
   return getUserFriendlyErrorMessage(
     error,
-    t('editor.image_upload_failed', { defaultValue: 'فشل رفع الصورة' })
+    t('editor.image_upload_failed', { defaultValue: t('rich_text_editor.ui.kyo2h66') })
   );
 };
 
@@ -213,17 +213,17 @@ export default function RichTextEditor({ value, onChange, label, className = '',
   const { t, i18n } = useTranslation('admin');
 
   const headerPickerLabels = useMemo(() => ({
-    1: t('editor.h1', { defaultValue: 'عنوان 1' }),
-    2: t('editor.h2', { defaultValue: 'عنوان 2' }),
-    3: t('editor.h3', { defaultValue: 'عنوان 3' }),
-    false: t('editor.normal', { defaultValue: 'عادي' }),
+    1: t('editor.h1', { defaultValue: t('rich_text_editor.ui.kgt4ozv') }),
+    2: t('editor.h2', { defaultValue: t('rich_text_editor.ui.kgt4ozw') }),
+    3: t('editor.h3', { defaultValue: t('rich_text_editor.ui.kgt4ozx') }),
+    false: t('editor.normal', { defaultValue: t('rich_text_editor.ui.kt6p3d') }),
   }), [t]);
 
   const sizePickerLabels = useMemo(() => ({
-    small: t('editor.small', { defaultValue: 'صغير' }),
-    false: t('editor.normal', { defaultValue: 'عادي' }),
-    large: t('editor.large', { defaultValue: 'كبير' }),
-    huge: t('editor.huge', { defaultValue: 'ضخم' }),
+    small: t('editor.small', { defaultValue: t('rich_text_editor.ui.kt4jv0') }),
+    false: t('editor.normal', { defaultValue: t('rich_text_editor.ui.kt6p3d') }),
+    large: t('editor.large', { defaultValue: t('rich_text_editor.ui.ktd4bw') }),
+    huge: t('editor.huge', { defaultValue: t('rich_text_editor.ui.kxu31') }),
   }), [t]);
 
   const toolbarLabels = useMemo(() => ({
@@ -243,11 +243,11 @@ export default function RichTextEditor({ value, onChange, label, className = '',
     '.ql-image': t('editor.image'),
     '.ql-video': t('editor.video'),
     '.ql-clean': t('editor.clean'),
-    '.ql-color': t('editor.color', { defaultValue: 'لون الخط' }),
-    '.ql-background': t('editor.background', { defaultValue: 'لون الخلفية' }),
-    '.ql-size': t('editor.size', { defaultValue: 'حجم الخط' }),
-    '.ql-header': t('editor.header', { defaultValue: 'نوع النص' }),
-    '.ql-emoji': t('editor.emoji', { defaultValue: 'ملصقات وفيسات' })
+    '.ql-color': t('editor.color', { defaultValue: t('rich_text_editor.ui.k9dri3g') }),
+    '.ql-background': t('editor.background', { defaultValue: t('rich_text_editor.ui.k2etdtd') }),
+    '.ql-size': t('editor.size', { defaultValue: t('rich_text_editor.ui.kial5i8') }),
+    '.ql-header': t('editor.header', { defaultValue: t('rich_text_editor.ui.ksx7oi3') }),
+    '.ql-emoji': t('editor.emoji', { defaultValue: t('rich_text_editor.ui.kou8bu2') })
   }), [t]);
 
   const handlers = useMemo(() => ({
@@ -268,7 +268,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           toast.error(
             t('editor.image_upload_offline', {
-              defaultValue: 'لا يمكن رفع الصورة أثناء عدم الاتصال بالإنترنت',
+              defaultValue: t('rich_text_editor.ui.knw08i'),
             })
           );
           return;
@@ -277,7 +277,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
         if ((input.files?.length || 0) > MAX_EDITOR_IMAGE_UPLOADS) {
           toast(
             t('editor.image_upload_limit', {
-              defaultValue: 'يمكن رفع {{count}} صور كحد أقصى في كل مرة',
+              defaultValue: t('rich_text_editor.ui.kj2zd3j'),
               count: MAX_EDITOR_IMAGE_UPLOADS,
             }),
             { icon: 'ℹ️' }
@@ -285,7 +285,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
         }
 
         const loadingToast = toast.loading(
-          t('editor.uploading_image', { defaultValue: 'جارٍ رفع الصورة...' })
+          t('editor.uploading_image', { defaultValue: t('rich_text_editor.ui.kbbarq2') })
         );
 
         try {
@@ -308,7 +308,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
               const progress = Math.max(1, Math.min(99, Math.round((loaded / total) * 100)));
               toast.loading(
                 t('editor.uploading_image_progress', {
-                  defaultValue: 'جارٍ رفع الصورة... {{progress}}%',
+                  defaultValue: t('rich_text_editor.ui.k40hswy'),
                   progress,
                 }),
                 { id: loadingToast }
@@ -337,7 +337,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
           quill.setSelection(insertIndex, 0, 'silent');
 
           toast.success(
-            t('editor.image_uploaded', { defaultValue: 'تم رفع الصورة بنجاح' }),
+            t('editor.image_uploaded', { defaultValue: t('rich_text_editor.ui.kymk6mg') }),
             { id: loadingToast }
           );
         } catch (error) {
@@ -353,7 +353,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
 
           toast.error(
             error?.response?.data?.message ||
-            t('editor.image_upload_failed', { defaultValue: 'فشل رفع الصورة' }),
+            t('editor.image_upload_failed', { defaultValue: t('rich_text_editor.ui.kyo2h66') }),
             { id: loadingToast }
           );
         }
@@ -367,7 +367,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
       const currentFormats = quill.getFormat(selection);
       const currentLink = typeof currentFormats.link === 'string' ? currentFormats.link : '';
       const rawUrl = window.prompt(
-        t('editor.link_prompt', { defaultValue: 'أدخل الرابط' }),
+        t('editor.link_prompt', { defaultValue: t('rich_text_editor.ui.k960668') }),
         currentLink || 'https://'
       );
 
@@ -395,7 +395,7 @@ export default function RichTextEditor({ value, onChange, label, className = '',
 
       const selection = getSafeSelection(quill);
       const rawUrl = window.prompt(
-        t('editor.video_prompt', { defaultValue: 'أدخل رابط الفيديو' }),
+        t('editor.video_prompt', { defaultValue: t('rich_text_editor.ui.kok5cnq') }),
         'https://'
       );
 
@@ -455,9 +455,9 @@ export default function RichTextEditor({ value, onChange, label, className = '',
         const currentKey = currentValue === '' || currentValue == null ? 'false' : currentValue;
         const currentLabel = labels[currentKey] || labels.false || '';
         const pickerPrefix = picker.classList.contains('ql-size')
-          ? t('editor.size_prefix', { defaultValue: 'حجم الخط: ' })
+          ? t('editor.size_prefix', { defaultValue: t('rich_text_editor.ui.kz19nuu') })
           : picker.classList.contains('ql-header')
-            ? t('editor.header_prefix', { defaultValue: 'نوع النص: ' })
+            ? t('editor.header_prefix', { defaultValue: t('rich_text_editor.ui.klizkyt') })
             : '';
 
         // Only update if changed to prevent reflows

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Check, FolderTree, X, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DEFAULT_CATEGORY_ICON } from '../utils/aiHelper';
+import { useTranslation } from 'react-i18next';
 
 /**
  * CategorySelector - A premium, searchable dropdown for category selection
@@ -131,10 +132,11 @@ export default function CategorySelector({
     value,
     onChange,
     categories = [],
-    placeholder = 'اختر قسم...',
+    placeholder = t('category_selector.ui.krwd7zg'),
     error,
     className = ''
 }) {
+  const { t } = useTranslation('admin');
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const containerRef = useRef(null);
@@ -197,7 +199,7 @@ export default function CategorySelector({
                             <div className="text-right">
                                 <span className="block leading-tight font-black text-gray-800 dark:text-white">{selected.name}</span>
                                 {selected.parent && (
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary-500">قسم فرعي</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary-500">{t('category_selector.ui.kkkdjkj')}</span>
                                 )}
                             </div>
                         </motion.div>
@@ -239,7 +241,7 @@ export default function CategorySelector({
                                     autoFocus
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="ابحث عن قسم..."
+                                    placeholder={t('category_selector.placeholders.klyw31o')}
                                     className="app-surface w-full rounded-xl border-2 py-3 pl-4 pr-11 text-sm font-bold outline-none transition-all focus:border-primary-500"
                                 />
                             </div>
@@ -249,7 +251,7 @@ export default function CategorySelector({
                             {filteredTopLevel.length === 0 ? (
                                 <div className="py-12 text-center">
                                     <FolderTree className="mx-auto mb-3 h-12 w-12 text-gray-200 dark:text-gray-800" />
-                                    <p className="text-sm font-bold text-gray-400">لم يتم العثور على أقسام</p>
+                                    <p className="text-sm font-bold text-gray-400">{t('category_selector.ui.kxotd0i')}</p>
                                 </div>
                             ) : (
                                 filteredTopLevel.map((category) => (

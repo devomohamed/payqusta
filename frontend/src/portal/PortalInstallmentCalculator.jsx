@@ -5,7 +5,7 @@ import { Calculator, DollarSign, Calendar, PieChart, RefreshCw, CreditCard } fro
 export default function PortalInstallmentCalculator() {
     const { t, i18n } = useTranslation('portal');
 
-    const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+    const currency = i18n.language === 'ar' ? t('portal_installment_calculator.ui.kwlxf') : 'EGP';
 
     const durationOptions = [
         { months: 3, label: t('installmentCalc.months', { count: 3 }) },
@@ -132,7 +132,7 @@ export default function PortalInstallmentCalculator() {
 
                             <div className="flex justify-between items-center pb-2">
                                 <span className="text-white/80 text-sm">{t('installmentCalc.duration_label')}</span>
-                                <span className="font-bold">{duration} {i18n.language === 'ar' ? 'شهور' : 'Months'}</span>
+                                <span className="font-bold">{duration} {i18n.language === 'ar' ? t('portal_installment_calculator.ui.kt46gs') : 'Months'}</span>
                             </div>
                         </div>
                     </div>

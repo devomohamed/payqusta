@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, X, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * UpdateBanner
@@ -9,6 +10,7 @@ import { RefreshCw, X, Zap } from 'lucide-react';
  * at the bottom of the screen that lets the user choose when to reload.
  */
 export default function UpdateBanner() {
+  const { t } = useTranslation('admin');
   const [visible, setVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -74,10 +76,10 @@ export default function UpdateBanner() {
 
             <div className="relative min-w-0 flex-1" dir="rtl">
               <p className="app-text-body text-sm font-black leading-snug">
-                يوجد تحديث جديد
+                {t('update_banner.ui.k9v2dq2')}
               </p>
               <p className="app-text-muted mt-0.5 text-xs leading-relaxed">
-                أعد تحميل التطبيق لضمان استمرار التشغيل بأحدث إصدار متاح.
+                {t('update_banner.ui.kdubzig')}
               </p>
             </div>
 
@@ -86,17 +88,17 @@ export default function UpdateBanner() {
                 onClick={handleUpdate}
                 disabled={updating}
                 className="inline-flex min-w-[96px] items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-black text-white shadow-lg shadow-primary-500/20 transition-all hover:bg-primary-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label="تحديث الآن"
+                aria-label={t('update_banner.form.k39kkqc')}
               >
                 <RefreshCw className={`h-3.5 w-3.5 flex-shrink-0 ${updating ? 'animate-spin' : ''}`} />
-                <span>{updating ? 'جارٍ التحديث...' : 'تحديث الآن'}</span>
+                <span>{updating ? t('update_banner.ui.ka9bpzt') : 'تحديث الآن'}</span>
               </button>
 
               <button
                 onClick={handleDismiss}
                 className="app-surface-muted app-text-soft flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-black/[0.04] hover:text-gray-700 active:scale-95 dark:hover:bg-white/[0.06] dark:hover:text-white"
-                aria-label="تجاهل"
-                title="لاحقًا"
+                aria-label={t('update_banner.form.kowlr5u')}
+                title={t('update_banner.titles.k2z0r6c')}
               >
                 <X className="h-4 w-4" />
               </button>

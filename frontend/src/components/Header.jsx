@@ -20,10 +20,10 @@ export default function Header({ onMenuClick }) {
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
   const ThemeIcon = themeMode === 'system' ? Monitor : dark ? Sun : Moon;
   const themeLabel = themeMode === 'system'
-    ? 'الوضع التلقائي'
+    ? t('header.theme.system')
     : dark
-      ? 'التبديل إلى الوضع الفاتح'
-      : 'التبديل إلى الوضع الداكن';
+      ? t('header.theme.to_light')
+      : t('header.theme.to_dark');
 
   const pageTitles = {
     '/': t('header.dashboard'),
@@ -57,7 +57,7 @@ export default function Header({ onMenuClick }) {
           <button
             onClick={onMenuClick}
             className="app-text-soft rounded-xl p-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05] md:hidden"
-            aria-label={t('header.open_navigation', 'فتح القائمة')}
+            aria-label={t('header.open_navigation')}
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -76,7 +76,7 @@ export default function Header({ onMenuClick }) {
               )}
               {isSystemSuperAdmin && (
                 <span className="mx-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:bg-amber-400/15 dark:text-amber-200">
-                  SUPER
+                  {t('header.super_badge')}
                 </span>
               )}
             </div>
@@ -87,10 +87,10 @@ export default function Header({ onMenuClick }) {
           <button
             onClick={() => navigate('/quick-sale')}
             className="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 shadow-sm transition-colors hover:bg-amber-100 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/15 sm:text-sm"
-            title="البيع السريع"
+            title={t('header.quick_sale')}
           >
             <Zap className="h-4 w-4" />
-            <span className="hidden sm:inline">البيع السريع</span>
+            <span className="hidden sm:inline">{t('header.quick_sale')}</span>
           </button>
 
           <ShiftStatusWidget />
@@ -113,7 +113,7 @@ export default function Header({ onMenuClick }) {
             onClick={() => setSearchOpen(true)}
             className="app-text-soft rounded-xl p-2.5 transition-all active:scale-95 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] md:hidden"
             title={t('header.search_quick_mobile')}
-            aria-label={t('header.search_quick_mobile', 'فتح البحث')}
+            aria-label={t('header.search_quick_mobile')}
           >
             <Search className="h-5 w-5" />
           </button>

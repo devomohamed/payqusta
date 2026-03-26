@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   MessageCircle, Search, Send, RefreshCw, Eye, CheckCircle, XCircle,
   Clock, User, Phone, ChevronLeft, Lock, MessageSquare, Filter
@@ -7,18 +8,18 @@ import { useAuthStore, api as globalApi } from '../store';
 import { Card, LoadingSpinner, EmptyState, Modal } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 
-const STATUS_CONFIG = {
-  open: { label: 'مفتوحة', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
-  replied: { label: 'تم الرد', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: MessageCircle },
-  closed: { label: 'مغلقة', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', icon: Lock },
-};
+const getStatusConfig = (t) => ({
+  open: { label: t('support_messages_page.ui.k3ub7rq'), color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
+  replied: { label: t('support_messages_page.ui.ket1r40'), color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: MessageCircle },
+  closed: { label: t('support_messages_page.ui.kpbpqd2'), color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', icon: Lock },
+});
 
-const TYPE_LABELS = {
-  inquiry: 'استفسار',
-  complaint: 'شكوى',
-  suggestion: 'اقتراح',
-  other: 'أخرى',
-};
+const getTypeLabels = (t) => ({
+  inquiry: t('support_messages_page.ui.krakf96'),
+  complaint: t('support_messages_page.ui.kt43io'),
+  suggestion: t('support_messages_page.ui.kaci4ns'),
+  other: t('support_messages_page.ui.ksssmb'),
+});
 
 const TYPE_COLORS = {
   inquiry: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
@@ -28,6 +29,9 @@ const TYPE_COLORS = {
 };
 
 export default function SupportMessagesPage() {
+  const { t } = useTranslation('admin');
+  const statusConfig = useMemo(() => getStatusConfig(t), [t]);
+  const typeLabels = useMemo(() => getTypeLabels(t), [t]);
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -51,7 +55,7 @@ export default function SupportMessagesPage() {
       setMessages(payload.messages || []);
       setStats(payload.stats || {});
     } catch {
-      notify.error('فشل تحميل الرسائل');
+      notify.error(t('support_messages_page.toasts.k2u1d1p'));
     } finally {
       setLoading(false);
     }
@@ -79,10 +83,10 @@ export default function SupportMessagesPage() {
       const { data } = await api('post', `/manage/support/${selected._id}/reply`, { message: replyText });
       setSelected(data.data || data);
       setReplyText('');
-      notify.success('تم إرسال الرد');
+      notify.success(t('support_messages_page.toasts.ke6fgnw'));
       load();
     } catch {
-      notify.error('فشل إرسال الرد');
+      notify.error(t('support_messages_page.toasts.k2djew6'));
     } finally {
       setReplyLoading(false);
     }
@@ -91,24 +95,24 @@ export default function SupportMessagesPage() {
   const closeTicket = async (id) => {
     try {
       await api('patch', `/manage/support/${id}/close`);
-      notify.success('تم إغلاق التذكرة');
+      notify.success(t('support_messages_page.toasts.kqasbur'));
       setSelected(null);
       load();
     } catch {
-      notify.error('فشل إغلاق التذكرة');
+      notify.error(t('support_messages_page.toasts.kvsthzh'));
     }
   };
 
   const timeAgo = (date) => {
     const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-    if (diff < 60) return 'الآن';
+    if (diff < 60) return t('support_messages_page.ui.ksvsip');
     if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
     if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`;
     return `منذ ${Math.floor(diff / 86400)} يوم`;
   };
 
   const StatusBadge = ({ status }) => {
-    const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.open;
+    const cfg = statusConfig[status] || statusConfig.open;
     const Icon = cfg.icon;
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.color}`}>
@@ -126,7 +130,7 @@ export default function SupportMessagesPage() {
           <h1 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
             <MessageCircle className="w-6 h-6 text-primary-500" /> رسائل الدعم
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">إدارة رسائل الدعم والاستفسارات من العملاء</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('support_messages_page.ui.ke1iv4k')}</p>
         </div>
         <button onClick={load} className="app-surface flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300">
           <RefreshCw className="w-4 h-4" /> تحديث
@@ -136,9 +140,9 @@ export default function SupportMessagesPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'مفتوحة', count: stats.open || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'open' },
-          { label: 'تم الرد', count: stats.replied || 0, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', filter: 'replied' },
-          { label: 'مغلقة', count: stats.closed || 0, color: 'text-gray-600 bg-gray-50 dark:bg-gray-800', filter: 'closed' },
+          { label: t('support_messages_page.ui.k3ub7rq'), count: stats.open || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'open' },
+          { label: t('support_messages_page.ui.ket1r40'), count: stats.replied || 0, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', filter: 'replied' },
+          { label: t('support_messages_page.ui.kpbpqd2'), count: stats.closed || 0, color: 'text-gray-600 bg-gray-50 dark:bg-gray-800', filter: 'closed' },
         ].map((s) => (
           <button
             key={s.filter}
@@ -155,8 +159,8 @@ export default function SupportMessagesPage() {
       {loading ? <LoadingSpinner /> : messages.length === 0 ? (
         <EmptyState
           icon={<MessageCircle className="w-12 h-12 text-gray-300" />}
-          title="لا توجد رسائل"
-          description={statusFilter ? 'لا توجد رسائل بهذه الحالة' : 'لم يتم استلام أي رسائل دعم بعد'}
+          title={t('support_messages_page.titles.kk19kqp')}
+          description={statusFilter ? t('support_messages_page.ui.k10kq61') : 'لم يتم استلام أي رسائل دعم بعد'}
         />
       ) : (
         <div className="space-y-3">
@@ -180,9 +184,9 @@ export default function SupportMessagesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-gray-900 dark:text-white text-sm">{msg.customer?.name || 'عميل'}</h3>
+                      <h3 className="font-bold text-gray-900 dark:text-white text-sm">{msg.customer?.name || t('support_messages_page.toasts.kt7bza')}</h3>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_COLORS[msg.type] || TYPE_COLORS.other}`}>
-                        {TYPE_LABELS[msg.type] || msg.type}
+                        {typeLabels[msg.type] || msg.type}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -203,7 +207,7 @@ export default function SupportMessagesPage() {
 
                 <div className="flex flex-col items-end gap-2 mt-2">
                   <span className="rounded-xl bg-primary-50 px-2 py-1 text-xs font-bold text-primary-600 dark:bg-primary-900/10 dark:text-primary-300">
-                    عرض التفاصيل
+                    {t('support_messages_page.ui.k3y9kzm')}
                   </span>
                   <ChevronLeft className="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
                 </div>
@@ -214,7 +218,7 @@ export default function SupportMessagesPage() {
       )}
 
       {/* Message Detail Modal */}
-      <Modal open={!!selected} onClose={() => { setSelected(null); setReplyText(''); }} title={selected?.subject || 'تفاصيل الرسالة'} size="lg">
+      <Modal open={!!selected} onClose={() => { setSelected(null); setReplyText(''); }} title={selected?.subject || t('support_messages_page.toasts.kf4wz58')} size="lg">
         {selected && (
           <div className="flex flex-col h-[70vh]">
             {/* Customer Info */}
@@ -256,7 +260,7 @@ export default function SupportMessagesPage() {
                   <div className="app-surface-muted rounded-2xl rounded-tr-md p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-sm">{selected.customer?.name}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_COLORS[selected.type]}`}>{TYPE_LABELS[selected.type]}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${TYPE_COLORS[selected.type]}`}>{typeLabels[selected.type]}</span>
                     </div>
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{selected.message}</p>
                   </div>
@@ -281,7 +285,7 @@ export default function SupportMessagesPage() {
                       }`}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-xs">
-                          {reply.sender === 'vendor' ? (reply.senderName || 'الإدارة') : selected.customer?.name}
+                          {reply.sender === 'vendor' ? (reply.senderName || t('support_messages_page.toasts.kz99ak8')) : selected.customer?.name}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{reply.message}</p>
@@ -301,7 +305,7 @@ export default function SupportMessagesPage() {
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="اكتب ردك هنا..."
+                    placeholder={t('support_messages_page.placeholders.kg70t4p')}
                     className="app-surface h-20 flex-1 resize-none rounded-2xl border border-transparent p-3 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
                     onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey) sendReply(); }}
                   />
@@ -311,7 +315,7 @@ export default function SupportMessagesPage() {
                     className="self-end px-6 py-3 rounded-xl bg-primary-500 text-white font-bold text-sm hover:bg-primary-600 transition disabled:opacity-50 flex items-center gap-2"
                   >
                     {replyLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    إرسال
+                    {t('support_messages_page.ui.send')}
                   </button>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-1">Ctrl+Enter للإرسال السريع</p>

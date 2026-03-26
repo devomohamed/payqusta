@@ -12,6 +12,7 @@ import { storefrontPath } from '../utils/storefrontHost';
 import { createBuyNowItem } from './buyNowItem';
 import { trackStorefrontFunnelEvent } from './storefrontFunnelAnalytics';
 import { loadStorefrontGuestProfile } from './storefrontGuestProfile';
+import { useTranslation } from 'react-i18next';
 import {
   loadStorefrontProducts,
   loadStorefrontSettings,
@@ -79,14 +80,14 @@ function scoreRelatedProduct(baseProduct, candidate) {
 
 function getCrossSellReason(baseProduct, candidate) {
   if (normalizeCategoryId(baseProduct?.category) === normalizeCategoryId(candidate?.category)) {
-    return 'يكمل نفس الفئة';
+    return 'product_details.ui.k2pxm3t';
   }
 
   if (getSharedTagCount(baseProduct, candidate) > 0) {
-    return 'مقترح من نفس الاهتمام';
+    return 'product_details.ui.ky1mhga';
   }
 
-  return 'اختيار مناسب مع هذا المنتج';
+  return 'product_details.ui.kh4oerq';
 }
 
 function trackCrossSellEvent(type, sourceProductId, relatedProductId) {
@@ -108,18 +109,20 @@ function trackCrossSellEvent(type, sourceProductId, relatedProductId) {
   } catch (_) { }
 }
 
-const REVIEW_SIGNAL_PATTERNS = [
-  { label: 'الجودة', patterns: ['جودة', 'الخامة', 'خامه', 'متقن'] },
-  { label: 'السعر', patterns: ['سعر', 'السعر', 'قيمة', 'قيمه'] },
-  { label: 'التوصيل', patterns: ['شحن', 'توصيل', 'وصل', 'التسليم'] },
-  { label: 'التغليف', patterns: ['تغليف', 'تعبئة', 'تغليفه'] },
-  { label: 'الخدمة', patterns: ['خدمة', 'الدعم', 'التعامل'] },
-];
+function getReviewSignalPatterns(t) {
+  return [
+    { label: t('product_details.ui.kabcs99'), patterns: ['جودة', t('product_details.ui.kabc686'), t('product_details.ui.kszorf'), 'متقن'] },
+    { label: t('product_details.ui.kovdxm6'), patterns: ['سعر', t('product_details.ui.kovdxm6'), t('product_details.ui.ktd6fg'), 'قيمه'] },
+    { label: t('product_details.ui.kzcgj78'), patterns: ['شحن', t('product_details.ui.kox3x8x'), t('product_details.ui.ky7lj'), 'التسليم'] },
+    { label: t('product_details.ui.kzc7wi6'), patterns: ['تغليف', t('product_details.ui.kowu1x8'), 'تغليفه'] },
+    { label: t('product_details.ui.kabc0am'), patterns: ['خدمة', t('product_details.ui.kovduny'), 'التعامل'] },
+  ];
+}
 
-function getTopReviewSignal(reviews) {
+function getTopReviewSignal(reviews, t) {
   if (!Array.isArray(reviews) || reviews.length === 0) return null;
 
-  const scoredSignals = REVIEW_SIGNAL_PATTERNS.map((signal) => {
+  const scoredSignals = getReviewSignalPatterns(t).map((signal) => {
     const score = reviews.reduce((total, review) => {
       const text = `${review?.title || ''} ${review?.body || ''}`.toLowerCase();
       return total + signal.patterns.reduce((count, pattern) => count + (text.includes(pattern) ? 1 : 0), 0);
@@ -133,6 +136,7 @@ function getTopReviewSignal(reviews) {
 }
 
 export default function ProductDetails() {
+  const { t } = useTranslation('admin');
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -266,7 +270,7 @@ export default function ProductDetails() {
         setSelectedVariant(res.data.data.variants[0]);
       }
     } catch (err) {
-      notify.error('فشل تحميل المنتج');
+      notify.error(t('product_details.toasts.ktpethv'));
       navigate(isPortal ? '/portal/products' : '/store/products');
     } finally {
       setLoading(false);
@@ -283,11 +287,11 @@ export default function ProductDetails() {
         source: selectedVariant ? 'product_details_variant' : 'product_details',
       });
     }
-    notify.success(isPortal ? 'تم إضافة المنتج للسلة' : 'تمت إضافة المنتج للسلة. يمكنك إكمال الطلب مباشرة كضيف.');
+    notify.success(isPortal ? t('product_details.ui.knc588x') : t('product_details.ui.ki0h6v2'));
     return;
     if (isPortal) {
       addToPortalCart(product, quantity, selectedVariant);
-      notify.success('تم إضافة المنتج للسلة 🛒');
+      notify.success(t('product_details.toasts.k70bjee'));
       return;
     }
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -304,7 +308,7 @@ export default function ProductDetails() {
     else cart.push(cartItem);
     localStorage.setItem('cart', JSON.stringify(cart));
     window.dispatchEvent(new Event('cartUpdated'));
-    notify.success('تم إضافة المنتج للسلة 🛒');
+    notify.success(t('product_details.toasts.k70bjee'));
   };
 
   const handleCrossSellOpen = (relatedProductId) => {
@@ -318,13 +322,13 @@ export default function ProductDetails() {
     if (!relatedProduct?._id) return;
 
     if ((relatedProduct.stock?.quantity ?? 0) <= 0) {
-      notify.error('هذا المنتج غير متوفر حاليًا');
+      notify.error(t('product_details.toasts.kjpai1m'));
       return;
     }
 
     if (relatedProduct.hasVariants) {
       trackCrossSellEvent('click', product?._id, relatedProduct._id);
-      notify.info('اختر المواصفات أولًا من صفحة المنتج');
+      notify.info(t('product_details.toasts.kcnkcva'));
       navigate(storefrontPath(`/products/${relatedProduct._id}`));
       return;
     }
@@ -346,13 +350,13 @@ export default function ProductDetails() {
 
   const handleBuyNow = () => {
     if (isOutOfStock) {
-      notify.error('المنتج غير متوفر حالياً');
+      notify.error(t('product_details.toasts.kk8kk8g'));
       return;
     }
 
     const buyNowItem = createBuyNowItem(product, quantity, selectedVariant);
     if (!buyNowItem) {
-      notify.error('تعذر بدء الشراء الآن');
+      notify.error(t('product_details.toasts.kuqj79l'));
       return;
     }
 
@@ -364,7 +368,7 @@ export default function ProductDetails() {
   const handleWishlist = async () => {
     setWishlistLoading(true);
     const res = await toggleWishlist(product._id);
-    if (res?.success) notify.success(res.wishlisted ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة');
+    if (res?.success) notify.success(res.wishlisted ? t('product_details.ui.ky2j5to') : t('product_details.ui.ktcsgs2'));
     setWishlistLoading(false);
   };
 
@@ -398,12 +402,12 @@ export default function ProductDetails() {
     const normalizedPhone = notifyPhone.trim();
 
     if (!normalizedEmail && !normalizedPhone) {
-      notify.error('أدخل بريدك الإلكتروني أو رقم الهاتف');
+      notify.error(t('product_details.toasts.kw062si'));
       return;
     }
 
     if (normalizedEmail && !normalizedEmail.includes('@')) {
-      notify.error('يرجى إدخال بريد إلكتروني صحيح');
+      notify.error(t('product_details.toasts.ke5m7vh'));
       return;
     }
 
@@ -416,14 +420,14 @@ export default function ProductDetails() {
       });
 
       if (res?.data?.data?.availableNow) {
-        notify.info(res?.data?.message || 'المنتج متوفر الآن ويمكنك إكمال الطلب');
+        notify.info(res?.data?.message || t('product_details.toasts.kheio4v'));
         return;
       }
 
       setNotifyDone(true);
-      notify.success(res?.data?.message || 'تم تسجيل طلبك وسنبلغك فور توفر المنتج');
+      notify.success(res?.data?.message || t('product_details.toasts.kbwe1g4'));
     } catch (error) {
-      notify.error(error?.response?.data?.message || 'حدث خطأ، يرجى المحاولة مرة أخرى');
+      notify.error(error?.response?.data?.message || t('product_details.toasts.kk93fsm'));
     } finally {
       setNotifySubmitting(false);
     }
@@ -444,31 +448,30 @@ export default function ProductDetails() {
   const activeVolumeSavings = !isPortal ? calculateStorefrontVolumeDiscountForLine(currentPrice, quantity) : 0;
   const sortedReviews = [...reviews].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   const highlightedReviews = sortedReviews.slice(0, 2);
-  const topReviewSignal = getTopReviewSignal(sortedReviews);
+  const topReviewSignal = getTopReviewSignal(sortedReviews, t);
   const latestReviewDate = sortedReviews[0]?.createdAt ? new Date(sortedReviews[0].createdAt).toLocaleDateString() : null;
   const productTrustSignals = [
     {
       key: 'rating',
       icon: Star,
-      title: 'تقييم العملاء',
-      value: reviewsStats.total > 0 ? `${reviewsStats.avgRating?.toFixed(1) || '0.0'} / 5` : 'بانتظار أول تقييم',
-      detail: reviewsStats.total > 0 ? `${reviewsStats.total} مراجعة معتمدة` : 'سيظهر هنا أول تقييم معتمد',
+      title: t('product_details.ui.k9oo6qq'),
+      value: reviewsStats.total > 0 ? `${reviewsStats.avgRating?.toFixed(1) || '0.0'} / 5` : t('product_details.ui.klxjpw5'),
+      detail: reviewsStats.total > 0 ? `${reviewsStats.total} مراجعة معتمدة` : t('product_details.ui.kco4lhd'),
     },
     {
       key: 'availability',
       icon: Package,
-      title: 'حالة التوفر',
-      value: isOutOfStock ? 'غير متوفر الآن' : `${currentStock} قطعة`,
-      detail: isOutOfStock ? 'فعّل تنبيه العودة للمخزون' : (currentStock <= 20 ? 'مخزون محدود حاليًا' : 'جاهز للطلب الآن'),
+      title: t('product_details.ui.kbgb7pw'),
+      value: isOutOfStock ? t('product_details.ui.k2b27f1') : `${currentStock} قطعة`,
+      detail: isOutOfStock ? t('product_details.ui.k9r9l2x') : (currentStock <= 20 ? t('product_details.ui.k2fump3') : t('product_details.ui.ka6xbvk')),
     },
     {
       key: 'signal',
       icon: MessageCircle,
-      title: 'إشارة الثقة',
-      value: topReviewSignal || (latestReviewDate ? 'آخر مراجعة مؤكدة' : 'طلب مباشر كضيف'),
+      title: t('product_details.ui.keysw5'),
+      value: topReviewSignal || (latestReviewDate ? t('product_details.ui.k8t1hl2') : t('product_details.ui.kkl4mzy')),
       detail: topReviewSignal
-        ? 'أكثر ما يتكرر داخل آراء العملاء'
-        : (latestReviewDate ? `آخر مراجعة بتاريخ ${latestReviewDate}` : 'يمكنك إتمام الطلب بدون إنشاء حساب'),
+        ? t('product_details.ui.kmucsj5') : (latestReviewDate ? `آخر مراجعة بتاريخ ${latestReviewDate}` : t('product_details.ui.ki6qeay')),
     },
   ];
 
@@ -545,7 +548,7 @@ export default function ProductDetails() {
               className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 font-bold text-white shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:h-11 sm:w-auto sm:flex-shrink-0 sm:px-6"
             >
               <ShoppingCart className="w-4 h-4" />
-              أضف للسلة
+              {t('product_details.ui.kwsmbc6')}
             </button>
           </div>
         </div>
@@ -553,9 +556,9 @@ export default function ProductDetails() {
 
       {/* ─── Breadcrumbs ─── */}
       <nav className="mb-6 flex flex-wrap items-center gap-2 pt-4 text-sm text-gray-400 sm:mb-8" aria-label="breadcrumb">
-        <Link to={storefrontPath('/')} className="hover:text-primary-600 transition-colors font-medium">الرئيسية</Link>
+        <Link to={storefrontPath('/')} className="hover:text-primary-600 transition-colors font-medium">{t('product_details.ui.kx2j17e')}</Link>
         <ChevronLeft className="w-4 h-4 flex-shrink-0" />
-        <Link to={storefrontPath('/products')} className="hover:text-primary-600 transition-colors font-medium">المنتجات</Link>
+        <Link to={storefrontPath('/products')} className="hover:text-primary-600 transition-colors font-medium">{t('product_details.ui.ks0nri5')}</Link>
         {product.category && (
           <>
             <ChevronLeft className="w-4 h-4 flex-shrink-0" />
@@ -590,7 +593,7 @@ export default function ProductDetails() {
             )}
             {isOutOfStock && (
               <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 transition-all duration-300">
-                <div className="bg-red-500 text-white px-8 py-3 rounded-full font-black text-xl shadow-[0_8px_30px_rgb(239,68,68,0.3)] -rotate-6 transform hover:scale-105 transition-transform duration-300">نفذت الكمية</div>
+                <div className="bg-red-500 text-white px-8 py-3 rounded-full font-black text-xl shadow-[0_8px_30px_rgb(239,68,68,0.3)] -rotate-6 transform hover:scale-105 transition-transform duration-300">{t('product_details.ui.kuw1l5')}</div>
               </div>
             )}
             <div className="absolute top-4 right-4 bg-white/80 dark:bg-black/60 backdrop-blur-md text-gray-700 dark:text-gray-200 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-sm">
@@ -618,10 +621,15 @@ export default function ProductDetails() {
             <h3 className="text-xl font-black mb-5 flex items-center gap-3 text-gray-900 dark:text-white">
               <span className="w-1.5 h-6 bg-gradient-to-b from-primary-400 to-primary-600 rounded-full" />وصف المنتج
             </h3>
+            {(() => {
+              const fallbackDescription = `<p>${t('product_details.ui.k6kxkkx')}</p>`;
+              return (
             <div
               className="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed app-surface p-8 rounded-[2rem] border border-gray-100/80 dark:border-white/10 shadow-[0_2px_10px_rgb(0,0,0,0.02)]"
-              dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف متاح لهذا المنتج.</p>' }}
+              dangerouslySetInnerHTML={{ __html: product.description || fallbackDescription }}
             />
+              );
+            })()}
           </div>
         </div>
 
@@ -647,7 +655,7 @@ export default function ProductDetails() {
                   <div className="absolute left-0 top-full mt-2 app-surface rounded-2xl shadow-xl border border-gray-100/80 dark:border-white/10 p-2 min-w-[200px] z-30 animate-fade-in origin-top-left">
                     <button onClick={copyLink} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-bold transition-colors">
                       {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
-                      {copied ? 'تم النسخ!' : 'انسخ الرابط'}
+                      {copied ? t('product_details.ui.kn8v75q') : 'انسخ الرابط'}
                     </button>
                     <button onClick={whatsappShare} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 text-sm font-bold transition-colors">
                       <MessageCircle className="w-4 h-4" /> شارك واتساب
@@ -671,7 +679,7 @@ export default function ProductDetails() {
                   <span className="text-amber-500 font-black">{reviewsStats.avgRating?.toFixed(1) || '0.0'}</span>
                   ({reviewsStats.total} تقييم)
                 </button>
-              ) : <span className="text-sm font-medium text-gray-400">لا يوجد تقييمات</span>}
+              ) : <span className="text-sm font-medium text-gray-400">{t('product_details.ui.kmcsusy')}</span>}
             </div>
 
             {(product.sku || product.barcode) && (
@@ -688,10 +696,10 @@ export default function ProductDetails() {
             {/* Price */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 relative">
               <div className="flex-1">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 font-bold uppercase tracking-wider">السعر الإجمالي</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 font-bold uppercase tracking-wider">{t('product_details.ui.kphkazm')}</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent tracking-tighter tabular-nums leading-none pb-1">{currentPrice.toLocaleString('en-US')}</span>
-                  <span className="text-xl font-bold text-gray-400">ج.م</span>
+                  <span className="text-xl font-bold text-gray-400">{t('product_details.ui.kwlxf')}</span>
                 </div>
                 {product.compareAtPrice > currentPrice && (
                   <div className="flex items-center gap-2 mt-2">
@@ -702,13 +710,13 @@ export default function ProductDetails() {
                   </div>
                 )}
                 {product.taxable && (
-                  <p className="text-xs font-bold text-gray-400 mt-1.5 app-surface-muted w-fit px-2 py-0.5 rounded-md">{product.priceIncludesTax ? 'السعر شامل الضريبة' : `تُضاف ضريبة بنسبة ${product.taxRate}%`}</p>
+                  <p className="text-xs font-bold text-gray-400 mt-1.5 app-surface-muted w-fit px-2 py-0.5 rounded-md">{product.priceIncludesTax ? t('product_details.ui.kneuu47') : `تُضاف ضريبة بنسبة ${product.taxRate}%`}</p>
                 )}
               </div>
 
               <div className={`sm:absolute top-0 left-0 text-center px-5 py-3 rounded-2xl min-w-[100px] border ${isOutOfStock ? 'bg-red-50 dark:bg-red-900/10 border-red-100' : 'bg-green-50 dark:bg-green-900/10 border-green-100'}`}>
                 <span className={`block text-3xl font-black ${isOutOfStock ? 'text-red-500' : 'text-green-600'}`}>{isOutOfStock ? '0' : currentStock}</span>
-                <span className={`text-xs font-bold uppercase tracking-widest ${isOutOfStock ? 'text-red-400' : 'text-green-600'}`}>{isOutOfStock ? 'نفذت الكمية' : 'متاح للطلب'}</span>
+                <span className={`text-xs font-bold uppercase tracking-widest ${isOutOfStock ? 'text-red-400' : 'text-green-600'}`}>{isOutOfStock ? t('product_details.ui.kuw1l5') : 'متاح للطلب'}</span>
               </div>
             </div>
 
@@ -753,9 +761,9 @@ export default function ProductDetails() {
             {product.hasVariants && product.variants?.length > 0 && (
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-black text-gray-900 dark:text-white">اختر المواصفات المتاحة:</label>
+                  <label className="text-sm font-black text-gray-900 dark:text-white">{t('product_details.ui.kd3ifqj')}</label>
                   {selectedVariant && (
-                    <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">تم الاختيار</span>
+                    <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">{t('product_details.ui.kkbcxlf')}</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -782,7 +790,7 @@ export default function ProductDetails() {
             {/* Variant Description Component */}
             {selectedVariant?.description && (
               <div className="p-4 app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 space-y-2 mt-2">
-                <span className="text-xs font-black text-primary-600 block">تفاصيل الموديل المُحدد:</span>
+                <span className="text-xs font-black text-primary-600 block">{t('product_details.ui.kf7fyxg')}</span>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedVariant.description}</p>
               </div>
             )}
@@ -808,7 +816,7 @@ export default function ProductDetails() {
                       >
                         <div className="flex items-center justify-center gap-3">
                           <ShoppingCart className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
-                          <span className="font-black tracking-wide">أضف إلى السلة</span>
+                          <span className="font-black tracking-wide">{t('product_details.ui.k86m0wj')}</span>
                         </div>
                       </Button>
                       <button
@@ -846,7 +854,7 @@ export default function ProductDetails() {
                       onClick={handleBuyNow}
                       className="w-full h-14 rounded-2xl border-2 border-primary-200 bg-primary-50/50 text-primary-700 font-bold hover:bg-primary-100 hover:border-primary-300 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                      <span className="tracking-wide">اشتري الآن بسرعة</span>
+                      <span className="tracking-wide">{t('product_details.ui.ku0hq1r')}</span>
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                   )}
@@ -855,7 +863,7 @@ export default function ProductDetails() {
                 <div className="space-y-4">
                   <div className="w-full py-5 rounded-2xl bg-gray-50 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 flex flex-col items-center justify-center gap-2 cursor-not-allowed">
                     <Package className="w-6 h-6 text-gray-400" />
-                    <span className="text-gray-500 font-black">المنتج غير متوفر حالياً بالمخزون</span>
+                    <span className="text-gray-500 font-black">{t('product_details.ui.krg4zxq')}</span>
                   </div>
                   {/* C2 — Notify Me When Back In Stock */}
                   {!isPortal && (
@@ -865,8 +873,8 @@ export default function ProductDetails() {
                           <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
                             <Check className="w-6 h-6" />
                           </div>
-                          <p className="font-bold text-gray-900 dark:text-gray-100">تم تسجيل طلبك للمتابعة</p>
-                          <p className="text-sm text-gray-500">سيصلك إشعار فور توفر المنتج لدينا!</p>
+                          <p className="font-bold text-gray-900 dark:text-gray-100">{t('product_details.ui.k9eqe56')}</p>
+                          <p className="text-sm text-gray-500">{t('product_details.ui.kauxft8')}</p>
                         </div>
                       ) : (
                         <>
@@ -874,14 +882,14 @@ export default function ProductDetails() {
                             <h4 className="font-black text-gray-900 dark:text-gray-100 mb-1 flex items-center justify-center gap-2">
                               <Bell className="w-5 h-5 text-primary-500" /> أعلمني عند التوفر
                             </h4>
-                            <p className="text-sm text-gray-500">لا تفوت الفرصة، سجل بياناتك لنخبرك مسبقاً</p>
+                            <p className="text-sm text-gray-500">{t('product_details.ui.km97jef')}</p>
                           </div>
                           <div className="grid gap-3 sm:grid-cols-2 pt-2">
                             <input
                               type="email"
                               value={notifyEmail}
                               onChange={(e) => setNotifyEmail(e.target.value)}
-                              placeholder="البريد الإلكتروني"
+                              placeholder={t('product_details.placeholders.k8lvosz')}
                               className="w-full rounded-xl border-gray-200 bg-white placeholder:text-gray-400 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-gray-700 dark:bg-gray-900 shadow-sm transition-shadow hover:shadow-md"
                               dir="rtl"
                             />
@@ -889,7 +897,7 @@ export default function ProductDetails() {
                               type="tel"
                               value={notifyPhone}
                               onChange={(e) => setNotifyPhone(e.target.value)}
-                              placeholder="رقم واتساب للمراسلة"
+                              placeholder={t('product_details.placeholders.k9d1jzc')}
                               className="w-full rounded-xl border-gray-200 bg-white placeholder:text-gray-400 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-gray-700 dark:bg-gray-900 shadow-sm transition-shadow hover:shadow-md"
                               dir="rtl"
                             />
@@ -916,7 +924,7 @@ export default function ProductDetails() {
                 className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 active:scale-[0.98] text-white font-bold transition-all shadow-[0_8px_20px_rgb(16,185,129,0.25)] border-none"
               >
                 <MessageCircle className="w-5 h-5 fill-white" />
-                <span className="tracking-wide text-lg">اطلب وتواصل بالواتساب</span>
+                <span className="tracking-wide text-lg">{t('product_details.ui.kq4hy8a')}</span>
               </button>
             )}
 
@@ -927,7 +935,7 @@ export default function ProductDetails() {
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-red-500 mb-0.5">تاريخ الصلاحية</p>
+                  <p className="text-xs font-bold text-red-500 mb-0.5">{t('product_details.ui.koj289l')}</p>
                   <p className="text-sm font-black font-mono tracking-wider">{new Date(product.expiryDate).toLocaleDateString('en-GB')}</p>
                 </div>
               </div>
@@ -948,7 +956,7 @@ export default function ProductDetails() {
           </h3>
           <div
             className="prose prose-lg dark:prose-invert max-w-none rounded-[2rem] border border-gray-100 bg-white p-5 text-gray-600 leading-relaxed dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-300 sm:p-8"
-            dangerouslySetInnerHTML={{ __html: product.description || '<p>لا يوجد وصف متاح لهذا المنتج.</p>' }}
+            dangerouslySetInnerHTML={{ __html: product.description || `<p>${t('product_details.ui.k6kxkkx')}</p>` }}
           />
         </div>
 
@@ -967,19 +975,19 @@ export default function ProductDetails() {
           {sortedReviews.length > 0 && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                <p className="text-[11px] font-black text-amber-700">متوسط التقييم</p>
+                <p className="text-[11px] font-black text-amber-700">{t('product_details.ui.koq4l9z')}</p>
                 <p className="mt-1 text-2xl font-black text-amber-900">{reviewsStats.avgRating?.toFixed(1) || '0.0'} / 5</p>
                 <p className="mt-1 text-xs font-medium text-amber-700">{reviewsStats.total} تقييم فعلي</p>
               </div>
               <div className="rounded-2xl border border-primary-100 bg-primary-50 p-4">
-                <p className="text-[11px] font-black text-primary-700">آخر تقييم</p>
-                <p className="mt-1 text-base font-black text-primary-900">{latestReviewDate || 'لا يوجد بعد'}</p>
-                <p className="mt-1 text-xs font-medium text-primary-700">أحدث آراء العملاء تظهر أولًا</p>
+                <p className="text-[11px] font-black text-primary-700">{t('product_details.ui.kn1qvqq')}</p>
+                <p className="mt-1 text-base font-black text-primary-900">{latestReviewDate || t('product_details.toasts.kbww4jo')}</p>
+                <p className="mt-1 text-xs font-medium text-primary-700">{t('product_details.ui.k116e11')}</p>
               </div>
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                <p className="text-[11px] font-black text-emerald-700">أكثر ما يذكره العملاء</p>
-                <p className="mt-1 text-base font-black text-emerald-900">{topReviewSignal || 'تجربة شراء جيدة'}</p>
-                <p className="mt-1 text-xs font-medium text-emerald-700">إشارة ثقة متكررة داخل المراجعات</p>
+                <p className="text-[11px] font-black text-emerald-700">{t('product_details.ui.km1tjqc')}</p>
+                <p className="mt-1 text-base font-black text-emerald-900">{topReviewSignal || t('product_details.toasts.kw324pb')}</p>
+                <p className="mt-1 text-xs font-medium text-emerald-700">{t('product_details.ui.k9exsq5')}</p>
               </div>
             </div>
           )}
@@ -988,7 +996,7 @@ export default function ProductDetails() {
               {highlightedReviews.map((review) => (
                 <div key={`highlight-${review._id}`} className="rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-black text-gray-500">{review.customer?.name || 'عميل'}</span>
+                    <span className="text-xs font-black text-gray-500">{review.customer?.name || t('product_details.toasts.kt7bza')}</span>
                     <div className="flex">{[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />)}</div>
                   </div>
                   <p className="mt-2 text-sm font-bold text-gray-800 dark:text-gray-100 line-clamp-3">{review.title || review.body}</p>
@@ -1002,7 +1010,7 @@ export default function ProductDetails() {
                 <div key={r._id} className="p-4 app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <span className="font-bold text-sm text-gray-900 dark:text-white">{r.customer?.name || 'مستخدم'}</span>
+                      <span className="font-bold text-sm text-gray-900 dark:text-white">{r.customer?.name || t('product_details.toasts.k3mlk94')}</span>
                       <div className="flex mt-0.5">{[...Array(5)].map((_, i) => <Star key={i} className={`w-3 h-3 ${i < r.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />)}</div>
                     </div>
                     <span className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</span>
@@ -1011,7 +1019,7 @@ export default function ProductDetails() {
                   <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{r.body}</p>
                   {r.reply && (
                     <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border-r-4 border-primary-500">
-                      <span className="text-xs font-black text-primary-600 block mb-1">رد المتجر</span>
+                      <span className="text-xs font-black text-primary-600 block mb-1">{t('product_details.ui.ke81wtz')}</span>
                       <p className="text-xs text-gray-500 leading-relaxed">{r.reply.body}</p>
                     </div>
                   )}
@@ -1021,8 +1029,8 @@ export default function ProductDetails() {
           ) : (
             <div className="text-center py-10 app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10">
               <Star className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-              <p className="text-gray-500 font-bold">لا توجد تقييمات حتى الآن</p>
-              <p className="text-sm text-gray-400">سجل دخول لكتابة رايك وتقيمك عن المنتج والبائع</p>
+              <p className="text-gray-500 font-bold">{t('product_details.ui.kt0255')}</p>
+              <p className="text-sm text-gray-400">{t('product_details.ui.kdg51ao')}</p>
             </div>
           )}
         </div>
@@ -1032,7 +1040,7 @@ export default function ProductDetails() {
       {relatedProducts.length > 0 && (
         <section className="mt-16 pt-10 border-t border-gray-100/80 dark:border-white/10 animate-fade-in">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white">منتجات قد تعجبك</h2>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white">{t('product_details.ui.k86mhhb')}</h2>
             <Link to={isPortal ? '/portal/products' : storefrontPath('/products')} className="text-sm font-bold text-primary-600 hover:text-primary-500 flex items-center gap-1">
               عرض الكل <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -1060,7 +1068,7 @@ export default function ProductDetails() {
                   <div className="p-3">
                     <p className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 transition-colors">{p.name}</p>
                     <span className="mt-2 inline-flex w-fit rounded-full bg-primary-50 px-2 py-1 text-[10px] font-black text-primary-700">
-                      {getCrossSellReason(product, p)}
+                      {t(getCrossSellReason(product, p))}
                     </span>
                     <p className="text-primary-600 font-black text-sm mt-1">{p.price?.toLocaleString()} ج.م</p>
                   </div>
@@ -1075,7 +1083,7 @@ export default function ProductDetails() {
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4" />
-                        {p.hasVariants ? 'عرض التفاصيل' : 'أضفه مع الطلب'}
+                        {p.hasVariants ? t('product_details.ui.k3y9kzm') : 'أضفه مع الطلب'}
                       </>
                     )}
                   </button>
@@ -1091,7 +1099,7 @@ export default function ProductDetails() {
         <section className="mt-12 animate-fade-in">
           <h2 className="text-xl font-black text-gray-900 dark:text-white mb-5 flex items-center gap-2">
             <span className="w-1 h-5 bg-gray-300 dark:bg-gray-600 rounded-full" />
-            شاهدته مؤخراً
+            {t('product_details.ui.kh91o1e')}
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-3 no-scrollbar">
             {recentlyViewed.map(p => (

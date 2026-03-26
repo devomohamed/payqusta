@@ -3,23 +3,24 @@ import { Badge, Button, EmptyState, Input, LoadingSpinner, Modal, Select, TextAr
 import { superAdminApi } from '../store';
 import toast from 'react-hot-toast';
 import { Building2, ExternalLink, Inbox, MessageSquareText, Search, Sparkles, UserRound } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const statusOptions = [
-  { value: 'all', label: 'كل الحالات' },
-  { value: 'new', label: 'جديدة' },
-  { value: 'contacted', label: 'تم التواصل' },
-  { value: 'qualified', label: 'مؤهلة' },
-  { value: 'closed', label: 'مغلقة' },
+  { value: 'all', label: t('public_leads_page.ui.k8ylak1') },
+  { value: 'new', label: t('public_leads_page.ui.koxryo1') },
+  { value: 'contacted', label: t('public_leads_page.ui.kaqqisq') },
+  { value: 'qualified', label: t('public_leads_page.ui.kpbbqx9') },
+  { value: 'closed', label: t('public_leads_page.ui.kpbpqd2') },
   { value: 'spam', label: 'Spam' },
 ];
 
 const requestTypeOptions = [
-  { value: 'all', label: 'كل الأنواع' },
-  { value: 'demo', label: 'طلب ديمو' },
-  { value: 'pricing', label: 'استفسار أسعار' },
-  { value: 'migration', label: 'ترحيل / نقل بيانات' },
-  { value: 'partnership', label: 'شراكة' },
-  { value: 'general', label: 'استفسار عام' },
+  { value: 'all', label: t('public_leads_page.ui.k8tn86z') },
+  { value: 'demo', label: t('public_leads_page.ui.kuszvul') },
+  { value: 'pricing', label: t('public_leads_page.ui.k2dl9mb') },
+  { value: 'migration', label: t('public_leads_page.ui.k3y1l9') },
+  { value: 'partnership', label: t('public_leads_page.ui.kp26vww') },
+  { value: 'general', label: t('public_leads_page.ui.kf2wbfz') },
 ];
 
 const statusBadgeVariant = {
@@ -31,22 +32,23 @@ const statusBadgeVariant = {
 };
 
 const statusLabel = {
-  new: 'جديدة',
-  contacted: 'تم التواصل',
-  qualified: 'مؤهلة',
-  closed: 'مغلقة',
+  new: t('public_leads_page.ui.koxryo1'),
+  contacted: t('public_leads_page.ui.kaqqisq'),
+  qualified: t('public_leads_page.ui.kpbbqx9'),
+  closed: t('public_leads_page.ui.kpbpqd2'),
   spam: 'Spam',
 };
 
 const typeLabel = {
-  demo: 'طلب ديمو',
-  pricing: 'استفسار أسعار',
-  migration: 'ترحيل / نقل بيانات',
-  partnership: 'شراكة',
-  general: 'استفسار عام',
+  demo: t('public_leads_page.ui.kuszvul'),
+  pricing: t('public_leads_page.ui.k2dl9mb'),
+  migration: t('public_leads_page.ui.k3y1l9'),
+  partnership: t('public_leads_page.ui.kp26vww'),
+  general: t('public_leads_page.ui.kf2wbfz'),
 };
 
 export default function PublicLeadsPage() {
+  const { t } = useTranslation('admin');
   const [leads, setLeads] = useState([]);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export default function PublicLeadsPage() {
       setLeads(res.data?.data?.leads || []);
       setStats(res.data?.data?.stats || []);
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'تعذر تحميل طلبات الموقع');
+      toast.error(error?.response?.data?.message || t('public_leads_page.toasts.k1wn5kj'));
     } finally {
       setLoading(false);
     }
@@ -109,11 +111,11 @@ export default function PublicLeadsPage() {
         status: editStatus,
         internalNotes: editNotes,
       });
-      toast.success('تم تحديث الطلب');
+      toast.success(t('public_leads_page.toasts.k3adq2'));
       setSelectedLead(null);
       fetchLeads();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'تعذر تحديث الطلب');
+      toast.error(error?.response?.data?.message || t('public_leads_page.toasts.kgoem63'));
     } finally {
       setSaving(false);
     }
@@ -129,9 +131,9 @@ export default function PublicLeadsPage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-500/80">Lead Intake Desk</p>
-              <h1 className="text-2xl font-black text-gray-900 dark:text-white">طلبات الموقع العامة</h1>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white">{t('public_leads_page.ui.kx3pduy')}</h1>
               <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
-                كل الطلبات القادمة من صفحة التواصل العامة: ديمو، أسعار، ترحيل، أو استفسارات مباشرة قبل التسجيل.
+                {t('public_leads_page.ui.kyq1ynr')}
               </p>
             </div>
           </div>
@@ -141,11 +143,11 @@ export default function PublicLeadsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="ابحث بالاسم أو البريد أو النشاط"
+                placeholder={t('public_leads_page.placeholders.kgqacof')}
               />
             </div>
             <Button type="submit" variant="outline" icon={<Search className="h-4 w-4" />} className="w-full sm:w-auto">
-              بحث
+              {t('public_leads_page.ui.search')}
             </Button>
           </form>
         </div>
@@ -153,10 +155,10 @@ export default function PublicLeadsPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {[
-          { key: 'new', label: 'جديدة', value: statsMap.new, tone: 'text-amber-600' },
-          { key: 'contacted', label: 'تم التواصل', value: statsMap.contacted, tone: 'text-blue-600' },
-          { key: 'qualified', label: 'مؤهلة', value: statsMap.qualified, tone: 'text-emerald-600' },
-          { key: 'closed', label: 'مغلقة', value: statsMap.closed, tone: 'text-slate-600' },
+          { key: 'new', label: t('public_leads_page.ui.koxryo1'), value: statsMap.new, tone: 'text-amber-600' },
+          { key: 'contacted', label: t('public_leads_page.ui.kaqqisq'), value: statsMap.contacted, tone: 'text-blue-600' },
+          { key: 'qualified', label: t('public_leads_page.ui.kpbbqx9'), value: statsMap.qualified, tone: 'text-emerald-600' },
+          { key: 'closed', label: t('public_leads_page.ui.kpbpqd2'), value: statsMap.closed, tone: 'text-slate-600' },
           { key: 'spam', label: 'Spam', value: statsMap.spam, tone: 'text-rose-600' },
         ].map((item) => (
           <div key={item.key} className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-5 shadow-sm">
@@ -179,7 +181,7 @@ export default function PublicLeadsPage() {
       ) : leads.length === 0 ? (
         <EmptyState
           icon={<Inbox />}
-          title="لا توجد طلبات مطابقة"
+          title={t('public_leads_page.titles.katoxb2')}
           description="لم يصل أي طلب يطابق عوامل التصفية الحالية، أو لم تُرسل طلبات من صفحة التواصل بعد."
         />
       ) : (
@@ -198,12 +200,12 @@ export default function PublicLeadsPage() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">النشاط</p>
+                    <p className="text-[11px] text-gray-400">{t('public_leads_page.ui.kaawllx')}</p>
                     <p className="mt-1 font-semibold text-gray-800 dark:text-gray-100">{lead.businessName || '-'}</p>
                     <p className="mt-1 text-xs text-gray-500">{lead.teamSize || 'unknown'}</p>
                   </div>
                   <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">النوع</p>
+                    <p className="text-[11px] text-gray-400">{t('public_leads_page.ui.kovec2i')}</p>
                     <div className="mt-1">
                       <Badge variant="info">{typeLabel[lead.requestType] || lead.requestType}</Badge>
                     </div>
@@ -211,7 +213,7 @@ export default function PublicLeadsPage() {
                 </div>
 
                 <div className="mt-3 rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                  <p className="text-[11px] text-gray-400">الرسالة</p>
+                  <p className="text-[11px] text-gray-400">{t('public_leads_page.ui.kzfxe31')}</p>
                   <p className="mt-1 line-clamp-4 text-sm leading-7 text-gray-600 dark:text-gray-300">{lead.message}</p>
                 </div>
 
@@ -222,7 +224,7 @@ export default function PublicLeadsPage() {
 
                 <div className="mt-4">
                   <Button size="sm" variant="outline" onClick={() => openLead(lead)} icon={<ExternalLink className="h-4 w-4" />} className="w-full">
-                    عرض وتحديث
+                    {t('public_leads_page.ui.k2ajkpl')}
                   </Button>
                 </div>
               </div>
@@ -233,13 +235,13 @@ export default function PublicLeadsPage() {
             <table className="w-full min-w-[980px] text-right text-sm">
               <thead className="app-surface-muted">
                 <tr>
-                  <th className="px-5 py-4 font-bold text-gray-500">المرسل</th>
-                  <th className="px-5 py-4 font-bold text-gray-500">النشاط</th>
-                  <th className="px-5 py-4 font-bold text-gray-500">النوع</th>
-                  <th className="px-5 py-4 font-bold text-gray-500">الرسالة</th>
-                  <th className="px-5 py-4 font-bold text-gray-500">التاريخ</th>
-                  <th className="px-5 py-4 font-bold text-gray-500">الحالة</th>
-                  <th className="px-5 py-4 font-bold text-gray-500">الإجراء</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kaaxaiu')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kaawllx')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kovec2i')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kzfxe31')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kzbvdnf')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kabct8k')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500">{t('public_leads_page.ui.kz97krr')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -272,7 +274,7 @@ export default function PublicLeadsPage() {
                     </td>
                     <td className="px-5 py-4 align-top">
                       <Button size="sm" variant="outline" onClick={() => openLead(lead)} icon={<ExternalLink className="h-4 w-4" />}>
-                        عرض وتحديث
+                        {t('public_leads_page.ui.k2ajkpl')}
                       </Button>
                     </td>
                   </tr>
@@ -283,7 +285,7 @@ export default function PublicLeadsPage() {
         </div>
       )}
 
-      <Modal open={!!selectedLead} onClose={() => setSelectedLead(null)} title="تفاصيل طلب الموقع" size="lg">
+      <Modal open={!!selectedLead} onClose={() => setSelectedLead(null)} title={t('public_leads_page.titles.kl6s66b')} size="lg">
         {selectedLead && (
           <div className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
@@ -294,7 +296,7 @@ export default function PublicLeadsPage() {
                 </div>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{selectedLead.email}</p>
                 {selectedLead.phone && <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{selectedLead.phone}</p>}
-                <p className="mt-1 text-xs text-gray-500">{selectedLead.businessName || 'بدون اسم نشاط واضح'}</p>
+                <p className="mt-1 text-xs text-gray-500">{selectedLead.businessName || t('public_leads_page.toasts.kwvub92')}</p>
               </div>
               <div className="app-surface-muted rounded-2xl border border-gray-100/80 dark:border-white/10 p-4">
                 <div className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
@@ -310,29 +312,29 @@ export default function PublicLeadsPage() {
             <div className="app-surface rounded-2xl border border-gray-100/80 dark:border-white/10 p-4">
               <div className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white">
                 <MessageSquareText className="h-4 w-4 text-emerald-500" />
-                الرسالة
+                {t('public_leads_page.ui.kzfxe31')}
               </div>
               <p className="mt-3 whitespace-pre-line text-sm leading-8 text-gray-600 dark:text-gray-300">{selectedLead.message}</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Select label="الحالة" value={editStatus} onChange={(e) => setEditStatus(e.target.value)} options={statusOptions.filter((item) => item.value !== 'all')} />
+              <Select label={t('public_leads_page.form.kabct8k')} value={editStatus} onChange={(e) => setEditStatus(e.target.value)} options={statusOptions.filter((item) => item.value !== 'all')} />
               <div className="rounded-2xl border border-gray-100 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-600 dark:border-gray-800 dark:bg-slate-900/40 dark:text-slate-300">
                 آخر تواصل: {selectedLead.lastContactedAt ? new Date(selectedLead.lastContactedAt).toLocaleString('ar-EG') : 'لم يتم بعد'}
               </div>
             </div>
 
             <TextArea
-              label="ملاحظات داخلية"
+              label={t('public_leads_page.form.kvku3rd')}
               rows={6}
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
-              placeholder="اكتب خلاصة التقييم أو المتابعة أو الخطوة التالية مع هذا الطلب"
+              placeholder={t('public_leads_page.placeholders.kpxeaug')}
             />
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => setSelectedLead(null)}>إغلاق</Button>
-              <Button onClick={handleSave} loading={saving}>حفظ التحديث</Button>
+              <Button variant="ghost" onClick={() => setSelectedLead(null)}>{t('public_leads_page.ui.close')}</Button>
+              <Button onClick={handleSave} loading={saving}>{t('public_leads_page.ui.ke7xmrw')}</Button>
             </div>
           </div>
         )}

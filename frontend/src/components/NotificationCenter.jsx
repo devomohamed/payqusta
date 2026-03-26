@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { X, Bell, Check, Trash2, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../store';
 import toast from 'react-hot-toast';
 import { EmptyState, LoadingSpinner } from './UI';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('admin');
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
       const { data } = await api.get(`/notifications${params}`);
       setNotifications(data.data || []);
     } catch (error) {
-      toast.error('فشل تحميل الإشعارات');
+      toast.error(t('notification_center.toasts.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
         notification._id === id ? { ...notification, isRead: true } : notification
       )));
     } catch (error) {
-      toast.error('فشل تحديث الحالة');
+      toast.error(t('notification_center.toasts.status_update_failed'));
     }
   };
 
@@ -46,9 +48,9 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     try {
       await api.patch('/notifications/read-all');
       setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
-      toast.success('تم تحديد الكل كمقروء');
+      toast.success(t('notification_center.toasts.mark_all_success'));
     } catch (error) {
-      toast.error('فشل التحديث');
+      toast.error(t('notification_center.toasts.update_failed'));
     }
   };
 
@@ -56,9 +58,9 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     try {
       await api.delete(`/notifications/${id}`);
       setNotifications((prev) => prev.filter((notification) => notification._id !== id));
-      toast.success('تم الحذف');
+      toast.success(t('notification_center.toasts.delete_success'));
     } catch (error) {
-      toast.error('فشل الحذف');
+      toast.error(t('notification_center.toasts.delete_failed'));
     }
   };
 
@@ -90,7 +92,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bell className="text-blue-600" size={22} />
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white sm:text-xl">الإشعارات</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white sm:text-xl">{t('notification_center.title')}</h2>
                 {unreadCount > 0 && (
                   <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
                     {unreadCount}
@@ -114,7 +116,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                     : 'app-surface-muted text-gray-700 dark:text-gray-300'
                 }`}
               >
-                الكل
+                {t('notification_center.filters.all')}
               </button>
               <button
                 onClick={() => setFilter('unread')}
@@ -124,11 +126,11 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                     : 'app-surface-muted text-gray-700 dark:text-gray-300'
                 }`}
               >
-                غير مقروء
+                {t('notification_center.filters.unread')}
               </button>
               {unreadCount > 0 && (
                 <button onClick={markAllAsRead} className="mr-auto text-xs font-medium text-blue-600 hover:text-blue-700 sm:text-sm">
-                  تحديد الكل كمقروء
+                  {t('notification_center.actions.mark_all_read')}
                 </button>
               )}
             </div>
@@ -136,13 +138,13 @@ const NotificationCenter = ({ isOpen, onClose }) => {
 
           <div className="flex-1 space-y-2 overflow-y-auto p-4">
             {loading ? (
-              <LoadingSpinner size="lg" text="جارٍ تحميل الإشعارات..." className="h-full" />
+              <LoadingSpinner size="lg" text={t('notification_center.loading')} className="h-full" />
             ) : notifications.length === 0 ? (
               <EmptyState
                 icon={Bell}
-                title="لا توجد إشعارات"
-                description={filter === 'unread' ? 'لا توجد إشعارات غير مقروءة حاليًا.' : 'ستظهر إشعاراتك هنا عند وصول جديد.'}
-                action={filter === 'unread' ? { label: 'عرض الكل', onClick: () => setFilter('all') } : null}
+                title={t('notification_center.empty.title')}
+                description={filter === 'unread' ? t('notification_center.empty.unread_description') : t('notification_center.empty.all_description')}
+                action={filter === 'unread' ? { label: t('notification_center.empty.show_all'), onClick: () => setFilter('all') } : null}
                 className="h-full py-0"
               />
             ) : (
@@ -183,11 +185,11 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                       </p>
                       <div className="mt-2 flex items-center justify-between">
                         <p className="text-[11px] text-gray-400">
-                          {new Date(notification.createdAt).toLocaleString('ar-EG')}
+                          {new Date(notification.createdAt).toLocaleString(i18n.language === 'ar' ? 'ar-EG' : 'en-US')}
                         </p>
                         {notification.link && (
                           <span className="flex items-center gap-0.5 text-[11px] text-blue-500 opacity-70">
-                            فتح <ChevronLeft size={12} />
+                            {t('notification_center.actions.open')} <ChevronLeft size={12} />
                           </span>
                         )}
                       </div>
@@ -201,7 +203,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                             markAsRead(notification._id);
                           }}
                           className="rounded-lg p-1.5 text-green-600 transition-colors hover:bg-green-50 dark:hover:bg-green-500/10"
-                          title="تحديد كمقروء"
+                          title={t('notification_center.actions.mark_read')}
                         >
                           <Check size={16} />
                         </button>
@@ -212,7 +214,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                           deleteNotification(notification._id);
                         }}
                         className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
-                        title="حذف"
+                        title={t('notification_center.actions.delete')}
                       >
                         <Trash2 size={16} />
                       </button>

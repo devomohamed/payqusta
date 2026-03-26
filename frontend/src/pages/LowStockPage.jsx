@@ -3,6 +3,7 @@ import { AlertTriangle, Building2, MessageCircle, Package, Phone, RefreshCw, Sen
 import toast from 'react-hot-toast';
 import { productsApi } from '../store';
 import { Badge, Button, Card, EmptyState, LoadingSpinner } from '../components/UI';
+import { useTranslation } from 'react-i18next';
 
 function getStockStatus(product) {
   const qty = Number(product?.stock?.quantity) || 0;
@@ -17,6 +18,7 @@ function getNeededQuantity(product) {
 }
 
 export default function LowStockPage() {
+  const { t } = useTranslation('admin');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingOrders, setSendingOrders] = useState({});
@@ -28,7 +30,7 @@ export default function LowStockPage() {
       const res = await productsApi.getLowStock();
       setProducts(res?.data?.data || []);
     } catch (error) {
-      toast.error('حدث خطأ أثناء تحميل المنتجات منخفضة المخزون');
+      toast.error(t('low_stock_page.toasts.kfzsiij'));
       setProducts([]);
     } finally {
       setLoading(false);
@@ -41,7 +43,7 @@ export default function LowStockPage() {
 
   const handleRequestRestock = async (product) => {
     if (!product?.supplier) {
-      toast.error('هذا المنتج ليس له مورد محدد');
+      toast.error(t('low_stock_page.toasts.kye82yj'));
       return;
     }
 
@@ -54,10 +56,10 @@ export default function LowStockPage() {
       if (res?.data?.data?.success) {
         toast.success(`تم إرسال طلب ${needed} قطعة من "${product.name}" للمورد`);
       } else {
-        toast.success('تم تجهيز طلب إعادة التخزين لكن قناة الإرسال غير متصلة حالياً');
+        toast.success(t('low_stock_page.toasts.k6e9kmz'));
       }
     } catch (error) {
-      toast.error('فشل إرسال طلب إعادة التخزين');
+      toast.error(t('low_stock_page.toasts.kit9wvq'));
     } finally {
       setSendingOrders((prev) => ({ ...prev, [product._id]: false }));
     }
@@ -66,7 +68,7 @@ export default function LowStockPage() {
   const handleBulkRestock = async () => {
     const productsWithSuppliers = products.filter((product) => product?.supplier);
     if (productsWithSuppliers.length === 0) {
-      toast.error('لا توجد منتجات مرتبطة بموردين');
+      toast.error(t('low_stock_page.toasts.ko1x255'));
       return;
     }
 
@@ -79,10 +81,10 @@ export default function LowStockPage() {
         const successful = data.results.filter((entry) => entry.success).length;
         toast.success(`تم إرسال ${data.totalProducts || productsWithSuppliers.length} طلب إلى ${successful}/${data.totalSuppliers || 0} مورد`);
       } else {
-        toast.success('تم تجهيز طلبات إعادة التخزين للموردين');
+        toast.success(t('low_stock_page.toasts.kp0ughp'));
       }
     } catch (error) {
-      toast.error('فشل إرسال الطلبات المجمعة');
+      toast.error(t('low_stock_page.toasts.ksc1azd'));
     } finally {
       setSendingBulk(false);
     }
@@ -91,7 +93,7 @@ export default function LowStockPage() {
   const groupedBySupplier = useMemo(() => {
     const groups = products.reduce((accumulator, product) => {
       const supplierId = product?.supplier?._id || 'no-supplier';
-      const supplierName = product?.supplier?.name || 'بدون مورد';
+      const supplierName = product?.supplier?.name || t('low_stock_page.toasts.k8ca3ng');
       if (!accumulator[supplierId]) {
         accumulator[supplierId] = { supplier: product?.supplier || null, name: supplierName, products: [] };
       }
@@ -115,9 +117,9 @@ export default function LowStockPage() {
 
   const stockBadge = (product) => {
     const status = getStockStatus(product);
-    if (status === 'out_of_stock') return <Badge variant="danger">نفذ</Badge>;
-    if (status === 'low_stock') return <Badge variant="warning">منخفض</Badge>;
-    return <Badge variant="success">متوفر</Badge>;
+    if (status === 'out_of_stock') return <Badge variant="danger">{t('low_stock_page.ui.ky6dx')}</Badge>;
+    if (status === 'low_stock') return <Badge variant="warning">{t('low_stock_page.ui.kpbwxvm')}</Badge>;
+    return <Badge variant="success">{t('low_stock_page.ui.kpbflir')}</Badge>;
   };
 
   return (
@@ -130,15 +132,15 @@ export default function LowStockPage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-500/80">Restock Radar</p>
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">المنتجات منخفضة المخزون</h2>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">{t('low_stock_page.ui.kxsenu6')}</h2>
               <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
-                متابعة فورية للنواقص الحرجة حسب المورد، مع أوامر إعادة تخزين أسرع وتصميم أوضح على الهاتف.
+                {t('low_stock_page.ui.k6j7irh')}
               </p>
             </div>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button variant="outline" onClick={load} icon={<RefreshCw className="h-4 w-4" />} className="w-full sm:w-auto">
-              تحديث
+              {t('low_stock_page.ui.update')}
             </Button>
             <Button
               variant="whatsapp"
@@ -148,7 +150,7 @@ export default function LowStockPage() {
               icon={<Send className="h-4 w-4" />}
               className="w-full sm:w-auto"
             >
-              إرسال طلبات لكل الموردين
+              {t('low_stock_page.ui.kdz4nmb')}
             </Button>
           </div>
         </div>
@@ -157,26 +159,26 @@ export default function LowStockPage() {
       {loading ? <LoadingSpinner /> : products.length === 0 ? (
         <EmptyState
           icon={<Package className="h-8 w-8" />}
-          title="لا توجد منتجات منخفضة المخزون"
+          title={t('low_stock_page.titles.ks5p5yh')}
           description="جميع المنتجات المتاحة حالياً فوق الحد الأدنى المطلوب."
         />
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Card className="border-2 border-red-100 p-4 dark:border-red-500/20">
-              <p className="text-xs text-gray-400">نفد من المخزون</p>
+              <p className="text-xs text-gray-400">{t('low_stock_page.ui.k1rveo9')}</p>
               <p className="text-2xl font-black text-red-600">{summary.outOfStock}</p>
             </Card>
             <Card className="border-2 border-amber-100 p-4 dark:border-amber-500/20">
-              <p className="text-xs text-gray-400">مخزون منخفض</p>
+              <p className="text-xs text-gray-400">{t('low_stock_page.ui.kss45lj')}</p>
               <p className="text-2xl font-black text-amber-600">{summary.lowStock}</p>
             </Card>
             <Card className="border-2 border-primary-100 p-4 dark:border-primary-500/20">
-              <p className="text-xs text-gray-400">عدد الموردين</p>
+              <p className="text-xs text-gray-400">{t('low_stock_page.ui.kk3kjvl')}</p>
               <p className="text-2xl font-black text-primary-600">{summary.suppliers}</p>
             </Card>
             <Card className="border-2 border-gray-100 p-4 dark:border-gray-700">
-              <p className="text-xs text-gray-400">بدون مورد</p>
+              <p className="text-xs text-gray-400">{t('low_stock_page.ui.k8ca3ng')}</p>
               <p className="text-2xl font-black text-gray-600">{summary.withoutSupplier}</p>
             </Card>
           </div>
@@ -226,7 +228,7 @@ export default function LowStockPage() {
                           </div>
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white">{product.name}</p>
-                            <p className="mt-1 font-mono text-xs text-gray-400">{product.sku || 'بدون SKU'}</p>
+                            <p className="mt-1 font-mono text-xs text-gray-400">{product.sku || t('low_stock_page.toasts.kmo36u6')}</p>
                           </div>
                         </div>
                         {stockBadge(product)}
@@ -234,17 +236,17 @@ export default function LowStockPage() {
 
                       <div className="mt-4 grid grid-cols-3 gap-3 text-center text-sm">
                         <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                          <p className="text-[11px] text-gray-400">الحالي</p>
+                          <p className="text-[11px] text-gray-400">{t('low_stock_page.ui.kabct7n')}</p>
                           <p className={`mt-1 font-black ${status === 'out_of_stock' ? 'text-red-500' : 'text-amber-500'}`}>
                             {Number(product?.stock?.quantity) || 0}
                           </p>
                         </div>
                         <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                          <p className="text-[11px] text-gray-400">الحد الأدنى</p>
+                          <p className="text-[11px] text-gray-400">{t('low_stock_page.ui.k9nku4t')}</p>
                           <p className="mt-1 font-black text-gray-900 dark:text-white">{Number(product?.stock?.minQuantity) || 5}</p>
                         </div>
                         <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                          <p className="text-[11px] text-gray-400">المطلوب</p>
+                          <p className="text-[11px] text-gray-400">{t('low_stock_page.ui.kza3mh7')}</p>
                           <p className="mt-1 font-black text-primary-600">{needed}</p>
                         </div>
                       </div>
@@ -259,10 +261,10 @@ export default function LowStockPage() {
                             icon={<Send className="h-3 w-3" />}
                             className="w-full"
                           >
-                            إرسال طلب إعادة تخزين
+                            {t('low_stock_page.ui.kqsoo8m')}
                           </Button>
                         ) : (
-                          <span className="text-xs text-gray-400">أضف مورد أولاً قبل إنشاء الطلب</span>
+                          <span className="text-xs text-gray-400">{t('low_stock_page.ui.k4blzvl')}</span>
                         )}
                       </div>
                     </div>
@@ -274,13 +276,13 @@ export default function LowStockPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">المنتج</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">{t('low_stock_page.ui.kaawv6o')}</th>
                       <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">SKU</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">الحالي</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">الحد الأدنى</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">المطلوب</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">الحالة</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">الإجراء</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">{t('low_stock_page.ui.kabct7n')}</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">{t('low_stock_page.ui.k9nku4t')}</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">{t('low_stock_page.ui.kza3mh7')}</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">{t('low_stock_page.ui.kabct8k')}</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-gray-400">{t('low_stock_page.ui.kz97krr')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -315,10 +317,10 @@ export default function LowStockPage() {
                                 loading={sendingOrders[product._id]}
                                 icon={<Send className="h-3 w-3" />}
                               >
-                                طلب
+                                {t('low_stock_page.ui.kxvbv')}
                               </Button>
                             ) : (
-                              <span className="text-xs text-gray-400">أضف مورد أولاً</span>
+                              <span className="text-xs text-gray-400">{t('low_stock_page.ui.k7w8aoa')}</span>
                             )}
                           </td>
                         </tr>

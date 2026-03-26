@@ -3,6 +3,7 @@ import { X, Copy, Send, CreditCard, Smartphone, Building2, Zap, Check, AlertCirc
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { api } from '../store';
+import { useTranslation } from 'react-i18next';
 
 const GATEWAY_ICONS = {
   paymob: CreditCard,
@@ -19,6 +20,7 @@ const GATEWAY_NAMES = {
 };
 
 const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
+  const { t } = useTranslation('admin');
   const [gateways, setGateways] = useState([]);
   const [selectedGateway, setSelectedGateway] = useState('');
   const [amount, setAmount] = useState(0);
@@ -38,7 +40,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
           setSelectedGateway(data.data[0].id);
         }
       } catch (error) {
-        toast.error('فشل تحميل بوابات الدفع');
+        toast.error(t('payment_link_generator.toasts.kmempi7'));
       }
     };
 
@@ -53,7 +55,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
 
   const handleGenerate = async () => {
     if (!selectedGateway) {
-      toast.error('اختر بوابة الدفع');
+      toast.error(t('payment_link_generator.toasts.kdubi00'));
       return;
     }
 
@@ -67,9 +69,9 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
       });
 
       setPaymentLink(data.data);
-      toast.success('تم إنشاء رابط الدفع');
+      toast.success(t('payment_link_generator.toasts.kkra1jt'));
     } catch (error) {
-      toast.error(error.response?.data?.message || 'فشل إنشاء رابط الدفع');
+      toast.error(error.response?.data?.message || t('payment_link_generator.toasts.ktuw6a7'));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
     if (!paymentLink?.paymentLink) return;
     navigator.clipboard.writeText(paymentLink.paymentLink);
     setCopied(true);
-    toast.success('تم النسخ');
+    toast.success(t('payment_link_generator.toasts.kwttjpd'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -116,7 +118,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
               <X size={20} />
             </button>
 
-            <h2 className="mb-2 text-xl font-bold">إنشاء رابط دفع</h2>
+            <h2 className="mb-2 text-xl font-bold">{t('payment_link_generator.ui.k7sp4f3')}</h2>
             <p className="text-sm text-blue-100">العميل: {customer.name}</p>
             <p className="text-sm text-blue-100">الفاتورة: #{invoice.invoiceNumber}</p>
           </div>
@@ -125,13 +127,13 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
             {gateways.length === 0 ? (
               <div className="py-8 text-center">
                 <AlertCircle className="mx-auto mb-3 text-yellow-500" size={48} />
-                <p className="text-gray-600 dark:text-gray-400">لا توجد بوابات دفع مفعلة</p>
-                <p className="mt-2 text-sm text-gray-500">فعّل بوابة دفع من صفحة الإعدادات أولًا.</p>
+                <p className="text-gray-600 dark:text-gray-400">{t('payment_link_generator.ui.km72ecx')}</p>
+                <p className="mt-2 text-sm text-gray-500">{t('payment_link_generator.ui.ksj1amh')}</p>
               </div>
             ) : !paymentLink ? (
               <>
                 <div>
-                  <label className="mb-3 block text-sm font-medium text-gray-700 dark:text-gray-300">اختر بوابة الدفع</label>
+                  <label className="mb-3 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('payment_link_generator.ui.kdubi00')}</label>
                   <div className="grid grid-cols-2 gap-3">
                     {gateways.map((gateway) => {
                       const Icon = GATEWAY_ICONS[gateway.id];
@@ -159,7 +161,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">المبلغ المطلوب</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('payment_link_generator.ui.kdfjle3')}</label>
                   <input
                     type="number"
                     value={amount}
@@ -178,7 +180,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                     className="h-5 w-5 rounded text-green-600 focus:ring-green-500"
                   />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">خصم الدفع المبكر (3%)</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{t('payment_link_generator.ui.k4s53d5')}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       {applyDiscount ? `قيمة الخصم: ${discount.toFixed(2)} جنيه` : 'غير مفعل'}
                     </p>
@@ -187,21 +189,21 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
 
                 <div className="app-surface-muted space-y-2 rounded-xl p-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">المبلغ الأصلي</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('payment_link_generator.ui.kiqw6n3')}</span>
                     <span className="font-medium">{amount.toFixed(2)} ج.م</span>
                   </div>
                   {applyDiscount && (
                     <div className="flex justify-between text-sm text-green-600">
-                      <span>الخصم</span>
+                      <span>{t('payment_link_generator.ui.kovdttt')}</span>
                       <span>- {discount.toFixed(2)} ج.م</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">رسوم المعاملة</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('payment_link_generator.ui.kpc2fpx')}</span>
                     <span className="font-medium">+ {fees.toFixed(2)} ج.م</span>
                   </div>
                   <div className="flex justify-between border-t border-gray-200/80 pt-2 text-lg font-bold dark:border-white/10">
-                    <span>المبلغ النهائي</span>
+                    <span>{t('payment_link_generator.ui.kdgczhf')}</span>
                     <span className="text-blue-600">{finalAmount.toFixed(2)} ج.م</span>
                   </div>
                 </div>
@@ -211,7 +213,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                   disabled={loading || !selectedGateway}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
                 >
-                  {loading ? 'جارٍ الإنشاء...' : 'إنشاء رابط الدفع'}
+                  {loading ? t('payment_link_generator.ui.k1axron') : 'إنشاء رابط الدفع'}
                 </button>
               </>
             ) : (
@@ -219,7 +221,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                 <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
                   <div className="mb-2 flex items-center gap-2 text-green-700 dark:text-green-400">
                     <Check size={20} />
-                    <span className="font-bold">تم إنشاء الرابط بنجاح</span>
+                    <span className="font-bold">{t('payment_link_generator.ui.ksdjrji')}</span>
                   </div>
                   <p className="break-all text-sm text-gray-700 dark:text-gray-300">{paymentLink.paymentLink}</p>
                 </div>
@@ -231,7 +233,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                   >
                     <span className="flex items-center justify-center gap-2">
                       <Copy size={18} />
-                      {copied ? 'تم النسخ' : 'نسخ الرابط'}
+                      {copied ? t('payment_link_generator.ui.kwttjpd') : 'نسخ الرابط'}
                     </span>
                   </button>
                   <button
@@ -240,7 +242,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                   >
                     <span className="flex items-center justify-center gap-2">
                       <Send size={18} />
-                      إرسال واتساب
+                      {t('payment_link_generator.ui.kiv8plx')}
                     </span>
                   </button>
                 </div>
@@ -252,7 +254,7 @@ const PaymentLinkGenerator = ({ invoice, customer, onClose }) => {
                   }}
                   className="w-full rounded-xl border border-gray-200/80 px-4 py-3 text-sm font-medium transition hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/5"
                 >
-                  إنشاء رابط جديد
+                  {t('payment_link_generator.ui.ksm8eds')}
                 </button>
               </div>
             )}

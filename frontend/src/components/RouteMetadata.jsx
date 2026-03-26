@@ -1,6 +1,7 @@
 ﻿import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store';
+import { useTranslation } from 'react-i18next';
 import {
   getStorefrontBasePath,
   isStorefrontSubdomainHost,
@@ -14,9 +15,9 @@ const PRIMARY_PUBLIC_ORIGIN = 'https://payqusta.store';
 const PLATFORM_DESCRIPTION = 'PayQusta بيكوستا منصة لإنشاء متجر إلكتروني وإدارة المبيعات والمخزون والأقساط والتحصيل من مكان واحد.';
 const PLATFORM_KEYWORDS = [
   ...brandSearchAliases,
-  'منصة إدارة المبيعات',
-  'برنامج مخزون وفواتير',
-  'منصة متجر إلكتروني',
+  'منصة تجارة إلكترونية عربية',
+  'برنامج إدارة المخزون والفواتير',
+  'نظام نقاط بيع وإدارة المتاجر',
 ];
 
 function normalizePath(pathname = '/') {
@@ -37,6 +38,7 @@ function isStorefrontNoindexPath(pathname) {
 }
 
 export default function RouteMetadata() {
+  const { t } = useTranslation('admin');
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
@@ -127,14 +129,14 @@ export default function RouteMetadata() {
     if (onStorefront) {
       const shouldNoindex = isStorefrontNoindexPath(pathname);
       let title = `${PLATFORM_NAME} Store | تسوق أونلاين بسهولة`;
-      let description = 'تصفح منتجات المتجر واطلب أونلاين بسهولة عبر تجربة شراء سريعة وواضحة.';
+      let description = t('route_metadata.ui.krel1t3');
 
       if (pathname.endsWith('/products')) {
         title = `منتجات المتجر | ${PLATFORM_NAME}`;
-        description = 'استعرض المنتجات المتاحة والعروض الجاهزة للطلب من متجر PayQusta.';
+        description = t('route_metadata.ui.kod0959');
       } else if (pathname.endsWith('/about')) {
         title = `عن المتجر | ${PLATFORM_NAME}`;
-        description = 'تعرف على معلومات المتجر ووسائل التواصل وسياسة الخدمة.';
+        description = t('route_metadata.ui.knzbre1');
       }
 
       applySeoMetadata({

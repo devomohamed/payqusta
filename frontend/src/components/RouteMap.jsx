@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const RouteMap = ({ route, tasks, onTaskClick }) => {
+  const { t } = useTranslation('admin');
   const [mapCenter, setMapCenter] = useState({ lat: 30.0444, lng: 31.2357 });
 
   useEffect(() => {
@@ -22,7 +24,7 @@ const RouteMap = ({ route, tasks, onTaskClick }) => {
   return (
     <div className="app-surface overflow-hidden rounded-xl shadow-lg">
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white">
-        <h3 className="mb-2 text-lg font-bold">خريطة المسار</h3>
+        <h3 className="mb-2 text-lg font-bold">{t('route_map.ui.ktrqpok')}</h3>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1">
             <div className="h-3 w-3 rounded-full bg-yellow-400" />
@@ -44,9 +46,9 @@ const RouteMap = ({ route, tasks, onTaskClick }) => {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <MapPin size={48} className="mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-500 dark:text-gray-400">خريطة تفاعلية</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('route_map.ui.kscytil')}</p>
               <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
-                يتطلب ذلك تفعيل Google Maps API.
+                {t('route_map.ui.ks7bvjk')}
               </p>
             </div>
           </div>
@@ -123,7 +125,7 @@ const RouteMap = ({ route, tasks, onTaskClick }) => {
 
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {task.customer?.name || 'عميل'}
+                  {task.customer?.name || t('route_map.toasts.kt7bza')}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {task.amount?.toLocaleString()} ج.م

@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-03-27T12:23:47.974Z",
+  "scope": "frontend/public/locales/{en,ar}/*.json",
+  "correctedCount": 1,
+  "uncertainCount": 0,
+  "corrected": [
+    {
+      "namespace": "admin",
+      "key": "sidebar.super_admin",
+      "action": "translated-ar-from-glossary",
+      "previousAr": "Super Admin",
+      "newAr": "المشرف العام"
+    }
+  ],
+  "uncertain": []
+}

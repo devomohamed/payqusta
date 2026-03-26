@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle, ChevronDown, ChevronRight, ChevronLeft, FolderTree, UserPlus, History, Wallet, Banknote, Store, Play } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import db, { syncProductsToLocal, syncCustomersToLocal, searchLocalProducts, sea
 import { useUnsavedWarning } from '../hooks/useUnsavedWarning';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getBarcodeSearchText } from '../utils/barcodeUtils';
+import { useTranslation } from 'react-i18next';
 
 // --- Helpers ---
 function findMatchedVariant(product, code) {
@@ -98,6 +99,7 @@ function matchesCategorySelection(product, selCat, selSub) {
 
 // --- Main Component ---
 export default function QuickSalePage() {
+  const { t } = useTranslation('admin');
   const [mode, setMode] = useState('sale');
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -118,6 +120,9 @@ export default function QuickSalePage() {
   const [custPage, setCustPage] = useState(0);
   const PRODUCTS_PER_PAGE = 18;
   const CUSTOMERS_PER_PAGE = 6;
+  const [cameras, setCameras] = useState([]);
+  const [showMonitor, setShowMonitor] = useState(false);
+  const [activeCamIdx, setActiveCamIdx] = useState(0);
   const categoriesRef = useRef(null);
   const cartsRef = useRef(null);
 
@@ -132,7 +137,7 @@ export default function QuickSalePage() {
     const tick = () => {
       const ms = new Date(activeShift.autoCloseAt).getTime() - Date.now();
       if (ms <= 0) {
-        setTimeLeft('مغلق');
+        setTimeLeft(t('quick_sale_page.ui.kterir'));
       } else {
         const h = Math.floor(ms / 3600000);
         const m = Math.floor((ms % 3600000) / 60000);
@@ -160,7 +165,7 @@ export default function QuickSalePage() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) { /* ignore */ }
-    return [{ id: Date.now(), title: 'العميل 1', items: [], customer: null, payments: [{ method: 'cash', amount: 0 }], installments: 3 }];
+    return [{ id: Date.now(), title: t('quick_sale_page.ui.kxp75jg'), items: [], customer: null, payments: [{ method: 'cash', amount: 0 }], installments: 3 }];
   };
 
   const [carts, setCarts] = useState(getInitialCarts);
@@ -199,7 +204,7 @@ export default function QuickSalePage() {
   const setSelectedCustomer = (customer) => updateActiveCart({ customer, title: customer?.name || `العميل ${carts.findIndex(c => c.id === activeCartId) + 1}` });
   const setPaymentMethod = (method) => updateActiveCart({ payments: [{ method, amount: total }] });
   const addPaymentMethod = (method) => {
-    if (remainingAmount <= 0) return toast.error('المبلغ الإجمالي مغطى بالكامل');
+    if (remainingAmount <= 0) return toast.error(t('quick_sale_page.toasts.ko0lzeh'));
     updateActiveCart({ payments: [...payments, { method, amount: remainingAmount }] });
   };
   const updatePaymentMethod = (idx, ups) => {
@@ -220,7 +225,7 @@ export default function QuickSalePage() {
     setActiveCartId(id);
   };
   const removeCart = (id) => {
-    if (carts.length === 1) return toast.error('يجب بقاء سلة واحدة على الأقل');
+    if (carts.length === 1) return toast.error(t('quick_sale_page.toasts.kfz6hys'));
     const newCarts = carts.filter(c => c.id !== id);
     setCarts(newCarts);
     if (activeCartId === id) setActiveCartId(newCarts[0].id);
@@ -236,7 +241,7 @@ export default function QuickSalePage() {
       const itemKey = item.variantId ? `${item.productId}-${item.variantId}` : item.productId;
       if (itemKey === key) {
         if (newQty > item.maxQty) {
-          toast.error('الكمية المطلوبة تتجاوز المخزون المتاح');
+          toast.error(t('quick_sale_page.toasts.kxzg0pb'));
           return item;
         }
         return { ...item, quantity: newQty };
@@ -246,7 +251,7 @@ export default function QuickSalePage() {
   };
 
   const handleQuickAddCustomer = async () => {
-    if (!custForm.name || !custForm.phone) return toast.error('الاسم والهاتف مطلوبان');
+    if (!custForm.name || !custForm.phone) return toast.error(t('quick_sale_page.toasts.k65m71l'));
     setCustSaving(true);
     try {
       const res = await customersApi.create(custForm);
@@ -255,9 +260,9 @@ export default function QuickSalePage() {
       setSelectedCustomer(newCustomer);
       setShowAddCustModal(false);
       setCustForm({ name: '', phone: '', password: 'customer123' });
-      toast.success('تم إضافة العميل بنجاح');
+      toast.success(t('quick_sale_page.toasts.ktv1spu'));
     } catch (err) {
-      toast.error(err.response?.data?.message || 'خطأ في إضافة العميل');
+      toast.error(err.response?.data?.message || t('quick_sale_page.toasts.kmzftuy'));
     } finally {
       setCustSaving(false);
     }
@@ -311,13 +316,15 @@ export default function QuickSalePage() {
       Promise.all([
         productsApi.getAll({ limit: 500 }),
         customersApi.getAll({ limit: 500 }),
-        categoriesApi.getTree().catch(() => ({ data: { data: [] } }))
-      ]).then(([p, c, cat]) => {
+        categoriesApi.getTree().catch(() => ({ data: { data: [] } })),
+        api.get('/auth/me')
+      ]).then(([p, c, cat, me]) => {
         const pr = p.data.data || []; const cu = c.data.data || []; const ca = cat?.data?.data || [];
-        setProducts(pr); setCustomers(cu);
+        const cams = me?.data?.data?.tenant?.cameras || [];
+        setProducts(pr); setCustomers(cu); setCameras(cams);
         setCategories(ca.length > 0 ? ca : buildCategoryTreeFromProducts(pr));
         syncProductsToLocal(pr); syncCustomersToLocal(cu);
-      }).catch(() => toast.error('تعذر تحميل البيانات. حاول مرة أخرى.'))
+      }).catch(() => toast.error(t('quick_sale_page.toasts.k1c62w5')))
         .finally(() => setLoading(false));
     } else {
       Promise.all([db.products.limit(200).toArray(), db.customers.limit(200).toArray()]).then(([p, c]) => {
@@ -346,10 +353,10 @@ export default function QuickSalePage() {
     if (p.variants?.length > 0 && !v) { setVariantPicker({ open: true, product: p }); return; }
     const target = v || p;
     const stock = getAvailableStock(target);
-    if (stock <= 0) return toast.error('نفد من المخزون');
+    if (stock <= 0) return toast.error(t('quick_sale_page.toasts.k1rveo9'));
     const exists = cart.find(c => v ? c.variantId === v._id : c.productId === p._id);
     if (exists) {
-      if (exists.quantity >= stock) return toast.error('الكمية غير متوفرة');
+      if (exists.quantity >= stock) return toast.error(t('quick_sale_page.toasts.kk2x99l'));
       setCart(cart.map(c => (v ? c.variantId === v._id : c.productId === p._id) ? { ...c, quantity: c.quantity + 1 } : c));
     } else {
       setCart([...cart, {
@@ -369,14 +376,14 @@ export default function QuickSalePage() {
       const p = res.data.data; const v = findMatchedVariant(p, bc);
       toast.success(`📦 ${p.name} | ${fmt(v?.price || p.price)} ج.م`);
       addToCart(p, v);
-    } catch (e) { toast.error('المنتج غير موجود'); }
+    } catch (e) { toast.error(t('quick_sale_page.toasts.knv6qnj')); }
   };
   useBarcodeScanner((p) => { if (mode === 'sale') handleBarcodeScan(p); }, mode === 'sale');
 
   const handleComplete = async () => {
-    if (!selectedCustomer) return toast.error('اختر العميل');
+    if (!selectedCustomer) return toast.error(t('quick_sale_page.toasts.kfe7g7p'));
     if (selectedCustomer.salesBlocked) return toast.error(`ممنوع: ${selectedCustomer.salesBlockedReason}`);
-    if (cart.length === 0) return toast.error('السلة فارغة');
+    if (cart.length === 0) return toast.error(t('quick_sale_page.toasts.k79ggxh'));
     setCreating(true);
     const { user } = useAuthStore.getState();
     const payload = {
@@ -390,8 +397,8 @@ export default function QuickSalePage() {
     try {
       if (navigator.onLine) await invoicesApi.create(payload);
       else await savePendingInvoice(payload);
-      toast.success('تمت العملية بنجاح!'); finishSale();
-    } catch (e) { toast.error(e.response?.data?.message || 'فشل حفظ العملية'); } finally { setCreating(false); }
+      toast.success(t('quick_sale_page.toasts.k67ww3g')); finishSale();
+    } catch (e) { toast.error(e.response?.data?.message || t('quick_sale_page.toasts.kg0x773')); } finally { setCreating(false); }
   };
 
   const finishSale = () => {
@@ -426,23 +433,23 @@ export default function QuickSalePage() {
     if (!returnInvoiceSearch) return; setReturnLoading(true);
     try {
       const res = await invoicesApi.getAll({ search: returnInvoiceSearch, limit: 1 });
-      const inv = res.data.data?.[0]; if (!inv) return toast.error('لم يتم العثور');
+      const inv = res.data.data?.[0]; if (!inv) return toast.error(t('quick_sale_page.toasts.kk2y3wy'));
       setReturnInvoice(inv); setReturnItems((inv.items || []).map(it => ({ ...it, returnQty: 0 })));
-    } catch { toast.error('خطأ'); } finally { setReturnLoading(false); }
+    } catch { toast.error(t('quick_sale_page.toasts.error')); } finally { setReturnLoading(false); }
   };
 
   const handleReturn = async () => {
     const items = returnItems.filter(i => i.returnQty > 0);
-    if (items.length === 0 || !returnReason) return toast.error('البيانات ناقصة');
+    if (items.length === 0 || !returnReason) return toast.error(t('quick_sale_page.toasts.kqd7h3e'));
     setReturnCreating(true);
     try {
       await api.post('/returns', { invoiceId: returnInvoice._id, items: items.map(i => ({ productId: i.product?._id || i.productId, quantity: i.returnQty })), reason: returnReason });
-      toast.success('تم المرتجع'); setReturnInvoice(null);
-    } catch { toast.error('فش'); } finally { setReturnCreating(false); }
+      toast.success(t('quick_sale_page.toasts.kacaph3')); setReturnInvoice(null);
+    } catch { toast.error(t('quick_sale_page.toasts.k13ir')); } finally { setReturnCreating(false); }
   };
 
   const fmt = (n) => (n || 0).toLocaleString('ar-EG');
-  const catIcon = (n) => n?.includes('آيفون') ? '📱' : n?.includes('شاشة') ? '🖥️' : '📦';
+  const catIcon = (n) => n?.includes(t('quick_sale_page.ui.kosr3br')) ? '📱' : n?.includes(t('quick_sale_page.ui.kt3i94')) ? '🖥️' : '📦';
 
   if (loading) return <LoadingSpinner />;
 
@@ -467,7 +474,7 @@ export default function QuickSalePage() {
                     : 'app-surface text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:border-primary-500'}`}
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  {c.title || 'سلة جديدة'}
+                  {c.title || t('quick_sale_page.toasts.kvl63nd')}
                 </button>
                 {carts.length > 1 && (
                   <button onClick={(e) => { e.stopPropagation(); removeCart(c.id); }} className="absolute -top-1 -left-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white rounded-full p-1 shadow-sm">
@@ -490,7 +497,7 @@ export default function QuickSalePage() {
                <input
                  ref={searchRef}
                  value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="ابحث بالاسم أو الباركود (F2)..."
+                placeholder={t('quick_sale_page.placeholders.k4hqihu')}
                  className="app-surface w-full rounded-2xl border-2 py-3 pl-4 pr-4 text-sm font-bold text-gray-900 shadow-sm transition-all focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:text-white font-cairo"
                />
 
@@ -500,7 +507,7 @@ export default function QuickSalePage() {
                  </button>
                 </div>
               </div>
-              <button onClick={() => setShowScanner(true)} className="app-surface rounded-2xl border-2 p-3 text-primary-500 shadow-sm transition-all hover:border-primary-500 hover:bg-primary-500 hover:text-white focus:outline-none" title="مسح باركود">
+              <button onClick={() => setShowScanner(true)} className="app-surface rounded-2xl border-2 p-3 text-primary-500 shadow-sm transition-all hover:border-primary-500 hover:bg-primary-500 hover:text-white focus:outline-none" title={t('quick_sale_page.titles.kkitj47')}>
                 <Scan className="w-6 h-6" />
               </button>
            </div>
@@ -517,13 +524,23 @@ export default function QuickSalePage() {
             </button>
           </div>
           <Badge variant={syncStatus === 'online' ? 'success' : 'danger'} className="text-[10px] py-1.5 px-3">
-             {syncStatus === 'online' ? 'متصل' : 'غير متصل'}
+             {syncStatus === 'online' ? t('quick_sale_page.ui.ktefas') : 'غير متصل'}
            </Badge>
+
+           {cameras.length > 0 && (
+             <button
+               onClick={() => setShowMonitor(!showMonitor)}
+               className={`flex items-center gap-2 p-2.5 rounded-2xl transition-all shadow-sm border-2 ${showMonitor ? 'bg-primary-500 border-primary-500 text-white animate-pulse shadow-primary-500/20' : 'app-surface border-gray-100 dark:border-gray-800 text-primary-500'}`}
+               title="المراقبة الحية"
+             >
+               <Camera className={`w-5 h-5 ${showMonitor ? 'fill-current' : ''}`} />
+             </button>
+           )}
         </div>
       </div>
 
       {/* SHIFT NEARLY OVER WARNING */}
-      {activeShift && activeShift.autoCloseAt && timeLeft && timeLeft !== 'مغلق' && (
+      {activeShift && activeShift.autoCloseAt && timeLeft && timeLeft !== t('quick_sale_page.ui.kterir') && (
         <AnimatePresence>
           {(() => {
             const ms = new Date(activeShift.autoCloseAt).getTime() - Date.now();
@@ -540,7 +557,7 @@ export default function QuickSalePage() {
                 <div className="flex items-center gap-3">
                     <Clock className={`w-5 h-5 ${mins < 5 ? 'animate-pulse' : ''}`} />
                     <span className="text-sm font-black">
-                        {mins < 10 ? 'تنبيه: سيتم إغلاق الوردية تلقائيا خلال دقائق قليلة' : 'تنبيه: اقترب موعد الإغلاق التلقائي للوردية'}
+                        {mins < 10 ? t('quick_sale_page.ui.ku1rljt') : 'تنبيه: اقترب موعد الإغلاق التلقائي للوردية'}
                     </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -562,12 +579,12 @@ export default function QuickSalePage() {
               <Store className="w-8 h-8 -rotate-3" />
             </div>
             
-            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">تسجيل فتح وردية</h2>
-            <p className="text-[11px] text-gray-500 mb-6 leading-relaxed px-4">يرجى إدخال الرصيد الافتتاحي الموجود في الدرج قبل بدء المبيعات.</p>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">{t('quick_sale_page.ui.kd8q116')}</h2>
+            <p className="text-[11px] text-gray-500 mb-6 leading-relaxed px-4">{t('quick_sale_page.ui.kv8k2w9')}</p>
             
             <div className="space-y-4 text-right">
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 pr-1">الرصيد الافتتاحي بالدرج</label>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 pr-1">{t('quick_sale_page.ui.kiyco8e')}</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -577,17 +594,17 @@ export default function QuickSalePage() {
                     className="app-surface-muted w-full rounded-xl px-4 py-3 text-lg font-black text-gray-900 transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:text-white"
                     dir="ltr"
                   />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm pointer-events-none select-none">ج.&</div>
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm pointer-events-none select-none">{t('quick_sale_page.ui.kwkpw')}</div>
                 </div>
               </div>
               
               <button
                 onClick={async () => {
-                  if (openingBalance === '') return toast.error('يرجى إدخال الرصيد الافتتاحي أولا');
+                  if (openingBalance === '') return toast.error(t('quick_sale_page.toasts.k2u8fnq'));
                   setOpeningShift(true);
                   try {
                     await openShift(Number(openingBalance));
-                    toast.success('تم فتح الوردية بنجاح. يمكنك الآن بدء البيع.');
+                    toast.success(t('quick_sale_page.toasts.kxhnsxb'));
                   } catch (err) {
                   } finally {
                     setOpeningShift(false);
@@ -597,7 +614,7 @@ export default function QuickSalePage() {
                 className="w-full flex justify-center items-center gap-2 bg-[#5C67E6] hover:bg-[#4C55D6] text-white py-3.5 rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
               >
                 {openingShift ? <LoadingSpinner size="sm" /> : <Play className="w-5 h-5 fill-current" />}
-                فتح الوردية الآن
+                {t('quick_sale_page.ui.kyhcqyz')}
               </button>
             </div>
           </div>
@@ -619,7 +636,7 @@ export default function QuickSalePage() {
                     onClick={() => { setSelectedCategoryId(''); setSelectedSubcategoryId(''); }}
                     className={`px-5 py-2.5 rounded-full text-xs font-black transition-all whitespace-nowrap border ${!selectedCategoryId ? 'bg-primary-500 text-white border-primary-500 shadow-md' : 'app-surface text-gray-500 dark:text-white/60 hover:text-gray-800 dark:hover:text-white hover:border-primary-500'}`}
                   >
-                    اْ
+                    {t('quick_sale_page.ui.k12x7')}
                   </button>
                   {categories.map(cat => (
                     <button
@@ -647,7 +664,7 @@ export default function QuickSalePage() {
                       onClick={() => setSelectedSubcategoryId('')}
                       className={`px-4 py-1.5 rounded-full text-[10px] font-black transition-all ${!selectedSubcategoryId ? 'bg-primary-500/20 text-primary-500 border border-primary-500/30' : 'app-surface-muted text-gray-500 dark:text-white/60'}`}
                     >
-                      اْ
+                      {t('quick_sale_page.ui.k12x7')}
                     </button>
                     {selectedCategory.children.map(sub => (
                       <button
@@ -683,8 +700,8 @@ export default function QuickSalePage() {
                         <span className={`text-4xl opacity-50 ${p.thumbnail || p.images?.[0] ? 'hidden' : ''}`}>{catIcon(p.name)}</span>
                         
                         {stock <= 5 && stock > 0 && <span className="absolute top-2 left-2 bg-amber-500 text-white text-[8px] font-black px-2 py-1 rounded-md">متبقي {stock}</span>}
-                        {stock <= 0 && !hasVar && <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-[2px] flex items-center justify-center font-black text-red-500 dark:text-red-400 text-sm">نفدت الكمية</div>}
-                        {hasVar && <span className="absolute bottom-2 right-2 bg-primary-500 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-sm">خيارات متاحة</span>}
+                        {stock <= 0 && !hasVar && <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-[2px] flex items-center justify-center font-black text-red-500 dark:text-red-400 text-sm">{t('quick_sale_page.ui.kur02dk')}</div>}
+                        {hasVar && <span className="absolute bottom-2 right-2 bg-primary-500 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-sm">{t('quick_sale_page.ui.krgvdy1')}</span>}
                       </div>
 
                       <div className="flex flex-1 flex-col justify-between p-3">
@@ -693,7 +710,7 @@ export default function QuickSalePage() {
                           <p className="text-[9px] text-gray-500 dark:text-white/50 font-bold tracking-wider">{p.sku || p.barcode || ''}</p>
                         </div>
                         <div className="flex items-center justify-between mt-auto pt-1">
-                          <span className="text-primary-500 font-black text-sm">{fmt(p.price)} <span className="text-[8px] text-gray-400 dark:text-white/40">ج.&</span></span>
+                          <span className="text-primary-500 font-black text-sm">{fmt(p.price)} <span className="text-[8px] text-gray-400 dark:text-white/40">{t('quick_sale_page.ui.kwkpw')}</span></span>
                           <div className="app-surface-muted flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors group-hover:bg-primary-500 group-hover:text-white dark:text-white/60">
                              <Plus className="w-4 h-4" />
                           </div>
@@ -738,7 +755,7 @@ export default function QuickSalePage() {
                 <div className="relative">
                    <input
                      value={custSearch} onChange={(e) => setCustSearch(e.target.value)}
-                     placeholder="رقم الهاتف أو الاسم..."
+                     placeholder={t('quick_sale_page.placeholders.kb6ptu5')}
                      className="app-surface w-full rounded-xl border-2 py-2 pr-10 pl-4 text-xs font-bold text-gray-900 shadow-sm focus:border-primary-500 dark:text-white font-cairo"
                    />
                    <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -797,7 +814,7 @@ export default function QuickSalePage() {
                     <div className="app-surface-muted mb-4 flex h-20 w-20 items-center justify-center rounded-3xl">
                       <ShoppingCart className="w-10 h-10" />
                     </div>
-                    <p className="text-sm font-black text-gray-400">السلة فارغة</p>
+                    <p className="text-sm font-black text-gray-400">{t('quick_sale_page.ui.k79ggxh')}</p>
                  </div>
                ) : (
                  <div className="space-y-3">
@@ -825,7 +842,7 @@ export default function QuickSalePage() {
              {/* Payment Footer */}
               <div className="app-surface-muted border-t p-4 space-y-4 sm:p-5">
                 <div className="flex items-center justify-between px-1">
-                   <span className="text-xs font-black text-gray-500 dark:text-gray-400">الإجمالي</span>
+                   <span className="text-xs font-black text-gray-500 dark:text-gray-400">{t('quick_sale_page.ui.krh6w30')}</span>
                    <span className="text-xl font-black text-primary-500">{fmt(total)} ج.&</span>
                 </div>
                 
@@ -834,7 +851,7 @@ export default function QuickSalePage() {
                      <button onClick={() => setPaymentMethod('cash')} className={`flex-1 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${payments[0]?.method === 'cash' ? 'bg-primary-500 border-primary-500 text-white shadow-lg' : 'app-surface border-gray-100 dark:border-gray-700 text-gray-500'}`}>
                         <Banknote className="w-4 h-4"/> نقدا
                      </button>
-                     <button onClick={() => setPaymentMethod('credit')} className={`flex-1 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${payments[0]?.method === 'credit' ? 'bg-[#5C67E6] border-[#5C67E6] text-white shadow-lg' : 'app-surface border-gray-100 dark:border-gray-700 text-gray-500'}`}>
+                     <button onClick={() => setPaymentMethod('visa')} className={`flex-1 py-3.5 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 border-2 ${payments[0]?.method === 'visa' ? 'bg-[#5C67E6] border-[#5C67E6] text-white shadow-lg' : 'app-surface border-gray-100 dark:border-gray-700 text-gray-500'}`}>
                         <CreditCard className="w-4 h-4"/> بطاقة
                      </button>
                    </div>
@@ -849,7 +866,7 @@ export default function QuickSalePage() {
                   className="w-full bg-primary-500 hover:bg-primary-600 active:scale-[0.98] text-white py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                  >
                   {creating ? <LoadingSpinner size="sm" /> : <Check className="w-5 h-5" />}
-                  إتمام العملية (F5)
+                  {t('quick_sale_page.ui.k105x2e')}
                 </button>
              </div>
           </div>
@@ -865,10 +882,10 @@ export default function QuickSalePage() {
               <div className="flex gap-2 mb-6">
                 <input
                   value={returnInvoiceSearch} onChange={(e) => setReturnInvoiceSearch(e.target.value)}
-                  placeholder="رقم الفاتورة..."
+                  placeholder={t('quick_sale_page.placeholders.kh4ptwp')}
                   className="app-surface flex-1 rounded-xl border-2 px-4 py-2.5 font-bold"
                 />
-                <button onClick={handleSearchInvoice} className="bg-primary-500 text-white px-6 rounded-xl font-bold">بحث</button>
+                <button onClick={handleSearchInvoice} className="bg-primary-500 text-white px-6 rounded-xl font-bold">{t('quick_sale_page.ui.search')}</button>
               </div>
            </div>
         </div>
@@ -881,7 +898,7 @@ export default function QuickSalePage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setVariantPicker({ open: false, product: null })} className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="app-surface relative w-full max-w-lg overflow-hidden rounded-[2.5rem] p-8 shadow-2xl">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white">اختر ا ع</h3>
+                  <h3 className="text-xl font-black text-gray-900 dark:text-white">{t('quick_sale_page.ui.k9n1hyq')}</h3>
                   <button onClick={() => setVariantPicker({ open: false, product: null })} className="app-surface-muted rounded-full p-2 text-gray-400 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -903,6 +920,70 @@ export default function QuickSalePage() {
       {showScanner ? (
         <BarcodeScanner onClose={() => setShowScanner(false)} onScan={handleBarcodeScan} />
       ) : null}
+
+      {/* Floating Camera Monitor */}
+      <AnimatePresence>
+        {showMonitor && cameras.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.9 }}
+            className="fixed bottom-6 left-6 z-[80] w-72 overflow-hidden rounded-3xl bg-black shadow-2xl ring-4 ring-white/10 dark:ring-slate-900/50"
+          >
+            <div className="group relative aspect-video bg-black">
+              {cameras[activeCamIdx].type === 'embed' ? (
+                <iframe
+                  src={cameras[activeCamIdx].url}
+                  className="h-full w-full border-0"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                />
+              ) : (
+                <LazyStreamPlayer
+                  url={cameras[activeCamIdx].url}
+                  type={cameras[activeCamIdx].type === 'mjpeg' ? 'mjpeg' : 'auto'}
+                  width="100%"
+                  height="100%"
+                  playing={true}
+                  controls={false}
+                  volume={0}
+                />
+              )}
+
+              {/* Monitor Controls Overlay */}
+              <div className="absolute inset-0 flex flex-col justify-between p-3 opacity-0 transition-opacity group-hover:opacity-100 bg-gradient-to-b from-black/60 via-transparent to-black/60">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">{cameras[activeCamIdx].name}</span>
+                  </div>
+                  <button onClick={() => setShowMonitor(false)} className="rounded-full bg-white/10 p-1 text-white hover:bg-red-500 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {cameras.length > 1 && (
+                  <div className="flex items-center justify-center gap-4">
+                    <button
+                      onClick={() => setActiveCamIdx((activeCamIdx - 1 + cameras.length) % cameras.length)}
+                      className="rounded-full bg-white/20 p-1.5 text-white hover:bg-primary-500 transition-all"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[10px] font-bold text-white/80">{activeCamIdx + 1} / {cameras.length}</span>
+                    <button
+                      onClick={() => setActiveCamIdx((activeCamIdx + 1) % cameras.length)}
+                      className="rounded-full bg-white/20 p-1.5 text-white hover:bg-primary-500 transition-all"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

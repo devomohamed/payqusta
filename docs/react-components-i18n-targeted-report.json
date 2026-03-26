@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-03-27T13:36:00.000Z",
+  "scope": {
+    "include": ["frontend/src/**/*.jsx", "frontend/src/**/*.tsx"],
+    "exclude": ["services", "utilities", "backend", "config"]
+  },
+  "updatedComponents": [
+    "frontend/src/components/NotificationCenter.jsx",
+    "frontend/src/components/BarcodeScanner.jsx",
+    "frontend/src/App.jsx",
+    "frontend/src/components/ErrorBoundary.jsx",
+    "frontend/src/components/InstallPrompt.jsx",
+    "frontend/src/components/CameraWidget.jsx",
+    "frontend/src/components/LazyStreamPlayer.jsx",
+    "frontend/src/components/Pagination.jsx",
+    "frontend/src/components/OfflineIndicator.jsx",
+    "frontend/src/components/OfflineBanner.jsx",
+    "frontend/src/pages/CustomersPage.jsx"
+  ],
+  "extractedTextsAndGeneratedKeys": [
+    {
+      "component": "frontend/src/components/NotificationCenter.jsx",
+      "entries": [
+        { "text": "الإشعارات", "key": "admin.notification_center.title" },
+        { "text": "جارٍ تحميل الإشعارات...", "key": "admin.notification_center.loading" },
+        { "text": "الكل", "key": "admin.notification_center.filters.all" },
+        { "text": "غير مقروء", "key": "admin.notification_center.filters.unread" },
+        { "text": "تحديد الكل كمقروء", "key": "admin.notification_center.actions.mark_all_read" },
+        { "text": "لا توجد إشعارات", "key": "admin.notification_center.empty.title" },
+        { "text": "لا توجد إشعارات غير مقروءة حاليًا.", "key": "admin.notification_center.empty.unread_description" },
+        { "text": "ستظهر إشعاراتك هنا عند وصول جديد.", "key": "admin.notification_center.empty.all_description" },
+        { "text": "عرض الكل", "key": "admin.notification_center.empty.show_all" },
+        { "text": "فتح", "key": "admin.notification_center.actions.open" },
+        { "text": "تحديد كمقروء", "key": "admin.notification_center.actions.mark_read" },
+        { "text": "حذف", "key": "admin.notification_center.actions.delete" },
+        { "text": "فشل تحميل الإشعارات", "key": "admin.notification_center.toasts.load_failed" },
+        { "text": "فشل تحديث الحالة", "key": "admin.notification_center.toasts.status_update_failed" },
+        { "text": "تم تحديد الكل كمقروء", "key": "admin.notification_center.toasts.mark_all_success" },
+        { "text": "فشل التحديث", "key": "admin.notification_center.toasts.update_failed" },
+        { "text": "تم الحذف", "key": "admin.notification_center.toasts.delete_success" },
+        { "text": "فشل الحذف", "key": "admin.notification_center.toasts.delete_failed" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/BarcodeScanner.jsx",
+      "entries": [
+        { "text": "مسح الباركود", "key": "admin.barcode_scanner.title" },
+        { "text": "تم مسح: {{code}}", "key": "admin.barcode_scanner.scan_success" },
+        { "text": "مسح بالكاميرا", "key": "admin.barcode_scanner.actions.scan_camera" },
+        { "text": "رفع صورة", "key": "admin.barcode_scanner.actions.upload_image" },
+        { "text": "إيقاف", "key": "admin.barcode_scanner.actions.stop" },
+        { "text": "تشغيل الفلاش", "key": "admin.barcode_scanner.actions.toggle_flash" },
+        { "text": "إضافة", "key": "admin.barcode_scanner.actions.add" },
+        { "text": "أدخل الباركود...", "key": "admin.barcode_scanner.placeholders.enter_barcode" },
+        { "text": "يدعم الكاميرا، قارئ USB keyboard، الإدخال اليدوي، ورفع صورة من الجهاز.", "key": "admin.barcode_scanner.hint" },
+        { "text": "تعذر قراءة الباركود من الكاميرا", "key": "admin.barcode_scanner.errors.camera_read_failed" },
+        { "text": "لا يمكن الوصول إلى الكاميرا. تأكد من منح الإذن للمتصفح.", "key": "admin.barcode_scanner.errors.camera_access_denied" },
+        { "text": "الكشاف غير مدعوم على هذا الجهاز أو المتصفح", "key": "admin.barcode_scanner.errors.torch_unsupported" },
+        { "text": "الباركود يجب أن يكون 3 أحرف على الأقل", "key": "admin.barcode_scanner.errors.min_length" },
+        { "text": "لم يتم العثور على باركود واضح داخل الصورة", "key": "admin.barcode_scanner.errors.image_not_found" }
+      ]
+    },
+    {
+      "component": "frontend/src/App.jsx",
+      "entries": [
+        { "text": "Loading your workspace...", "key": "admin.app.loading.workspace" },
+        { "text": "Signing out...", "key": "admin.app.loading.signing_out" },
+        { "text": "Signed in as Super Admin", "key": "admin.app.toasts.super_admin_signed_in" },
+        { "text": "جاري تحميل ... (route messages)", "key": "admin.app.loading.route_generic" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/ErrorBoundary.jsx",
+      "entries": [
+        { "text": "حدث خطأ غير متوقع", "key": "admin.error_boundary.title" },
+        { "text": "حاول مرة أخرى", "key": "admin.error_boundary.retry" },
+        { "text": "الذهاب للصفحة الرئيسية", "key": "admin.error_boundary.go_home" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/InstallPrompt.jsx",
+      "entries": [
+        { "text": "ثبت التطبيق", "key": "admin.install_prompt.title" },
+        { "text": "مميزات التطبيق", "key": "admin.install_prompt.features_title" },
+        { "text": "تثبيت الآن", "key": "admin.install_prompt.install_now" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/CameraWidget.jsx",
+      "entries": [
+        { "text": "المراقبة بالكاميرات", "key": "admin.camera_widget.title" },
+        { "text": "عرض جميع الكاميرات", "key": "admin.camera_widget.view_all" },
+        { "text": "لا توجد كاميرات متاحة", "key": "admin.camera_widget.empty" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/LazyStreamPlayer.jsx",
+      "entries": [
+        { "text": "جاري تحميل البث...", "key": "admin.stream_player.loading" },
+        { "text": "فشل تحميل البث", "key": "admin.stream_player.error_title" },
+        { "text": "يرجى المحاولة مرة أخرى لاحقاً", "key": "admin.stream_player.error_subtitle" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/Pagination.jsx",
+      "entries": [
+        { "text": "صفحة", "key": "admin.pagination.page" },
+        { "text": "من", "key": "admin.pagination.of" },
+        { "text": "عنصر", "key": "admin.pagination.items" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/OfflineIndicator.jsx",
+      "entries": [
+        { "text": "أنت متصل الآن", "key": "admin.offline_indicator.toasts.online" },
+        { "text": "أنت غير متصل", "key": "admin.offline_indicator.toasts.offline" },
+        { "text": "مزامنة", "key": "admin.offline_indicator.actions.sync" }
+      ]
+    },
+    {
+      "component": "frontend/src/components/OfflineBanner.jsx",
+      "entries": [
+        { "text": "أنت غير متصل بالإنترنت", "key": "admin.offline_banner.offline.title" },
+        { "text": "جاري مزامنة البيانات", "key": "admin.offline_banner.syncing.title" },
+        { "text": "فشل في مزامنة بعض البيانات", "key": "admin.offline_banner.error.title" }
+      ]
+    },
+    {
+      "component": "frontend/src/pages/CustomersPage.jsx",
+      "entries": [
+        { "text": "إدارة العملاء", "key": "admin.customers_page.title" },
+        { "text": "إضافة عميل", "key": "admin.customers_page.actions.add_customer" },
+        { "text": "بحث بالاسم أو الهاتف...", "key": "admin.customers_page.filters.search_placeholder" },
+        { "text": "إعدادات WhatsApp", "key": "admin.customers_page.whatsapp.title" },
+        { "text": "سجل المعاملات", "key": "admin.customers_page.transactions.title" }
+      ]
+    }
+  ],
+  "ambiguousManualReview": [
+    {
+      "component": "frontend/src/pages/CustomersPage.jsx",
+      "reason": "High-volume details/print-template strings remain and need a dedicated second pass for full completion."
+    },
+    {
+      "component": "frontend/src/components/BranchSettlementModal.jsx",
+      "reason": "Dense financial/operational terminology requires domain-confirmed key taxonomy before bulk extraction."
+    },
+    {
+      "component": "frontend/src/components/ProductDetailModal.jsx",
+      "reason": "Many context-dependent labels mixed with computed business values; requires careful split between dynamic values and user-facing keys."
+    }
+  ],
+  "constraintsRespected": {
+    "businessLogicChanged": false,
+    "jsxStructureChanged": false,
+    "runtimeBehaviorChanged": false
+  }
+}

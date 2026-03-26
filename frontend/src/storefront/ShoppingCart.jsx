@@ -8,6 +8,7 @@ import { api } from '../store';
 import { notify } from '../components/AnimatedNotification';
 import { confirm } from '../components/ConfirmDialog';
 import { pickProductImage } from '../utils/media';
+import { useTranslation } from 'react-i18next';
 import {
   clearStorefrontCoupon,
   loadStorefrontCoupon,
@@ -33,6 +34,7 @@ function normalizeCategoryValue(category) {
 }
 
 export default function ShoppingCart() {
+  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const location = useLocation();
   const isPortal = location.pathname.includes('/portal') || location.pathname.includes('/account');
@@ -63,7 +65,7 @@ export default function ShoppingCart() {
   };
 
   const handleClearCart = async () => {
-    const ok = await confirm.warn('هل تريد إفراغ السلة؟ سيتم حذف جميع المنتجات المضافة.', 'إفراغ السلة');
+    const ok = await confirm.warn(t('shopping_cart.ui.kp0t5b'), t('shopping_cart.ui.kob2g8t'));
     if (ok) {
       clearStorefrontCoupon();
       clearCart();
@@ -225,7 +227,7 @@ export default function ShoppingCart() {
       saveStorefrontCoupon(res.data.data);
     } catch (error) {
       setCouponData(null);
-      setCouponError(error.response?.data?.message || 'تعذر تطبيق الكوبون الآن');
+      setCouponError(error.response?.data?.message || t('shopping_cart.toasts.k5kw9ye'));
       clearStorefrontCoupon();
     } finally {
       setCouponLoading(false);
@@ -259,12 +261,12 @@ export default function ShoppingCart() {
       <div className="max-w-2xl mx-auto">
         <EmptyState
           icon={<ShoppingBag className="w-16 h-16" />}
-          title="سلة التسوق فارغة"
+          title={t('shopping_cart.titles.kblbita')}
           description="لم تقم بإضافة أي منتجات بعد"
         />
         <div className="text-center mt-6">
           <Button onClick={() => navigate(isPortal ? `${portalBasePath}/products` : storefrontPath('/products'))}>
-            تصفح المنتجات
+            {t('shopping_cart.ui.k5ctpqs')}
           </Button>
         </div>
       </div>
@@ -274,12 +276,12 @@ export default function ShoppingCart() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-black">سلة التسوق</h1>
+        <h1 className="text-3xl font-black">{t('shopping_cart.ui.kh9kcoo')}</h1>
         <button
           onClick={handleClearCart}
           className="self-start text-sm font-medium text-red-500 hover:text-red-600 sm:self-auto"
         >
-          إفراغ السلة
+          {t('shopping_cart.ui.kob2g8t')}
         </button>
       </div>
 
@@ -307,7 +309,7 @@ export default function ShoppingCart() {
                 </div>
                 <div className="md:w-56">
                   <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-gray-500">
-                    <span>تقدمك نحو الشحن المجاني</span>
+                    <span>{t('shopping_cart.ui.k4n6dwz')}</span>
                     <span>{freeShippingProgress}%</span>
                   </div>
                   <div className="h-2.5 overflow-hidden rounded-full bg-gray-200">
@@ -324,7 +326,7 @@ export default function ShoppingCart() {
           {cart.map((item, index) => {
             const product = item.product || item;
             const imageUrl = pickProductImage(product);
-            const productName = product?.name || 'منتج';
+            const productName = product?.name || t('shopping_cart.toasts.ktezs3');
             const variantAttributes = item.variant?.attributes || {};
             const volumeOffer = !isPortal ? getStorefrontVolumeOfferForQuantity(item.quantity) : null;
             const itemVolumeDiscount = !isPortal ? calculateStorefrontVolumeDiscountForLine(item.price || 0, item.quantity || 0) : 0;
@@ -399,13 +401,13 @@ export default function ShoppingCart() {
 
         <div className="lg:col-span-1">
           <Card className="p-5 sm:p-6 lg:sticky lg:top-20">
-            <h2 className="text-xl font-bold mb-4">ملخص الطلب</h2>
+            <h2 className="text-xl font-bold mb-4">{t('shopping_cart.ui.ksv7g78')}</h2>
 
             {!isPortal && (
               <div className="mb-5 rounded-2xl border border-amber-100 bg-amber-50 p-4">
                 <div className="mb-2 flex items-center gap-2 text-sm font-black text-amber-900">
                   <Sparkles className="h-4 w-4" />
-                  إضافة سريعة ترفع قيمة الطلب
+                  {t('shopping_cart.ui.k5fiisl')}
                 </div>
                 {suggestedProduct ? (
                   <div className="rounded-2xl bg-white p-3 shadow-sm">
@@ -425,7 +427,7 @@ export default function ShoppingCart() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-black text-gray-900 dark:text-gray-100">{suggestedProduct.name}</p>
-                        <p className="mt-1 text-xs font-medium text-gray-500">إضافة خفيفة ومناسبة مع طلبك الحالي.</p>
+                        <p className="mt-1 text-xs font-medium text-gray-500">{t('shopping_cart.ui.kydp1y0')}</p>
                         <p className="mt-2 text-sm font-black text-primary-600">
                           {(suggestedProduct.price || 0).toFixed(2)} ج.م
                         </p>
@@ -435,14 +437,13 @@ export default function ShoppingCart() {
                       onClick={handleAddSuggestedProduct}
                       className="mt-3 w-full rounded-xl border border-primary-200 px-4 py-3 text-sm font-black text-primary-700 transition-colors hover:border-primary-300 hover:bg-primary-50"
                     >
-                      أضفها مع الطلب
+                      {t('shopping_cart.ui.kk4gnz0')}
                     </button>
                   </div>
                 ) : (
                   <p className="text-xs font-medium text-amber-800">
                     {suggestionLoading
-                      ? 'جارٍ تجهيز اقتراح مناسب لسلتك...'
-                      : 'سلتك جاهزة الآن، ويمكنك المتابعة مباشرة لإتمام الطلب.'}
+                      ? t('shopping_cart.ui.k1oimnz') : 'سلتك جاهزة الآن، ويمكنك المتابعة مباشرة لإتمام الطلب.'}
                   </p>
                 )}
               </div>
@@ -452,7 +453,7 @@ export default function ShoppingCart() {
               <div className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-700">
                   <Tag className="w-4 h-4 text-primary-500" />
-                  كوبون الخصم
+                  {t('shopping_cart.ui.kvivgua')}
                 </div>
 
                 {couponData ? (
@@ -471,7 +472,7 @@ export default function ShoppingCart() {
                         onClick={handleRemoveCoupon}
                         className="text-xs font-bold text-red-500 hover:text-red-600"
                       >
-                        إزالة
+                        {t('shopping_cart.ui.kotym0v')}
                       </button>
                     </div>
                   </div>
@@ -491,7 +492,7 @@ export default function ShoppingCart() {
                             handleApplyCoupon();
                           }
                         }}
-                        placeholder="اكتب الكوبون"
+                        placeholder={t('shopping_cart.placeholders.kjqaqle')}
                         className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm focus:border-primary-500 focus:outline-none"
                         dir="ltr"
                       />
@@ -511,27 +512,27 @@ export default function ShoppingCart() {
 
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-gray-600">
-                <span>المجموع الفرعي:</span>
+                <span>{t('shopping_cart.ui.k7pzlwy')}</span>
                 <span className="font-bold">{subtotal.toFixed(2)} ج.م</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>الضريبة (14%):</span>
+                <span>{t('shopping_cart.ui.kt5tlt4')}</span>
                 <span className="font-bold">{tax.toFixed(2)} ج.م</span>
               </div>
               {volumeDiscount > 0 && (
                 <div className="flex justify-between text-emerald-600">
-                  <span>خصم الكمية:</span>
+                  <span>{t('shopping_cart.ui.kx1lsca')}</span>
                   <span className="font-bold">-{volumeDiscount.toFixed(2)} ج.م</span>
                 </div>
               )}
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-600">
-                  <span>خصم الكوبون:</span>
+                  <span>{t('shopping_cart.ui.ktz9z7c')}</span>
                   <span className="font-bold">-{discount.toFixed(2)} ج.م</span>
                 </div>
               )}
               <div className="border-t border-gray-200/80 dark:border-white/10 pt-3 flex justify-between text-lg">
-                <span className="font-bold">الإجمالي:</span>
+                <span className="font-bold">{t('shopping_cart.ui.kkf12q')}</span>
                 <span className="font-black text-primary-600 text-2xl">{total.toFixed(2)} ج.م</span>
               </div>
             </div>
@@ -542,14 +543,14 @@ export default function ShoppingCart() {
               size="lg"
               icon={<ArrowRight className="w-5 h-5" />}
             >
-              إتمام الطلب
+              {t('shopping_cart.ui.kuse6jo')}
             </Button>
 
             <button
               onClick={() => navigate(isPortal ? `${portalBasePath}/products` : storefrontPath('/products'))}
               className="w-full mt-3 text-center text-primary-600 hover:text-primary-700 font-medium text-sm"
             >
-              متابعة التسوق
+              {t('shopping_cart.ui.kk77tg6')}
             </button>
           </Card>
         </div>

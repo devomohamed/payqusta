@@ -140,7 +140,7 @@ export default function PortalAddresses() {
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-2">
                                     <div className="app-surface-muted w-10 h-10 rounded-xl flex items-center justify-center">
-                                        {addr.label === 'العمل' || addr.label === 'Work' ? <Briefcase className="w-5 h-5 text-gray-400" /> : <Home className="w-5 h-5 text-gray-400" />}
+                                        {addr.label === t('portal_addresses.ui.kove2d7') || addr.label === 'Work' ? <Briefcase className="w-5 h-5 text-gray-400" /> : <Home className="w-5 h-5 text-gray-400" />}
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 dark:text-white text-sm">{addr.label}</h4>
@@ -233,12 +233,12 @@ export default function PortalAddresses() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.zip_field', { defaultValue: 'الرمز البريدي' })}</label>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">{t('addresses.zip_field', { defaultValue: t('portal_addresses.ui.k5t65xc') })}</label>
                                 <input
                                     type="text"
                                     value={formData.zipCode}
                                     onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                                    placeholder={t('addresses.zip_placeholder', { defaultValue: 'أدخل الرمز البريدي إن وجد' })}
+                                    placeholder={t('addresses.zip_placeholder', { defaultValue: t('portal_addresses.ui.kf068gm') })}
                                     className={inputClass}
                                 />
                             </div>

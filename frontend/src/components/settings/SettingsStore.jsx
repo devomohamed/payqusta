@@ -17,6 +17,7 @@ import { useAuthStore, api } from '../../store';
 import { Button, Input, TextArea } from '../UI';
 import { notify } from '../AnimatedNotification';
 import { transliterateArabicToEnglish } from '../../utils/textUtils';
+import { useTranslation } from 'react-i18next';
 import { getUserFriendlyErrorMessage } from '../../utils/errorMapper';
 import {
   PLATFORM_ROOT_DOMAIN,
@@ -36,6 +37,7 @@ const createEmptyShippingZone = () => ({
 
 export default function SettingsStore() {
   const { tenant, getMe, getBranches } = useAuthStore();
+  const { t } = useTranslation('admin');
   const [branches, setBranches] = useState([]);
   const [storeForm, setStoreForm] = useState({
     name: '',
@@ -54,7 +56,7 @@ export default function SettingsStore() {
     shippingProvider: 'local',
     shippingProviderDisplayName: '',
     shippingApiKey: '',
-    shippingMethodName: 'توصيل قياسي',
+    shippingMethodName: t('settings_store.ui.kble1bt'),
     shippingBaseFee: 0,
     shippingFreeThreshold: 0,
     shippingEstimatedDaysMin: 1,
@@ -103,7 +105,7 @@ export default function SettingsStore() {
       shippingProvider: tenant.settings?.shipping?.provider || 'local',
       shippingProviderDisplayName: tenant.settings?.shipping?.providerDisplayName || '',
       shippingApiKey: tenant.settings?.shipping?.apiKey || '',
-      shippingMethodName: tenant.settings?.shipping?.defaultMethodName || 'توصيل قياسي',
+      shippingMethodName: tenant.settings?.shipping?.defaultMethodName || t('settings_store.toasts.kble1bt'),
       shippingBaseFee: tenant.settings?.shipping?.baseFee ?? 0,
       shippingFreeThreshold: tenant.settings?.shipping?.freeShippingThreshold ?? 0,
       shippingEstimatedDaysMin: tenant.settings?.shipping?.estimatedDaysMin ?? 1,
@@ -192,7 +194,7 @@ export default function SettingsStore() {
 
   const handleSaveStore = async () => {
     if (!storeForm.name.trim()) {
-      notify.error('اسم المتجر مطلوب');
+      notify.error(t('settings_store.toasts.name_required'));
       return;
     }
 
@@ -247,10 +249,10 @@ export default function SettingsStore() {
         },
       });
 
-      notify.success('تم حفظ بيانات المتجر');
+      notify.success(t('settings_store.toasts.store_saved'));
       getMe();
     } catch (err) {
-      notify.error(getUserFriendlyErrorMessage(err, 'خطأ في الحفظ'));
+      notify.error(getUserFriendlyErrorMessage(err, t('settings_store.toasts.save_error')));
     } finally {
       setSaving(false);
     }
@@ -258,7 +260,7 @@ export default function SettingsStore() {
 
   const handleApplyWatermarkToAll = async () => {
     if (!storeForm.watermarkEnabled || !storeForm.watermarkText) {
-      notify.error('فعّل العلامة المائية وأدخل النص أولاً ثم احفظ');
+      notify.error(t('settings_store.toasts.watermark_enable_first'));
       return;
     }
     setApplyingWatermark(true);
@@ -269,11 +271,11 @@ export default function SettingsStore() {
       setApplyResult({ processed, failed, skippedLegacy, totalProducts });
       notify.success(
         skippedLegacy > 0
-          ? `تم تحديث ${processed} صورة، وتخطي ${skippedLegacy} صورة قديمة تحتاج إعادة رفع`
-          : `تم تطبيق العلامة المائية على ${processed} صورة من ${totalProducts} منتج`
+          ? t('settings_store.toasts.watermark_applied_skip', { processed, skippedLegacy })
+          : t('settings_store.toasts.watermark_applied', { processed, totalProducts })
       );
     } catch (err) {
-      notify.error('فشل تطبيق العلامة المائية — تأكد من حفظ الإعدادات أولاً');
+      notify.error(t('settings_store.toasts.watermark_apply_error'));
     } finally {
       setApplyingWatermark(false);
     }
@@ -298,7 +300,7 @@ export default function SettingsStore() {
 
     if (normalized === tenant?.slug) {
       setIsAvailable(true);
-      setAvailabilityMsg('هذا هو رابطك الحالي');
+      setAvailabilityMsg(t('settings_store.subdomain.current_link'));
       return;
     }
 
@@ -309,12 +311,12 @@ export default function SettingsStore() {
       setIsAvailable(available);
       setAvailabilityMsg(
         available
-          ? 'هذا الرابط متاح للاستخدام.'
-          : 'عذرًا، هذا الرابط محجوز لمتجر آخر'
+          ? t('settings_store.subdomain.available')
+          : t('settings_store.subdomain.unavailable')
       );
     } catch (err) {
       setIsAvailable(false);
-      setAvailabilityMsg(getUserFriendlyErrorMessage(err, 'خطأ في فحص التوفر'));
+      setAvailabilityMsg(getUserFriendlyErrorMessage(err, t('settings_store.toasts.availability_error')));
     } finally {
       setChecking(false);
     }
@@ -326,10 +328,10 @@ export default function SettingsStore() {
     setUpdatingSubdomain(true);
     try {
       await api.put('/settings/subdomain', { subdomain });
-      notify.success('تم تحديث رابط المتجر بنجاح');
+      notify.success(t('settings_store.toasts.subdomain_updated'));
       getMe();
     } catch (err) {
-      notify.error(getUserFriendlyErrorMessage(err, 'فشل في تحديث الرابط'));
+      notify.error(getUserFriendlyErrorMessage(err, t('settings_store.toasts.subdomain_update_error')));
     } finally {
       setUpdatingSubdomain(false);
     }
@@ -349,59 +351,59 @@ export default function SettingsStore() {
             <Building2 className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">بيانات المتجر</h2>
-            <p className="text-sm text-subtle">معلومات متجرك الأساسية</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('settings_store.sections.store_data')}</h2>
+            <p className="text-sm text-subtle">{t('settings_store.sections.store_data_desc')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input
-            label="اسم المتجر *"
+            label={t('settings_store.form.store_name')}
             value={storeForm.name}
             onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
-            placeholder="مثال: إلكترونيات المعادي"
+            placeholder={t('settings_store.form.store_name_placeholder')}
           />
           <Input
-            label="البريد الإلكتروني"
+            label={t('settings_store.form.email')}
             type="email"
             value={storeForm.email}
             onChange={(e) => setStoreForm({ ...storeForm, email: e.target.value })}
             placeholder="info@store.com"
           />
           <Input
-            label="رقم الهاتف"
+            label={t('settings_store.form.phone')}
             value={storeForm.phone}
             onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })}
             placeholder="01000000000"
           />
           <Input
-            label="العنوان"
+            label={t('settings_store.form.address')}
             value={storeForm.address}
             onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
-            placeholder="المعادي، القاهرة"
+            placeholder={t('settings_store.form.address_placeholder')}
           />
         </div>
 
         <div className="rounded-2xl border border-primary-100 bg-primary-50/40 p-5 dark:border-primary-900/30 dark:bg-primary-900/10">
           <div className="mb-4">
-            <h3 className="text-base font-bold text-primary-700 dark:text-primary-300">إعدادات الباركود</h3>
+            <h3 className="text-base font-bold text-primary-700 dark:text-primary-300">{t('settings_store.sections.barcode')}</h3>
             <p className="mt-1 text-sm text-muted">
-              التحكم في واجهات الباركود المحلي والدولي، والبحث بالكاميرا، ومصادر الباركود المطبوعة.
+              {t('settings_store.sections.barcode_desc')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">وضع الباركود</label>
+              <label className="text-sm font-medium">{t('settings_store.form.barcode_mode')}</label>
               <select
                 value={storeForm.barcodeMode}
                 onChange={(e) => setStoreForm({ ...storeForm, barcodeMode: e.target.value })}
                 className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-800 dark:text-white"
               >
-                <option value="none">إخفاء واجهات الباركود</option>
-                <option value="international_only">دولي فقط</option>
-                <option value="local_only">محلي فقط</option>
-                <option value="both">محلي + دولي</option>
+                <option value="none">{t('settings_store.form.barcode_mode_none')}</option>
+                <option value="international_only">{t('settings_store.form.barcode_mode_international')}</option>
+                <option value="local_only">{t('settings_store.form.barcode_mode_local')}</option>
+                <option value="both">{t('settings_store.form.barcode_mode_both')}</option>
               </select>
             </div>
 
@@ -412,32 +414,32 @@ export default function SettingsStore() {
                 onChange={(e) => setStoreForm({ ...storeForm, autoGenerateLocalBarcode: e.target.checked })}
                 className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
               />
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">توليد الباركود المحلي تلقائيًا عند إنشاء المنتج</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings_store.form.auto_barcode')}</span>
             </label>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">باركود الإيصال</label>
+              <label className="text-sm font-medium">{t('settings_store.form.receipt_barcode')}</label>
               <select
                 value={storeForm.receiptBarcodeSource}
                 onChange={(e) => setStoreForm({ ...storeForm, receiptBarcodeSource: e.target.value })}
                 className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-800 dark:text-white"
               >
-                <option value="none">بدون باركود</option>
-                <option value="international">الباركود الدولي</option>
-                <option value="local">الباركود المحلي</option>
+                <option value="none">{t('settings_store.form.barcode_none')}</option>
+                <option value="international">{t('settings_store.form.barcode_international')}</option>
+                <option value="local">{t('settings_store.form.barcode_local')}</option>
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">باركود تيكيت التوصيل</label>
+              <label className="text-sm font-medium">{t('settings_store.form.delivery_barcode')}</label>
               <select
                 value={storeForm.deliveryBarcodeSource}
                 onChange={(e) => setStoreForm({ ...storeForm, deliveryBarcodeSource: e.target.value })}
                 className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 transition-colors focus:border-primary-500 focus:ring-0 dark:border-gray-800 dark:text-white"
               >
-                <option value="none">بدون باركود</option>
-                <option value="international">الباركود الدولي</option>
-                <option value="local">الباركود المحلي</option>
+                <option value="none">{t('settings_store.form.barcode_none')}</option>
+                <option value="international">{t('settings_store.form.barcode_international')}</option>
+                <option value="local">{t('settings_store.form.barcode_local')}</option>
               </select>
             </div>
           </div>
@@ -449,7 +451,7 @@ export default function SettingsStore() {
               onChange={(e) => setStoreForm({ ...storeForm, storefrontBarcodeSearchEnabled: e.target.checked })}
               className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
             />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">تفعيل البحث بالكاميرا داخل المتجر الأمامي</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings_store.form.storefront_barcode')}</span>
           </label>
         </div>
 
@@ -459,9 +461,9 @@ export default function SettingsStore() {
               <Truck className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-amber-700 dark:text-amber-300">إعدادات الشحن</h3>
+              <h3 className="text-base font-bold text-amber-700 dark:text-amber-300">{t('settings_store.sections.shipping')}</h3>
               <p className="mt-1 text-sm text-subtle">
-                الرسوم الافتراضية، شركة الشحن، ومناطق التوصيل التي ستظهر في المتجر وتدخل ضمن ملخص الطلب.
+                {t('settings_store.sections.shipping_desc')}
               </p>
             </div>
           </div>
@@ -475,7 +477,7 @@ export default function SettingsStore() {
                   onChange={(e) => setStoreForm({ ...storeForm, shippingEnabled: e.target.checked })}
                   className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">تفعيل الشحن داخل المتجر</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings_store.form.shipping_enabled')}</span>
               </label>
 
               <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-gray-50 px-4 py-3 dark:border-amber-900/40 dark:bg-slate-950">
@@ -485,7 +487,7 @@ export default function SettingsStore() {
                   onChange={(e) => setStoreForm({ ...storeForm, shippingSupportsCashOnDelivery: e.target.checked })}
                   className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">السماح بالدفع عند الاستلام</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings_store.form.cod')}</span>
               </label>
 
               <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-amber-100 bg-gray-50 px-4 py-3 dark:border-amber-900/40 dark:bg-slate-950 md:col-span-2">
@@ -495,49 +497,49 @@ export default function SettingsStore() {
                   onChange={(e) => setStoreForm({ ...storeForm, shippingAutoCreateShipment: e.target.checked })}
                   className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">إنشاء الشحنة تلقائيًا بعد تأكيد الطلب عند تفعيل التكامل لاحقًا</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings_store.form.auto_shipment')}</span>
               </label>
             </div>
 
             <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${!storeForm.shippingEnabled ? 'pointer-events-none opacity-60' : ''}`}>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">شركة الشحن</label>
+                <label className="text-sm font-medium">{t('settings_store.form.provider')}</label>
                 <select
                   value={storeForm.shippingProvider}
                   onChange={(e) => setStoreForm({ ...storeForm, shippingProvider: e.target.value })}
                   className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-amber-500 focus:ring-0 dark:border-gray-800 dark:bg-slate-950 dark:text-white"
                 >
-                  <option value="local">شحن محلي</option>
+                  <option value="local">{t('settings_store.form.provider_local')}</option>
                   <option value="bosta">Bosta</option>
                   <option value="aramex">Aramex</option>
-                  <option value="manual">يدوي / شركة خارجية</option>
-                  <option value="none">بدون مزود افتراضي</option>
+                  <option value="manual">{t('settings_store.form.provider_manual')}</option>
+                  <option value="none">{t('settings_store.form.provider_none')}</option>
                 </select>
               </div>
 
               <Input
-                label="الاسم الظاهر للمزود"
+                label={t('settings_store.form.provider_display_name')}
                 value={storeForm.shippingProviderDisplayName}
                 onChange={(e) => setStoreForm({ ...storeForm, shippingProviderDisplayName: e.target.value })}
-                placeholder="مثال: Bosta Express"
+                placeholder={t('settings_store.placeholders.kkdelfq')}
               />
 
               <Input
-                label="مسمى وسيلة الشحن"
+                label={t('settings_store.form.method_name')}
                 value={storeForm.shippingMethodName}
                 onChange={(e) => setStoreForm({ ...storeForm, shippingMethodName: e.target.value })}
-                placeholder="توصيل قياسي"
+                placeholder={t('settings_store.form.method_name_placeholder')}
               />
 
               <Input
-                label="API Key (اختياري)"
+                label={t('settings_store.form.api_key')}
                 value={storeForm.shippingApiKey}
                 onChange={(e) => setStoreForm({ ...storeForm, shippingApiKey: e.target.value })}
-                placeholder="يظهر للإدارة فقط"
+                placeholder={t('settings_store.form.api_key_placeholder')}
               />
 
               <Input
-                label="رسوم الشحن الأساسية"
+                label={t('settings_store.form.base_fee')}
                 type="number"
                 min="0"
                 value={storeForm.shippingBaseFee}
@@ -546,7 +548,7 @@ export default function SettingsStore() {
               />
 
               <Input
-                label="حد الشحن المجاني"
+                label={t('settings_store.form.free_threshold')}
                 type="number"
                 min="0"
                 value={storeForm.shippingFreeThreshold}
@@ -555,7 +557,7 @@ export default function SettingsStore() {
               />
 
               <Input
-                label="أقل مدة متوقعة (أيام)"
+                label={t('settings_store.form.min_days')}
                 type="number"
                 min="0"
                 value={storeForm.shippingEstimatedDaysMin}
@@ -564,7 +566,7 @@ export default function SettingsStore() {
               />
 
               <Input
-                label="أقصى مدة متوقعة (أيام)"
+                label={t('settings_store.form.max_days')}
                 type="number"
                 min="0"
                 value={storeForm.shippingEstimatedDaysMax}
@@ -573,25 +575,25 @@ export default function SettingsStore() {
               />
 
               <Input
-                label="محافظة الشحن الأصلية"
+                label={t('settings_store.form.origin_governorate')}
                 value={storeForm.shippingOriginGovernorate}
                 onChange={(e) => setStoreForm({ ...storeForm, shippingOriginGovernorate: e.target.value })}
-                placeholder="القاهرة"
+                placeholder={t('settings_store.form.origin_governorate_placeholder')}
               />
 
               <Input
-                label="مدينة / فرع الانطلاق"
+                label={t('settings_store.form.origin_city')}
                 value={storeForm.shippingOriginCity}
                 onChange={(e) => setStoreForm({ ...storeForm, shippingOriginCity: e.target.value })}
-                placeholder="مدينة نصر"
+                placeholder={t('settings_store.form.origin_city_placeholder')}
               />
 
               <div className="md:col-span-2">
                 <TextArea
-                  label="عنوان المستودع أو نقطة الاستلام"
+                  label={t('settings_store.form.warehouse_address')}
                   value={storeForm.shippingWarehouseAddress}
                   onChange={(e) => setStoreForm({ ...storeForm, shippingWarehouseAddress: e.target.value })}
-                  placeholder="العنوان الكامل الذي سيتم الاعتماد عليه عند إنشاء الشحنات"
+                  placeholder={t('settings_store.form.warehouse_address_placeholder')}
                   rows={3}
                 />
               </div>
@@ -600,38 +602,38 @@ export default function SettingsStore() {
             <div className={`rounded-2xl border border-dashed border-amber-200 bg-white/70 p-4 dark:border-amber-800/40 dark:bg-gray-950/20 ${!storeForm.shippingEnabled ? 'pointer-events-none opacity-60' : ''}`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">مناطق ورسوم الشحن</h4>
-                  <p className="mt-1 text-xs text-muted">يمكنك تخصيص رسوم ومدة مختلفة لكل محافظة أو منطقة بدلًا من الرسوم الأساسية.</p>
+                  <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">{t('settings_store.zones.title')}</h4>
+                  <p className="mt-1 text-xs text-muted">{t('settings_store.zones.desc')}</p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addShippingZone} icon={<Plus className="h-4 w-4" />}>
-                  إضافة منطقة
+                  {t('settings_store.zones.add')}
                 </Button>
               </div>
 
               <div className="space-y-3">
                 {storeForm.shippingZones.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-muted dark:border-gray-800 dark:bg-slate-950">
-                    لا توجد مناطق مخصصة الآن. سيتم استخدام الرسوم الأساسية في المتجر حتى تضيف مناطق شحن هنا.
+                    {t('settings_store.zones.empty')}
                   </div>
                 ) : (
                   storeForm.shippingZones.map((zone, index) => (
                     <div key={`${zone.code || 'zone'}-${index}`} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
                         <Input
-                          label="المنطقة"
+                          label={t('settings_store.zones.zone_label')}
                           value={zone.label}
                           onChange={(e) => updateShippingZone(index, 'label', e.target.value)}
-                          placeholder="القاهرة"
+                          placeholder={t('settings_store.placeholders.kzc16df')}
                           className="md:col-span-2"
                         />
                         <Input
-                          label="الكود"
+                          label={t('settings_store.zones.code')}
                           value={zone.code}
                           onChange={(e) => updateShippingZone(index, 'code', e.target.value)}
                           placeholder="cairo"
                         />
                         <Input
-                          label="الرسوم"
+                          label={t('settings_store.zones.fee')}
                           type="number"
                           min="0"
                           value={zone.fee}
@@ -639,7 +641,7 @@ export default function SettingsStore() {
                           placeholder="45"
                         />
                         <Input
-                          label="من يوم"
+                          label={t('settings_store.zones.from_day')}
                           type="number"
                           min="0"
                           value={zone.estimatedDaysMin}
@@ -647,7 +649,7 @@ export default function SettingsStore() {
                           placeholder="1"
                         />
                         <Input
-                          label="إلى يوم"
+                          label={t('settings_store.zones.to_day')}
                           type="number"
                           min="0"
                           value={zone.estimatedDaysMax}
@@ -663,7 +665,7 @@ export default function SettingsStore() {
                             onChange={(e) => updateShippingZone(index, 'isActive', e.target.checked)}
                             className="h-4 w-4 rounded text-amber-600 focus:ring-amber-500"
                           />
-                          المنطقة مفعلة
+                          {t('settings_store.zones.active')}
                         </label>
                         <Button
                           type="button"
@@ -672,7 +674,7 @@ export default function SettingsStore() {
                           onClick={() => removeShippingZone(index)}
                           icon={<Trash2 className="h-4 w-4" />}
                         >
-                          حذف
+                          {t('settings_store.zones.delete')}
                         </Button>
                       </div>
                     </div>
@@ -689,9 +691,9 @@ export default function SettingsStore() {
               <Truck className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-sky-700 dark:text-sky-300">سياسة تجهيز الطلبات الأونلاين</h3>
+              <h3 className="text-base font-bold text-sky-700 dark:text-sky-300">{t('settings_store.sections.fulfillment')}</h3>
               <p className="mt-1 text-sm text-subtle">
-                حدد الفرع الذي سيتولى تجهيز الطلبات الإلكترونية، وما إذا كان مسموحًا بالتحويل لفروع أخرى في حال عدم توفر المخزون، وإمكانية تجزئة الطلب بين أكثر من فرع.
+                {t('settings_store.sections.fulfillment_desc')}
               </p>
             </div>
           </div>
@@ -699,26 +701,26 @@ export default function SettingsStore() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">نظام توجيه الطلبات</label>
+                <label className="text-sm font-medium">{t('settings_store.fulfillment.routing_label')}</label>
                 <select
                   value={storeForm.onlineFulfillmentMode}
                   onChange={(e) => setStoreForm({ ...storeForm, onlineFulfillmentMode: e.target.value })}
                   className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-sky-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                 >
-                  <option value="branch_priority">أولوية الفروع</option>
-                  <option value="default_branch">الفرع الافتراضي دائمًا</option>
-                  <option value="customer_branch">فرع العميل أولاً</option>
+                  <option value="branch_priority">{t('settings_store.fulfillment.routing_priority')}</option>
+                  <option value="default_branch">{t('settings_store.fulfillment.routing_default')}</option>
+                  <option value="customer_branch">{t('settings_store.fulfillment.routing_customer')}</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">الفرع الافتراضي للطلبات</label>
+                <label className="text-sm font-medium">{t('settings_store.fulfillment.default_branch_label')}</label>
                 <select
                   value={storeForm.defaultOnlineBranchId || ''}
                   onChange={(e) => setStoreForm({ ...storeForm, defaultOnlineBranchId: e.target.value })}
                   className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-sky-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                 >
-                  <option value="">لا يوجد فرع افتراضي محدد</option>
+                  <option value="">{t('settings_store.fulfillment.no_default_branch')}</option>
                   {branches.map((branch) => (
                     <option key={branch._id} value={branch._id}>
                       {branch.name}
@@ -739,7 +741,7 @@ export default function SettingsStore() {
                   className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  السماح بتحويل الطلب لفرع آخر في حالة نفاد المخزون من الفرع الأساسي (Fallback)
+                  {t('settings_store.fulfillment.allow_cross_branch')}
                 </span>
               </label>
 
@@ -752,23 +754,23 @@ export default function SettingsStore() {
                   className="h-4 w-4 rounded text-sky-600 focus:ring-sky-500"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  السماح بتجزئة الطلب الواحد وتجهيزه من عدة فروع معاً حسب المخزون المتاح
+                  {t('settings_store.fulfillment.allow_mixed_orders')}
                 </span>
               </label>
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="mb-3">
-                <h4 className="text-sm font-bold app-text-strong">أولوية الفروع</h4>
+                  <h4 className="text-sm font-bold app-text-strong">{t('settings_store.fulfillment.priority_title')}</h4>
                 <p className="mt-1 text-xs text-muted">
-                  حدد الفروع ذات الأولوية في تحويل وتجهيز الطلبات الإلكترونية (سيتم التجاوز عن الفروع غير المفعلة للطلب الأونلاين).
+                    {t('settings_store.fulfillment.priority_desc')}
                 </p>
               </div>
 
               <div className="space-y-2">
                 {branches.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-muted dark:border-gray-800 dark:bg-slate-950">
-                    لم يتم إضافة أي فرع بعد. قم بإنشاء الفروع أولاً لإعداد سياسة التوجيه.
+                    {t('settings_store.fulfillment.no_branches')}
                   </div>
                 ) : (
                   branches.map((branch) => {
@@ -781,7 +783,7 @@ export default function SettingsStore() {
                         <div>
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{branch.name}</p>
                           <p className="text-xs text-muted">
-                            {branch.participatesInOnlineOrders ? 'مفعل للطلبات الأونلاين' : 'غير مفعل للطلبات'}
+                            {branch.participatesInOnlineOrders ? t('settings_store.fulfillment.branch_active') : t('settings_store.fulfillment.branch_inactive')}
                           </p>
                         </div>
                         <input
@@ -801,7 +803,7 @@ export default function SettingsStore() {
 
         <div className="flex justify-end">
           <Button onClick={handleSaveStore} loading={saving} icon={<Save className="h-4 w-4" />}>
-            حفظ بيانات المتجر
+            {t('settings_store.actions.save_store')}
           </Button>
         </div>
       </section>
@@ -814,17 +816,17 @@ export default function SettingsStore() {
             <Clock className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">إعدادات التشغيل والورديات</h2>
-            <p className="text-sm text-gray-400">التحكم في نظام الورديات وساعات العمل</p>
+            <h2 className="text-xl font-bold">{t('settings_store.sections.shifts')}</h2>
+            <p className="text-sm text-gray-400">{t('settings_store.sections.shifts_desc')}</p>
           </div>
         </div>
 
         <div className="rounded-2xl border border-purple-100 bg-purple-50/40 p-5 dark:border-purple-900/30 dark:bg-purple-900/10">
           <div className="mb-4 flex items-start gap-4">
             <div className="flex-1">
-              <h3 className="text-base font-bold text-purple-700 dark:text-purple-300">مدة الوردية الافتراضية</h3>
+              <h3 className="text-base font-bold text-purple-700 dark:text-purple-300">{t('settings_store.sections.shift_duration')}</h3>
               <p className="mt-1 text-sm text-gray-500">
-                حدد عدد الساعات التي تنتهي بعدها الوردية تلقائيًا. (من 1 إلى 24 ساعة)
+                {t('settings_store.sections.shift_duration_desc')}
               </p>
             </div>
             <div className="w-32">
@@ -842,7 +844,7 @@ export default function SettingsStore() {
 
         <div className="flex justify-end">
           <Button onClick={handleSaveStore} loading={saving} icon={<Save className="h-4 w-4" />}>
-            حفظ إعدادات التشغيل
+            {t('settings_store.actions.save_shifts')}
           </Button>
         </div>
       </section>
@@ -856,10 +858,10 @@ export default function SettingsStore() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-              رابط المتجر (Subdomain)
+              {t('settings_store.sections.subdomain')}
             </h2>
             <p className="text-sm text-gray-500">
-              الرابط المباشر الذي سيستخدمه عملاؤك للدخول والشراء
+              {t('settings_store.sections.subdomain_desc')}
             </p>
           </div>
         </div>
@@ -868,23 +870,23 @@ export default function SettingsStore() {
           <div className="max-w-xl">
             <div className="mb-6 rounded-lg border border-indigo-100 bg-white p-4 text-right text-sm text-subtle dark:border-indigo-500/30 dark:bg-slate-950">
               <p className="mb-2 font-bold text-indigo-800 dark:text-indigo-200">
-                ما هو رابط المتجر الأساسي؟
+                {t('settings_store.subdomain.info_title')}
               </p>
               <ul className="list-inside list-disc space-y-1 text-xs leading-relaxed text-subtle dark:text-gray-300">
                 <li>
-                  هذا الرابط مجاني وسريع الإعداد، ويمنح عملاءك مدخلًا مباشرًا لمتجرك.
+                  {t('settings_store.subdomain.info_free')}
                 </li>
                 <li>
-                  إذا كنت تريد ربط نطاقك الخاص مثل{' '}
+                  {t('settings_store.subdomain.info_custom_domain')}{' '}
                   <span dir="ltr" className="ml-1 font-mono text-[10px]">
                     www.myshop.com
                   </span>
-                  ، انتقل إلى شاشة{' '}
+                  {', '}{t('common.navigate_to')}{' '}
                   <Link
                     to="/settings?tab=whitelabel"
                     className="font-bold text-indigo-600 underline dark:text-indigo-400"
                   >
-                    إعدادات الهوية البصرية والنطاق المخصص
+                    {t('settings_store.subdomain.info_whitelabel_link')}
                   </Link>
                   .
                 </li>
@@ -892,7 +894,7 @@ export default function SettingsStore() {
             </div>
 
             <label className="mb-2 block text-sm font-medium">
-              اكتب رابط متجرك بالإنجليزية
+              {t('settings_store.subdomain.write_label')}
             </label>
             <div className="flex items-stretch gap-2">
               <div className="relative flex-1">
@@ -920,12 +922,12 @@ export default function SettingsStore() {
                 loading={updatingSubdomain}
                 className="shadow-md"
               >
-                تحديث الرابط
+                {t('settings_store.actions.update_subdomain')}
               </Button>
             </div>
 
             <div className="mt-4 rounded-xl border border-dashed border-indigo-200 bg-white/50 px-4 py-3 text-sm dark:border-indigo-800 dark:bg-gray-900/50">
-              <span className="text-gray-500 dark:text-gray-400">الرابط النهائي:</span>{' '}
+              <span className="text-gray-500 dark:text-gray-400">{t('settings_store.subdomain.final_url')}</span>{' '}
               {subdomain ? (
                 <div className="mt-2 space-y-1.5">
                   <span
@@ -937,7 +939,7 @@ export default function SettingsStore() {
                   </span>
                   {isLocalEnvironment && productionStoreUrl && (
                     <span className="block text-xs text-gray-500 dark:text-gray-400">
-                      بعد النشر سيكون الرابط:
+                      {t('settings_store.subdomain.after_deploy')}
                       {' '}
                       <span dir="ltr" className="font-mono text-indigo-500 dark:text-indigo-300">
                         {productionStoreUrl}
@@ -947,7 +949,7 @@ export default function SettingsStore() {
                 </div>
               ) : (
                 <span className="text-gray-400 dark:text-gray-500">
-                  سيظهر الرابط هنا بعد كتابة اسم المتجر
+                  {t('settings_store.subdomain.url_hint')}
                 </span>
               )}
             </div>
@@ -966,13 +968,13 @@ export default function SettingsStore() {
                 ) : (
                   <AlertCircle className="h-4 w-4" />
                 )}
-                {checking ? 'جارٍ فحص التوفر...' : availabilityMsg}
+                {checking ? t('settings_store.subdomain.checking') : availabilityMsg}
               </div>
             )}
 
             {tenant?.slug && (
               <div className="mt-6 border-t border-indigo-100 pt-6 dark:border-white/10">
-                <p className="mb-2 text-sm text-subtle">رابط متجرك النشط حاليًا:</p>
+                <p className="mb-2 text-sm text-subtle">{t('settings_store.subdomain.active_link')}</p>
                 <a
                   href={activeStoreUrl}
                   target="_blank"
@@ -985,7 +987,7 @@ export default function SettingsStore() {
                 </a>
                 {isLocalEnvironment && activeProductionStoreUrl && (
                   <p className="mt-2 text-xs text-muted">
-                    بعد النشر سيعمل المتجر على:
+                    {t('settings_store.subdomain.after_deploy_active')}
                     {' '}
                     <span dir="ltr" className="font-mono text-indigo-500 dark:text-indigo-300">
                       {activeProductionStoreUrl}
@@ -1020,10 +1022,10 @@ export default function SettingsStore() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-teal-600 dark:text-teal-400">
-              العلامة المائية للصور (Watermark)
+              {t('settings_store.sections.watermark')}
             </h2>
             <p className="text-sm text-subtle">
-              طبع اسم متجرك بشكل شفاف على صور المنتجات تلقائيًا لحفظ الحقوق
+              {t('settings_store.sections.watermark_desc')}
             </p>
           </div>
         </div>
@@ -1041,7 +1043,7 @@ export default function SettingsStore() {
                   className="h-5 w-5 rounded text-teal-600 focus:ring-teal-500"
                 />
                 <span className="font-bold text-gray-900 dark:text-gray-100">
-                  تفعيل العلامة المائية للصور الجديدة
+                  {t('settings_store.watermark.enable_label')}
                 </span>
               </label>
 
@@ -1050,16 +1052,16 @@ export default function SettingsStore() {
                   }`}
               >
                 <Input
-                  label="نص العلامة المائية"
+                  label={t('settings_store.watermark.text_label')}
                   value={storeForm.watermarkText}
                   onChange={(e) =>
                     setStoreForm({ ...storeForm, watermarkText: e.target.value })
                   }
-                  placeholder="مثال: متجر الأناقة"
+                  placeholder={t('settings_store.watermark.text_placeholder')}
                 />
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">موقع العلامة المائية</label>
+                  <label className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('settings_store.watermark.position_label')}</label>
                   <select
                     value={storeForm.watermarkPosition}
                     onChange={(e) =>
@@ -1067,11 +1069,11 @@ export default function SettingsStore() {
                     }
                     className="w-full rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus:border-teal-500 focus:ring-0 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
                   >
-                    <option value="center">في المنتصف</option>
-                    <option value="southeast">أسفل اليمين</option>
-                    <option value="southwest">أسفل اليسار</option>
-                    <option value="northeast">أعلى اليمين</option>
-                    <option value="northwest">أعلى اليسار</option>
+                    <option value="center">{t('settings_store.watermark.pos_center')}</option>
+                    <option value="southeast">{t('settings_store.watermark.pos_southeast')}</option>
+                    <option value="southwest">{t('settings_store.watermark.pos_southwest')}</option>
+                    <option value="northeast">{t('settings_store.watermark.pos_northeast')}</option>
+                    <option value="northwest">{t('settings_store.watermark.pos_northwest')}</option>
                   </select>
                 </div>
               </div>
@@ -1118,14 +1120,14 @@ export default function SettingsStore() {
               )}
 
               <div className="absolute bottom-2 right-2 rounded bg-gray-50/80 px-2 py-1 text-[10px] text-muted dark:bg-slate-950/80">
-                معاينة تجريبية
+                {t('settings_store.watermark.preview')}
               </div>
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3 justify-end">
             <Button onClick={handleSaveStore} loading={saving} icon={<Save className="h-4 w-4" />}>
-              حفظ إعدادات المتجر والعلامة المائية
+              {t('settings_store.actions.save_watermark')}
             </Button>
             <button
               onClick={handleApplyWatermarkToAll}
@@ -1133,17 +1135,17 @@ export default function SettingsStore() {
               className="inline-flex items-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 text-sm font-bold text-white shadow transition-all active:scale-95"
             >
               {applyingWatermark ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> جاري التطبيق...</>
+                <><Loader2 className="h-4 w-4 animate-spin" /> {t('settings_store.actions.applying')}</>
               ) : (
-                <>🖼️ تطبيق على الصور الموجودة</>
+                <>🖼️ {t('settings_store.actions.apply_to_existing')}</>
               )}
             </button>
           </div>
           {applyResult && (
             <p className="mt-3 text-sm text-teal-700 dark:text-teal-300 font-medium text-left">
-              ✅ تم معالجة {applyResult.processed} صورة من {applyResult.totalProducts} منتج
-              {applyResult.skippedLegacy > 0 && ` (${applyResult.skippedLegacy} صورة قديمة تحتاج إعادة رفع)`}
-              {applyResult.failed > 0 && ` (${applyResult.failed} فشلت)`}
+              ✅ {t('settings_store.watermark.apply_result', { processed: applyResult.processed, totalProducts: applyResult.totalProducts })}
+              {applyResult.skippedLegacy > 0 && ` ${t('settings_store.watermark.apply_result_skip', { count: applyResult.skippedLegacy })}`}
+              {applyResult.failed > 0 && ` ${t('settings_store.watermark.apply_result_fail', { count: applyResult.failed })}`}
             </p>
           )}
         </div>

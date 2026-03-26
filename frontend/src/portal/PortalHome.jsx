@@ -52,7 +52,7 @@ export default function PortalHome() {
   }
 
   const { wallet, upcomingInstallments, categories, products, store } = data;
-  const currencyLabel = wallet?.currency === 'EGP' ? 'ج.م' : wallet?.currency;
+  const currencyLabel = wallet?.currency === 'EGP' ? t('portal_home.ui.kwlxf') : wallet?.currency;
 
   // Dynamic colors
   const primaryColor = store?.primaryColor || '#6366f1';
@@ -410,7 +410,7 @@ export default function PortalHome() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ابحث عن منتجات، أقسام..."
+                  placeholder={t('portal_home.placeholders.kcm2i7c')}
                   className="app-surface-muted w-full rounded-xl border border-transparent py-2.5 pr-10 pl-4 text-sm focus:ring-2 focus:ring-primary-500/20"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {

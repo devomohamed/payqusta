@@ -350,7 +350,7 @@ const tenantSchema = new mongoose.Schema(
       {
         name: { type: String, required: true },
         url: { type: String, required: true }, // HLS (.m3u8), MP4, or Embed URL
-        type: { type: String, enum: ['stream', 'embed'], default: 'stream' },
+        type: { type: String, enum: ['stream', 'embed', 'mjpeg'], default: 'stream' },
         branch: { type: String }, // Optional: link to specific branch
       }
     ],

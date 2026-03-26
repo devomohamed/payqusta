@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   RefreshCcw, Search, Eye, CheckCircle, XCircle, Package, Clock, User
 } from 'lucide-react';
@@ -6,21 +7,24 @@ import { api as globalApi } from '../store';
 import { Card, LoadingSpinner, EmptyState, Modal } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
 
-const STATUS_CONFIG = {
-  pending: { label: 'قيد المراجعة', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
-  approved: { label: 'تمت الموافقة', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
-  rejected: { label: 'مرفوض', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
-  completed: { label: 'مكتمل', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: Package },
-};
+const getStatusConfig = (t) => ({
+  pending: { label: t('returns_management_page.ui.khwh8k7'), color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
+  approved: { label: t('returns_management_page.ui.ka79e0e'), color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle },
+  rejected: { label: t('returns_management_page.ui.kpbjxer'), color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle },
+  completed: { label: t('returns_management_page.ui.kpbuy23'), color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: Package },
+});
 
-const REASON_LABELS = {
-  defective: 'عيب صناعة',
-  wrong_item: 'منتج خاطئ',
-  changed_mind: 'تغيير رأي',
-  other: 'أخرى',
-};
+const getReasonLabels = (t) => ({
+  defective: t('returns_management_page.ui.kan6ndp'),
+  wrong_item: t('returns_management_page.ui.k8z3717'),
+  changed_mind: t('returns_management_page.ui.kzcoccn'),
+  other: t('returns_management_page.ui.ksssmb'),
+});
 
 export default function ReturnsManagementPage() {
+  const { t } = useTranslation('admin');
+  const statusConfig = useMemo(() => getStatusConfig(t), [t]);
+  const reasonLabels = useMemo(() => getReasonLabels(t), [t]);
   const [returns, setReturns] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -43,7 +47,7 @@ export default function ReturnsManagementPage() {
       setReturns(payload.returns || []);
       setStats(payload.stats || {});
     } catch {
-      notify.error('فشل تحميل المرتجعات');
+      notify.error(t('returns_management_page.toasts.kg4wwyq'));
     } finally {
       setLoading(false);
     }
@@ -55,20 +59,20 @@ export default function ReturnsManagementPage() {
     setActionLoading(true);
     try {
       await api('patch', `/manage/returns/${id}`, { status, adminNotes });
-      notify.success(status === 'approved' ? 'تمت الموافقة على المرتجع' : status === 'rejected' ? 'تم رفض المرتجع' : 'تم التحديث');
+      notify.success(status === 'approved' ? t('returns_management_page.ui.ktcbz6') : status === 'rejected' ? t('returns_management_page.ui.kw60x01') : t('returns_management_page.ui.kar7l11'));
       load();
       setSelected(null);
       setShowRejectModal(null);
       setRejectNotes('');
     } catch {
-      notify.error('فشل التحديث');
+      notify.error(t('returns_management_page.toasts.k1mzp4v'));
     } finally {
       setActionLoading(false);
     }
   };
 
   const StatusBadge = ({ status }) => {
-    const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+    const cfg = statusConfig[status] || statusConfig.pending;
     const Icon = cfg.icon;
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cfg.color}`}>
@@ -88,9 +92,9 @@ export default function ReturnsManagementPage() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-500/80">Returns Control</p>
-              <h1 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">إدارة المرتجعات</h1>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">{t('returns_management_page.ui.kf3mwva')}</h1>
               <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
-                مراجعة مرتجعات العملاء مع عرض أسرع للحالة، والإجراءات، والتفاصيل الأساسية على شاشات الهاتف.
+                {t('returns_management_page.ui.kxm5101')}
               </p>
             </div>
           </div>
@@ -101,10 +105,10 @@ export default function ReturnsManagementPage() {
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            { label: 'قيد المراجعة', count: stats.pending || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'pending' },
-            { label: 'تمت الموافقة', count: stats.approved || 0, color: 'text-green-600 bg-green-50 dark:bg-green-900/20', filter: 'approved' },
-            { label: 'مرفوض', count: stats.rejected || 0, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', filter: 'rejected' },
-            { label: 'مكتمل', count: stats.completed || 0, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', filter: 'completed' },
+            { label: t('returns_management_page.ui.khwh8k7'), count: stats.pending || 0, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', filter: 'pending' },
+            { label: t('returns_management_page.ui.ka79e0e'), count: stats.approved || 0, color: 'text-green-600 bg-green-50 dark:bg-green-900/20', filter: 'approved' },
+            { label: t('returns_management_page.ui.kpbjxer'), count: stats.rejected || 0, color: 'text-red-600 bg-red-50 dark:bg-red-900/20', filter: 'rejected' },
+            { label: t('returns_management_page.ui.kpbuy23'), count: stats.completed || 0, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', filter: 'completed' },
           ].map((s) => (
             <button
               key={s.filter}
@@ -121,15 +125,15 @@ export default function ReturnsManagementPage() {
       <Card className="app-surface-muted rounded-[2rem] p-4">
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">Search</p>
-          <h2 className="mt-2 text-lg font-extrabold text-gray-900 dark:text-white">بحث سريع</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">ابحث باسم العميل أو رقم الفاتورة مع الاحتفاظ بفلاتر الحالة أعلاه.</p>
+          <h2 className="mt-2 text-lg font-extrabold text-gray-900 dark:text-white">{t('returns_management_page.ui.khz20gp')}</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.ka8k57l')}</p>
         </div>
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث باسم العميل أو رقم الفاتورة..."
+            placeholder={t('returns_management_page.placeholders.kbfl19m')}
             className="app-surface w-full rounded-2xl border border-transparent py-3 pl-4 pr-10 text-sm outline-none transition-all duration-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10"
           />
         </div>
@@ -139,8 +143,8 @@ export default function ReturnsManagementPage() {
       {loading ? <LoadingSpinner /> : returns.length === 0 ? (
         <EmptyState
           icon={<RefreshCcw className="w-12 h-12 text-gray-300" />}
-          title="لا توجد مرتجعات"
-          description={statusFilter ? 'لا توجد مرتجعات بهذه الحالة' : 'لم يتم استلام أي طلبات مرتجعات بعد'}
+          title={t('returns_management_page.titles.kcya3ho')}
+          description={statusFilter ? t('returns_management_page.ui.krwhrle') : 'لم يتم استلام أي طلبات مرتجعات بعد'}
         />
       ) : (
         <Card className="overflow-hidden rounded-3xl">
@@ -150,7 +154,7 @@ export default function ReturnsManagementPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-extrabold text-gray-900 dark:text-white">{ret.customer?.name || '—'}</p>
-                    <p className="mt-1 text-xs text-gray-400">{ret.customer?.phone || 'بدون رقم هاتف'}</p>
+                    <p className="mt-1 text-xs text-gray-400">{ret.customer?.phone || t('returns_management_page.toasts.k852f3y')}</p>
                   </div>
                   <StatusBadge status={ret.status} />
                 </div>
@@ -171,23 +175,23 @@ export default function ReturnsManagementPage() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">سبب الإرجاع</p>
-                    <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{REASON_LABELS[ret.reason] || ret.reason}</p>
+                    <p className="text-[11px] text-gray-400">{t('returns_management_page.ui.kbrfofc')}</p>
+                    <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{reasonLabels[ret.reason] || ret.reason}</p>
                   </div>
                   <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
-                    <p className="text-[11px] text-gray-400">الكمية</p>
+                    <p className="text-[11px] text-gray-400">{t('returns_management_page.ui.kaay54y')}</p>
                     <p className="mt-1 font-semibold text-gray-700 dark:text-gray-200">{ret.quantity}</p>
                   </div>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
                   <span>{new Date(ret.createdAt).toLocaleDateString('ar-EG')}</span>
-                  {ret.refundStatus && ret.refundStatus !== 'none' ? <span>استرداد: {ret.refundStatus}</span> : <span>مرتجع عميل</span>}
+                  {ret.refundStatus && ret.refundStatus !== 'none' ? <span>استرداد: {ret.refundStatus}</span> : <span>{t('returns_management_page.ui.kion2d')}</span>}
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <button onClick={() => setSelected(ret)} className="rounded-2xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 dark:bg-blue-900/20">
-                    عرض التفاصيل
+                    {t('returns_management_page.ui.k3y9kzm')}
                   </button>
                   {ret.status === 'pending' && (
                     <>
@@ -196,13 +200,13 @@ export default function ReturnsManagementPage() {
                         disabled={actionLoading}
                         className="rounded-2xl bg-green-50 px-4 py-2 text-sm font-bold text-green-600 transition-all duration-200 hover:bg-green-100 disabled:opacity-50 dark:bg-green-900/20"
                       >
-                        موافقة
+                        {t('returns_management_page.ui.k3y3q9w')}
                       </button>
                       <button
                         onClick={() => setShowRejectModal(ret._id)}
                         className="rounded-2xl bg-red-50 px-4 py-2 text-sm font-bold text-red-500 transition-all duration-200 hover:bg-red-100 dark:bg-red-900/20"
                       >
-                        رفض
+                        {t('returns_management_page.ui.reject')}
                       </button>
                     </>
                   )}
@@ -212,7 +216,7 @@ export default function ReturnsManagementPage() {
                       disabled={actionLoading}
                       className="rounded-2xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600 transition-all duration-200 hover:bg-blue-100 disabled:opacity-50 dark:bg-blue-900/20"
                     >
-                      إكمال المرتجع
+                      {t('returns_management_page.ui.kqo0ksu')}
                     </button>
                   )}
                 </div>
@@ -224,14 +228,14 @@ export default function ReturnsManagementPage() {
             <table className="w-full text-sm text-right">
               <thead>
                 <tr className="border-b border-gray-100/80 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.03]">
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">العميل</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">المنتج</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">الفاتورة</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">السبب</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">الكمية</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">التاريخ</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">الحالة</th>
-                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400 text-center">إجراءات</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kab4izh')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kaawv6o')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kudvah3')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kovdx7a')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kaay54y')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kzbvdnf')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kabct8k')}</th>
+                  <th className="px-5 py-4 font-bold text-gray-500 dark:text-gray-400 text-center">{t('returns_management_page.ui.k5a5wt5')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100/70 dark:divide-white/5">
@@ -254,13 +258,13 @@ export default function ReturnsManagementPage() {
                       </div>
                     </td>
                     <td className="px-5 py-4 font-bold text-primary-600">#{ret.invoice?.invoiceNumber || '—'}</td>
-                    <td className="px-5 py-4 text-gray-600 dark:text-gray-400">{REASON_LABELS[ret.reason] || ret.reason}</td>
+                    <td className="px-5 py-4 text-gray-600 dark:text-gray-400">{reasonLabels[ret.reason] || ret.reason}</td>
                     <td className="px-5 py-4 font-bold">{ret.quantity}</td>
                     <td className="px-5 py-4 text-xs text-gray-500">{new Date(ret.createdAt).toLocaleDateString('ar-EG')}</td>
                     <td className="px-5 py-4"><StatusBadge status={ret.status} /></td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => setSelected(ret)} className="rounded-xl bg-blue-50 p-2 text-blue-600 transition-all duration-200 hover:bg-blue-100 motion-safe:hover:-translate-y-0.5 dark:bg-blue-900/20" title="عرض التفاصيل">
+                        <button onClick={() => setSelected(ret)} className="rounded-xl bg-blue-50 p-2 text-blue-600 transition-all duration-200 hover:bg-blue-100 motion-safe:hover:-translate-y-0.5 dark:bg-blue-900/20" title={t('returns_management_page.titles.k3y9kzm')}>
                           <Eye className="w-4 h-4" />
                         </button>
                         {ret.status === 'pending' && (
@@ -269,14 +273,14 @@ export default function ReturnsManagementPage() {
                               onClick={() => updateReturn(ret._id, 'approved')}
                               disabled={actionLoading}
                               className="rounded-xl bg-green-50 p-2 text-green-600 transition-all duration-200 hover:bg-green-100 motion-safe:hover:-translate-y-0.5 disabled:opacity-50 dark:bg-green-900/20"
-                              title="موافقة"
+                              title={t('returns_management_page.titles.k3y3q9w')}
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setShowRejectModal(ret._id)}
                               className="rounded-xl bg-red-50 p-2 text-red-500 transition-all duration-200 hover:bg-red-100 motion-safe:hover:-translate-y-0.5 dark:bg-red-900/20"
-                              title="رفض"
+                              title={t('returns_management_page.titles.reject')}
                             >
                               <XCircle className="w-4 h-4" />
                             </button>
@@ -287,7 +291,7 @@ export default function ReturnsManagementPage() {
                             onClick={() => updateReturn(ret._id, 'completed')}
                             disabled={actionLoading}
                             className="rounded-xl bg-blue-50 p-2 text-blue-600 transition-all duration-200 hover:bg-blue-100 motion-safe:hover:-translate-y-0.5 disabled:opacity-50 dark:bg-blue-900/20"
-                            title="إكمال واستلام المرتجع"
+                            title={t('returns_management_page.titles.kawvwda')}
                           >
                             <Package className="w-4 h-4" />
                           </button>
@@ -297,7 +301,7 @@ export default function ReturnsManagementPage() {
                             onClick={() => updateReturn(ret._id, 'completed')}
                             disabled={actionLoading}
                             className="rounded-xl bg-emerald-50 p-2 text-emerald-600 transition-all duration-200 hover:bg-emerald-100 motion-safe:hover:-translate-y-0.5 disabled:opacity-50 dark:bg-emerald-900/20"
-                            title="معالجة الاسترداد"
+                            title={t('returns_management_page.titles.k59fy6t')}
                           >
                             <RefreshCcw className="w-4 h-4" />
                           </button>
@@ -313,7 +317,7 @@ export default function ReturnsManagementPage() {
       )}
 
       {/* Detail Modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title="تفاصيل طلب المرتجع" size="md">
+      <Modal open={!!selected} onClose={() => setSelected(null)} title={t('returns_management_page.titles.khknz88')} size="md">
         {selected && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -364,33 +368,33 @@ export default function ReturnsManagementPage() {
             </div>
 
             <div className="app-surface-muted rounded-2xl p-4">
-              <h4 className="font-bold text-xs text-gray-400 uppercase mb-2">سبب الإرجاع</h4>
-              <p className="font-bold text-orange-600">{REASON_LABELS[selected.reason]}</p>
+              <h4 className="font-bold text-xs text-gray-400 uppercase mb-2">{t('returns_management_page.ui.kbrfofc')}</h4>
+              <p className="font-bold text-orange-600">{reasonLabels[selected.reason]}</p>
               {selected.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{selected.description}</p>}
             </div>
 
             {selected.adminNotes && (
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4">
-                <h4 className="font-bold text-xs text-blue-500 uppercase mb-2">ملاحظات الإدارة</h4>
+                <h4 className="font-bold text-xs text-blue-500 uppercase mb-2">{t('returns_management_page.ui.khbfvw2')}</h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300">{selected.adminNotes}</p>
               </div>
             )}
 
             {(selected.refundStatus && selected.refundStatus !== 'none') || selected.restockedAt || selected.completedAt ? (
               <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 space-y-2">
-                <h4 className="font-bold text-xs text-emerald-600 uppercase mb-2">الاسترداد والمخزون</h4>
+                <h4 className="font-bold text-xs text-emerald-600 uppercase mb-2">{t('returns_management_page.ui.kl5incr')}</h4>
                 {selected.refundStatus && selected.refundStatus !== 'none' ? (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">حالة الاسترداد</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kl1zpa2')}</span>
                     <span className="font-bold text-emerald-700 dark:text-emerald-300">
-                      {selected.refundStatus === 'pending' ? 'قيد المعالجة' : selected.refundStatus === 'refunded' ? 'تم رد المبلغ' : selected.refundStatus}
+                      {selected.refundStatus === 'pending' ? t('returns_management_page.ui.ki0w2sk') : selected.refundStatus === 'refunded' ? t('returns_management_page.ui.khyyhdf') : selected.refundStatus}
                       {Number(selected.refundAmount || 0) > 0 ? ` • ${Number(selected.refundAmount).toLocaleString('ar-EG')} ج.م` : ''}
                     </span>
                   </div>
                 ) : null}
                 {selected.restockedAt ? (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">إعادة للمخزون</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.k9mklcc')}</span>
                     <span className="font-bold text-blue-700 dark:text-blue-300">
                       {new Date(selected.restockedAt).toLocaleString('ar-EG')}
                     </span>
@@ -398,7 +402,7 @@ export default function ReturnsManagementPage() {
                 ) : null}
                 {selected.completedAt ? (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">تاريخ الإكمال</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.kwmigjj')}</span>
                     <span className="font-bold text-gray-800 dark:text-gray-100">
                       {new Date(selected.completedAt).toLocaleString('ar-EG')}
                     </span>
@@ -406,7 +410,7 @@ export default function ReturnsManagementPage() {
                 ) : null}
                 {selected.refundedAt ? (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">تم رد المبلغ</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('returns_management_page.ui.khyyhdf')}</span>
                     <span className="font-bold text-emerald-700 dark:text-emerald-300">
                       {new Date(selected.refundedAt).toLocaleString('ar-EG')}
                     </span>
@@ -424,13 +428,13 @@ export default function ReturnsManagementPage() {
       </Modal>
 
       {/* Reject Modal */}
-      <Modal open={!!showRejectModal} onClose={() => { setShowRejectModal(null); setRejectNotes(''); }} title="رفض المرتجع" size="sm">
+      <Modal open={!!showRejectModal} onClose={() => { setShowRejectModal(null); setRejectNotes(''); }} title={t('returns_management_page.titles.k1v49u4')} size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">يرجى كتابة سبب الرفض (اختياري)</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('returns_management_page.ui.kby3lax')}</p>
           <textarea
             value={rejectNotes}
             onChange={(e) => setRejectNotes(e.target.value)}
-            placeholder="سبب الرفض..."
+            placeholder={t('returns_management_page.placeholders.kfdjsoi')}
             className="app-surface h-24 w-full resize-none rounded-2xl border border-transparent p-3 text-sm outline-none transition-all duration-200 focus:border-red-400 focus:ring-4 focus:ring-red-500/10"
           />
           <div className="flex gap-3">
@@ -439,13 +443,13 @@ export default function ReturnsManagementPage() {
               disabled={actionLoading}
               className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition disabled:opacity-50"
             >
-              تأكيد الرفض
+              {t('returns_management_page.ui.kksqvrs')}
             </button>
             <button
               onClick={() => { setShowRejectModal(null); setRejectNotes(''); }}
               className="app-surface flex-1 rounded-xl py-3 text-sm font-bold transition-all duration-200 hover:border-primary-500/30 hover:text-primary-600 dark:hover:text-primary-300"
             >
-              إلغاء
+              {t('returns_management_page.ui.cancel')}
             </button>
           </div>
         </div>

@@ -3,8 +3,10 @@ import { api } from '../store';
 import { Card, Badge, LoadingSpinner } from './UI';
 import { AlertCircle, TrendingDown, ArrowRight, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function AIStockWidget() {
+  const { t } = useTranslation('admin');
   const [forecast, setForecast] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,8 +41,8 @@ export default function AIStockWidget() {
               <TrendingDown className="w-5 h-5 text-indigo-300" />
             </div>
             <div>
-              <h3 className="font-bold text-lg">تحليل المخزون بالذكاء الاصطناعي</h3>
-              <p className="text-xs text-indigo-300">توقعات النفاذ بناءً على المبيعات</p>
+              <h3 className="font-bold text-lg">{t('a_i_stock_widget.ui.kuj0157')}</h3>
+              <p className="text-xs text-indigo-300">{t('a_i_stock_widget.ui.kdj5puw')}</p>
             </div>
           </div>
 
@@ -50,13 +52,13 @@ export default function AIStockWidget() {
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-sm truncate w-2/3" title={item.name}>{item.name}</h4>
                   <Badge variant={item.status === 'critical' ? 'danger' : 'warning'} size="sm">
-                    {item.status === 'critical' ? 'حرج جداً' : 'منخفض'}
+                    {item.status === 'critical' ? t('a_i_stock_widget.ui.krrrl0h') : 'منخفض'}
                   </Badge>
                 </div>
                 
                 <div className="flex justify-between items-end text-xs text-gray-300">
                   <div>
-                    <p>المخزون الحالي: <span className="text-white font-bold">{item.currentStock}</span></p>
+                    <p>{t('a_i_stock_widget.ui.ku86ibr')} <span className="text-white font-bold">{item.currentStock}</span></p>
                     <p>معدل البيع: {item.ads} / يوم</p>
                   </div>
                   <div className="text-right">

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Package, ChevronLeft, Star, Quote, Heart, RotateCcw,
   Truck, ShieldCheck, Tag, Info, Bell, FileText, ArrowLeft, ArrowUpRight, CheckCircle2,
@@ -67,6 +68,7 @@ const initialCustomerZone = {
 };
 
 export default function StorefrontHome() {
+  const { t } = useTranslation('admin');
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +187,7 @@ export default function StorefrontHome() {
   const customerQuickLinks = [
     {
       key: 'orders',
-      label: 'طلباتي',
+      label: t('storefront_home.ui.k2qq2gk'),
       detail: `${customerZone.ordersCount.toLocaleString()} طلب`,
       icon: Package,
       href: '/portal/orders',
@@ -194,7 +196,7 @@ export default function StorefrontHome() {
     },
     {
       key: 'invoices',
-      label: 'فواتيري',
+      label: t('storefront_home.ui.k7dw1on'),
       detail: customerZone.dueInvoicesCount > 0 ? `${customerZone.dueInvoicesCount.toLocaleString()} تحتاج متابعة` : `${customerZone.invoicesCount.toLocaleString()} فاتورة`,
       icon: FileText,
       href: '/portal/invoices',
@@ -203,8 +205,8 @@ export default function StorefrontHome() {
     },
     {
       key: 'returns',
-      label: 'المرتجعات',
-      detail: customerZone.returnsCount > 0 ? `${customerZone.returnsCount.toLocaleString()} طلب مرتجع` : 'قدم أو تابع طلبات الإرجاع',
+      label: t('storefront_home.ui.kq51opb'),
+      detail: customerZone.returnsCount > 0 ? `${customerZone.returnsCount.toLocaleString()} طلب مرتجع` : t('storefront_home.ui.k5dir2k'),
       icon: RotateCcw,
       href: '/portal/returns',
       tone: 'from-orange-500/15 via-white to-white',
@@ -212,8 +214,8 @@ export default function StorefrontHome() {
     },
     {
       key: 'support',
-      label: 'الدعم',
-      detail: customerZone.supportOpenCount > 0 ? `${customerZone.supportOpenCount.toLocaleString()} محادثة مفتوحة` : 'ابدأ محادثة مع المتجر',
+      label: t('storefront_home.ui.kovduny'),
+      detail: customerZone.supportOpenCount > 0 ? `${customerZone.supportOpenCount.toLocaleString()} محادثة مفتوحة` : t('storefront_home.ui.k8ilhkk'),
       icon: MessageCircle,
       href: '/portal/support',
       tone: 'from-emerald-500/15 via-white to-white',
@@ -223,36 +225,36 @@ export default function StorefrontHome() {
   const customerAssetCards = [
     {
       key: 'notifications',
-      label: 'الإشعارات',
+      label: t('storefront_home.ui.k31c17e'),
       value: unreadCount.toLocaleString(),
-      detail: customerZone.latestNotification?.title || 'آخر التحديثات ستظهر هنا',
+      detail: customerZone.latestNotification?.title || t('storefront_home.toasts.k5r2sph'),
       icon: Bell,
       href: '/portal/dashboard',
       badgeClass: unreadCount > 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600',
     },
     {
       key: 'wishlist',
-      label: 'المفضلة',
+      label: t('storefront_home.ui.kz9xj32'),
       value: customerZone.wishlistCount.toLocaleString(),
-      detail: 'منتجات محفوظة للرجوع السريع',
+      detail: t('storefront_home.ui.kprsfd4'),
       icon: Heart,
       href: '/portal/wishlist',
       badgeClass: 'bg-rose-100 text-rose-700',
     },
     {
       key: 'documents',
-      label: 'المستندات',
+      label: t('storefront_home.ui.kp6i1o5'),
       value: customerZone.documentsCount.toLocaleString(),
-      detail: 'تتبع اعتماد ملفاتك وKYC',
+      detail: t('storefront_home.ui.k5bqua5'),
       icon: File,
       href: '/portal/documents',
       badgeClass: 'bg-amber-100 text-amber-700',
     },
     {
       key: 'addresses',
-      label: 'العناوين',
+      label: t('storefront_home.ui.kxp8jkp'),
       value: customerZone.addressesCount.toLocaleString(),
-      detail: 'أماكن الشحن والحفظ السريع',
+      detail: t('storefront_home.ui.k58t58j'),
       icon: MapPin,
       href: '/portal/addresses',
       badgeClass: 'bg-cyan-100 text-cyan-700',
@@ -262,24 +264,24 @@ export default function StorefrontHome() {
     {
       key: 'availability',
       value: showcasedInStockCount > 0 ? showcasedInStockCount.toLocaleString() : '0',
-      label: 'منتج متاح الآن',
+      label: t('storefront_home.ui.kcjjq9l'),
       detail: showcasedProductsCount > 0
         ? `من أصل ${showcasedProductsCount.toLocaleString()} منتجًا ظاهرًا الآن`
-        : 'يتم تحديث التوفر مع تحميل الصفحة',
+        : t('storefront_home.ui.kl8kt2q'),
     },
     {
       key: 'reviews',
-      value: storefrontRatingSnapshot.reviewCount > 0 ? `${storefrontRatingSnapshot.avgRating.toFixed(1)} / 5` : 'جاري التحديث',
-      label: 'متوسط تقييم معتمد',
+      value: storefrontRatingSnapshot.reviewCount > 0 ? `${storefrontRatingSnapshot.avgRating.toFixed(1)} / 5` : t('storefront_home.ui.k3bo9ss'),
+      label: t('storefront_home.ui.kyftb58'),
       detail: storefrontRatingSnapshot.reviewCount > 0
         ? `${storefrontRatingSnapshot.reviewCount.toLocaleString()} تقييم على المنتجات المعروضة`
-        : 'سيظهر هنا متوسط التقييم بعد أول مراجعات معتمدة',
+        : t('storefront_home.ui.kwlf76x'),
     },
     {
       key: 'guest-checkout',
-      value: 'بدون حساب',
-      label: 'إتمام الطلب',
-      detail: 'أكمل الشراء كضيف ثم تابع الطلب برقم الهاتف أو رقم الطلب',
+      value: t('storefront_home.ui.k8buc5e'),
+      label: t('storefront_home.ui.kuse6jo'),
+      detail: t('storefront_home.ui.kx90hso'),
     },
   ];
   return (
@@ -301,18 +303,18 @@ export default function StorefrontHome() {
 
         <div className="relative z-20 mx-auto max-w-4xl text-white">
           <Badge variant="primary" className="border border-white/10 bg-white/10 px-4 py-1.5 text-sm text-white backdrop-blur-md">
-            منتجات مختارة
+            {t('storefront_home.ui.kky6coo')}
           </Badge>
           <h1 className="mt-5 max-w-2xl text-3xl sm:text-4xl md:text-5xl font-black leading-tight">
-            اكتشف أحدث منتجات {settings?.store?.name || 'المتجر'}
+            اكتشف أحدث منتجات {settings?.store?.name || t('storefront_home.toasts.kaaxfw9')}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-slate-200 md:text-lg">
-            تجربة شراء أسرع، أسعار واضحة، ومنتجات جاهزة للطلب بدون ازدحام أو رسائل مشتتة.
+            {t('storefront_home.ui.kn1tf0b')}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to={storefrontPath('/products')}>
               <Button size="lg" className="px-8 py-3 shadow-xl">
-                ابدأ التسوق
+                {t('storefront_home.ui.kkvl27p')}
                 <ArrowLeft className="mr-2 h-5 w-5" />
               </Button>
             </Link>
@@ -340,24 +342,24 @@ export default function StorefrontHome() {
               <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                 <div className="max-w-2xl">
                   <Badge variant="primary" className="border border-white/15 bg-white/10 px-4 py-1.5 text-xs text-white backdrop-blur">
-                    منطقة العميل داخل المتجر
+                    {t('storefront_home.ui.ki0x9gh')}
                   </Badge>
                   <h2 className="mt-4 text-2xl font-black md:text-3xl">
-                    رجوع سريع لطلباتك وفواتيرك بدون الخروج من المتجر
+                    {t('storefront_home.ui.knbfgl7')}
                   </h2>
                   <p className="mt-3 text-sm leading-7 text-slate-200 md:text-base">
-                    أهلاً {customer.name || 'بك'}، هذه أهم العناصر المرتبطة بحسابك الآن مع اختصارات مباشرة للطلبات، الفواتير، المرتجعات، والدعم.
+                    أهلاً {customer.name || t('storefront_home.toasts.k12xn')}، هذه أهم العناصر المرتبطة بحسابك الآن مع اختصارات مباشرة للطلبات، الفواتير، المرتجعات، والدعم.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 md:min-w-[320px]">
                   <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">الرصيد المتاح</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">{t('storefront_home.ui.k3g0ria')}</p>
                     <p className="mt-2 text-2xl font-black">{Number(customer.balance || 0).toLocaleString()} ج.م</p>
                     <p className="mt-1 text-xs text-slate-200">من حد ائتماني إجمالي {Number(customer.creditLimit || 0).toLocaleString()} ج.م</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">نقاط الولاء</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">{t('storefront_home.ui.k22339j')}</p>
                     <p className="mt-2 text-2xl font-black">{Number(customer.points || 0).toLocaleString()}</p>
                     <p className="mt-1 text-xs text-slate-200">الفئة الحالية: {customer.tier || 'classic'}</p>
                   </div>
@@ -385,7 +387,7 @@ export default function StorefrontHome() {
                         </div>
                       </div>
                       <div className="mt-5 inline-flex items-center gap-2 text-xs font-black text-primary-600">
-                        افتح الآن
+                        {t('storefront_home.ui.kxtya3o')}
                         <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                       </div>
                     </Link>
@@ -397,17 +399,17 @@ export default function StorefrontHome() {
                 <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div className="text-right">
-                      <h3 className="text-xl font-black text-slate-900">ملخص الحساب داخل المتجر</h3>
-                      <p className="mt-1 text-sm text-slate-500">روابط يومية سريعة بدل الدخول لكل صفحة على حدة.</p>
+                      <h3 className="text-xl font-black text-slate-900">{t('storefront_home.ui.koathcn')}</h3>
+                      <p className="mt-1 text-sm text-slate-500">{t('storefront_home.ui.kf365y8')}</p>
                     </div>
                     {customerZoneLoading ? (
                       <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 shadow-sm">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        جاري التحديث
+                        {t('storefront_home.ui.k3bo9ss')}
                       </div>
                     ) : (
                       <Link to="/portal/dashboard" className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black text-primary-600 shadow-sm transition-colors hover:bg-primary-50">
-                        لوحة الحساب
+                        {t('storefront_home.ui.krct6kk')}
                         <ChevronLeft className="h-4 w-4" />
                       </Link>
                     )}
@@ -437,9 +439,9 @@ export default function StorefrontHome() {
                 <div className="rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="text-right">
-                      <h3 className="text-xl font-black text-slate-900">دعم سريع من داخل المتجر</h3>
+                      <h3 className="text-xl font-black text-slate-900">{t('storefront_home.ui.kxa9d3s')}</h3>
                       <p className="mt-2 text-sm leading-7 text-slate-600">
-                        افتح تذكرة جديدة أو أكمل المحادثات المفتوحة بدون الحاجة للعودة إلى لوحة منفصلة.
+                        {t('storefront_home.ui.k6dq36z')}
                       </p>
                     </div>
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
@@ -449,11 +451,11 @@ export default function StorefrontHome() {
 
                   <div className="mt-5 space-y-3 rounded-2xl border border-white/80 bg-white/80 p-4 backdrop-blur">
                     <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-bold text-slate-500">محادثات مفتوحة</span>
+                      <span className="font-bold text-slate-500">{t('storefront_home.ui.k2ma9p4')}</span>
                       <span className="text-lg font-black text-slate-900">{customerZone.supportOpenCount.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-bold text-slate-500">إشعارات غير مقروءة</span>
+                      <span className="font-bold text-slate-500">{t('storefront_home.ui.k6wog0s')}</span>
                       <span className="text-lg font-black text-slate-900">{unreadCount.toLocaleString()}</span>
                     </div>
                   </div>
@@ -463,14 +465,14 @@ export default function StorefrontHome() {
                       to="/portal/support"
                       className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-500"
                     >
-                      افتح الدعم
+                      {t('storefront_home.ui.kgo5twl')}
                       <ArrowLeft className="h-4 w-4" />
                     </Link>
                     <Link
                       to="/portal/support"
                       className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-50"
                     >
-                      كل المحادثات
+                      {t('storefront_home.ui.kg68ls2')}
                       <ChevronLeft className="h-4 w-4" />
                     </Link>
                   </div>
@@ -487,15 +489,15 @@ export default function StorefrontHome() {
           <div className="text-right">
             <h2 className="flex items-center gap-3 text-3xl font-black text-gray-900 dark:text-white">
               <Sparkles className="w-8 h-8 text-amber-500" />
-              تقسيم المتجر
+              {t('storefront_home.ui.kgl2s33')}
             </h2>
             <p className="mt-2 text-sm font-medium text-gray-500">
-              اعرض الأقسام الرئيسية وما بداخلها من أقسام فرعية بشكل واضح للعميل من أول زيارة.
+              {t('storefront_home.ui.k70bbpz')}
             </p>
           </div>
           {isUsingShowcaseFallback && (
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-xs font-black text-amber-700">
-              عرض توضيحي جاهز حتى تضيف منتجاتك الفعلية
+              {t('storefront_home.ui.km2rdw3')}
             </span>
           )}
         </div>
@@ -511,7 +513,7 @@ export default function StorefrontHome() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[11px] font-black uppercase tracking-widest text-primary-500">
-                      قسم
+                      {t('storefront_home.ui.ky33o')}
                     </p>
                     <h3 className="mt-2 text-2xl font-black text-gray-900 dark:text-white">{category.name}</h3>
                     <p className="mt-2 text-xs font-medium leading-6 text-gray-500">
@@ -533,7 +535,7 @@ export default function StorefrontHome() {
                     </span>
                   )) : (
                     <span className="inline-flex items-center rounded-full border border-dashed border-gray-300 px-3 py-1 text-[11px] font-bold text-gray-500">
-                      تسوّق من هذا القسم
+                      {t('storefront_home.ui.kic06je')}
                     </span>
                   )}
                 </div>
@@ -549,13 +551,13 @@ export default function StorefrontHome() {
       <section dir="rtl">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">الأكثر مبيعاً</h2>
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{t('storefront_home.ui.kmhoedv')}</h2>
             <p className="text-gray-500 font-medium">
-              {featuredProducts.length > 0 ? 'المنتجات التي يفضلها عملاؤنا حالياً' : 'منتجات مختارة لتبدأ التصفح بسرعة'}
+              {featuredProducts.length > 0 ? t('storefront_home.ui.ktkkjtv') : 'منتجات مختارة لتبدأ التصفح بسرعة'}
             </p>
           </div>
           <Link to={storefrontPath('/products')} className="bg-gray-100 dark:bg-gray-800 px-6 py-2 rounded-xl font-bold text-sm hover:bg-primary-500 hover:text-white transition-all flex items-center gap-2">
-            عرض الكل
+            {t('storefront_home.ui.kwbgoww')}
             <ChevronLeft className="w-4 h-4 ml-2" />
           </Link>
         </div>
@@ -577,13 +579,13 @@ export default function StorefrontHome() {
       <section dir="rtl">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">وصل حديثاً</h2>
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{t('storefront_home.ui.k74gwcw')}</h2>
             <p className="text-gray-500 font-medium">
-              {newArrivals.length > 0 ? 'أحدث المنتجات في متجرنا' : 'مختارات جديدة من المتجر'}
+              {newArrivals.length > 0 ? t('storefront_home.ui.kkokubj') : 'مختارات جديدة من المتجر'}
             </p>
           </div>
           <Link to={storefrontPath('/products?sort=-createdAt')} className="bg-gray-100 dark:bg-gray-800 px-6 py-2 rounded-xl font-bold text-sm hover:bg-primary-500 hover:text-white transition-all flex items-center gap-2">
-            عرض الكل
+            {t('storefront_home.ui.kwbgoww')}
             <ChevronLeft className="w-4 h-4 ml-2" />
           </Link>
         </div>
@@ -599,6 +601,7 @@ export default function StorefrontHome() {
 }
 
 function ProductCard({ product }) {
+  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const { addToCart } = useCommerceStore((state) => ({
     addToCart: state.addToCart,
@@ -619,17 +622,17 @@ function ProductCard({ product }) {
 
     if (isShowcasePlaceholder) {
       navigate(productLink);
-      notify.info('هذا العنصر غير متاح للطلب المباشر حالياً.');
+      notify.info(t('storefront_home.toasts.kfypy1h'));
       return;
     }
 
     if (outOfStock) {
-      notify.error('المنتج غير متوفر حالياً');
+      notify.error(t('storefront_home.toasts.kk8kk8g'));
       return;
     }
 
     if (product.hasVariants) {
-      notify.info('اختر المواصفات أولاً من صفحة المنتج');
+      notify.info(t('storefront_home.toasts.ke5ldsi'));
       navigate(storefrontPath(`/products/${product._id}`));
       return;
     }
@@ -652,24 +655,24 @@ function ProductCard({ product }) {
 
     if (isShowcasePlaceholder) {
       navigate(productLink);
-      notify.info('افتح القسم لمشاهدة المنتجات المتاحة حالياً.');
+      notify.info(t('storefront_home.toasts.kq36k5p'));
       return;
     }
 
     if (outOfStock) {
-      notify.error('المنتج غير متوفر حالياً');
+      notify.error(t('storefront_home.toasts.kk8kk8g'));
       return;
     }
 
     if (product.hasVariants) {
-      notify.info('اختر المواصفات أولاً لإتمام الشراء');
+      notify.info(t('storefront_home.toasts.kadyuv5'));
       navigate(storefrontPath(`/products/${product._id}`));
       return;
     }
 
     const buyNowItem = createBuyNowItem(product);
     if (!buyNowItem) {
-      notify.error('تعذر بدء الشراء الآن');
+      notify.error(t('storefront_home.toasts.kuqj79l'));
       return;
     }
 
@@ -687,10 +690,10 @@ function ProductCard({ product }) {
             <Badge variant="danger" className="font-black px-3 py-1 text-sm shadow-lg pointer-events-auto">-{discount}%</Badge>
           )}
           {product.isNew && !discount && !isShowcasePlaceholder && (
-            <Badge variant="success" className="font-black px-3 py-1 shadow-lg pointer-events-auto">جديد</Badge>
+            <Badge variant="success" className="font-black px-3 py-1 shadow-lg pointer-events-auto">{t('storefront_home.ui.ksyktk')}</Badge>
           )}
           <span className="hidden">
-            {isShowcasePlaceholder ? (product.showcaseLabel || 'عرض توضيحي') : outOfStock ? 'غير متاح' : 'شراء سريع'}
+            {isShowcasePlaceholder ? (product.showcaseLabel || t('storefront_home.toasts.kg184i7')) : outOfStock ? t('storefront_home.ui.k5xt3ii') : 'شراء سريع'}
           </span>
         </div>
 
@@ -713,13 +716,13 @@ function ProductCard({ product }) {
           <div className="hidden">
             <Button className="w-full shadow-xl" size="md" onClick={handleQuickAdd} loading={adding} disabled={outOfStock && !isShowcasePlaceholder}>
               <ShoppingBag className="w-4 h-4 ml-2" />
-              {isShowcasePlaceholder ? 'استعرض القسم' : 'أضف للسلة'}
+              {isShowcasePlaceholder ? t('storefront_home.ui.k3rnbfb') : 'أضف للسلة'}
             </Button>
           </div>
 
           {outOfStock && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
-              <span className="bg-white text-black font-black px-6 py-2 rounded-full text-sm uppercase tracking-wider">نفذت الكمية</span>
+              <span className="bg-white text-black font-black px-6 py-2 rounded-full text-sm uppercase tracking-wider">{t('storefront_home.ui.kuw1l5')}</span>
             </div>
           )}
         </div>
@@ -746,7 +749,7 @@ function ProductCard({ product }) {
             )}
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-black text-indigo-600">{product.price.toFixed(2)}</span>
-              <span className="text-[10px] font-bold text-indigo-600 uppercase">ج.م</span>
+              <span className="text-[10px] font-bold text-indigo-600 uppercase">{t('storefront_home.ui.kwlxf')}</span>
             </div>
           </div>
 
@@ -756,7 +759,7 @@ function ProductCard({ product }) {
             className={`mt-4 w-full h-11 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${(outOfStock && !isShowcasePlaceholder) ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/20 active:scale-95'}`}
           >
             <ShoppingBag className="w-4 h-4" />
-            {isShowcasePlaceholder ? 'استعرض القسم' : product.hasVariants ? 'اختر المواصفات' : adding ? 'جارٍ الإضافة...' : 'أضف للسلة الآن'}
+            {isShowcasePlaceholder ? t('storefront_home.ui.k3rnbfb') : product.hasVariants ? t('storefront_home.ui.ka27v6s') : adding ? t('storefront_home.ui.kq77xre') : 'أضف للسلة الآن'}
           </button>
 
           {false && !outOfStock && !isShowcasePlaceholder && (
@@ -764,14 +767,14 @@ function ProductCard({ product }) {
               onClick={handleBuyNow}
               className="mt-2.5 w-full h-10 rounded-2xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-300 hover:border-primary-300 hover:text-primary-600 transition-all active:scale-95"
             >
-              اشترِ الآن
+              {t('storefront_home.ui.kkjjf1h')}
             </button>
           )}
 
           {/* Trust Signal for Card */}
           <div className="hidden">
             <Truck className="w-3 h-3 text-emerald-500" />
-            <span className="text-[10px] font-bold text-gray-500 uppercase">توصيل غداً</span>
+            <span className="text-[10px] font-bold text-gray-500 uppercase">{t('storefront_home.ui.kk8rkq0')}</span>
           </div>
         </div>
       </Card>

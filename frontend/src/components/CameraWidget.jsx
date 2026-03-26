@@ -1,11 +1,13 @@
 import React from 'react';
 import { Camera, Maximize2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card } from './UI';
 import LazyStreamPlayer from './LazyStreamPlayer';
 
 export default function CameraWidget({ cameras = [] }) {
   const navigate = useNavigate();
+  const { t } = useTranslation('admin');
 
   if (!cameras || cameras.length === 0) {
     return (
@@ -13,24 +15,24 @@ export default function CameraWidget({ cameras = [] }) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <Camera className="w-5 h-5 text-primary-500" />
-            المراقبة الحية
+            {t('camera_widget.title')}
           </h3>
           <button 
             onClick={() => navigate('/cameras')} 
             className="text-sm text-primary-500 hover:underline flex items-center gap-1"
           >
-            إدارة الكاميرات
+            {t('camera_widget.manage')}
             <ExternalLink className="w-3 h-3" />
           </button>
         </div>
         <div className="text-center py-8 text-gray-400">
           <Camera className="w-12 h-12 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">لم يتم إضافة كاميرات بعد</p>
+          <p className="text-sm">{t('camera_widget.empty')}</p>
           <button 
             onClick={() => navigate('/cameras')} 
             className="mt-3 text-primary-500 text-sm hover:underline"
           >
-            إضافة كاميرا الآن
+            {t('camera_widget.add_now')}
           </button>
         </div>
       </Card>
@@ -45,7 +47,7 @@ export default function CameraWidget({ cameras = [] }) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <Camera className="w-5 h-5 text-primary-500" />
-          المراقبة الحية
+          {t('camera_widget.title')}
           {cameras.length > 4 && (
             <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">
               +{cameras.length - 4}
@@ -56,7 +58,7 @@ export default function CameraWidget({ cameras = [] }) {
           onClick={() => navigate('/cameras')} 
           className="text-sm text-primary-500 hover:underline flex items-center gap-1"
         >
-          عرض الكل
+          {t('camera_widget.view_all')}
           <ExternalLink className="w-3 h-3" />
         </button>
       </div>

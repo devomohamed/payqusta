@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Users,
     TrendingUp,
@@ -21,6 +22,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 const StaffPerformancePage = () => {
+  const { t } = useTranslation('admin');
     const [performance, setPerformance] = useState([]);
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ const StaffPerformancePage = () => {
             setPerformance(res.data.data.performance);
             setSummary(res.data.data.summary);
         } catch (error) {
-            toast.error('فشل تحميل إحصائيات الموظفين');
+            toast.error(t('staff_performance_page.toasts.krd5wxb'));
         } finally {
             setLoading(false);
         }
@@ -73,20 +75,20 @@ const StaffPerformancePage = () => {
                         <div className="text-xl font-black text-gray-900 dark:text-white">
                             {staff.stats.sales.toLocaleString('ar-EG')} ج.م
                         </div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">إجمالي المبيعات</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t('staff_performance_page.ui.kflwesj')}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-6">
                     <div className="app-surface rounded-xl p-3">
-                        <p className="text-[10px] text-gray-500 mb-1">حمولة التحصيل</p>
+                        <p className="text-[10px] text-gray-500 mb-1">{t('staff_performance_page.ui.k674ovw')}</p>
                         <div className="flex items-center justify-between">
                             <span className="font-bold text-sm">%{Math.round((staff.stats.collected / (staff.stats.sales || 1)) * 100)}</span>
                             <Activity className="w-3 h-3 text-indigo-500" />
                         </div>
                     </div>
                     <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-900/20">
-                        <p className="text-[10px] text-blue-500 mb-1">العمولة الـمـقدرة</p>
+                        <p className="text-[10px] text-blue-500 mb-1">{t('staff_performance_page.ui.kney2wp')}</p>
                         <div className="flex items-center justify-between">
                             <span className="font-bold text-sm text-blue-600">{staff.stats.commissionEarned.toLocaleString('ar-EG')} ج.م</span>
                             <DollarSign className="w-3 h-3 text-blue-500" />
@@ -136,8 +138,8 @@ const StaffPerformancePage = () => {
                         <Trophy className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-gray-900 dark:text-white">أداء فريق العمل</h1>
-                        <p className="text-gray-500 dark:text-gray-400">لوحة الشرف ومتابعة الإنتاجية</p>
+                        <h1 className="text-2xl font-black text-gray-900 dark:text-white">{t('staff_performance_page.ui.k72b2o3')}</h1>
+                        <p className="text-gray-500 dark:text-gray-400">{t('staff_performance_page.ui.kluhvv')}</p>
                     </div>
                 </div>
 
@@ -170,7 +172,7 @@ const StaffPerformancePage = () => {
                     {/* Summary Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="p-6 bg-gradient-to-br from-indigo-600 to-blue-700 text-white shadow-xl shadow-indigo-600/20">
-                            <h4 className="text-indigo-100 text-xs font-bold mb-1">إجمالي المبيعات (الفريق)</h4>
+                            <h4 className="text-indigo-100 text-xs font-bold mb-1">{t('staff_performance_page.ui.k4l51fd')}</h4>
                             <div className="text-3xl font-black">{summary?.totalSales.toLocaleString('ar-EG')} ج.م</div>
                             <div className="mt-4 flex items-center gap-2 text-xs bg-white/10 w-fit px-3 py-1.5 rounded-full backdrop-blur-sm">
                                 <Users className="w-3 h-3" />
@@ -179,22 +181,22 @@ const StaffPerformancePage = () => {
                         </Card>
 
                         <Card className="app-surface-muted p-6">
-                            <h4 className="text-gray-400 text-xs font-bold mb-1">العمولات المستحقة</h4>
+                            <h4 className="text-gray-400 text-xs font-bold mb-1">{t('staff_performance_page.ui.kbzj13h')}</h4>
                             <div className="text-3xl font-black text-gray-900 dark:text-white">{summary?.totalCommission.toLocaleString('ar-EG')} ج.م</div>
                             <div className="mt-4 flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 w-fit px-3 py-1.5 rounded-full">
                                 <TrendingUp className="w-3 h-3" />
-                                <span>تحسن بنسبة %12 عن الشهر الماضي</span>
+                                <span>{t('staff_performance_page.ui.ky9gpft')}</span>
                             </div>
                         </Card>
 
                         <Card className="app-surface-muted p-6">
-                            <h4 className="text-gray-400 text-xs font-bold mb-1">متوسط نشاط الموظف</h4>
+                            <h4 className="text-gray-400 text-xs font-bold mb-1">{t('staff_performance_page.ui.kl1t6um')}</h4>
                             <div className="text-3xl font-black text-gray-900 dark:text-white">
                                 {Math.round(performance.reduce((s, p) => s + p.stats.actionCount, 0) / (performance.length || 1))} عملية
                             </div>
                             <div className="mt-4 flex items-center gap-2 text-xs text-green-600 bg-green-50 dark:bg-green-900/30 w-fit px-3 py-1.5 rounded-full">
                                 <Target className="w-3 h-3" />
-                                <span>تحقيق %85 من المستهدف اليومي</span>
+                                <span>{t('staff_performance_page.ui.kpilbke')}</span>
                             </div>
                         </Card>
                     </div>
@@ -209,9 +211,9 @@ const StaffPerformancePage = () => {
                     {performance.length === 0 && (
                         <EmptyState
                             icon={Users}
-                            title="لا توجد بيانات أداء للموظفين"
+                            title={t('staff_performance_page.titles.k4r4b7c')}
                             description="لم يتم العثور على نشاط خلال الفترة المحددة."
-                            action={{ label: 'تحديث البيانات', onClick: fetchPerformance }}
+                            action={{ label: t('staff_performance_page.ui.k560y7g'), onClick: fetchPerformance }}
                         />
                     )}
                 </>

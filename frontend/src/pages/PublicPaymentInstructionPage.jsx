@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -23,12 +24,12 @@ const STATUS_STYLES = {
 };
 
 const STATUS_LABELS = {
-  success: 'تم السداد',
-  refunded: 'تم الاسترداد',
-  processing: 'بانتظار التأكيد',
-  pending: 'قيد الانتظار',
-  failed: 'فشل الدفع',
-  expired: 'انتهت صلاحية الرابط',
+  success: t('public_payment_instruction_page.ui.kn97dui'),
+  refunded: t('public_payment_instruction_page.ui.k75384e'),
+  processing: t('public_payment_instruction_page.ui.kbid32n'),
+  pending: t('public_payment_instruction_page.ui.k40qeml'),
+  failed: t('public_payment_instruction_page.ui.kpndwbp'),
+  expired: t('public_payment_instruction_page.ui.ky4eik'),
 };
 
 const GATEWAY_META = {
@@ -38,15 +39,16 @@ const GATEWAY_META = {
 };
 
 const formatDateTime = (value) => {
-  if (!value) return 'غير متاح';
+  if (!value) return t('public_payment_instruction_page.ui.k5xt3ii');
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'غير متاح';
+  if (Number.isNaN(date.getTime())) return t('public_payment_instruction_page.ui.k5xt3ii');
   return date.toLocaleString('ar-EG');
 };
 
 const formatAmount = (amount, currency) => `${Number(amount || 0).toFixed(2)} ${currency || 'EGP'}`;
 
 export default function PublicPaymentInstructionPage() {
+  const { t } = useTranslation('admin');
   const { gateway, id } = useParams();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function PublicPaymentInstructionPage() {
         setSession(response.data?.data || null);
       } catch (err) {
         if (!active) return;
-        setError(err.response?.data?.message || 'تعذر تحميل بيانات الدفع');
+        setError(err.response?.data?.message || t('public_payment_instruction_page.toasts.k2fw3tq'));
       } finally {
         if (active) setLoading(false);
       }
@@ -103,7 +105,7 @@ export default function PublicPaymentInstructionPage() {
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
         <div className="flex items-center gap-3 text-slate-200">
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span>جاري تجهيز تعليمات الدفع...</span>
+          <span>{t('public_payment_instruction_page.ui.k71udkg')}</span>
         </div>
       </div>
     );
@@ -114,11 +116,11 @@ export default function PublicPaymentInstructionPage() {
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
         <div className="max-w-md w-full rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <ShieldAlert className="w-12 h-12 mx-auto mb-4 text-amber-300" />
-          <h1 className="text-2xl font-black mb-3">الرابط غير متاح</h1>
-          <p className="text-slate-300 leading-7">{error || 'تعذر عرض بيانات عملية الدفع الحالية.'}</p>
+          <h1 className="text-2xl font-black mb-3">{t('public_payment_instruction_page.ui.kxa9mt4')}</h1>
+          <p className="text-slate-300 leading-7">{error || t('public_payment_instruction_page.toasts.kd9ka4r')}</p>
           <Link to="/" className="inline-flex items-center gap-2 mt-6 rounded-full bg-white text-slate-950 px-5 py-3 font-bold">
             <ArrowLeft className="w-4 h-4" />
-            العودة للموقع
+            {t('public_payment_instruction_page.ui.k3bsogc')}
           </Link>
         </div>
       </div>
@@ -156,7 +158,7 @@ export default function PublicPaymentInstructionPage() {
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">المبلغ</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{t('public_payment_instruction_page.ui.kaaxgsq')}</p>
                 <p className="mt-3 text-3xl font-black text-slate-950">{formatAmount(session.netAmount, session.currency)}</p>
                 {session.invoiceNumber ? <p className="mt-2 text-sm text-slate-500">فاتورة رقم {session.invoiceNumber}</p> : null}
               </div>
@@ -174,7 +176,7 @@ export default function PublicPaymentInstructionPage() {
                   </button>
                 </div>
                 <p className="mt-2 text-sm text-slate-500">
-                  {copiedValue === paymentMeta.referenceValue ? 'تم نسخ المرجع' : 'انسخ المرجع قبل إتمام السداد'}
+                  {copiedValue === paymentMeta.referenceValue ? t('public_payment_instruction_page.ui.k8mu0d6') : 'انسخ المرجع قبل إتمام السداد'}
                 </p>
               </div>
             </div>
@@ -197,7 +199,7 @@ export default function PublicPaymentInstructionPage() {
             ) : null}
 
             <div className="mt-8">
-              <h3 className="mb-4 text-lg font-black text-slate-950">الخطوات</h3>
+              <h3 className="mb-4 text-lg font-black text-slate-950">{t('public_payment_instruction_page.ui.kzed811')}</h3>
               <div className="space-y-3">
                 {paymentMeta.steps?.map((step, index) => (
                   <div key={`${index}-${step}`} className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -216,7 +218,7 @@ export default function PublicPaymentInstructionPage() {
                 className={`mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${gatewayUi.accent} px-6 py-3 font-bold text-white shadow-lg`}
               >
                 <ExternalLink className="w-4 h-4" />
-                فتح التطبيق مباشرة
+                {t('public_payment_instruction_page.ui.kjbp02a')}
               </a>
             ) : null}
           </section>
@@ -226,20 +228,20 @@ export default function PublicPaymentInstructionPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Transaction</p>
               <div className="mt-4 space-y-4">
                 <div>
-                  <p className="text-sm text-slate-300">رقم العملية</p>
+                  <p className="text-sm text-slate-300">{t('public_payment_instruction_page.ui.krhcg0i')}</p>
                   <p className="mt-1 break-all font-bold">{session.transactionId}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-300">تم الإنشاء</p>
+                  <p className="text-sm text-slate-300">{t('public_payment_instruction_page.ui.katiigl')}</p>
                   <p className="mt-1 font-bold">{formatDateTime(session.createdAt)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-300">انتهاء الصلاحية</p>
+                  <p className="text-sm text-slate-300">{t('public_payment_instruction_page.ui.ku4wzol')}</p>
                   <p className="mt-1 font-bold">{formatDateTime(session.expiresAt)}</p>
                 </div>
                 {session.completedAt ? (
                   <div>
-                    <p className="text-sm text-slate-300">تم التأكيد</p>
+                    <p className="text-sm text-slate-300">{t('public_payment_instruction_page.ui.kardk2b')}</p>
                     <p className="mt-1 font-bold">{formatDateTime(session.completedAt)}</p>
                   </div>
                 ) : null}
@@ -247,11 +249,11 @@ export default function PublicPaymentInstructionPage() {
             </div>
 
             <div className="rounded-[2rem] bg-white p-6 shadow-2xl shadow-slate-950/20">
-              <h3 className="text-lg font-black text-slate-950">مهم قبل الإغلاق</h3>
+              <h3 className="text-lg font-black text-slate-950">{t('public_payment_instruction_page.ui.kqel4du')}</h3>
               <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <li>استخدم نفس المبلغ المعروض دون تعديل.</li>
-                <li>لا تشارك الرابط إلا مع صاحب الفاتورة أو المكلّف بالدفع.</li>
-                <li>احتفظ بالرقم المرجعي حتى تظهر الحالة "تم السداد".</li>
+                <li>{t('public_payment_instruction_page.ui.k6lkylb')}</li>
+                <li>{t('public_payment_instruction_page.ui.kkfke02')}</li>
+                <li>{t('public_payment_instruction_page.ui.kdxi054')}</li>
               </ul>
             </div>
           </aside>

@@ -24,7 +24,7 @@ export default function PortalProductDetails() {
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [quantity, setQuantity] = useState(1);
 
-    const currency = i18n.language === 'ar' ? 'ج.م' : 'EGP';
+    const currency = i18n.language === 'ar' ? t('portal_product_details.ui.kwlxf') : 'EGP';
 
     useEffect(() => {
         loadProduct();

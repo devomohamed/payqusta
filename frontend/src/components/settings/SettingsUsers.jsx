@@ -5,8 +5,10 @@ import { Button, Input, Modal, Badge, Card, LoadingSpinner, EmptyState } from '.
 import { notify } from '../AnimatedNotification';
 import { confirm } from '../ConfirmDialog';
 import Pagination from '../Pagination';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsUsers() {
+  const { t } = useTranslation('admin');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -31,7 +33,7 @@ export default function SettingsUsers() {
       setUsers(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
-      notify.error('فشل تحميل المستخدمين');
+      notify.error(t('settings_users.toasts.kqd6fxw'));
     } finally {
       setLoading(false);
     }
@@ -69,12 +71,12 @@ export default function SettingsUsers() {
 
   const handleSave = async () => {
     if (!form.name || !form.email || !form.role) {
-      notify.warning('البيانات الأساسية مطلوبة');
+      notify.warning(t('settings_users.toasts.kpkza5c'));
       return;
     }
 
     if (false) {
-      notify.warning('كلمة المرور مطلوبة للمستخدم الجديد');
+      notify.warning(t('settings_users.toasts.k4ehgyh'));
       return;
     }
 
@@ -88,7 +90,7 @@ export default function SettingsUsers() {
           isActive: form.isActive,
           invitationChannel: form.invitationChannel,
         });
-        notify.success('تم تحديث المستخدم');
+        notify.success(t('settings_users.toasts.kfn7k1v'));
       } else {
         await api.post('/auth/users', {
           name: form.name,
@@ -97,12 +99,12 @@ export default function SettingsUsers() {
           role: form.role,
           invitationChannel: form.invitationChannel,
         });
-        notify.success('تم إضافة المستخدم');
+        notify.success(t('settings_users.toasts.kqa6ecs'));
       }
       setShowModal(false);
       loadUsers();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'حدث خطأ أثناء الحفظ');
+      notify.error(error.response?.data?.message || t('settings_users.toasts.kx7tp8e'));
     } finally {
       setSaving(false);
     }
@@ -111,30 +113,30 @@ export default function SettingsUsers() {
   const handleDelete = async (id) => {
     notify.custom({
       type: 'error',
-      title: 'تأكيد الحذف أو التعطيل',
-      message: 'هل تريد تعطيل حساب المستخدم فقط (مؤقتاً) أم حذفه نهائياً من النظام؟',
+      title: t('settings_users.ui.k5yeb8a'),
+      message: t('settings_users.ui.kvken9p'),
       duration: 10000,
       action: {
-        label: 'حذف نهائي',
+        label: t('settings_users.ui.kcuf6ig'),
         onClick: async () => {
           try {
             await api.delete(`/auth/users/${id}?hardDelete=true`);
-            notify.success('تم حذف المستخدم نهائياً', 'تم الحفظ');
+            notify.success(t('settings_users.ui.kcogsva'), t('settings_users.ui.kwtu1we'));
             loadUsers();
           } catch (error) {
-            notify.error(error.response?.data?.message || 'تعذر حذف المستخدم', 'حدث خطأ');
+            notify.error(error.response?.data?.message || t('settings_users.toasts.kgdyvm1'), t('settings_users.ui.ktcqm3h'));
           }
         },
       },
       secondaryAction: {
-        label: 'تعطيل فقط',
+        label: t('settings_users.ui.kce6i3c'),
         onClick: async () => {
           try {
             await api.delete(`/auth/users/${id}`);
-            notify.success('تم تعطيل المستخدم بنجاح', 'تم الحفظ');
+            notify.success(t('settings_users.ui.klo6evw'), t('settings_users.ui.kwtu1we'));
             loadUsers();
           } catch (error) {
-            notify.error(error.response?.data?.message || 'تعذر تعطيل المستخدم', 'حدث خطأ');
+            notify.error(error.response?.data?.message || t('settings_users.toasts.khi7j03'), t('settings_users.ui.ktcqm3h'));
           }
         },
       },
@@ -146,10 +148,10 @@ export default function SettingsUsers() {
       await api.post(`/auth/users/${user._id}/resend-invitation`, {
         invitationChannel: user.phone ? 'auto' : 'email',
       });
-      notify.success('تم إعادة إرسال الدعوة');
+      notify.success(t('settings_users.toasts.k173mf0'));
       loadUsers();
     } catch (error) {
-      notify.error(error.response?.data?.message || 'فشل إعادة إرسال الدعوة');
+      notify.error(error.response?.data?.message || t('settings_users.toasts.k7htz22'));
     }
   };
 
@@ -157,11 +159,11 @@ export default function SettingsUsers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">إدارة الموظفين</h2>
-          <p className="text-sm text-subtle">إضافة المستخدمين وتعديل صلاحياتهم</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('settings_users.ui.k8bi8a8')}</h2>
+          <p className="text-sm text-subtle">{t('settings_users.ui.kms5zq3')}</p>
         </div>
         <Button onClick={handleOpenAdd} icon={<Plus className="h-4 w-4" />}>
-          مستخدم جديد
+          {t('settings_users.ui.ku2tzuo')}
         </Button>
       </div>
 
@@ -170,7 +172,7 @@ export default function SettingsUsers() {
           <div className="relative max-w-sm">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="بحث بالاسم أو البريد..."
+              placeholder={t('settings_users.placeholders.kvgrksa')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pr-10"
@@ -183,7 +185,7 @@ export default function SettingsUsers() {
         ) : users.length === 0 ? (
           <EmptyState
             icon={<Users className="h-8 w-8" />}
-            title="لا يوجد مستخدمون"
+            title={t('settings_users.titles.k8hxeew')}
             description="أضف موظفين ليساعدوك في إدارة المتجر"
           />
         ) : (
@@ -191,10 +193,10 @@ export default function SettingsUsers() {
             <table className="w-full text-sm">
               <thead className="border-b border-gray-100 bg-gray-50/50 font-medium text-subtle dark:border-white/5 dark:bg-white/5">
                 <tr>
-                  <th className="p-4 text-right">المستخدم</th>
-                  <th className="p-4 text-right">الدور</th>
-                  <th className="p-4 text-right">الحالة</th>
-                  <th className="p-4 text-center">الإجراءات</th>
+                  <th className="p-4 text-right">{t('settings_users.ui.ksb3t2z')}</th>
+                  <th className="p-4 text-right">{t('settings_users.ui.kovdv0b')}</th>
+                  <th className="p-4 text-right">{t('settings_users.ui.kabct8k')}</th>
+                  <th className="p-4 text-center">{t('settings_users.ui.kvfmk6')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -214,12 +216,12 @@ export default function SettingsUsers() {
                     </td>
                     <td className="p-4">
                       <Badge variant={user.role === 'vendor' ? 'primary' : 'info'}>
-                        {user.role === 'vendor' ? 'مسؤول' : 'منسق'}
+                        {user.role === 'vendor' ? t('settings_users.ui.kpbklw2') : 'منسق'}
                       </Badge>
                     </td>
                     <td className="p-4">
                       <Badge variant={user.isActive ? 'success' : 'danger'}>
-                        {user.isActive ? 'نشط' : 'معطل'}
+                        {user.isActive ? t('settings_users.ui.ky62x') : 'معطل'}
                       </Badge>
                     </td>
                     <td className="flex justify-center gap-2 p-4">
@@ -256,36 +258,36 @@ export default function SettingsUsers() {
         )}
       </Card>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}>
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editId ? t('settings_users.ui.kz4wguq') : 'إضافة مستخدم جديد'}>
         <div className="space-y-4">
-          <Input label="الاسم" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+          <Input label={t('settings_users.form.kovdol8')} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           <Input
-            label="البريد الإلكتروني"
+            label={t('settings_users.form.k8lvosz')}
             type="email"
             value={form.email}
             onChange={(event) => setForm({ ...form, email: event.target.value })}
             disabled={Boolean(editId)}
           />
-          <Input label="رقم الهاتف" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+          <Input label={t('settings_users.form.k3pahhc')} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">الدور</label>
+            <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">{t('settings_users.ui.kovdv0b')}</label>
             <select
               value={form.role}
               onChange={(event) => setForm({ ...form, role: event.target.value })}
               className="app-surface-muted w-full rounded-xl border-2 border-gray-100/80 px-4 py-2.5 text-gray-900 outline-none transition-all focus:border-primary-500 dark:border-white/10 dark:text-white dark:focus:border-primary-400"
             >
-              <option value="coordinator">منسق</option>
-              <option value="vendor">مسؤول</option>
+              <option value="coordinator">{t('settings_users.ui.ktf00g')}</option>
+              <option value="vendor">{t('settings_users.ui.kpbklw2')}</option>
             </select>
           </div>
 
           <Input
-            label={editId ? 'تغيير كلمة المرور (اختياري)' : 'كلمة المرور'}
+            label={editId ? t('settings_users.ui.kdwt42u') : 'كلمة المرور'}
             type="password"
             value={form.password}
             onChange={(event) => setForm({ ...form, password: event.target.value })}
-            placeholder={editId ? 'اتركه فارغًا للإبقاء على الحالية' : ''}
+            placeholder={editId ? t('settings_users.ui.klem02k') : ''}
           />
 
           {!editId && (
@@ -322,24 +324,24 @@ export default function SettingsUsers() {
 
           {editId && (
             <div>
-              <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">الحالة</label>
+              <label className="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-300">{t('settings_users.ui.kabct8k')}</label>
               <select
                 value={form.isActive}
                 onChange={(event) => setForm({ ...form, isActive: event.target.value === 'true' })}
                 className="app-surface-muted w-full rounded-xl border-2 border-gray-100/80 px-4 py-2.5 text-gray-900 outline-none transition-all focus:border-primary-500 dark:border-white/10 dark:text-white dark:focus:border-primary-400"
               >
-                <option value="true">نشط</option>
-                <option value="false">معطل</option>
+                <option value="true">{t('settings_users.ui.ky62x')}</option>
+                <option value="false">{t('settings_users.ui.kteqgx')}</option>
               </select>
             </div>
           )}
 
           <div className="flex gap-3 pt-4">
             <Button className="flex-1" onClick={handleSave} loading={saving}>
-              حفظ
+              {t('settings_users.ui.save')}
             </Button>
             <Button className="flex-1" variant="ghost" onClick={() => setShowModal(false)}>
-              إلغاء
+              {t('settings_users.ui.cancel')}
             </Button>
           </div>
         </div>

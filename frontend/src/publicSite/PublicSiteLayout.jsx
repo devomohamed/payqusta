@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { ArrowLeft, Menu, Sparkles, X } from 'lucide-react';
 import AnimatedBrandLogo from '../components/AnimatedBrandLogo';
 import ThemeModeSwitcher from '../components/ThemeModeSwitcher';
+import { useTranslation } from 'react-i18next';
 import {
   brandArabicName,
   brandDisplayName,
@@ -21,6 +22,7 @@ function navLinkClass({ isActive }) {
 }
 
 export default function PublicSiteLayout({ children }) {
+  const { t } = useTranslation('admin');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -41,7 +43,7 @@ export default function PublicSiteLayout({ children }) {
               <AnimatedBrandLogo src="/logo-square.png" alt="PayQusta" size="sm" containerClassName="shrink-0" />
               <div className="min-w-0 text-right">
                 <p className="truncate text-base font-black tracking-tight sm:text-lg">{brandDisplayName}</p>
-                <p className="app-text-muted truncate text-[11px] font-medium sm:text-xs">منصة تشغيل ونمو للمتاجر</p>
+                <p className="app-text-muted truncate text-[11px] font-medium sm:text-xs">{t('public_site_layout.ui.klj17m1')}</p>
               </div>
             </Link>
 
@@ -59,13 +61,13 @@ export default function PublicSiteLayout({ children }) {
                 to="/login"
                 className="app-surface-muted app-text-body rounded-full px-5 py-2.5 text-sm font-black transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
               >
-                تسجيل الدخول
+                {t('public_site_layout.ui.k32w7dx')}
               </Link>
               <Link
                 to="/login?mode=register"
                 className="inline-flex items-center gap-2 rounded-full bg-primary-600 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-primary-500/20 transition-transform hover:-translate-y-0.5 hover:bg-primary-700"
               >
-                ابدأ الآن
+                {t('public_site_layout.ui.kl6w4j0')}
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </div>
@@ -74,7 +76,7 @@ export default function PublicSiteLayout({ children }) {
               type="button"
               onClick={() => setMobileMenuOpen((open) => !open)}
               className="app-surface inline-flex h-11 w-11 items-center justify-center rounded-2xl text-slate-700 dark:text-slate-100 lg:hidden"
-              aria-label="فتح القائمة"
+              aria-label={t('public_site_layout.form.k8fiyp8')}
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -86,7 +88,7 @@ export default function PublicSiteLayout({ children }) {
           <div className="border-t border-[color:var(--surface-border)] lg:hidden">
             <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
               <div className="app-surface rounded-[1.75rem] p-4">
-                <p className="app-text-muted text-right text-xs font-black uppercase tracking-[0.18em]">التصفح</p>
+                <p className="app-text-muted text-right text-xs font-black uppercase tracking-[0.18em]">{t('public_site_layout.ui.kabefvw')}</p>
                 <div className="mt-4 grid gap-2">
                   {publicNavLinks.map((item) => (
                     <NavLink
@@ -102,7 +104,7 @@ export default function PublicSiteLayout({ children }) {
                 </div>
 
                 <div className="app-surface-muted mt-4 rounded-2xl p-4 text-right">
-                  <p className="text-sm font-black text-slate-900 dark:text-white">واجهة عامة + تشغيل داخلي</p>
+                  <p className="text-sm font-black text-slate-900 dark:text-white">{t('public_site_layout.ui.ktsf510')}</p>
                   <p className="app-text-soft mt-2 text-xs leading-6">
                     {brandArabicName} يجمع بين موقع واضح للزائر وتجربة تشغيل فعلية للمتجر من الداخل.
                   </p>
@@ -118,14 +120,14 @@ export default function PublicSiteLayout({ children }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="app-surface-muted app-text-body rounded-full px-4 py-3 text-center text-sm font-black"
                   >
-                    تسجيل الدخول
+                    {t('public_site_layout.ui.k32w7dx')}
                   </Link>
                   <Link
                     to="/login?mode=register"
                     onClick={() => setMobileMenuOpen(false)}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3 text-center text-sm font-black text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700"
                   >
-                    ابدأ الآن
+                    {t('public_site_layout.ui.kl6w4j0')}
                     <ArrowLeft className="h-4 w-4" />
                   </Link>
                 </div>
@@ -156,10 +158,10 @@ export default function PublicSiteLayout({ children }) {
             <div className="overflow-hidden rounded-[2rem] border border-[color:var(--surface-border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.97),rgba(30,41,59,0.94))] p-6 text-right text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:border-white/10 sm:p-8">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-black text-amber-200">
                 <Sparkles className="h-3.5 w-3.5" />
-                جاهز لتجربة PayQusta
+                {t('public_site_layout.ui.k7354by')}
               </div>
               <h2 className="mt-5 text-2xl font-black leading-tight sm:text-3xl">
-                ابنِ حضورًا عامًا أقوى، وشغّل المبيعات والمخزون والأقساط من نفس المكان.
+                {t('public_site_layout.ui.k5o29hb')}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
                 الموقع العام يعرّف الزائر بالمشروع، والمتجر العام يحول الزيارة إلى طلب، بينما النظام الداخلي يربط البيع بالمخزون والتحصيل في تجربة تشغيل واحدة.
@@ -169,21 +171,21 @@ export default function PublicSiteLayout({ children }) {
                   to="/login?mode=register"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:-translate-y-0.5"
                 >
-                  أنشئ حسابك
+                  {t('public_site_layout.ui.kwfqesx')}
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/features"
                   className="rounded-full border border-white/15 px-6 py-3 text-center text-sm font-black text-white transition-colors hover:bg-white/10"
                 >
-                  استكشف المزايا
+                  {t('public_site_layout.ui.k21jqek')}
                 </Link>
               </div>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               <div className="app-surface rounded-[1.75rem] p-6 text-right">
-                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">التصفح</p>
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_site_layout.ui.kabefvw')}</p>
                 <div className="mt-4 flex flex-col gap-3">
                   {publicNavLinks.map((item) => (
                     <NavLink
@@ -199,7 +201,7 @@ export default function PublicSiteLayout({ children }) {
               </div>
 
               <div className="app-surface rounded-[1.75rem] p-6 text-right">
-                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">الثقة والسياسات</p>
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_site_layout.ui.kbfz3xc')}</p>
                 <div className="mt-4 flex flex-col gap-3">
                   {publicUtilityLinks.map((item) => (
                     <NavLink
@@ -212,12 +214,12 @@ export default function PublicSiteLayout({ children }) {
                   ))}
                 </div>
                 <p className="app-text-soft mt-5 text-sm leading-7">
-                  هذه الصفحات تساعد الزائر على فهم الشروط والخصوصية ومسار التواصل قبل التسجيل أو الإطلاق.
+                  {t('public_site_layout.ui.kvzqrjm')}
                 </p>
               </div>
 
               <div className="app-surface-muted rounded-[1.75rem] p-6 text-right sm:col-span-2 xl:col-span-1">
-                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">عن البراند</p>
+                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('public_site_layout.ui.kie88yx')}</p>
                 <p className="mt-4 text-base font-black app-text-body">{brandDisplayName}</p>
                 <p className="app-text-soft mt-2 text-sm leading-7">
                   {brandArabicName} هو الاسم العربي المتداول لنفس البراند. الواجهة العامة هنا موجودة لتشرح القيمة التجارية بوضوح وتدعم الظهور والبحث.
@@ -238,7 +240,7 @@ export default function PublicSiteLayout({ children }) {
 
           <div className="mt-8 flex flex-col gap-2 border-t border-[color:var(--surface-border)] pt-6 text-right text-sm font-medium text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
             <p>PayQusta © 2026</p>
-            <p>واجهة عامة قابلة للفهرسة وتجربة مناسبة للموبايل والسطح المكتبي.</p>
+            <p>{t('public_site_layout.ui.kwai0rn')}</p>
           </div>
         </div>
       </footer>
