@@ -66,6 +66,44 @@ const ORDER_TIMELINE = ['pending', 'confirmed', 'processing', 'shipped', 'delive
 
 const formatMoney = (value) => Number(value || 0).toLocaleString('ar-EG');
 
+const FALLBACK_VALUE = '\u2014';
+const PRIMARY_BRANCH_LABEL = '\u0641\u0631\u0639 \u0627\u0644\u062a\u0646\u0641\u064a\u0630';
+const SHIPPING_STATUS_LABELS = {
+  pending: '\u0642\u064a\u062f \u0627\u0644\u0645\u0631\u0627\u062c\u0639\u0629',
+  created: '\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0634\u062d\u0646\u0629',
+  confirmed: '\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0634\u062d\u0646\u0629',
+  picked_up: '\u062a\u0645 \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645 \u0645\u0646 \u0627\u0644\u0645\u0631\u0633\u0644',
+  out_for_delivery: '\u062e\u0631\u062c\u062a \u0644\u0644\u062a\u0633\u0644\u064a\u0645',
+  in_transit: '\u0641\u064a \u0627\u0644\u0637\u0631\u064a\u0642',
+  delivered: '\u062a\u0645 \u0627\u0644\u062a\u0633\u0644\u064a\u0645',
+  cancelled: '\u0645\u0644\u063a\u0627\u0629',
+  returned: '\u0645\u0631\u062a\u062c\u0639\u0629',
+  exception: '\u062a\u0639\u0630\u0631 \u0627\u0644\u062a\u0633\u0644\u064a\u0645',
+  failed: '\u0641\u0634\u0644\u062a \u0627\u0644\u0634\u062d\u0646\u0629',
+};
+
+function formatDisplayValue(value, fallback = FALLBACK_VALUE) {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === '?' || trimmed === '—') return fallback;
+    return trimmed;
+  }
+  return value;
+}
+
+function normalizePortalText(value) {
+  const text = formatDisplayValue(value, '');
+  if (!text) return text;
+  return text.replace(/Branch X/g, PRIMARY_BRANCH_LABEL);
+}
+
+function getShippingStatusLabel(status) {
+  const normalized = formatDisplayValue(status, '');
+  if (!normalized) return FALLBACK_VALUE;
+  return SHIPPING_STATUS_LABELS[normalized] || normalized;
+}
+
 function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = config.icon;
@@ -90,8 +128,26 @@ function TimelineStep({ status, currentStatus }) {
       </div>
       <div>
         <p className={`text-sm font-bold ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>{config.label}</p>
-        <p className="text-xs text-gray-400">حالة الطلب التشغيلية</p>
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">حالة الطلب التشغيلية</p>
       </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, dir, multiline = false, valueClassName = '' }) {
+  return (
+    <div
+      className={`rounded-2xl border border-slate-200/70 bg-slate-50/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03] ${
+        multiline ? 'space-y-2' : 'flex items-center justify-between gap-4'
+      }`}
+    >
+      <span className="text-sm font-bold text-slate-600 dark:text-slate-300">{label}</span>
+      <span
+        dir={dir}
+        className={`${multiline ? 'block text-left text-sm leading-6' : 'text-base'} font-black text-slate-950 dark:text-white ${valueClassName}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
@@ -347,9 +403,9 @@ export default function PortalOrderConfirmationPage() {
               العودة إلى الطلبات
             </button>
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-cyan-200/80">Order Detail</p>
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-cyan-200/80">{'\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0637\u0644\u0628'}</p>
               <h1 className="mt-2 text-3xl font-black">طلب #{order.invoiceNumber}</h1>
-              <p className="mt-2 text-sm text-white/75">واجهة التشغيل الحالية لتأكيد الطلب، مراجعة بيانات العميل، وتجهيز مسار التنفيذ القادم.</p>
+              <p className="mt-2 text-sm font-medium leading-7 text-white/90">واجهة التشغيل الحالية لتأكيد الطلب، مراجعة بيانات العميل، وتجهيز مسار التنفيذ القادم.</p>
             </div>
           </div>
 
@@ -449,9 +505,9 @@ export default function PortalOrderConfirmationPage() {
           <Card className="rounded-[2rem] border-0 p-6 shadow-sm">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div className="space-y-2">
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">Order Summary</p>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500 dark:text-slate-300">{'\u0645\u0644\u062e\u0635 \u0627\u0644\u0637\u0644\u0628'}</p>
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white">ملخص الطلب</h2>
-                <p className="text-sm text-gray-500">راجع البيانات قبل الانتقال إلى إجراءات التنفيذ والشحن.</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">راجع البيانات قبل الانتقال إلى إجراءات التنفيذ والشحن.</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -521,22 +577,10 @@ export default function PortalOrderConfirmationPage() {
                 <h3 className="text-lg font-black text-gray-900 dark:text-white">بيانات العميل</h3>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-gray-400">الاسم</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{order.customer?.name || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-gray-400">الهاتف</span>
-                  <span className="font-bold text-gray-900 dark:text-white" dir="ltr">{order.customer?.phone || order.shippingAddress?.phone || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-gray-400">منشئ الفاتورة</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{order.createdBy?.name || '—'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-gray-400">الفرع</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{order.branch?.name || '—'}</span>
-                </div>
+                <DetailRow label={'\u0627\u0644\u0627\u0633\u0645'} value={formatDisplayValue(order.customer?.name)} />
+                <DetailRow label={'\u0627\u0644\u0647\u0627\u062a\u0641'} value={formatDisplayValue(order.customer?.phone || order.shippingAddress?.phone)} dir="ltr" />
+                <DetailRow label={'\u0645\u0646\u0634\u0626 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629'} value={formatDisplayValue(order.createdBy?.name)} />
+                <DetailRow label={'\u0627\u0644\u0641\u0631\u0639'} value={formatDisplayValue(order.branch?.name, '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')} />
               </div>
             </Card>
 
@@ -547,27 +591,12 @@ export default function PortalOrderConfirmationPage() {
               </div>
               {order.shippingAddress ? (
                 <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">المستلم</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{order.shippingAddress.fullName || order.customer?.name || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">الهاتف</span>
-                    <span className="font-bold text-gray-900 dark:text-white" dir="ltr">{order.shippingAddress.phone || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">المحافظة</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{order.shippingAddress.governorate || '—'}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-400">العنوان</span>
-                    <span className="max-w-[65%] text-left font-bold text-gray-900 dark:text-white">{order.shippingAddress.address || '—'}</span>
-                  </div>
+                  <DetailRow label={'\u0627\u0644\u0645\u0633\u062a\u0644\u0645'} value={formatDisplayValue(order.shippingAddress.fullName || order.customer?.name)} />
+                  <DetailRow label={'\u0627\u0644\u0647\u0627\u062a\u0641'} value={formatDisplayValue(order.shippingAddress.phone)} dir="ltr" />
+                  <DetailRow label={'\u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629'} value={formatDisplayValue(order.shippingAddress.governorate, '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')} />
+                  <DetailRow label={'\u0627\u0644\u0639\u0646\u0648\u0627\u0646'} value={formatDisplayValue(order.shippingAddress.address)} multiline valueClassName="max-w-full" />
                   {order.shippingAddress.notes && (
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-gray-400">ملاحظات</span>
-                      <span className="max-w-[65%] text-left text-gray-600 dark:text-gray-300">{order.shippingAddress.notes}</span>
-                    </div>
+                    <DetailRow label={'\u0645\u0644\u0627\u062d\u0638\u0627\u062a'} value={order.shippingAddress.notes} multiline valueClassName="max-w-full font-semibold text-slate-700 dark:text-slate-200" />
                   )}
                 </div>
               ) : (
@@ -588,13 +617,13 @@ export default function PortalOrderConfirmationPage() {
             </div>
             <div className="space-y-3">
               {order.items?.map((item, index) => (
-                <div key={`${item.product?._id || item.productName || 'item'}-${index}`} className="app-surface-muted flex items-center justify-between rounded-3xl px-5 py-4">
+                <div key={`${item.product?._id || item.productName || 'item'}-${index}`} className="app-surface-muted flex items-center justify-between rounded-3xl border border-slate-200/70 px-5 py-4 dark:border-white/10">
                   <div className="space-y-1">
                     <p className="font-bold text-gray-900 dark:text-white">{item.productName || item.product?.name || 'منتج'}</p>
-                    <p className="text-xs text-gray-400">الكمية: {item.quantity} × {formatMoney(item.unitPrice)} ج.م</p>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">الكمية: {item.quantity} × {formatMoney(item.unitPrice)} ج.م</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-xs text-gray-400">الإجمالي</p>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">الإجمالي</p>
                     <p className="font-black text-primary-600 dark:text-primary-400">{formatMoney((item.quantity || 0) * (item.unitPrice || 0))} ج.م</p>
                   </div>
                 </div>
@@ -611,9 +640,9 @@ export default function PortalOrderConfirmationPage() {
             ) : fulfillmentAnalysis ? (
               <div className="mt-5 space-y-5">
                 <div className="rounded-3xl border border-primary-100 bg-primary-50/60 p-4 dark:border-primary-900/40 dark:bg-primary-950/20">
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-primary-500">Branch X</p>
-                  <h4 className="mt-2 text-base font-black text-gray-900 dark:text-white">{fulfillmentAnalysis.branchX?.name || '—'}</h4>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-primary-500">{PRIMARY_BRANCH_LABEL}</p>
+                  <h4 className="mt-2 text-base font-black text-gray-900 dark:text-white">{formatDisplayValue(fulfillmentAnalysis.branchX?.name, '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')}</h4>
+                  <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
                     {fulfillmentAnalysis.branchX?.governorate || 'بدون محافظة'}{fulfillmentAnalysis.branchX?.city ? ` / ${fulfillmentAnalysis.branchX.city}` : ''}
                   </p>
                 </div>
@@ -643,7 +672,7 @@ export default function PortalOrderConfirmationPage() {
                                 <p className="text-xs text-gray-500">{branch.distanceLabel} • تجهيز {branch.preparationTimeMinutes} دقيقة</p>
                               </div>
                               <div className="text-left">
-                                <p className="text-xs text-gray-400">التغطية</p>
+                                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">التغطية</p>
                                 <p className="font-black text-primary-600 dark:text-primary-400">{branch.totalCoverageQty}</p>
                               </div>
                             </div>
@@ -683,7 +712,7 @@ export default function PortalOrderConfirmationPage() {
                 <EmptyState
                   icon={Package}
                   title="تعذر تحليل التنفيذ"
-                  description="لم نتمكن من تحديد Branch X أو الفروع البديلة لهذا الطلب حاليًا."
+                  description={normalizePortalText('\u0644\u0645 \u0646\u062a\u0645\u0643\u0646 \u0645\u0646 \u062a\u062d\u062f\u064a\u062f Branch X \u0623\u0648 \u0627\u0644\u0641\u0631\u0648\u0639 \u0627\u0644\u0628\u062f\u064a\u0644\u0629 \u0644\u0647\u0630\u0627 \u0627\u0644\u0637\u0644\u0628 \u062d\u0627\u0644\u064a\u0627\u064b.')}
                   className="py-4"
                 />
               </div>
@@ -699,7 +728,7 @@ export default function PortalOrderConfirmationPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-black text-gray-900 dark:text-white">{item.productName}</p>
-                        <p className="mt-1 text-xs text-gray-500">المطلوب {item.requestedQty} • المتاح في Branch X {item.branchXAvailableQty}</p>
+                        <p className="mt-1 text-xs text-gray-500">{`\u0627\u0644\u0645\u0637\u0644\u0648\u0628 ${item.requestedQty} � \u0627\u0644\u0645\u062a\u0627\u062d \u0641\u064a ${PRIMARY_BRANCH_LABEL} ${item.branchXAvailableQty}`}</p>
                       </div>
                       <Badge variant={item.shortageQty > 0 ? 'warning' : 'success'} className="rounded-full">
                         {item.shortageQty > 0 ? `نقص ${item.shortageQty}` : 'متاح'}
@@ -734,27 +763,18 @@ export default function PortalOrderConfirmationPage() {
             <div className="flex items-start gap-3">
               <ShieldAlert className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <div className="space-y-2">
-                <h3 className="text-lg font-black">{fulfillmentCard.title}</h3>
-                <p className="text-sm leading-7 opacity-90">{fulfillmentCard.body}</p>
+                <h3 className="text-lg font-black">{normalizePortalText(fulfillmentCard.title)}</h3>
+                <p className="text-sm leading-7 opacity-90">{normalizePortalText(fulfillmentCard.body)}</p>
               </div>
             </div>
           </Card>
 
           <Card className="rounded-[2rem] border-0 p-6 shadow-sm">
             <h3 className="text-lg font-black text-gray-900 dark:text-white">ملخص التسعير</h3>
-            <div className="mt-5 space-y-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">الإجمالي الفرعي</span>
-                <span className="font-bold text-gray-900 dark:text-white">{formatMoney(summary.subtotal)} ج.م</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">الشحن</span>
-                <span className="font-bold text-gray-900 dark:text-white">{formatMoney(summary.shippingFee)} ج.م</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">الخصم</span>
-                <span className="font-bold text-gray-900 dark:text-white">-{formatMoney(summary.discount)} ج.م</span>
-              </div>
+            <div className="mt-5 space-y-3 text-sm">
+              <DetailRow label={'\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0641\u0631\u0639\u064a'} value={`${formatMoney(summary.subtotal)} \u062c.\u0645`} />
+              <DetailRow label={'\u0627\u0644\u0634\u062d\u0646'} value={`${formatMoney(summary.shippingFee)} \u062c.\u0645`} />
+              <DetailRow label={'\u0627\u0644\u062e\u0635\u0645'} value={`-${formatMoney(summary.discount)} \u062c.\u0645`} />
               <div className="h-px bg-gray-100 dark:bg-white/10" />
               <div className="flex items-center justify-between text-base">
                 <span className="font-black text-gray-900 dark:text-white">الإجمالي النهائي</span>
@@ -765,23 +785,11 @@ export default function PortalOrderConfirmationPage() {
 
           <Card className="rounded-[2rem] border-0 p-6 shadow-sm">
             <h3 className="text-lg font-black text-gray-900 dark:text-white">بيانات الشحنة</h3>
-            <div className="mt-5 space-y-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">طريقة الشحن</span>
-                <span className="font-bold text-gray-900 dark:text-white">{order.shippingMethod || '—'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">رقم التتبع</span>
-                <span className="font-bold text-gray-900 dark:text-white" dir="ltr">{order.trackingNumber || order.shippingDetails?.waybillNumber || '—'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">حالة شركة الشحن</span>
-                <span className="font-bold text-gray-900 dark:text-white">{order.shippingDetails?.status || '—'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">موعد متوقع</span>
-                <span className="font-bold text-gray-900 dark:text-white">{order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleDateString('ar-EG') : '—'}</span>
-              </div>
+            <div className="mt-5 space-y-3 text-sm">
+              <DetailRow label={'\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0634\u062d\u0646'} value={formatDisplayValue(order.shippingMethod, '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')} />
+              <DetailRow label={'\u0631\u0642\u0645 \u0627\u0644\u062a\u062a\u0628\u0639'} value={formatDisplayValue(order.trackingNumber || order.shippingDetails?.waybillNumber)} dir="ltr" />
+              <DetailRow label={'\u062d\u0627\u0644\u0629 \u0634\u0631\u0643\u0629 \u0627\u0644\u0634\u062d\u0646'} value={getShippingStatusLabel(order.shippingDetails?.status)} />
+              <DetailRow label={'\u0645\u0648\u0639\u062f \u0645\u062a\u0648\u0642\u0639'} value={order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleDateString('ar-EG') : FALLBACK_VALUE} />
             </div>
 
             {order.shippingDetails?.trackingUrl && (
@@ -801,19 +809,19 @@ export default function PortalOrderConfirmationPage() {
               <div className="mt-5 space-y-4 text-sm">
                 {order.refundStatus && order.refundStatus !== 'none' && (
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">حالة الاسترداد</span>
+                    <span className="text-slate-500 dark:text-slate-300">حالة الاسترداد</span>
                     <span className="font-bold text-gray-900 dark:text-white">{order.refundStatus}</span>
                   </div>
                 )}
                 {Number(order.refundAmount || 0) > 0 && (
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-gray-400">قيمة الاسترداد</span>
+                    <span className="text-slate-500 dark:text-slate-300">قيمة الاسترداد</span>
                     <span className="font-bold text-gray-900 dark:text-white">{formatMoney(order.refundAmount)} ج.م</span>
                   </div>
                 )}
                 {order.cancelReason && (
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-gray-400">سبب الإلغاء</span>
+                    <span className="text-slate-500 dark:text-slate-300">سبب الإلغاء</span>
                     <span className="max-w-[65%] text-left font-bold text-gray-900 dark:text-white">{order.cancelReason}</span>
                   </div>
                 )}
@@ -825,3 +833,8 @@ export default function PortalOrderConfirmationPage() {
     </div>
   );
 }
+
+
+
+
+

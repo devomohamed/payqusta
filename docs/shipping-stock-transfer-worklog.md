@@ -833,6 +833,8 @@ When work resumes, do this in order:
   - added a frontend `PurchaseOrdersRoute` guard so users without `purchase_orders.read` are redirected before `PurchaseOrdersPage` attempts a forbidden API call
   - removed the React Router parent-route warning by making `/` a pure landing/redirect route and letting the authenticated app shell live behind the existing `/*` catch-all route, while unknown in-app paths now fall back directly to `/dashboard`
   - re-ran backend syntax checks successfully for `backend/src/routes/index.js` and repeated `frontend` sanity/route-contract checks successfully after the purchase-order guard and route fixes
+  - improved readability in `PortalOrderConfirmationPage` by strengthening muted text contrast on the dark order-detail layout, adding clearer information rows for customer/shipping/pricing/shipment details, and making product line pricing easier to scan without changing the underlying workflow
+  - verified the portal-order detail follow-up through `npm --prefix frontend run sanity:check`
 - Next recommended step:
   - run `SR-004` manual live workflow validation in the browser because the remaining highest-risk gap is now behavioral confirmation rather than missing backend wiring
   - after the manual pass, decide whether `SR-005` variant-aware UI needs to be implemented now or can stay deferred until branch shortage flows actually expose variant selection in the product and low-stock screens
