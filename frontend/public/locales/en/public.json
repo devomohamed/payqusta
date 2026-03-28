@@ -1,0 +1,127 @@
+{
+  "navLinks": {
+    "home": "Home",
+    "features": "Features",
+    "pricing": "Pricing",
+    "demo": "Demo",
+    "useCases": "Use Cases",
+    "howItWorks": "How It Works",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
+  "nav": {
+    "login": "Sign In",
+    "startNow": "Start Free"
+  },
+  "hero": {
+    "badge": "Smart Operating Platform for Modern Stores",
+    "title": "Run your store. Track sales. Collect installments.",
+    "subtitle": "Everything you need to manage sales, inventory, installments, and your online store — in one unified platform that works from day one.",
+    "cta": "Start for Free",
+    "learnMore": "See How It Works"
+  },
+  "pillars": {
+    "eyebrow": "Everything in One Place",
+    "title": "Four Pillars to Build Your Business On",
+    "subtitle": "No need for scattered tools — sales, inventory, installments, and your storefront move together seamlessly.",
+    "sales": {
+      "title": "Faster Sales & Smarter Invoices",
+      "summary": "Create invoices in seconds, track every payment, and link sales to inventory and customers automatically — no Excel sheets needed.",
+      "bullets": [
+        "Cash and installment invoices from one screen",
+        "Record partial and full payments instantly",
+        "Automatic syncing with inventory and customer records"
+      ]
+    },
+    "inventory": {
+      "title": "Your Inventory, Always Under Control",
+      "summary": "Know what's moving and what's running low before you lose a sale — with smart alerts and real-time updates.",
+      "bullets": [
+        "Instant alerts for low stock levels",
+        "Manage images, prices, and details centrally",
+        "Smart organization by categories and sections"
+      ]
+    },
+    "storefront": {
+      "title": "An Online Store Working 24/7",
+      "summary": "A professional storefront that showcases your products and accepts orders — even while you sleep. Linked directly to your real inventory.",
+      "bullets": [
+        "Clean product pages ready to share",
+        "Shopping cart and direct mobile ordering",
+        "Automatic syncing with inventory and shipping"
+      ]
+    },
+    "installments": {
+      "title": "Clear Installments & Painless Collection",
+      "summary": "Track who paid, who's late, and when the next installment is due — everything is in front of you instead of scattered spreadsheets.",
+      "bullets": [
+        "Flexible payment schedules linked to invoices",
+        "Instant view of overdue customers",
+        "Clear collection metrics ready for export"
+      ]
+    }
+  },
+  "workflow": {
+    "eyebrow": "Ready in Minutes",
+    "title": "From Signup to First Sale in 4 Steps",
+    "steps": [
+      {
+        "title": "Sign Up & Set Up",
+        "text": "One account is all you need. Add your store name, products, and categories — and start immediately."
+      },
+      {
+        "title": "Start Selling Instantly",
+        "text": "Create invoices, record payments, and monitor sales from a single screen instead of multiple disjointed tools."
+      },
+      {
+        "title": "Launch Your Online Store",
+        "text": "Showcase your products in a professional storefront that customers can easily access and order from."
+      },
+      {
+        "title": "Track Growth & Decide Better",
+        "text": "Indicators and alerts tell you where sales are moving, what needs restocking, and who is late on payments."
+      }
+    ]
+  },
+  "paths": {
+    "eyebrow": "Start From Your Strongest Angle",
+    "title": "Choose the Path That Fits Your Needs",
+    "subtitle": "Whether you focus on sales, inventory, installments, or your online store — you'll find a starting point designed exactly for you."
+  },
+  "finalCta": {
+    "eyebrow": "Start Today",
+    "title": "Your store deserves a smarter system.",
+    "description": "Join over 1,000 merchants managing their sales, inventory, and installments effortlessly with PayQusta. Try it yourself for free.",
+    "cta": "Sign Up for Free",
+    "explore": "Explore Features"
+  },
+  "footer": {
+    "cta": {
+      "badge": "Ready to Experience PayQusta?",
+      "title": "Build a stronger digital presence and manage your operations from one place.",
+      "description": "The website introduces customers to your store, and the internal system automatically connects sales to inventory and billing.",
+      "createAccount": "Sign Up for Free",
+      "explore": "Explore Features"
+    },
+    "nav": {
+      "title": "Navigation"
+    },
+    "trust": {
+      "title": "Trust & Policies",
+      "description": "Pages that help you understand our terms and privacy guidelines before you begin."
+    },
+    "brand": {
+      "title": "About the Brand",
+      "description": "PayQusta is an integrated operational platform tailored for modern retail stores."
+    },
+    "highlights": [
+      "Sales & Invoices linked to Inventory",
+      "Installments & Daily Collection tracking",
+      "E-commerce Store with Trackable Orders",
+      "Reports & Alerts to aid decision-making"
+    ],
+    "tagline": "Professional operating platform for stores — designed to work flawlessly on all devices."
+  }
+}

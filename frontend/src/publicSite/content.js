@@ -1,17 +1,17 @@
-﻿export const publicNavLinks = [
-  { to: '/', label: 'الرئيسية' },
-  { to: '/features', label: 'المزايا' },
-  { to: '/pricing', label: 'الأسعار' },
-  { to: '/demo', label: 'الديمو' },
-  { to: '/use-cases', label: 'الحالات العملية' },
-  { to: '/how-it-works', label: 'كيف يعمل' },
-  { to: '/faq', label: 'الأسئلة الشائعة' },
+export const publicNavLinks = [
+  { to: '/', label: 'الرئيسية', i18nKey: 'navLinks.home' },
+  { to: '/features', label: 'المزايا', i18nKey: 'navLinks.features' },
+  { to: '/pricing', label: 'الأسعار', i18nKey: 'navLinks.pricing' },
+  { to: '/demo', label: 'الديمو', i18nKey: 'navLinks.demo' },
+  { to: '/use-cases', label: 'الحالات العملية', i18nKey: 'navLinks.useCases' },
+  { to: '/how-it-works', label: 'كيف يعمل', i18nKey: 'navLinks.howItWorks' },
+  { to: '/faq', label: 'الأسئلة الشائعة', i18nKey: 'navLinks.faq' },
 ];
 
 export const publicUtilityLinks = [
-  { to: '/contact', label: 'التواصل' },
-  { to: '/privacy', label: 'الخصوصية' },
-  { to: '/terms', label: 'الشروط' },
+  { to: '/contact', label: 'التواصل', i18nKey: 'navLinks.contact' },
+  { to: '/privacy', label: 'الخصوصية', i18nKey: 'navLinks.privacy' },
+  { to: '/terms', label: 'الشروط', i18nKey: 'navLinks.terms' },
 ];
 
 export const brandName = 'PayQusta';

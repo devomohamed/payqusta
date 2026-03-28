@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useThemeStore } from '../store';
 
@@ -23,9 +23,31 @@ const OPTIONS = [
   },
 ];
 
-export default function ThemeModeSwitcher({ className = '', compact = false }) {
+const CYCLE_ORDER = ['light', 'dark', 'system'];
+
+export default function ThemeModeSwitcher({ className = '', compact = false, minimal = false }) {
   const { dark, themeMode, setThemeMode } = useThemeStore();
 
+  // Minimal mode: single circular icon button that cycles light → dark → system
+  if (minimal) {
+    const currentIndex = CYCLE_ORDER.indexOf(themeMode);
+    const nextMode = CYCLE_ORDER[(currentIndex + 1) % CYCLE_ORDER.length];
+    const CurrentIcon = themeMode === 'light' ? Sun : themeMode === 'dark' ? Moon : Monitor;
+
+    return (
+      <button
+        type="button"
+        onClick={() => setThemeMode(nextMode)}
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-all text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 ${className}`}
+        aria-label="تبديل المظهر"
+        title={OPTIONS.find((o) => o.value === themeMode)?.label}
+      >
+        <CurrentIcon className="h-4 w-4" />
+      </button>
+    );
+  }
+
+  // Full mode (default + compact)
   return (
     <div className={`space-y-3 ${className}`}>
       <div className="app-surface-muted inline-flex flex-wrap gap-1 rounded-2xl p-1.5">
