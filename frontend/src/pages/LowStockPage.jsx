@@ -1,31 +1,79 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Building2, MessageCircle, Package, Phone, RefreshCw, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { productsApi } from '../store';
-import { Badge, Button, Card, EmptyState, LoadingSpinner } from '../components/UI';
+import { productsApi, supplierReplenishmentRequestsApi, suppliersApi, useAuthStore } from '../store';
+import { Badge, Button, Card, EmptyState, LoadingSpinner, Modal } from '../components/UI';
 
 function getStockStatus(product) {
-  const qty = Number(product?.stock?.quantity) || 0;
-  const minQty = Number(product?.stock?.minQuantity) || 5;
+  const qty = Number(product?.branchStock?.quantity ?? product?.stock?.quantity) || 0;
+  const minQty = Number(product?.branchStock?.minQuantity ?? product?.stock?.minQuantity) || 5;
   if (qty <= 0) return 'out_of_stock';
   if (qty <= minQty) return 'low_stock';
   return 'in_stock';
 }
 
 function getNeededQuantity(product) {
-  return Math.max(10, ((Number(product?.stock?.minQuantity) || 5) * 2) - (Number(product?.stock?.quantity) || 0));
+  return Math.max(
+    10,
+    ((Number(product?.branchStock?.minQuantity ?? product?.stock?.minQuantity) || 5) * 2)
+      - (Number(product?.branchStock?.quantity ?? product?.stock?.quantity) || 0)
+  );
 }
 
 export default function LowStockPage() {
+  const { user, tenant, can, getBranches } = useAuthStore();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingOrders, setSendingOrders] = useState({});
   const [sendingBulk, setSendingBulk] = useState(false);
+  const [supplierModalProduct, setSupplierModalProduct] = useState(null);
+  const [supplierOptions, setSupplierOptions] = useState([]);
+  const [supplierOptionsLoading, setSupplierOptionsLoading] = useState(false);
+  const [supplierRequestLoading, setSupplierRequestLoading] = useState(false);
+  const [supplierRequestForm, setSupplierRequestForm] = useState({
+    supplierId: '',
+    requestedQty: 1,
+    notes: '',
+  });
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const branchScopeId = String(user?.branch?._id || user?.branch || '');
+  const isAdminLikeUser = user?.role === 'admin' || !!user?.isSuperAdmin;
+  const canSwitchBranchView = !branchScopeId && (isAdminLikeUser || can('branches', 'read'));
+  const activeBranchId = branchScopeId || selectedBranchId || '';
+  const isPseudoMainBranch = Boolean(
+    !branchScopeId && tenant?._id && String(activeBranchId) === String(tenant._id)
+  );
+  const canSendSupplierOrders = !activeBranchId && (isAdminLikeUser || user?.role === 'vendor');
+  const canCreateSupplierRequests = can('supplier_replenishment_requests', 'create');
+  const canOpenBranchSupplierRequest = Boolean(activeBranchId && !isPseudoMainBranch && canCreateSupplierRequests);
+  const branchOptions = useMemo(() => {
+    const mainBranch = tenant?._id ? [{ _id: String(tenant._id), name: `${tenant?.name || 'المخزن الرئيسي'} (الرئيسي)` }] : [];
+    return [
+      { _id: '', name: 'كل الفروع' },
+      ...mainBranch,
+      ...(Array.isArray(branches) ? branches.map((branch) => ({ _id: String(branch._id), name: branch.name })) : []),
+    ];
+  }, [branches, tenant?._id, tenant?.name]);
+  const activeBranchLabel = useMemo(() => {
+    const match = branchOptions.find((option) => String(option._id) === String(activeBranchId));
+    return match?.name || 'كل الفروع';
+  }, [activeBranchId, branchOptions]);
+
+  useEffect(() => {
+    if (branchScopeId) setSelectedBranchId(branchScopeId);
+  }, [branchScopeId]);
+
+  useEffect(() => {
+    getBranches?.()
+      .then((rows) => setBranches(Array.isArray(rows) ? rows : []))
+      .catch(() => setBranches([]));
+  }, [getBranches]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await productsApi.getLowStock();
+      const res = await productsApi.getLowStock(activeBranchId ? { branchId: activeBranchId } : undefined);
       setProducts(res?.data?.data || []);
     } catch (error) {
       toast.error('حدث خطأ أثناء تحميل المنتجات منخفضة المخزون');
@@ -33,7 +81,7 @@ export default function LowStockPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeBranchId]);
 
   useEffect(() => {
     void load();
@@ -88,6 +136,77 @@ export default function LowStockPage() {
     }
   };
 
+  const loadSupplierOptions = useCallback(async () => {
+    setSupplierOptionsLoading(true);
+    try {
+      const res = await suppliersApi.getAll({ limit: 200 });
+      setSupplierOptions(res?.data?.data || []);
+    } catch (error) {
+      toast.error('تعذر تحميل الموردين');
+      setSupplierOptions([]);
+    } finally {
+      setSupplierOptionsLoading(false);
+    }
+  }, []);
+
+  const openSupplierRequestModal = useCallback(async (product) => {
+    if (!product?._id || !activeBranchId || !canCreateSupplierRequests) return;
+
+    const defaultSupplierId = String(product?.supplier?._id || product?.supplier || '');
+    if (!defaultSupplierId) {
+      await loadSupplierOptions();
+    } else {
+      setSupplierOptions([]);
+    }
+
+    setSupplierModalProduct(product);
+    setSupplierRequestForm({
+      supplierId: defaultSupplierId,
+      requestedQty: getNeededQuantity(product),
+      notes: '',
+    });
+  }, [activeBranchId, canCreateSupplierRequests, loadSupplierOptions]);
+
+  const closeSupplierRequestModal = useCallback(() => {
+    setSupplierModalProduct(null);
+    setSupplierOptions([]);
+    setSupplierOptionsLoading(false);
+    setSupplierRequestLoading(false);
+    setSupplierRequestForm({
+      supplierId: '',
+      requestedQty: 1,
+      notes: '',
+    });
+  }, []);
+
+  const submitSupplierRequest = useCallback(async () => {
+    if (!supplierModalProduct?._id || !activeBranchId) return;
+    if (!supplierRequestForm.supplierId) {
+      toast.error('اختر المورد أولاً');
+      return;
+    }
+
+    setSupplierRequestLoading(true);
+    try {
+      await supplierReplenishmentRequestsApi.create({
+        branch: activeBranchId,
+        product: supplierModalProduct._id,
+        supplier: supplierRequestForm.supplierId,
+        requestedQty: supplierRequestForm.requestedQty,
+        currentQty: Number(supplierModalProduct?.branchStock?.quantity ?? supplierModalProduct?.stock?.quantity) || 0,
+        minQty: Number(supplierModalProduct?.branchStock?.minQuantity ?? supplierModalProduct?.stock?.minQuantity) || 0,
+        notes: supplierRequestForm.notes || '',
+        source: 'low_stock_page',
+      });
+      toast.success('تم إنشاء طلب المورد بنجاح');
+      closeSupplierRequestModal();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'فشل إنشاء طلب المورد');
+    } finally {
+      setSupplierRequestLoading(false);
+    }
+  }, [activeBranchId, closeSupplierRequestModal, supplierModalProduct, supplierRequestForm]);
+
   const groupedBySupplier = useMemo(() => {
     const groups = products.reduce((accumulator, product) => {
       const supplierId = product?.supplier?._id || 'no-supplier';
@@ -134,9 +253,27 @@ export default function LowStockPage() {
               <p className="max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
                 متابعة فورية للنواقص الحرجة حسب المورد، مع أوامر إعادة تخزين أسرع وتصميم أوضح على الهاتف.
               </p>
+              {activeBranchId ? (
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                  عرض الفرع: {activeBranchLabel}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            {canSwitchBranchView ? (
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="app-surface w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
+              >
+                {branchOptions.map((option) => (
+                  <option key={String(option._id || 'all')} value={String(option._id || '')}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             <Button variant="outline" onClick={load} icon={<RefreshCw className="h-4 w-4" />} className="w-full sm:w-auto">
               تحديث
             </Button>
@@ -144,7 +281,7 @@ export default function LowStockPage() {
               variant="whatsapp"
               onClick={handleBulkRestock}
               loading={sendingBulk}
-              disabled={products.every((product) => !product?.supplier)}
+              disabled={!canSendSupplierOrders || products.every((product) => !product?.supplier)}
               icon={<Send className="h-4 w-4" />}
               className="w-full sm:w-auto"
             >
@@ -236,12 +373,12 @@ export default function LowStockPage() {
                         <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
                           <p className="text-[11px] text-gray-400">الحالي</p>
                           <p className={`mt-1 font-black ${status === 'out_of_stock' ? 'text-red-500' : 'text-amber-500'}`}>
-                            {Number(product?.stock?.quantity) || 0}
+                            {Number(product?.branchStock?.quantity ?? product?.stock?.quantity) || 0}
                           </p>
                         </div>
                         <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
                           <p className="text-[11px] text-gray-400">الحد الأدنى</p>
-                          <p className="mt-1 font-black text-gray-900 dark:text-white">{Number(product?.stock?.minQuantity) || 5}</p>
+                          <p className="mt-1 font-black text-gray-900 dark:text-white">{Number(product?.branchStock?.minQuantity ?? product?.stock?.minQuantity) || 5}</p>
                         </div>
                         <div className="rounded-2xl bg-black/[0.03] p-3 dark:bg-white/[0.04]">
                           <p className="text-[11px] text-gray-400">المطلوب</p>
@@ -250,7 +387,7 @@ export default function LowStockPage() {
                       </div>
 
                       <div className="mt-4">
-                        {supplierId !== 'no-supplier' ? (
+                        {supplierId !== 'no-supplier' && canSendSupplierOrders ? (
                           <Button
                             size="sm"
                             variant="outline"
@@ -261,8 +398,26 @@ export default function LowStockPage() {
                           >
                             إرسال طلب إعادة تخزين
                           </Button>
+                        ) : canOpenBranchSupplierRequest ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openSupplierRequestModal(product)}
+                            icon={<Send className="h-3 w-3" />}
+                            className="w-full"
+                          >
+                            طلب من المورد
+                          </Button>
+                        ) : isPseudoMainBranch ? (
+                          <span className="text-xs text-gray-400">طلب المورد المباشر متاح عند اختيار فرع فعلي فقط</span>
+                        ) : supplierId === 'no-supplier' ? (
+                          <span className="text-xs text-gray-400">
+                            {activeBranchId && canCreateSupplierRequests ? 'اختر المورد من الطلب قبل الإرسال' : 'أضف مورد أولاً قبل إنشاء الطلب'}
+                          </span>
                         ) : (
-                          <span className="text-xs text-gray-400">أضف مورد أولاً قبل إنشاء الطلب</span>
+                          <span className="text-xs text-gray-400">
+                            {activeBranchId ? 'هذا الحساب يرى النقص فقط ولا يملك طلب المورد' : 'طلبات المورد المباشرة من العرض العام فقط'}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -300,14 +455,14 @@ export default function LowStockPage() {
                           <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{product.sku || '—'}</td>
                           <td className="px-4 py-3">
                             <span className={`font-bold ${status === 'out_of_stock' ? 'text-red-500' : 'text-amber-500'}`}>
-                              {Number(product?.stock?.quantity) || 0}
+                              {Number(product?.branchStock?.quantity ?? product?.stock?.quantity) || 0}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-500">{Number(product?.stock?.minQuantity) || 5}</td>
+                          <td className="px-4 py-3 text-gray-500">{Number(product?.branchStock?.minQuantity ?? product?.stock?.minQuantity) || 5}</td>
                           <td className="px-4 py-3 font-bold text-primary-600">{needed}</td>
                           <td className="px-4 py-3">{stockBadge(product)}</td>
                           <td className="px-4 py-3">
-                            {supplierId !== 'no-supplier' ? (
+                            {supplierId !== 'no-supplier' && canSendSupplierOrders ? (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -317,8 +472,25 @@ export default function LowStockPage() {
                               >
                                 طلب
                               </Button>
+                            ) : canOpenBranchSupplierRequest ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openSupplierRequestModal(product)}
+                                icon={<Send className="h-3 w-3" />}
+                              >
+                                طلب من المورد
+                              </Button>
+                            ) : isPseudoMainBranch ? (
+                              <span className="text-xs text-gray-400">اختر فرعًا فعليًا لطلب المورد</span>
+                            ) : supplierId === 'no-supplier' ? (
+                              <span className="text-xs text-gray-400">
+                                {activeBranchId && canCreateSupplierRequests ? 'اختر المورد من الطلب' : 'أضف مورد أولاً'}
+                              </span>
                             ) : (
-                              <span className="text-xs text-gray-400">أضف مورد أولاً</span>
+                              <span className="text-xs text-gray-400">
+                                {activeBranchId ? 'هذا الحساب يرى النقص فقط ولا يملك طلب المورد' : 'طلبات المورد المباشرة من العرض العام فقط'}
+                              </span>
                             )}
                           </td>
                         </tr>
@@ -331,6 +503,100 @@ export default function LowStockPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={Boolean(supplierModalProduct)}
+        onClose={closeSupplierRequestModal}
+        title={supplierModalProduct ? `طلب مورد • ${supplierModalProduct.name}` : 'طلب مورد جديد'}
+        size="md"
+      >
+        {supplierModalProduct ? (
+          <div className="space-y-4">
+            <Card className="rounded-3xl border-0 p-4 shadow-none app-surface-muted">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">الفرع</span>
+                  <span className="font-black">{activeBranchLabel}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">الصنف</span>
+                  <span className="font-black">{supplierModalProduct.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">SKU</span>
+                  <span className="font-black">{supplierModalProduct.sku || '—'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">المخزون الحالي</span>
+                  <span className="font-black">{Number(supplierModalProduct?.branchStock?.quantity ?? supplierModalProduct?.stock?.quantity) || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">الحد الأدنى</span>
+                  <span className="font-black">{Number(supplierModalProduct?.branchStock?.minQuantity ?? supplierModalProduct?.stock?.minQuantity) || 0}</span>
+                </div>
+              </div>
+            </Card>
+
+            <label className="block rounded-2xl border border-[color:var(--surface-border)] p-4">
+              <span className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400">المورد</span>
+              <select
+                className="mt-3 w-full rounded-xl border-2 border-transparent bg-transparent px-3 py-2 app-text-body focus:border-primary-500/30 focus:outline-none"
+                value={supplierRequestForm.supplierId}
+                onChange={(event) => setSupplierRequestForm((current) => ({ ...current, supplierId: event.target.value }))}
+                disabled={supplierOptionsLoading || Boolean(supplierModalProduct?.supplier?._id || supplierModalProduct?.supplier)}
+              >
+                <option value="">
+                  {supplierOptionsLoading ? 'جاري تحميل الموردين...' : 'اختر المورد'}
+                </option>
+                {supplierModalProduct?.supplier ? (
+                  <option value={String(supplierModalProduct.supplier?._id || supplierModalProduct.supplier)}>
+                    {supplierModalProduct.supplier?.name || 'المورد الافتراضي'}
+                  </option>
+                ) : null}
+                {supplierOptions.map((supplier) => (
+                  <option key={supplier._id} value={String(supplier._id)}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block rounded-2xl border border-[color:var(--surface-border)] p-4">
+              <span className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400">الكمية المطلوبة</span>
+              <input
+                type="number"
+                min="1"
+                className="mt-3 w-full rounded-xl border-2 border-transparent bg-transparent px-3 py-2 app-text-body focus:border-primary-500/30 focus:outline-none"
+                value={supplierRequestForm.requestedQty}
+                onChange={(event) => setSupplierRequestForm((current) => ({
+                  ...current,
+                  requestedQty: Math.max(1, Number(event.target.value) || 1),
+                }))}
+              />
+            </label>
+
+            <label className="block rounded-2xl border border-[color:var(--surface-border)] p-4">
+              <span className="block text-xs font-black uppercase tracking-[0.2em] text-gray-400">ملاحظات</span>
+              <textarea
+                rows={3}
+                className="mt-3 w-full rounded-xl border-2 border-transparent bg-transparent px-3 py-2 app-text-body focus:border-primary-500/30 focus:outline-none"
+                placeholder="مثال: المنتج نفد من الفرع ونحتاج التوريد خلال 48 ساعة"
+                value={supplierRequestForm.notes}
+                onChange={(event) => setSupplierRequestForm((current) => ({ ...current, notes: event.target.value }))}
+              />
+            </label>
+
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="ghost" onClick={closeSupplierRequestModal}>
+                إلغاء
+              </Button>
+              <Button loading={supplierRequestLoading} onClick={submitSupplierRequest}>
+                إنشاء طلب المورد
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 }

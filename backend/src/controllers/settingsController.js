@@ -22,7 +22,9 @@ const {
 const {
   applyTenantShippingSettings,
   getPublicShippingSettings,
+  getTenantShippingSettings,
 } = require('../utils/shippingHelpers');
+const { resolveTenantShippingQuote } = require('../utils/shippingQuoteResolver');
 const { processImage } = require('../middleware/upload');
 const logger = require('../utils/logger');
 
@@ -43,6 +45,11 @@ const ONLINE_FULFILLMENT_MODES = new Set([
   'default_branch',
   'branch_priority',
   'customer_branch',
+]);
+const SHIPPING_ERROR_BEHAVIORS = new Set([
+  'show_error',
+  'use_fallback_price',
+  'block_checkout',
 ]);
 
 function normalizeObjectIdValue(value) {
@@ -87,6 +94,16 @@ async function applyTenantOnlineFulfillmentSettings(tenantId, onlineFulfillment 
       Boolean(onlineFulfillment.allowCrossBranchOnlineAllocation) &&
       onlineBranchIds.size > 1,
   };
+}
+
+async function listEligibleShippingBranches(tenantId) {
+  return Branch.find({
+    tenant: tenantId,
+    isActive: true,
+    participatesInOnlineOrders: true,
+  })
+    .select('name address branchType onlinePriority shippingOrigin participatesInOnlineOrders')
+    .sort({ onlinePriority: 1, name: 1 });
 }
 
 class SettingsController {
@@ -161,12 +178,21 @@ class SettingsController {
    */
   getStorefrontSettings = catchAsync(async (req, res, next) => {
     const tenantId = req.query.tenant || req.headers['x-tenant-id'];
+    const requestedSlug = String(
+      req.query.slug ||
+      req.query.tenantSlug ||
+      req.query.storeCode ||
+      req.headers['x-tenant-slug'] ||
+      ''
+    ).trim().toLowerCase();
     const requestHost = getRequestHost(req);
     const platformSubdomain = getPlatformSubdomain(requestHost);
     let tenant;
 
     if (tenantId) {
       tenant = await Tenant.findById(tenantId);
+    } else if (requestedSlug) {
+      tenant = await Tenant.findOne({ slug: requestedSlug, isActive: true });
     } else if (platformSubdomain) {
       tenant = await Tenant.findOne({ slug: platformSubdomain, isActive: true });
     } else if (!isLocalOrRunHost(requestHost)) {
@@ -265,6 +291,126 @@ class SettingsController {
     if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
 
     ApiResponse.success(res, { tenant }, 'تم تحديث بيانات المتجر بنجاح');
+  });
+
+  getShippingSettings = catchAsync(async (req, res, next) => {
+    const [tenant, eligibleBranches] = await Promise.all([
+      Tenant.findById(req.tenantId).select('settings.shipping'),
+      listEligibleShippingBranches(req.tenantId),
+    ]);
+
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    ApiResponse.success(res, {
+      shipping: getTenantShippingSettings(tenant),
+      shippingPublic: getPublicShippingSettings(tenant),
+      eligibleBranches,
+    });
+  });
+
+  calculateShippingQuote = catchAsync(async (req, res, next) => {
+    const tenant = await Tenant.findById(req.tenantId).select('settings.shipping');
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    const quote = await resolveTenantShippingQuote(tenant, {
+      shippingAddress: req.body?.shippingAddress || {},
+      subtotal: Number(req.body?.subtotal) || 0,
+      requestedSummary: req.body?.shippingSummary || {},
+    });
+
+    if (!quote.ok) {
+      return next(new AppError(
+        quote.errorMessage || 'تعذر حساب تكلفة الشحن حالياً',
+        400,
+        quote.errorCode || 'SHIPPING_CALCULATION_FAILED'
+      ));
+    }
+
+    ApiResponse.success(res, {
+      pricingMode: quote.pricingMode,
+      calculationState: quote.calculationState,
+      isEstimated: Boolean(quote.isEstimated),
+      warningMessage: quote.warningMessage || '',
+      shippingSummary: quote.shippingSummary,
+      shippingBranch: quote.shippingBranch
+        ? {
+            _id: quote.shippingBranch._id,
+            name: quote.shippingBranch.name,
+            branchType: quote.shippingBranch.branchType,
+            address: quote.shippingBranch.address,
+            shippingOrigin: quote.shippingBranch.shippingOrigin,
+          }
+        : null,
+    }, 'تم حساب تكلفة الشحن بنجاح');
+  });
+
+  updateShippingSettings = catchAsync(async (req, res, next) => {
+    const tenant = await Tenant.findById(req.tenantId).select('settings.shipping');
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    const shipping = applyTenantShippingSettings(req.body?.shipping || {}, tenant);
+    const eligibleBranches = await listEligibleShippingBranches(req.tenantId);
+    const eligibleBranchIds = new Set(eligibleBranches.map((branch) => String(branch._id)));
+
+    if (shipping.enabled && !shipping.defaultShippingBranchId) {
+      return next(AppError.badRequest('يجب اختيار فرع الشحن الافتراضي أولاً'));
+    }
+
+    if (shipping.defaultShippingBranchId && !eligibleBranchIds.has(String(shipping.defaultShippingBranchId))) {
+      return next(AppError.badRequest('فرع الشحن المختار غير مؤهل لطلبات الأونلاين'));
+    }
+
+    if (shipping.enabled && shipping.pricingMode === 'dynamic_api') {
+      if (!shipping.dynamicApi?.endpoint) {
+        return next(AppError.badRequest('يجب إدخال رابط API للتسعير الديناميكي'));
+      }
+
+      if (!SHIPPING_ERROR_BEHAVIORS.has(shipping.dynamicApi?.errorBehavior)) {
+        return next(AppError.badRequest('سلوك الخطأ للشحن غير صالح'));
+      }
+    }
+
+    await Tenant.findByIdAndUpdate(
+      req.tenantId,
+      { $set: { 'settings.shipping': shipping } },
+      { new: true, runValidators: true }
+    );
+
+    ApiResponse.success(res, { shipping }, 'تم حفظ إعدادات الشحن بنجاح');
+  });
+
+  testShippingConnection = catchAsync(async (req, res, next) => {
+    const tenant = await Tenant.findById(req.tenantId).select('settings.shipping');
+    if (!tenant) return next(AppError.notFound('المتجر غير موجود'));
+
+    const shipping = applyTenantShippingSettings(req.body?.shipping || tenant.settings?.shipping || {}, tenant);
+    const endpoint = shipping.dynamicApi?.endpoint;
+
+    if (!endpoint) {
+      return next(AppError.badRequest('يجب إدخال رابط API قبل اختبار الاتصال'));
+    }
+
+    const response = await axios.get(endpoint, {
+      timeout: shipping.dynamicApi?.timeoutMs || 8000,
+      headers: {
+        ...(shipping.dynamicApi?.apiKey ? {
+          Authorization: `Bearer ${shipping.dynamicApi.apiKey}`,
+          'x-api-key': shipping.dynamicApi.apiKey,
+        } : {}),
+      },
+      validateStatus: () => true,
+    });
+
+    if (response.status >= 200 && response.status < 400) {
+      return ApiResponse.success(res, {
+        endpoint,
+        statusCode: response.status,
+      }, 'تم اختبار الاتصال بنجاح');
+    }
+
+    return next(
+      AppError.badRequest(`تم الوصول للخدمة ولكنها أعادت رمز ${response.status}`)
+    );
   });
 
   /**

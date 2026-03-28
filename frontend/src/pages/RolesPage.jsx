@@ -26,6 +26,7 @@ const PERMISSION_RESOURCES = [
   { id: 'products', label: 'المنتجات' },
   { id: 'stock_adjustments', label: 'تعديلات المخزون' },
   { id: 'purchase_orders', label: 'أوامر الشراء' },
+  { id: 'supplier_replenishment_requests', label: 'طلبات المورد للفروع' },
   { id: 'suppliers', label: 'الموردون' },
   { id: 'customers', label: 'العملاء' },
   { id: 'invoices', label: 'الفواتير' },
@@ -42,7 +43,7 @@ const PERMISSION_GROUPS = [
     id: 'catalog',
     label: 'الكتالوج والمخزون',
     description: 'المنتجات، المخزون، الموردون، وأوامر الشراء.',
-    resources: ['products', 'stock_adjustments', 'purchase_orders', 'suppliers'],
+    resources: ['products', 'stock_adjustments', 'purchase_orders', 'supplier_replenishment_requests', 'suppliers'],
   },
   {
     id: 'sales',

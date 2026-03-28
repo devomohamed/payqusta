@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ShoppingCart, Plus, Check, X, Package, FileDown, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -70,6 +71,7 @@ function parseCustomInstallmentDates(rawValue) {
 }
 
 export default function PurchaseOrdersPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -84,6 +86,7 @@ export default function PurchaseOrdersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [highlightedOrderFallback, setHighlightedOrderFallback] = useState(null);
 
   const [form, setForm] = useState({
     supplier: '',
@@ -110,6 +113,25 @@ export default function PurchaseOrdersPage() {
     () => orders.filter((order) => ['draft', 'pending', 'approved', 'partial'].includes(order.status)).length,
     [orders]
   );
+  const highlightedOrderId = searchParams.get('highlight') || '';
+  const highlightedOrderInList = useMemo(
+    () => orders.find((order) => String(order._id) === String(highlightedOrderId)),
+    [orders, highlightedOrderId]
+  );
+  const highlightedOrder = highlightedOrderInList || highlightedOrderFallback;
+  const highlightedOrderVisible = Boolean(highlightedOrderInList);
+
+  const isSupplierRequestDerived = (order) => (
+    order?.sourceType === 'supplier_replenishment_request'
+    || Boolean(order?.sourceSupplierReplenishmentRequest?._id || order?.sourceSupplierReplenishmentRequest)
+    || Boolean(order?.notes && String(order.notes).includes('طلب مورد فرعي'))
+  );
+
+  const getSupplierRequestReference = (order) => {
+    const requestId = order?.sourceSupplierReplenishmentRequest?._id || order?.sourceSupplierReplenishmentRequest;
+    if (!requestId) return '';
+    return String(requestId).slice(-8);
+  };
 
   useEffect(() => {
     loadSuppliers();
@@ -130,6 +152,39 @@ export default function PurchaseOrdersPage() {
       setForm((prev) => ({ ...prev, branch: branches[0]._id }));
     }
   }, [showCreateModal, form.branch, branches]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadHighlightedOrder = async () => {
+      if (!highlightedOrderId) {
+        setHighlightedOrderFallback(null);
+        return;
+      }
+
+      if (highlightedOrderInList) {
+        setHighlightedOrderFallback(null);
+        return;
+      }
+
+      try {
+        const res = await api.get(`/purchase-orders/${highlightedOrderId}`);
+        if (!cancelled) {
+          setHighlightedOrderFallback(res.data?.data || null);
+        }
+      } catch (_) {
+        if (!cancelled) {
+          setHighlightedOrderFallback(null);
+        }
+      }
+    };
+
+    loadHighlightedOrder();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [highlightedOrderId, highlightedOrderInList]);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -177,6 +232,19 @@ export default function PurchaseOrdersPage() {
     } catch (_) {
       setBranches([]);
     }
+  };
+
+  const clearHighlight = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('highlight');
+    setSearchParams(nextParams);
+    setHighlightedOrderFallback(null);
+  };
+
+  const revealHighlightedOrder = () => {
+    setStatusFilter('');
+    setSupplierFilter('');
+    setPage(1);
   };
 
   const handleOpenCreate = () => {
@@ -635,6 +703,52 @@ export default function PurchaseOrdersPage() {
         </div>
       </Card>
 
+      {highlightedOrder && (
+        <Card className={`border-2 ${highlightedOrderVisible ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-950/20' : 'border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20'}`}>
+          <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={highlightedOrderVisible ? 'success' : 'warning'}>
+                  {highlightedOrderVisible ? 'أمر الشراء ظاهر الآن' : 'أمر الشراء مخفي بسبب الفلاتر'}
+                </Badge>
+                {isSupplierRequestDerived(highlightedOrder) && (
+                  <Badge variant="info">قادم من طلب مورد فرعي</Badge>
+                )}
+              </div>
+              <div>
+                <p className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                  {highlightedOrder.orderNumber || highlightedOrder._id}
+                </p>
+                <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">
+                  {highlightedOrder.supplier?.name || 'مورد غير محدد'}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {highlightedOrder.branch?.name || 'الفرع الرئيسي'}
+                  {' · '}
+                  {STATUS_LABELS[highlightedOrder.status] || highlightedOrder.status}
+                </p>
+                {getSupplierRequestReference(highlightedOrder) && (
+                  <p className="mt-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                    مرجع طلب المورد: #{getSupplierRequestReference(highlightedOrder)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {!highlightedOrderVisible && (
+                <Button size="sm" variant="outline" onClick={revealHighlightedOrder}>
+                  إظهار أمر الشراء
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={clearHighlight}>
+                إزالة التمييز
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {loading ? (
         <LoadingSpinner />
       ) : orders.length === 0 ? (
@@ -651,14 +765,28 @@ export default function PurchaseOrdersPage() {
               const canApprove = order.status === 'draft' || order.status === 'pending';
               const canReceive = ['approved', 'pending', 'partial'].includes(order.status);
               const canCancel = ['draft', 'pending', 'approved'].includes(order.status) && Number(order.receivedValue || 0) <= 0;
+              const isHighlighted = String(order._id) === String(highlightedOrderId);
 
               return (
-                <div key={order._id} className="app-surface-muted rounded-2xl p-4">
+                <div
+                  key={order._id}
+                  className={`rounded-2xl p-4 ${isHighlighted
+                    ? 'border-2 border-emerald-300 bg-emerald-50 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/20'
+                    : 'app-surface-muted'
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-mono text-xs text-gray-500">{order.orderNumber}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-mono text-xs text-gray-500">{order.orderNumber}</p>
+                        {isHighlighted && <Badge variant="success">الأمر الناتج</Badge>}
+                        {isSupplierRequestDerived(order) && <Badge variant="info">طلب مورد فرعي</Badge>}
+                      </div>
                       <p className="mt-1 text-sm font-black text-gray-900 dark:text-white">{order.supplier?.name || '—'}</p>
                       <p className="mt-1 text-[11px] text-gray-400">{order.branch?.name || 'الفرع الرئيسي'} · {format(new Date(order.createdAt), 'dd MMM yyyy', { locale: ar })}</p>
+                      {getSupplierRequestReference(order) && (
+                        <p className="mt-1 text-[11px] font-medium text-gray-400">مرجع الطلب #{getSupplierRequestReference(order)}</p>
+                      )}
                     </div>
                     <Badge variant={STATUS_COLORS[order.status] || 'gray'}>
                       {STATUS_LABELS[order.status] || order.status}
@@ -745,10 +873,20 @@ export default function PurchaseOrdersPage() {
                   const canApprove = order.status === 'draft' || order.status === 'pending';
                   const canReceive = ['approved', 'pending', 'partial'].includes(order.status);
                   const canCancel = ['draft', 'pending', 'approved'].includes(order.status) && Number(order.receivedValue || 0) <= 0;
+                  const isHighlighted = String(order._id) === String(highlightedOrderId);
 
                   return (
-                    <tr key={order._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="p-4 font-mono text-xs">{order.orderNumber}</td>
+                    <tr key={order._id} className={`${isHighlighted ? 'bg-emerald-50/80 dark:bg-emerald-950/20' : ''} hover:bg-gray-50 dark:hover:bg-gray-800/50`}>
+                      <td className="p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-xs">{order.orderNumber}</span>
+                          {isHighlighted && <Badge variant="success">الأمر الناتج</Badge>}
+                          {isSupplierRequestDerived(order) && <Badge variant="info">طلب مورد فرعي</Badge>}
+                        </div>
+                        {getSupplierRequestReference(order) && (
+                          <p className="mt-1 text-[11px] text-gray-500">مرجع الطلب #{getSupplierRequestReference(order)}</p>
+                        )}
+                      </td>
                       <td className="p-4 text-xs text-gray-500">{order.branch?.name || 'الفرع الرئيسي'}</td>
                       <td className="p-4 font-medium">{order.supplier?.name || '—'}</td>
                       <td className="p-4 text-xs text-gray-500">

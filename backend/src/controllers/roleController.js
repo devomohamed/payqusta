@@ -6,6 +6,7 @@ const Role = require('../models/Role');
 const AppError = require('../utils/AppError');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
+const { ensureTenantSystemRoles } = require('../services/systemRoleService');
 
 class RoleController {
   /**
@@ -14,6 +15,7 @@ class RoleController {
    */
   async getAll(req, res, next) {
     try {
+      await ensureTenantSystemRoles(req.tenantId);
       const roles = await Role.find({ tenant: req.tenantId }).sort('name');
       ApiResponse.success(res, roles);
     } catch (error) {

@@ -3,6 +3,8 @@ const INVOICE_SHIPPING_PROVIDERS = ['local', 'bosta', 'aramex', 'manual'];
 
 const DEFAULT_TENANT_SHIPPING_SETTINGS = Object.freeze({
   enabled: false,
+  pricingMode: 'fixed_zones',
+  defaultShippingBranchId: null,
   provider: 'local',
   providerDisplayName: '',
   apiKey: '',
@@ -16,6 +18,18 @@ const DEFAULT_TENANT_SHIPPING_SETTINGS = Object.freeze({
   originGovernorate: '',
   originCity: '',
   warehouseAddress: '',
+  dynamicApi: {
+    endpoint: '',
+    apiKey: '',
+    timeoutMs: 8000,
+    errorBehavior: 'show_error',
+    fallbackPrice: 0,
+  },
+  transferReminders: {
+    enabled: true,
+    hoursToOverdue: 6,
+    reminderIntervalHours: 4,
+  },
   zones: [],
 });
 
@@ -48,6 +62,29 @@ function toOptionalPositiveInteger(value) {
   return Math.round(normalized);
 }
 
+function normalizeObjectIdLike(value) {
+  if (!value) return null;
+  if (typeof value === 'object' && value._id) {
+    return sanitizeShippingText(value._id, { maxLength: 48 });
+  }
+  return sanitizeShippingText(value, { maxLength: 48 });
+}
+
+function normalizeStringList(values = [], options = {}) {
+  const maxLength = options.maxLength || 80;
+  const unique = new Set();
+
+  if (!Array.isArray(values)) return [];
+
+  values.forEach((value) => {
+    const normalized = sanitizeShippingText(value, { maxLength });
+    if (!normalized) return;
+    unique.add(normalized);
+  });
+
+  return [...unique];
+}
+
 function normalizeShippingCode(value, fallback = 'zone-1') {
   const normalized = sanitizeShippingText(value, {
     maxLength: 48,
@@ -66,17 +103,23 @@ function resolveShippingZone(settings, shippingAddress = {}, requestedSummary = 
     requestedSummary?.zoneLabel,
     shippingAddress?.governorate,
     shippingAddress?.city,
+    shippingAddress?.area,
   ].filter(Boolean);
 
   if (!candidateValues.length || !Array.isArray(settings?.zones)) return null;
 
-  return settings.zones.find((zone) =>
-    candidateValues.some((value) => {
-      const normalizedValue = normalizeShippingCode(value, '');
-      const normalizedLabel = sanitizeShippingText(value, { maxLength: 80 });
+  const normalizedCandidates = candidateValues.map((value) => ({
+    code: normalizeShippingCode(value, ''),
+    label: sanitizeShippingText(value, { maxLength: 80 }),
+  }));
 
-      return zone.code === normalizedValue || zone.label === normalizedLabel;
-    })
+  return settings.zones.find((zone) =>
+    normalizedCandidates.some((candidate) =>
+      zone.code === candidate.code ||
+      zone.label === candidate.label ||
+      zone.governorates?.includes(candidate.label) ||
+      zone.areas?.includes(candidate.label)
+    )
   ) || null;
 }
 
@@ -108,7 +151,10 @@ function normalizeShippingZone(zone = {}, index = 0) {
   return {
     code: normalizeShippingCode(zone.code || zone.value || label, `zone-${index + 1}`),
     label,
+    governorates: normalizeStringList(zone.governorates, { maxLength: 80 }),
+    areas: normalizeStringList(zone.areas, { maxLength: 80 }),
     fee: toNonNegativeNumber(zone.fee, 0),
+    sortOrder: toNonNegativeNumber(zone.sortOrder, index),
     estimatedDaysMin: estimatedDaysMin ?? 0,
     estimatedDaysMax,
     isActive: zone.isActive !== false,
@@ -124,6 +170,11 @@ function getTenantShippingSettings(tenant) {
   return {
     ...DEFAULT_TENANT_SHIPPING_SETTINGS,
     enabled: Boolean(rawSettings.enabled),
+    pricingMode:
+      rawSettings.pricingMode === 'dynamic_api'
+        ? 'dynamic_api'
+        : DEFAULT_TENANT_SHIPPING_SETTINGS.pricingMode,
+    defaultShippingBranchId: normalizeObjectIdLike(rawSettings.defaultShippingBranchId),
     provider,
     providerDisplayName:
       sanitizeShippingText(rawSettings.providerDisplayName, { maxLength: 80 }) ||
@@ -162,10 +213,44 @@ function getTenantShippingSettings(tenant) {
     warehouseAddress: sanitizeShippingText(rawSettings.warehouseAddress, {
       maxLength: 400,
     }),
+    dynamicApi: {
+      endpoint: sanitizeShippingText(rawSettings.dynamicApi?.endpoint, { maxLength: 400 }),
+      apiKey: sanitizeShippingText(rawSettings.dynamicApi?.apiKey, { maxLength: 255 }),
+      timeoutMs:
+        toOptionalPositiveInteger(rawSettings.dynamicApi?.timeoutMs) ??
+        DEFAULT_TENANT_SHIPPING_SETTINGS.dynamicApi.timeoutMs,
+      errorBehavior:
+        ['show_error', 'use_fallback_price', 'block_checkout'].includes(rawSettings.dynamicApi?.errorBehavior)
+          ? rawSettings.dynamicApi.errorBehavior
+          : DEFAULT_TENANT_SHIPPING_SETTINGS.dynamicApi.errorBehavior,
+      fallbackPrice: toNonNegativeNumber(
+        rawSettings.dynamicApi?.fallbackPrice,
+        DEFAULT_TENANT_SHIPPING_SETTINGS.dynamicApi.fallbackPrice
+      ),
+    },
+    transferReminders: {
+      enabled:
+        rawSettings.transferReminders?.enabled === undefined
+          ? DEFAULT_TENANT_SHIPPING_SETTINGS.transferReminders.enabled
+          : Boolean(rawSettings.transferReminders?.enabled),
+      hoursToOverdue:
+        Math.max(
+          toOptionalPositiveInteger(rawSettings.transferReminders?.hoursToOverdue) ??
+            DEFAULT_TENANT_SHIPPING_SETTINGS.transferReminders.hoursToOverdue,
+          1
+        ),
+      reminderIntervalHours:
+        Math.max(
+          toOptionalPositiveInteger(rawSettings.transferReminders?.reminderIntervalHours) ??
+            DEFAULT_TENANT_SHIPPING_SETTINGS.transferReminders.reminderIntervalHours,
+          1
+        ),
+    },
     zones: Array.isArray(rawSettings.zones)
       ? rawSettings.zones
           .map((zone, index) => normalizeShippingZone(zone, index))
           .filter(Boolean)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
       : [],
   };
 }
@@ -182,6 +267,8 @@ function applyTenantShippingSettings(input = {}, tenant) {
 
   return {
     enabled: Boolean(nextSettings.enabled),
+    pricingMode: nextSettings.pricingMode === 'dynamic_api' ? 'dynamic_api' : 'fixed_zones',
+    defaultShippingBranchId: normalizeObjectIdLike(nextSettings.defaultShippingBranchId),
     provider,
     providerDisplayName:
       sanitizeShippingText(nextSettings.providerDisplayName, { maxLength: 80 }) ||
@@ -212,10 +299,42 @@ function applyTenantShippingSettings(input = {}, tenant) {
     warehouseAddress: sanitizeShippingText(nextSettings.warehouseAddress, {
       maxLength: 400,
     }),
+    dynamicApi: {
+      endpoint: sanitizeShippingText(nextSettings.dynamicApi?.endpoint, { maxLength: 400 }),
+      apiKey: sanitizeShippingText(nextSettings.dynamicApi?.apiKey, { maxLength: 255 }),
+      timeoutMs:
+        toOptionalPositiveInteger(nextSettings.dynamicApi?.timeoutMs) ??
+        currentSettings.dynamicApi.timeoutMs,
+      errorBehavior:
+        ['show_error', 'use_fallback_price', 'block_checkout'].includes(nextSettings.dynamicApi?.errorBehavior)
+          ? nextSettings.dynamicApi.errorBehavior
+          : currentSettings.dynamicApi.errorBehavior,
+      fallbackPrice: toNonNegativeNumber(
+        nextSettings.dynamicApi?.fallbackPrice,
+        currentSettings.dynamicApi.fallbackPrice
+      ),
+    },
+    transferReminders: {
+      enabled:
+        nextSettings.transferReminders?.enabled === undefined
+          ? currentSettings.transferReminders.enabled
+          : Boolean(nextSettings.transferReminders?.enabled),
+      hoursToOverdue: Math.max(
+        toOptionalPositiveInteger(nextSettings.transferReminders?.hoursToOverdue) ??
+          currentSettings.transferReminders.hoursToOverdue,
+        1
+      ),
+      reminderIntervalHours: Math.max(
+        toOptionalPositiveInteger(nextSettings.transferReminders?.reminderIntervalHours) ??
+          currentSettings.transferReminders.reminderIntervalHours,
+        1
+      ),
+    },
     zones: Array.isArray(nextSettings.zones)
       ? nextSettings.zones
           .map((zone, index) => normalizeShippingZone(zone, index))
           .filter(Boolean)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
       : currentSettings.zones,
   };
 }
@@ -225,6 +344,8 @@ function getPublicShippingSettings(tenant) {
 
   return {
     enabled: settings.enabled,
+    pricingMode: settings.pricingMode,
+    defaultShippingBranchId: settings.defaultShippingBranchId,
     provider: settings.provider,
     providerDisplayName: settings.providerDisplayName,
     defaultMethodName: settings.defaultMethodName,
@@ -233,6 +354,10 @@ function getPublicShippingSettings(tenant) {
     freeShippingThreshold: settings.freeShippingThreshold,
     estimatedDaysMin: settings.estimatedDaysMin,
     estimatedDaysMax: settings.estimatedDaysMax,
+    requiredAddressFields:
+      settings.pricingMode === 'dynamic_api'
+        ? ['governorate', 'city']
+        : ['governorate'],
     zones: settings.zones.filter((zone) => zone.isActive !== false),
   };
 }

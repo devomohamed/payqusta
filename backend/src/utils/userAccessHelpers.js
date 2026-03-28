@@ -4,6 +4,7 @@ const AppError = require('./AppError');
 const Branch = require('../models/Branch');
 const Role = require('../models/Role');
 const { ROLES } = require('../config/constants');
+const { BRANCH_MANAGER_ROLE_NAME } = require('../services/systemRoleService');
 
 const STANDARD_ROLES = new Set(Object.values(ROLES));
 const BRANCH_ACCESS_MODES = ['all_branches', 'assigned_branches', 'single_branch'];
@@ -24,18 +25,29 @@ const dedupeIds = (values = []) => {
   });
 };
 
+const resolveStoredRoleBaseRole = (roleDoc, fallbackRole) => {
+  if (roleDoc?.name === BRANCH_MANAGER_ROLE_NAME) {
+    return ROLES.COORDINATOR;
+  }
+
+  return fallbackRole;
+};
+
 const resolveUserRoleAssignment = async ({ tenantId, role, customRole, fallbackRole = ROLES.VENDOR }) => {
   let resolvedRole = role || fallbackRole;
 
   if (customRole !== undefined && customRole !== null && customRole !== '') {
-    const roleDoc = await Role.findOne({ _id: customRole, tenant: tenantId }).select('_id');
+    const roleDoc = await Role.findOne({ _id: customRole, tenant: tenantId }).select('_id name');
     if (!roleDoc) {
       throw AppError.badRequest('الدور المخصص غير موجود في هذا المتجر');
     }
     if (!STANDARD_ROLES.has(resolvedRole)) {
       resolvedRole = fallbackRole;
     }
-    return { role: resolvedRole, customRole: roleDoc._id };
+    return {
+      role: resolveStoredRoleBaseRole(roleDoc, resolvedRole),
+      customRole: roleDoc._id,
+    };
   }
 
   if (customRole === null || customRole === '') {
@@ -46,11 +58,14 @@ const resolveUserRoleAssignment = async ({ tenantId, role, customRole, fallbackR
   }
 
   if (!STANDARD_ROLES.has(resolvedRole)) {
-    const roleDoc = await Role.findOne({ name: resolvedRole, tenant: tenantId }).select('_id');
+    const roleDoc = await Role.findOne({ name: resolvedRole, tenant: tenantId }).select('_id name');
     if (!roleDoc) {
       throw AppError.badRequest('الدور غير معروف');
     }
-    return { role: fallbackRole, customRole: roleDoc._id };
+    return {
+      role: resolveStoredRoleBaseRole(roleDoc, fallbackRole),
+      customRole: roleDoc._id,
+    };
   }
 
   return { role: resolvedRole, customRole: null };

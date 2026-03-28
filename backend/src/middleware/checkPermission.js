@@ -42,6 +42,25 @@ function resolveDefaultRole(user) {
   return DEFAULT_ROLES[user.role.toUpperCase()] || null;
 }
 
+async function userHasPermission(user, resource, action) {
+  if (!user) return false;
+
+  if (user?.isSuperAdmin) return true;
+  if (isTenantAdminFullAccess(user)) return true;
+
+  const roleDoc = await resolveRoleDocument(user);
+  if (roleDoc) {
+    const permission = roleDoc.permissions.find((entry) => entry.resource === resource);
+    return Boolean(permission && permission.actions.includes(action));
+  }
+
+  const defaultRole = resolveDefaultRole(user);
+  if (!defaultRole) return false;
+
+  const permission = defaultRole.permissions.find((entry) => entry.resource === resource);
+  return Boolean(permission && permission.actions.includes(action));
+}
+
 /**
  * Check if user has permission for resource/action.
  * Frozen decision for the current RBAC wave:
@@ -119,4 +138,5 @@ module.exports = {
   checkPermission,
   getUserPermissions,
   isTenantAdminFullAccess,
+  userHasPermission,
 };

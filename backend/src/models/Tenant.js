@@ -122,6 +122,16 @@ const tenantSchema = new mongoose.Schema(
       },
       shipping: {
         enabled: { type: Boolean, default: false },
+        pricingMode: {
+          type: String,
+          enum: ['fixed_zones', 'dynamic_api'],
+          default: 'fixed_zones',
+        },
+        defaultShippingBranchId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Branch',
+          default: null,
+        },
         provider: {
           type: String,
           enum: ['none', 'local', 'bosta', 'aramex', 'manual'],
@@ -139,10 +149,29 @@ const tenantSchema = new mongoose.Schema(
         originGovernorate: { type: String, default: '' },
         originCity: { type: String, default: '' },
         warehouseAddress: { type: String, default: '' },
+        dynamicApi: {
+          endpoint: { type: String, default: '' },
+          apiKey: { type: String, default: '' },
+          timeoutMs: { type: Number, default: 8000, min: 1000, max: 30000 },
+          errorBehavior: {
+            type: String,
+            enum: ['show_error', 'use_fallback_price', 'block_checkout'],
+            default: 'show_error',
+          },
+          fallbackPrice: { type: Number, default: 0, min: 0 },
+        },
+        transferReminders: {
+          enabled: { type: Boolean, default: true },
+          hoursToOverdue: { type: Number, default: 6, min: 1, max: 168 },
+          reminderIntervalHours: { type: Number, default: 4, min: 1, max: 168 },
+        },
         zones: [{
           code: { type: String, default: '' },
           label: { type: String, default: '' },
+          governorates: [{ type: String, default: '' }],
+          areas: [{ type: String, default: '' }],
           fee: { type: Number, default: 0, min: 0 },
+          sortOrder: { type: Number, default: 0, min: 0 },
           estimatedDaysMin: { type: Number, default: 0, min: 0 },
           estimatedDaysMax: { type: Number, default: 0, min: 0 },
           isActive: { type: Boolean, default: true },

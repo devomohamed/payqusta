@@ -252,6 +252,130 @@ async function loadTenantForWrite(tenantId) {
   return tenant;
 }
 
+async function resolveProductListBranchScope(req) {
+  const isAdminLikeUser = req.user?.role === 'admin' || !!req.user?.isSuperAdmin;
+  const enforcedBranchId = (!isAdminLikeUser && req.user?.branch)
+    ? String(req.user.branch?._id || req.user.branch)
+    : '';
+  const requestedBranchId = isAdminLikeUser && req.query.branchId
+    ? String(req.query.branchId).trim()
+    : '';
+  const branchId = enforcedBranchId || requestedBranchId;
+  const mainBranchId = String(req.tenantId);
+
+  if (!branchId) {
+    return {
+      branchId: '',
+      mainBranchId,
+      enforced: false,
+      isMainBranch: false,
+    };
+  }
+
+  if (branchId === mainBranchId) {
+    return {
+      branchId,
+      mainBranchId,
+      enforced: Boolean(enforcedBranchId),
+      isMainBranch: true,
+    };
+  }
+
+  const branch = await Branch.findOne({
+    _id: branchId,
+    tenant: req.tenantId,
+    isActive: true,
+  }).select('_id');
+
+  if (!branch) {
+    throw AppError.badRequest('الفرع المحدد غير صالح أو غير نشط.');
+  }
+
+  return {
+    branchId,
+    mainBranchId,
+    enforced: Boolean(enforcedBranchId),
+    isMainBranch: false,
+  };
+}
+
+function getProductBranchSnapshot(product, branchScope) {
+  const inventoryItems = Array.isArray(product?.inventory) ? product.inventory : [];
+  const availabilityItems = Array.isArray(product?.branchAvailability) ? product.branchAvailability : [];
+
+  if (!branchScope?.branchId) {
+    const quantity = Number(product?.stock?.quantity) || 0;
+    const minQuantity = Number(product?.stock?.minQuantity) || 5;
+    return {
+      branchId: '',
+      quantity,
+      minQuantity,
+      isAvailableInBranch: true,
+      hasInventoryRow: inventoryItems.length > 0,
+      hasAvailabilityRow: availabilityItems.length > 0,
+      status: quantity <= 0 ? 'out_of_stock' : quantity <= minQuantity ? 'low_stock' : 'in_stock',
+    };
+  }
+
+  const branchId = String(branchScope.branchId);
+  const inventoryRow = inventoryItems.find((item) => String(item?.branch?._id || item?.branch || '') === branchId);
+  const availabilityRow = availabilityItems.find((item) => String(item?.branch?._id || item?.branch || '') === branchId);
+  const quantity = branchScope.isMainBranch
+    ? Number(product?.stock?.quantity) || 0
+    : Number(inventoryRow?.quantity) || 0;
+  const minQuantity = branchScope.isMainBranch
+    ? Number(product?.stock?.minQuantity) || 5
+    : Number(inventoryRow?.minQuantity) || 5;
+  const isAvailableInBranch = availabilityRow
+    ? availabilityRow.isAvailableInBranch !== false
+    : (branchScope.isMainBranch ? true : Boolean(inventoryRow));
+  const status = !isAvailableInBranch
+    ? 'unavailable'
+    : quantity <= 0
+      ? 'out_of_stock'
+      : quantity <= minQuantity
+        ? 'low_stock'
+        : 'in_stock';
+
+  return {
+    branchId,
+    quantity,
+    minQuantity,
+    isAvailableInBranch,
+    hasInventoryRow: Boolean(inventoryRow),
+    hasAvailabilityRow: Boolean(availabilityRow),
+    status,
+  };
+}
+
+function isProductVisibleInBranch(product, branchScope, branchSnapshot) {
+  if (!branchScope?.branchId) return true;
+  if (branchSnapshot.status === 'unavailable') return false;
+  if (branchScope.isMainBranch) return true;
+  return branchSnapshot.hasInventoryRow || branchSnapshot.hasAvailabilityRow;
+}
+
+function matchesBranchStockFilter(branchSnapshot, stockFilter) {
+  if (!stockFilter) return true;
+  if (stockFilter === 'out_of_stock') return branchSnapshot.status === 'out_of_stock';
+  if (stockFilter === 'low_stock') return branchSnapshot.status === 'low_stock';
+  if (stockFilter === 'in_stock') return branchSnapshot.status === 'in_stock';
+  return true;
+}
+
+function mapProductListItem(product, branchScope, branchSnapshot) {
+  return {
+    ...product,
+    branchStock: {
+      branchId: branchScope?.branchId || '',
+      quantity: branchSnapshot.quantity,
+      minQuantity: branchSnapshot.minQuantity,
+      status: branchSnapshot.status,
+      isAvailableInBranch: branchSnapshot.isAvailableInBranch,
+    },
+  };
+}
+
 async function resolveCreateInventory(req, stockQuantity, minQuantity) {
   const inventory = parseInventoryPayload(req.body.inventory);
   const isAdminLikeUser = req.user?.role === 'admin' || !!req.user?.isSuperAdmin;
@@ -315,6 +439,7 @@ class ProductController {
     const { page, limit, skip, sort } = Helpers.getPaginationParams(req.query);
     const filter = { ...req.tenantFilter, isActive: true };
     const isPublic = !req.user;
+    const branchScope = isPublic ? { branchId: '', mainBranchId: String(req.tenantId), enforced: false, isMainBranch: false } : await resolveProductListBranchScope(req);
     const scopeQuery = String(req.query.scope || '').trim().toLowerCase();
     const suspendedQuery = String(req.query.suspended || '').trim().toLowerCase();
     if (isPublic) filter.isSuspended = { $ne: true };
@@ -338,8 +463,9 @@ class ProductController {
       }
     }
     if (queryConditions.length > 0) filter.$and = queryConditions;
-    
-    if (req.query.stockStatus) {
+
+    const requestedStockFilter = String(req.query.stockStatus || '').trim();
+    if (requestedStockFilter && !branchScope.branchId) {
       if (req.query.stockStatus === 'out_of_stock') {
         filter['stock.quantity'] = { $lte: 0 };
       } else if (req.query.stockStatus === 'low_stock') {
@@ -353,25 +479,50 @@ class ProductController {
     }
 
     if (req.query.supplier) filter.supplier = req.query.supplier;
+    if (branchScope.branchId && !branchScope.isMainBranch) {
+      const branchId = branchScope.branchId;
+      filter.$and = [
+        ...(filter.$and || []),
+        {
+          $or: [
+            { inventory: { $elemMatch: { branch: branchId } } },
+            { branchAvailability: { $elemMatch: { branch: branchId, isAvailableInBranch: { $ne: false } } } },
+          ],
+        },
+      ];
+    }
 
     const Review = require('../models/Review');
+    const baseListQuery = Product.find(filter)
+      .select('name sku description price compareAtPrice cost thumbnail images supplier category subcategory stock stockStatus inventory branchAvailability isSuspended localBarcode localBarcodeType barcode internationalBarcode internationalBarcodeType tags')
+      .populate('supplier', 'name')
+      .populate('category', 'name icon')
+      .populate('subcategory', 'name icon')
+      .sort(sort)
+      .lean();
     const loadPage = () => Promise.all([
-      Product.find(filter)
-        .populate('supplier', 'name')
-        .populate('category', 'name icon')
-        .populate('subcategory', 'name icon')
-        .populate('inventory.branch', 'name')
-        .populate('branchAvailability.branch', 'name')
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      baseListQuery.clone().skip(skip).limit(limit),
       Product.countDocuments(filter),
     ]);
     let [products, total] = await loadPage();
     if (total === 0) {
       const seedResult = await seedStarterCatalogForTenant(req.tenantId);
       if (seedResult.seeded) [products, total] = await loadPage();
+    }
+    if (branchScope.branchId) {
+      const scopedProducts = total > 0 ? await baseListQuery.clone() : products;
+      const branchAwareProducts = scopedProducts
+        .map((product) => {
+          const branchSnapshot = getProductBranchSnapshot(product, branchScope);
+          if (!isProductVisibleInBranch(product, branchScope, branchSnapshot)) return null;
+          if (!matchesBranchStockFilter(branchSnapshot, requestedStockFilter)) return null;
+          return mapProductListItem(product, branchScope, branchSnapshot);
+        })
+        .filter(Boolean);
+      total = branchAwareProducts.length;
+      products = branchAwareProducts.slice(skip, skip + limit);
+    } else {
+      products = products.map((product) => mapProductListItem(product, branchScope, getProductBranchSnapshot(product, branchScope)));
     }
     if (products.length > 0) {
       const stats = await Review.aggregate([
@@ -780,6 +931,58 @@ class ProductController {
 }
 
 const productController = new ProductController();
+
+productController.getLowStock = catchAsync(async (req, res) => {
+  const branchScope = await resolveProductListBranchScope(req);
+  if (!branchScope.branchId) {
+    return ApiResponse.success(res, await Product.findLowStock(req.tenantId), 'المنتجات منخفضة المخزون');
+  }
+
+  const products = await Product.find({ ...req.tenantFilter, isActive: true })
+    .select('name sku price cost supplier stock stockStatus inventory branchAvailability')
+    .populate('supplier', 'name contactPerson phone')
+    .lean();
+
+  const lowStockProducts = products
+    .map((product) => {
+      const branchSnapshot = getProductBranchSnapshot(product, branchScope);
+      if (!isProductVisibleInBranch(product, branchScope, branchSnapshot)) return null;
+      if (!['low_stock', 'out_of_stock'].includes(branchSnapshot.status)) return null;
+      return mapProductListItem(product, branchScope, branchSnapshot);
+    })
+    .filter(Boolean);
+
+  return ApiResponse.success(res, lowStockProducts, 'المنتجات منخفضة المخزون');
+});
+
+productController.getStockSummary = catchAsync(async (req, res) => {
+  const branchScope = await resolveProductListBranchScope(req);
+  if (!branchScope.branchId) {
+    return ApiResponse.success(res, await Product.getStockSummary(req.tenantId));
+  }
+
+  const products = await Product.find({ ...req.tenantFilter, isActive: true })
+    .select('stock inventory branchAvailability cost')
+    .lean();
+
+  const summary = {
+    inStock: 0,
+    lowStock: 0,
+    outOfStock: 0,
+    totalValue: 0,
+  };
+
+  products.forEach((product) => {
+    const branchSnapshot = getProductBranchSnapshot(product, branchScope);
+    if (!isProductVisibleInBranch(product, branchScope, branchSnapshot)) return;
+    if (branchSnapshot.status === 'in_stock') summary.inStock += 1;
+    if (branchSnapshot.status === 'low_stock') summary.lowStock += 1;
+    if (branchSnapshot.status === 'out_of_stock') summary.outOfStock += 1;
+    summary.totalValue += branchSnapshot.quantity * (Number(product?.cost) || 0);
+  });
+
+  return ApiResponse.success(res, summary);
+});
 
 productController.uploadEditorImages = catchAsync(async (req, res, next) => {
   const files = Array.isArray(req.files)

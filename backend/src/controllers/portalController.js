@@ -21,7 +21,7 @@ const {
   getOnlineFulfillmentSettings,
   resolveInventoryAllocation,
 } = require('../utils/inventoryAllocation');
-const { calculateTenantShippingSummary } = require('../utils/shippingHelpers');
+const { resolveTenantShippingQuote } = require('../utils/shippingQuoteResolver');
 const {
   calculateRefundAmountForItems,
   cancelInvoiceOrder,
@@ -1231,6 +1231,47 @@ class PortalController {
   });
 
   /**
+   * POST /api/v1/portal/shipping/calculate
+   */
+  calculateShippingQuote = catchAsync(async (req, res, next) => {
+    const customer = await Customer.findById(req.user.id).populate('tenant', 'settings.shipping');
+    if (!customer) {
+      return next(AppError.notFound('العميل غير موجود'));
+    }
+
+    const quote = await resolveTenantShippingQuote(customer.tenant, {
+      shippingAddress: req.body?.shippingAddress || {},
+      subtotal: Number(req.body?.subtotal) || 0,
+      requestedSummary: req.body?.shippingSummary || {},
+    });
+
+    if (!quote.ok) {
+      return next(new AppError(
+        quote.errorMessage || 'تعذر حساب تكلفة الشحن حالياً',
+        400,
+        quote.errorCode || 'SHIPPING_CALCULATION_FAILED'
+      ));
+    }
+
+    ApiResponse.success(res, {
+      pricingMode: quote.pricingMode,
+      calculationState: quote.calculationState,
+      isEstimated: Boolean(quote.isEstimated),
+      warningMessage: quote.warningMessage || '',
+      shippingSummary: quote.shippingSummary,
+      shippingBranch: quote.shippingBranch
+        ? {
+            _id: quote.shippingBranch._id,
+            name: quote.shippingBranch.name,
+            branchType: quote.shippingBranch.branchType,
+            address: quote.shippingBranch.address,
+            shippingOrigin: quote.shippingBranch.shippingOrigin,
+          }
+        : null,
+    }, 'تم حساب تكلفة الشحن بنجاح');
+  });
+
+  /**
    * POST /api/v1/portal/cart/checkout
    */
   checkout = catchAsync(async (req, res, next) => {
@@ -1397,12 +1438,20 @@ class PortalController {
       finalTotalAmount = Math.max(0, totalAmount - discountAmount);
     }
 
-    const computedShippingSummary = calculateTenantShippingSummary(
-      customer.tenant,
+    const shippingQuote = await resolveTenantShippingQuote(customer.tenant, {
       shippingAddress,
-      totalAmount,
-      shippingSummary
-    );
+      subtotal: totalAmount,
+      requestedSummary: shippingSummary,
+    });
+    if (!shippingQuote.ok) {
+      return next(new AppError(
+        shippingQuote.errorMessage || 'تعذر حساب تكلفة الشحن حالياً',
+        400,
+        shippingQuote.errorCode || 'SHIPPING_CALCULATION_FAILED'
+      ));
+    }
+
+    const computedShippingSummary = shippingQuote.shippingSummary;
     const effectiveShippingAmount = Math.max(
       0,
       (computedShippingSummary?.shippingFee || 0) - (computedShippingSummary?.shippingDiscount || 0)
@@ -1457,6 +1506,7 @@ class PortalController {
     const invoice = await Invoice.create({
       tenant: customer.tenant._id || customer.tenant,
       branch: branchId,
+      fulfillmentBranch: shippingQuote?.shippingBranch?.branchId || branchId,
       invoiceNumber: Helpers.generateInvoiceNumber(),
       customer: customer._id,
       items: invoiceItems,
@@ -1470,6 +1520,7 @@ class PortalController {
       remainingAmount: finalTotalAmount,
       status: 'pending',
       orderStatus: 'pending',
+      fulfillmentStatus: 'pending_review',
       paymentMethod,
       installments,
       createdBy: customer._id,
@@ -2275,7 +2326,5 @@ class PortalController {
 }
 
 module.exports = new PortalController();
-
-
 
 

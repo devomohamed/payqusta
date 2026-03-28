@@ -7,6 +7,9 @@ const Notification = require('../models/Notification');
 const ApiResponse = require('../utils/ApiResponse');
 const Helpers = require('../utils/helpers');
 const NotificationService = require('../services/NotificationService');
+const { userHasPermission } = require('../middleware/checkPermission');
+
+const STOCK_TRANSFER_LINK_REGEX = /^\/stock-transfers(?:\/|$)/;
 
 const isSuperAdminUser = (user = {}) =>
   Boolean(
@@ -15,7 +18,7 @@ const isSuperAdminUser = (user = {}) =>
   );
 
 // Keep owner/admin notifications isolated from customer notifications.
-const buildOwnerNotificationFilter = (req, extra = {}) => {
+const buildOwnerNotificationFilter = async (req, extra = {}) => {
   const filter = {
     recipient: req.user._id,
     $or: [
@@ -29,6 +32,19 @@ const buildOwnerNotificationFilter = (req, extra = {}) => {
     filter.tenant = req.tenantId;
   }
 
+  const canManageStockTransfers = await userHasPermission(req.user, 'invoices', 'update');
+  if (!canManageStockTransfers) {
+    filter.$and = [
+      {
+        $or: [
+          { link: { $exists: false } },
+          { link: null },
+          { link: { $not: STOCK_TRANSFER_LINK_REGEX } },
+        ],
+      },
+    ];
+  }
+
   return filter;
 };
 
@@ -40,7 +56,7 @@ class NotificationController {
   async getAll(req, res, next) {
     try {
       const { page, limit, skip } = Helpers.getPaginationParams(req.query);
-      const filter = buildOwnerNotificationFilter(req);
+      const filter = await buildOwnerNotificationFilter(req);
 
       if (req.query.unread === 'true') filter.isRead = false;
       if (req.query.type) filter.type = req.query.type;
@@ -61,7 +77,7 @@ class NotificationController {
    */
   async getUnreadCount(req, res, next) {
     try {
-      const filter = buildOwnerNotificationFilter(req, { isRead: false });
+      const filter = await buildOwnerNotificationFilter(req, { isRead: false });
       const count = await Notification.countDocuments(filter);
       ApiResponse.success(res, { count });
     } catch (error) {
@@ -74,7 +90,7 @@ class NotificationController {
    */
   async markAsRead(req, res, next) {
     try {
-      const filter = buildOwnerNotificationFilter(req, { _id: req.params.id });
+      const filter = await buildOwnerNotificationFilter(req, { _id: req.params.id });
       await Notification.findOneAndUpdate(filter, { isRead: true, readAt: new Date() });
       ApiResponse.success(res, null, 'تم التعليم كمقروء');
     } catch (error) {
@@ -87,7 +103,7 @@ class NotificationController {
    */
   async markAllAsRead(req, res, next) {
     try {
-      const filter = buildOwnerNotificationFilter(req, { isRead: false });
+      const filter = await buildOwnerNotificationFilter(req, { isRead: false });
       await Notification.updateMany(filter, { isRead: true, readAt: new Date() });
       ApiResponse.success(res, null, 'تم تعليم الكل كمقروء');
     } catch (error) {
@@ -100,7 +116,7 @@ class NotificationController {
    */
   async deleteOne(req, res, next) {
     try {
-      const filter = buildOwnerNotificationFilter(req, { _id: req.params.id });
+      const filter = await buildOwnerNotificationFilter(req, { _id: req.params.id });
       await Notification.findOneAndDelete(filter);
       ApiResponse.success(res, null, 'تم حذف الإشعار');
     } catch (error) {

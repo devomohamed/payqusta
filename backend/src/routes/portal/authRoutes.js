@@ -53,6 +53,7 @@ router.get('/points/history', portalController.getPointsHistory);
 // Products & Shopping
 router.get('/products', portalController.getProducts);
 router.get('/products/:id', portalController.getProductDetails);
+router.post('/shipping/calculate', portalController.calculateShippingQuote);
 router.post('/cart/checkout', portalController.checkout);
 
 // Orders

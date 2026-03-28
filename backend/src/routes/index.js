@@ -27,6 +27,7 @@ const purchaseReturnController = require('../controllers/purchaseReturnControlle
 const ownerMgmt = require('../controllers/ownerManagementController');
 const roleController = require('../controllers/roleController');
 const purchaseOrderController = require('../controllers/purchaseOrderController');
+const supplierReplenishmentRequestController = require('../controllers/supplierReplenishmentRequestController');
 const revenueAnalyticsController = require('../controllers/revenueAnalyticsController');
 const planController = require('../controllers/planController');
 const reviewController = require('../controllers/reviewController');
@@ -93,6 +94,7 @@ router.post('/customers', (req, res, next) => {
 
 router.get('/orders/track', publicTenantScope, invoiceController.trackPublicOrder);
 router.get('/orders/:id([0-9a-fA-F]{24})/confirmation', publicTenantScope, invoiceController.getPublicOrderConfirmation);
+router.post('/shipping/calculate', publicTenantScope, settingsController.calculateShippingQuote);
 
 router.post('/invoices', (req, res, next) => {
   if (req.body.source === 'online_store') return next();
@@ -149,6 +151,7 @@ router.use('/products', require('./productRoutes'));
 router.use('/categories', require('./categoryRoutes'));
 router.use('/customers', require('./customerRoutes'));
 router.use('/invoices', require('./invoiceRoutes'));
+router.use('/stock-transfers', require('./stockTransferRoutes'));
 router.use('/bi', require('./biRoutes'));
 
 // --- Suppliers --- (coordinator can view)
@@ -228,6 +231,9 @@ router.put('/expenses/:id', authorize('vendor', 'admin'), checkPermission('expen
 router.delete('/expenses/:id', authorize('vendor', 'admin'), checkPermission('expenses', 'delete'), auditLog('delete', 'expense'), expenseController.delete);
 
 // --- Settings ---
+router.get('/settings/shipping', authorize('vendor', 'admin'), checkPermission('settings', 'read'), settingsController.getShippingSettings);
+router.put('/settings/shipping', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateShippingSettings);
+router.post('/settings/shipping/test-connection', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.testShippingConnection);
 router.put('/settings/store', authorize('vendor', 'admin'), checkPermission('settings', 'update'), settingsController.updateStore);
 router.put('/settings/whatsapp', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.updateWhatsApp);
 router.post('/settings/whatsapp/test', authorize('admin'), requireFeature('whatsapp_notifications'), settingsController.testWhatsApp);
@@ -282,13 +288,19 @@ router.put('/roles/:id', authorize('vendor', 'admin'), roleController.update);
 router.delete('/roles/:id', authorize('vendor', 'admin'), roleController.delete);
 
 // --- Purchase Orders ---
-router.get('/purchase-orders', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'read'), purchaseOrderController.getAll);
-router.get('/purchase-orders/:id', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'read'), purchaseOrderController.getById);
-router.get('/purchase-orders/:id/pdf', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'read'), purchaseOrderController.generatePDF);
+router.get('/purchase-orders', authorize('vendor', 'admin', 'coordinator'), checkPermission('purchase_orders', 'read'), purchaseOrderController.getAll);
+router.get('/purchase-orders/:id', authorize('vendor', 'admin', 'coordinator'), checkPermission('purchase_orders', 'read'), purchaseOrderController.getById);
+router.get('/purchase-orders/:id/pdf', authorize('vendor', 'admin', 'coordinator'), checkPermission('purchase_orders', 'read'), purchaseOrderController.generatePDF);
 router.post('/purchase-orders', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'create'), purchaseOrderController.create);
 router.put('/purchase-orders/:id', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'update'), purchaseOrderController.update);
 router.post('/purchase-orders/:id/receive', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'update'), purchaseOrderController.receive);
 router.delete('/purchase-orders/:id', authorize('vendor', 'admin'), checkPermission('purchase_orders', 'delete'), purchaseOrderController.delete);
+
+// --- Supplier Replenishment Requests ---
+router.get('/supplier-replenishment-requests', authorize('vendor', 'admin', 'coordinator'), checkPermission('supplier_replenishment_requests', 'read'), supplierReplenishmentRequestController.getAll);
+router.post('/supplier-replenishment-requests', authorize('vendor', 'admin', 'coordinator'), checkPermission('supplier_replenishment_requests', 'create'), supplierReplenishmentRequestController.create);
+router.patch('/supplier-replenishment-requests/:id/status', authorize('vendor', 'admin', 'coordinator'), checkPermission('supplier_replenishment_requests', 'update'), supplierReplenishmentRequestController.updateStatus);
+router.post('/supplier-replenishment-requests/:id/convert-to-purchase-order', authorize('vendor', 'admin', 'coordinator'), checkPermission('supplier_replenishment_requests', 'update'), supplierReplenishmentRequestController.convertToPurchaseOrder);
 
 // --- Payment Gateway ---
 router.use('/payments', require('./paymentRoutes'));

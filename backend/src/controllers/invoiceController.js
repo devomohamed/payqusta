@@ -15,6 +15,7 @@ const WhatsAppService = require('../services/WhatsAppService');
 const NotificationService = require('../services/NotificationService');
 const GamificationService = require('../services/GamificationService');
 const ShippingService = require('../services/ShippingService');
+const { analyzeInvoiceFulfillment } = require('../services/FulfillmentService');
 const refundService = require('../services/RefundService');
 const catchAsync = require('../utils/catchAsync');
 const { PAYMENT_METHODS, INVOICE_STATUS } = require('../config/constants');
@@ -148,6 +149,14 @@ const syncInvoiceShippingState = (
   }
 };
 
+const buildShipmentAttemptSummary = (deliveryData = {}) => ({
+  address: String(deliveryData.address || '').slice(0, 300),
+  city: String(deliveryData.city || '').slice(0, 80),
+  governorate: String(deliveryData.governorate || '').slice(0, 80),
+  itemsCount: Number(deliveryData.itemsCount) || 0,
+  reference: String(deliveryData.reference || '').slice(0, 80),
+});
+
 const toPublicOrderPayload = (invoice) => ({
   id: invoice._id,
   invoiceId: invoice._id,
@@ -264,7 +273,21 @@ class InvoiceController {
    * Get all invoices with pagination and filtering
    */
   getAll = catchAsync(async (req, res, next) => {
-    const { page = 1, limit = 50, search, status, orderStatus, source, customerId, startDate, endDate, sortBy = '-createdAt', branch } = req.query;
+    const {
+      page = 1,
+      limit = 50,
+      search,
+      status,
+      orderStatus,
+      fulfillmentStatus,
+      fulfillmentBranch,
+      source,
+      customerId,
+      startDate,
+      endDate,
+      sortBy = '-createdAt',
+      branch,
+    } = req.query;
 
     const filter = { ...req.tenantFilter };
 
@@ -278,6 +301,10 @@ class InvoiceController {
     if (source) filter.source = { $in: source.split(',') };
     // Filter by order tracking status
     if (orderStatus) filter.orderStatus = orderStatus;
+    // Filter by fulfillment status
+    if (fulfillmentStatus) filter.fulfillmentStatus = fulfillmentStatus;
+    // Filter by fulfillment branch
+    if (fulfillmentBranch) filter.fulfillmentBranch = fulfillmentBranch;
 
     // Filter by date range
     if (startDate || endDate) {
@@ -312,6 +339,7 @@ class InvoiceController {
         .populate('customer', 'name phone balance creditLimit')
         .populate('createdBy', 'name')
         .populate('branch', 'name')
+        .populate('fulfillmentBranch', 'name')
         .sort(sortBy)
         .skip(skip)
         .limit(parseInt(limit))
@@ -341,12 +369,33 @@ class InvoiceController {
       .populate('customer', 'name phone address whatsapp balance creditLimit')
       .populate('createdBy', 'name')
       .populate('branch', 'name')
+      .populate('fulfillmentBranch', 'name')
+      .populate('shipmentFailure.dismissedBy', 'name')
       .populate('items.product', 'name barcode internationalBarcode internationalBarcodeType localBarcode localBarcodeType')
       .lean();
 
     if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
 
     ApiResponse.success(res, invoice);
+  });
+
+  /**
+   * GET /api/v1/invoices/:id/fulfillment-analysis
+   * Analyze Branch X availability and recommend one-source transfer candidates
+   */
+  getFulfillmentAnalysis = catchAsync(async (req, res, next) => {
+    const invoice = await Invoice.findOne({
+      _id: req.params.id,
+      ...req.tenantFilter,
+    })
+      .populate('customer', 'name phone')
+      .populate('branch', 'name')
+      .lean(false);
+
+    if (!invoice) return next(AppError.notFound('الفاتورة غير موجودة'));
+
+    const analysis = await analyzeInvoiceFulfillment(invoice);
+    ApiResponse.success(res, analysis);
   });
 
   /**
@@ -727,38 +776,73 @@ class InvoiceController {
 
     // We can also let the frontend pass overrides via req.body
     Object.assign(deliveryData, req.body);
+    const attemptSummary = buildShipmentAttemptSummary(deliveryData);
 
-    const bostaRes = await ShippingService.createDelivery(deliveryData);
+    try {
+      const bostaRes = await ShippingService.createDelivery(deliveryData);
 
-    // Save back to invoice
-    invoice.shippingDetails = {
-      provider: 'bosta',
-      waybillNumber: bostaRes.trackingNumber, // or deliveryId based on Bosta's response
-      trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
-      status: bostaRes.state || 'created',
-    };
-    invoice.shippingMethod = invoice.shippingMethod || 'Bosta';
-    invoice.shipmentId =
-      bostaRes.deliveryId ||
-      bostaRes.shipmentId ||
-      bostaRes.trackingNumber;
-    invoice.trackingNumber = bostaRes.trackingNumber;
-    syncInvoiceShippingState(invoice, {
-      provider: 'bosta',
-      shippingStatus: bostaRes.state || 'created',
-      rawStatus: bostaRes.state || 'created',
-      shipmentId: invoice.shipmentId,
-      trackingNumber: bostaRes.trackingNumber,
-      trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
-      note: `تم إنشاء بوليصة شحن Bosta: ${bostaRes.trackingNumber}`,
-    });
-    await invoice.save();
+      // Save back to invoice
+      invoice.shippingDetails = {
+        provider: 'bosta',
+        waybillNumber: bostaRes.trackingNumber, // or deliveryId based on Bosta's response
+        trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
+        status: bostaRes.state || 'created',
+      };
+      invoice.shippingMethod = invoice.shippingMethod || 'Bosta';
+      invoice.shipmentId =
+        bostaRes.deliveryId ||
+        bostaRes.shipmentId ||
+        bostaRes.trackingNumber;
+      invoice.trackingNumber = bostaRes.trackingNumber;
+      invoice.shipmentFailure = {
+        provider: 'bosta',
+        lastError: '',
+        failedAt: null,
+        retryCount: 0,
+        lastAttemptAt: new Date(),
+        lastAttemptPayloadSummary: attemptSummary,
+        dismissedAt: null,
+        dismissedBy: null,
+        dismissalNote: '',
+      };
+      syncInvoiceShippingState(invoice, {
+        provider: 'bosta',
+        shippingStatus: bostaRes.state || 'created',
+        rawStatus: bostaRes.state || 'created',
+        shipmentId: invoice.shipmentId,
+        trackingNumber: bostaRes.trackingNumber,
+        trackingUrl: `https://bosta.co/tracking-shipment?tracking_num=${bostaRes.trackingNumber}`,
+        note: `Shipment created via Bosta: ${bostaRes.trackingNumber}`,
+      });
+      await invoice.save();
 
-    ApiResponse.success(res, {
-      waybillNumber: bostaRes.trackingNumber,
-      trackingUrl: invoice.shippingDetails.trackingUrl,
-      status: invoice.shippingDetails.status,
-    }, 'تم إنشاء بوليصة الشحن بنجاح');
+      ApiResponse.success(res, {
+        waybillNumber: bostaRes.trackingNumber,
+        trackingUrl: invoice.shippingDetails.trackingUrl,
+        status: invoice.shippingDetails.status,
+      }, 'Shipment created successfully');
+    } catch (error) {
+      invoice.shipmentFailure = {
+        provider: 'bosta',
+        lastError: error.message || 'Shipment creation failed',
+        failedAt: new Date(),
+        retryCount: Number(invoice.shipmentFailure?.retryCount || 0) + 1,
+        lastAttemptAt: new Date(),
+        lastAttemptPayloadSummary: attemptSummary,
+        dismissedAt: null,
+        dismissedBy: null,
+        dismissalNote: '',
+      };
+      invoice.orderStatusHistory = invoice.orderStatusHistory || [];
+      invoice.orderStatusHistory.push({
+        status: invoice.orderStatus,
+        date: new Date(),
+        note: `Shipment creation failed: ${invoice.shipmentFailure.lastError}`,
+      });
+      await invoice.save({ validateBeforeSave: false });
+
+      return next(error);
+    }
   });
 
   /**
@@ -915,6 +999,74 @@ class InvoiceController {
         mode: refundExecution.mode,
       } : null,
     }, 'تم تحديث حالة الطلب');
+  });
+
+  /**
+   * PATCH /api/v1/invoices/:id/operational-review
+   * Resolve address review, partial receipt review, or shipment failure states
+   */
+  resolveOperationalReview = catchAsync(async (req, res, next) => {
+    const { action, note } = req.body || {};
+    const invoice = await Invoice.findOne({ _id: req.params.id, ...req.tenantFilter });
+
+    if (!invoice) return next(AppError.notFound('Invoice not found'));
+
+    if (!action) {
+      return next(AppError.badRequest('Review action is required'));
+    }
+
+    let message = 'Operational review updated';
+
+    if (action === 'resolve_address_review') {
+      if (!invoice.addressChangedAfterCheckout && invoice.addressReviewStatus !== 'pending') {
+        return next(AppError.badRequest('No pending address review found on this order'));
+      }
+
+      invoice.addressChangedAfterCheckout = false;
+      invoice.addressReviewStatus = 'resolved';
+      invoice.addressReviewNote = String(note || '').trim();
+      invoice.orderStatusHistory = invoice.orderStatusHistory || [];
+      invoice.orderStatusHistory.push({
+        status: invoice.orderStatus,
+        date: new Date(),
+        note: note || 'Address review resolved by admin',
+      });
+      message = 'Address review resolved';
+    } else if (action === 'mark_partial_receipt_ready') {
+      if (invoice.fulfillmentStatus !== 'partial_receipt_review') {
+        return next(AppError.badRequest('Order is not in partial receipt review state'));
+      }
+
+      invoice.fulfillmentStatus = 'ready_for_shipping';
+      invoice.orderStatusHistory = invoice.orderStatusHistory || [];
+      invoice.orderStatusHistory.push({
+        status: invoice.orderStatus,
+        date: new Date(),
+        note: note || 'Admin approved the partially received quantity for shipping',
+      });
+      message = 'Partially received quantity approved for shipping';
+    } else if (action === 'dismiss_shipment_failure') {
+      if (!invoice.shipmentFailure?.failedAt) {
+        return next(AppError.badRequest('No shipment failure is stored on this order'));
+      }
+
+      invoice.shipmentFailure.dismissedAt = new Date();
+      invoice.shipmentFailure.dismissedBy = req.user?._id || null;
+      invoice.shipmentFailure.dismissalNote = String(note || '').trim();
+      invoice.orderStatusHistory = invoice.orderStatusHistory || [];
+      invoice.orderStatusHistory.push({
+        status: invoice.orderStatus,
+        date: new Date(),
+        note: note || 'Shipment failure alert was dismissed temporarily',
+      });
+      message = 'Shipment failure alert dismissed';
+    } else {
+      return next(AppError.badRequest('Unsupported operational review action'));
+    }
+
+    await invoice.save({ validateBeforeSave: false });
+
+    ApiResponse.success(res, invoice, message);
   });
 
   /**

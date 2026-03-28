@@ -1,14 +1,15 @@
 import React, { Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Store,
-  User,
-  MessageCircle,
+  BellRing,
   CreditCard,
-  Palette,
-  Users,
   Globe,
-  BellRing
+  MessageCircle,
+  Palette,
+  Store,
+  Truck,
+  User,
+  Users,
 } from 'lucide-react';
 import { useAuthStore } from '../store';
 import { LoadingSpinner } from '../components/UI';
@@ -21,6 +22,7 @@ const SettingsInstallments = lazy(() => import('../components/settings/SettingsI
 const SettingsUsers = lazy(() => import('../components/settings/SettingsUsers'));
 const SettingsWhiteLabel = lazy(() => import('../components/settings/SettingsWhiteLabel'));
 const SettingsNotificationChannels = lazy(() => import('../components/settings/SettingsNotificationChannels'));
+const SettingsShipping = lazy(() => import('../components/settings/SettingsShipping'));
 const SettingsSystem = lazy(() => import('../components/settings/SettingsSystem'));
 
 const ALL_TABS = [
@@ -31,6 +33,7 @@ const ALL_TABS = [
   { id: 'whitelabel', label: 'الهوية البصرية', description: 'تخصيص ألوان وشعار المنصة', icon: Palette, adminOnly: true },
   { id: 'whatsapp', label: 'واتساب', description: 'ربط وإعداد رسائل واتساب', icon: MessageCircle, adminOnly: true, superOnly: true },
   { id: 'notifications', label: 'الإشعارات', description: 'قنوات التنبيه والرسائل', icon: BellRing, adminOnly: true },
+  { id: 'shipping', label: 'الشحن', description: 'Branch X وتسعير التوصيل', icon: Truck, adminOnly: true },
   { id: 'system', label: 'حالة النظام', description: 'تحديثات ومعلومات النظام', icon: Globe, adminOnly: false },
 ];
 
@@ -59,74 +62,72 @@ export default function SettingsPage() {
       case 'whitelabel': return <SettingsWhiteLabel />;
       case 'whatsapp': return <SettingsWhatsApp />;
       case 'notifications': return <SettingsNotificationChannels />;
+      case 'shipping': return <SettingsShipping />;
       case 'system': return <SettingsSystem />;
       default: return null;
     }
   };
 
-  const currentTabInfo = tabs.find(t => t.id === activeTab);
+  const currentTabInfo = tabs.find((t) => t.id === activeTab);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8 pb-12">
-      {/* Header Section */}
+    <div className="mx-auto max-w-7xl space-y-6 pb-12 sm:space-y-8">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">الإعدادات</h1>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">الإعدادات</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500 dark:text-gray-400">
             إدارة تفضيلات حسابك، إعدادات النظام، والتحكم في تجربة الاستخدام بشكل كامل.
           </p>
         </div>
-        
-        {/* Theme Widget */}
-        <div className="flex items-center gap-3 app-surface rounded-2xl p-2 pr-4 shadow-sm border border-gray-100 dark:border-white/5 w-fit">
+
+        <div className="flex w-fit items-center gap-3 rounded-2xl border border-gray-100 p-2 pr-4 shadow-sm app-surface dark:border-white/5">
           <div className="hidden sm:block">
             <p className="text-xs font-bold text-gray-900 dark:text-white">مظهر النظام</p>
           </div>
-          <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 hidden sm:block mx-1"></div>
-          <ThemeModeSwitcher compact={true} />
+          <div className="mx-1 hidden h-6 w-[1px] bg-gray-200 dark:bg-gray-700 sm:block" />
+          <ThemeModeSwitcher compact />
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8 lg:min-h-[calc(100vh-220px)]">
-        {/* Sidebar Nav */}
-        <div className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-6">
-          <nav className="flex overflow-x-auto lg:flex-col gap-2 pb-3 lg:pb-0 no-scrollbar snap-x">
+      <div className="flex min-h-[calc(100vh-220px)] flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <div className="w-full flex-shrink-0 lg:sticky lg:top-6 lg:w-72">
+          <nav className="no-scrollbar flex snap-x gap-2 overflow-x-auto pb-3 lg:flex-col lg:pb-0">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
+
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`group relative flex min-w-[220px] lg:min-w-0 items-center justify-between gap-3 rounded-2xl p-3 text-right transition-all duration-200 snap-start
-                    ${isActive 
-                      ? 'bg-primary-50 dark:bg-primary-500/10 shadow-sm ring-1 ring-primary-200/50 dark:ring-primary-500/20' 
-                      : 'hover:bg-gray-50 dark:hover:bg-white/5 active:scale-[0.98]'
-                    }`}
+                  className={`group relative flex min-w-[220px] snap-start items-center justify-between gap-3 rounded-2xl p-3 text-right transition-all duration-200 lg:min-w-0 ${
+                    isActive
+                      ? 'bg-primary-50 shadow-sm ring-1 ring-primary-200/50 dark:bg-primary-500/10 dark:ring-primary-500/20'
+                      : 'hover:bg-gray-50 active:scale-[0.98] dark:hover:bg-white/5'
+                  }`}
                 >
                   <div className="flex items-center gap-4">
-                    <span 
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors
-                        ${isActive 
-                          ? 'bg-white text-primary-600 dark:bg-primary-500/20 dark:text-primary-400 shadow-sm' 
-                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700/50'
-                        }`}
+                    <span
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                        isActive
+                          ? 'bg-white text-primary-600 shadow-sm dark:bg-primary-500/20 dark:text-primary-400'
+                          : 'bg-gray-100 text-gray-500 group-hover:bg-white dark:bg-gray-800/50 dark:text-gray-400 dark:group-hover:bg-gray-700/50'
+                      }`}
                     >
                       <Icon className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className={`font-bold transition-colors ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'}`}>
+                      <p className={`font-bold transition-colors ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-gray-700 group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white'}`}>
                         {tab.label}
                       </p>
-                      <p className={`text-xs mt-0.5 hidden sm:block ${isActive ? 'text-primary-600/70 dark:text-primary-400/70' : 'text-gray-500 dark:text-gray-500'}`}>
+                      <p className={`mt-0.5 hidden text-xs sm:block ${isActive ? 'text-primary-600/70 dark:text-primary-400/70' : 'text-gray-500 dark:text-gray-500'}`}>
                         {tab.description}
                       </p>
                     </div>
                   </div>
-                  
+
                   {isActive && (
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-500 rounded-l-full dark:bg-primary-400 hidden lg:block"></div>
+                    <div className="absolute right-0 top-1/2 hidden h-8 w-1 -translate-y-1/2 rounded-l-full bg-primary-500 dark:bg-primary-400 lg:block" />
                   )}
                 </button>
               );
@@ -134,43 +135,39 @@ export default function SettingsPage() {
           </nav>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 min-w-0 flex flex-col h-full">
-          <div className="app-surface rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden flex-1 flex flex-col bg-white dark:bg-gray-900/50 backdrop-blur-xl">
-            {/* Context Header */}
-            <div className="border-b border-gray-100 dark:border-white/5 px-6 py-5 sm:px-8 sm:py-6 bg-gray-50/50 dark:bg-white/[0.02]">
+        <div className="flex h-full min-w-0 flex-1 flex-col">
+          <div className="flex flex-1 flex-col overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm backdrop-blur-xl app-surface dark:border-white/5 dark:bg-gray-900/50">
+            <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-5 dark:border-white/5 dark:bg-white/[0.02] sm:px-8 sm:py-6">
               <div className="flex items-center gap-3">
                 {currentTabInfo && (
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
-                    <currentTabInfo.icon className="w-5 h-5" />
+                    <currentTabInfo.icon className="h-5 w-5" />
                   </span>
                 )}
                 <div>
                   <h2 className="text-xl font-black text-gray-900 dark:text-white">
                     {currentTabInfo?.label}
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {currentTabInfo?.description}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Rendered View */}
-            <div className="p-6 sm:p-8 flex-1">
-              <Suspense 
-                fallback={
+            <div className="flex-1 p-6 sm:p-8">
+              <Suspense
+                fallback={(
                   <div className="flex h-40 items-center justify-center">
                     <LoadingSpinner text="جاري التحميل..." />
                   </div>
-                }
+                )}
               >
                 {renderTabContent()}
               </Suspense>
             </div>
           </div>
         </div>
-        
       </div>
     </div>
   );
