@@ -6,10 +6,10 @@ import {
   Package, Users, FileText, ChevronDown, PieChart, Building2, 
   TrendingUp, HelpCircle, Smartphone, Clock, Shield, Truck, 
   Upload, BarChart2, Star, Gift, Share2, Bell, Search, History, 
-  Image as ImageIcon, CreditCard, Crown, MessageCircle, Target, 
+  Image as ImageIcon, CreditCard, Crown, MessageCircle, Target, ClipboardList,
   Zap, Boxes, Plus, FolderTree, AlertTriangle, CheckSquare, 
   Archive, ShoppingCart, Receipt, RefreshCcw, ShoppingBag, 
-  FileCheck, Tag, Store, Video, BarChart3, DollarSign, Award, 
+  FileCheck, Tag, Store, Video, BarChart3, DollarSign, Award, ArrowRightLeft,
   ChevronLeft, ExternalLink 
 } from 'lucide-react';
 import { useAuthStore, useThemeStore } from '../store';
@@ -114,6 +114,10 @@ export default function Sidebar({ open, onClose }) {
   const isSystemSuperAdmin =
     !!user?.isSuperAdmin || user?.email?.toLowerCase() === 'super@payqusta.com';
   const storefrontUrl = getStorefrontDomainUrl(tenant?.slug);
+  const branchContextName = user?.branch?.name || (tenant?.branchType ? tenant?.name : '');
+  const hasBranchContext = Boolean(user?.branch?._id || user?.branch || tenant?.branchType);
+  const canManageStockTransfers = can('invoices', 'update');
+  const canAccessBranchTransfers = hasBranchContext && canManageStockTransfers;
 
   // Dropdown states
   const [dashboardOpen, setDashboardOpen] = useState(
@@ -131,11 +135,13 @@ export default function Sidebar({ open, onClose }) {
   const [suppliersOpen, setSuppliersOpen] = useState(
     location.pathname === '/suppliers' ||
     location.pathname === '/purchase-orders' ||
+    location.pathname === '/supplier-replenishment-requests' ||
     location.pathname === '/purchase-returns' ||
     location.pathname === '/supplier-purchase-invoices'
   );
   const [portalOpen, setPortalOpen] = useState(
     location.pathname === '/portal-orders' ||
+    location.pathname.startsWith('/stock-transfers') ||
     location.pathname === '/returns-management' ||
     location.pathname === '/kyc-review' ||
     location.pathname === '/support-messages' ||
@@ -171,10 +177,12 @@ export default function Sidebar({ open, onClose }) {
   const isSuppliersActive =
     location.pathname === '/suppliers' ||
     location.pathname === '/purchase-orders' ||
+    location.pathname === '/supplier-replenishment-requests' ||
     location.pathname === '/purchase-returns' ||
     location.pathname === '/supplier-purchase-invoices';
   const isPortalActive =
     location.pathname === '/portal-orders' ||
+    location.pathname.startsWith('/stock-transfers') ||
     location.pathname === '/returns-management' ||
     location.pathname === '/kyc-review' ||
     location.pathname === '/support-messages' ||
@@ -191,7 +199,10 @@ export default function Sidebar({ open, onClose }) {
     location.pathname === '/backup' ||
     location.pathname === '/onboarding';
   const isSettingsActive = location.pathname.startsWith('/settings') || location.pathname === '/admin/audit-logs';
-  const canAccessSuppliers = can('suppliers', 'read') || user?.role === 'admin';
+  const canAccessSuppliers =
+    can('suppliers', 'read') ||
+    can('supplier_replenishment_requests', 'read') ||
+    user?.role === 'admin';
 
   const renderSidebarContent = () => (
     <div className="app-shell-bg flex h-full flex-col bg-white/95 dark:bg-[#0B1120]/95">
@@ -272,9 +283,20 @@ export default function Sidebar({ open, onClose }) {
               {!isSystemSuperAdmin && (
                 <SubNavItem to="/command-center" icon={Target} label={t('sidebar.command_center')} tone="sky" />
               )}
+              {!!user?.branch && !isSystemSuperAdmin && (
+                <SubNavItem to="/branch-dashboard" icon={Building2} label="لوحة الفرع" tone="sky" />
+              )}
             </div>
           </div>
         </div>
+
+        {canAccessBranchTransfers && (
+          <NavItem
+            to="/stock-transfers?direction=outgoing"
+            icon={ArrowRightLeft}
+            label={branchContextName ? `طلبات التزويد من ${branchContextName}` : 'طلبات التزويد من فرعك'}
+          />
+        )}
 
         {(can('invoices', 'create') || can('customers', 'read') || can('invoices', 'read')) && (
           <div>
@@ -351,6 +373,9 @@ export default function Sidebar({ open, onClose }) {
               <div className="space-y-1 py-1">
                 <SubNavItem to="/suppliers" icon={Truck} label={t('sidebar.suppliers')} tone="slate" />
                 <SubNavItem to="/purchase-orders" icon={ShoppingCart} label="أوامر الشراء" tone="slate" />
+                {can('supplier_replenishment_requests', 'read') && (
+                  <SubNavItem to="/supplier-replenishment-requests" icon={ClipboardList} label="طلبات المورد للفروع" tone="slate" />
+                )}
                 <SubNavItem to="/supplier-purchase-invoices" icon={Receipt} label="فواتير مشتريات المورد" tone="slate" />
                 <SubNavItem to="/purchase-returns" icon={RefreshCcw} label="مرتجعات الشراء" tone="slate" />
               </div>
@@ -371,7 +396,12 @@ export default function Sidebar({ open, onClose }) {
           <div className={`overflow-hidden transition-all duration-200 ${portalOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
               {(user?.role === 'admin' || isSystemSuperAdmin) && (
-                <SubNavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} tone="violet" />
+                <>
+                  <SubNavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} tone="violet" />
+                </>
+              )}
+              {!hasBranchContext && canManageStockTransfers && (
+                <SubNavItem to="/stock-transfers" icon={ArrowRightLeft} label="تحويلات المخزون" tone="violet" />
               )}
               {(user?.role === 'admin' || user?.role === 'vendor' || can('settings', 'read') || isSystemSuperAdmin) && (
                 <>

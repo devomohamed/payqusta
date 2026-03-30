@@ -68,6 +68,16 @@ const purchaseOrderSchema = new mongoose.Schema(
     receivedValue: { type: Number, default: 0, min: 0 },
     paidAmount: { type: Number, default: 0, min: 0 },
     outstandingAmount: { type: Number, default: 0, min: 0 },
+    sourceType: {
+      type: String,
+      enum: ['manual', 'supplier_replenishment_request'],
+      default: 'manual',
+    },
+    sourceSupplierReplenishmentRequest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SupplierReplenishmentRequest',
+      default: null,
+    },
     notes: { type: String },
     expectedDeliveryDate: { type: Date },
     receivedDate: { type: Date },

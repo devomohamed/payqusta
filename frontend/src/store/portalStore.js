@@ -429,6 +429,25 @@ export const usePortalStore = create((set, get) => ({
     }
   },
 
+  calculateShipping: async (shippingAddress, subtotal = 0, shippingSummary = null) => {
+    try {
+      const body = {
+        shippingAddress,
+        subtotal,
+      };
+      if (shippingSummary) body.shippingSummary = shippingSummary;
+
+      const res = await portalApi.post('/portal/shipping/calculate', body);
+      return { success: true, data: res.data.data, message: res.data.message };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || 'تعذر حساب تكلفة الشحن حالياً',
+        code: err.response?.data?.code || 'SHIPPING_CALCULATION_FAILED',
+      };
+    }
+  },
+
   // Checkout (place order with shipping details)
   checkout: async (items, shippingAddress, shippingSummary, notes, signature, couponCode, paymentMethod, months) => {
     try {

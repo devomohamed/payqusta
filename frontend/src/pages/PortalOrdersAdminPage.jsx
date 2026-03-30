@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     ShoppingBag, MapPin, Phone, User, Search, Eye, CheckCircle,
     Truck, Package, XCircle, Clock, RefreshCw, Filter
@@ -35,6 +36,7 @@ const NEXT_STATUS = {
 };
 
 export default function PortalOrdersAdminPage() {
+    const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState(null);
@@ -277,7 +279,7 @@ export default function PortalOrdersAdminPage() {
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
-                                                        onClick={() => openOrderDetails(order)}
+                                                        onClick={() => navigate(`/portal-orders/${order._id}`)}
                                                         className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition"
                                                         title="عرض التفاصيل"
                                                     >

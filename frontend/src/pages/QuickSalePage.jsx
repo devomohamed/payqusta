@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle, ChevronDown, ChevronRight, ChevronLeft, FolderTree, UserPlus, History, Wallet, Banknote, Store, Play } from 'lucide-react';
+import { Search, X, Plus, Minus, ShoppingCart, Zap, CreditCard, Calendar, Clock, Check, Trash2, Scan, RotateCcw, Package, AlertCircle, ChevronDown, ChevronRight, ChevronLeft, FolderTree, UserPlus, History, Wallet, Banknote, Store, Play, Camera } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { api, productsApi, customersApi, invoicesApi, categoriesApi, useAuthStore, useShiftStore } from '../store';

@@ -104,6 +104,8 @@ const SuperAdminPlansPage = React.lazy(() => import('./pages/SuperAdminPlansPage
 const SubscriptionRequestsPage = React.lazy(() => import('./pages/SubscriptionRequestsPage'));
 const SuperAdminNotificationSettingsPage = React.lazy(() => import('./pages/SuperAdminNotificationSettingsPage'));
 const PortalOrdersAdminPage = React.lazy(() => import('./pages/PortalOrdersAdminPage'));
+const PortalOrderConfirmationPage = React.lazy(() => import('./pages/PortalOrderConfirmationPage'));
+const StockTransfersPage = React.lazy(() => import('./pages/StockTransfersPage'));
 const ReturnsManagementPage = React.lazy(() => import('./pages/ReturnsManagementPage'));
 const AddonStorePage = React.lazy(() => import('./pages/AddonStorePage'));
 const KYCReviewPage = React.lazy(() => import('./pages/KYCReviewPage'));
@@ -118,6 +120,7 @@ const ShiftManagementPage = React.lazy(() => import('./pages/ShiftManagementPage
 const AdminShiftsPage = React.lazy(() => import('./pages/AdminShiftsPage'));
 const SupplierAgingReportPage = React.lazy(() => import('./pages/SupplierAgingReportPage'));
 const PurchaseReturnsPage = React.lazy(() => import('./pages/PurchaseReturnsPage'));
+const SupplierReplenishmentRequestsPage = React.lazy(() => import('./pages/SupplierReplenishmentRequestsPage'));
 
 const hasBrokenEncoding = (value = '') => /[Ã˜Ã™Ã°Ã¢]|^\?{3,}/.test(String(value));
 const normalizeLoadingMessage = (message) => {
@@ -168,6 +171,39 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function StockTransfersRoute({ children }) {
+  const { user, can } = useAuthStore();
+  const canManageStockTransfers = can('invoices', 'update');
+
+  if (!canManageStockTransfers) {
+    return <Navigate to={user?.branch ? '/branch-dashboard' : '/dashboard'} replace />;
+  }
+
+  return children;
+}
+
+function SupplierReplenishmentRequestsRoute({ children }) {
+  const { user, can } = useAuthStore();
+  const canReadSupplierRequests = can('supplier_replenishment_requests', 'read');
+
+  if (!canReadSupplierRequests) {
+    return <Navigate to={user?.branch ? '/branch-dashboard' : '/dashboard'} replace />;
+  }
+
+  return children;
+}
+
+function PurchaseOrdersRoute({ children }) {
+  const { user, can } = useAuthStore();
+  const canReadPurchaseOrders = can('purchase_orders', 'read');
+
+  if (!canReadPurchaseOrders) {
+    return <Navigate to={user?.branch ? '/branch-dashboard' : '/dashboard'} replace />;
+  }
+
+  return children;
+}
+
 function MainLayout() {
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -210,8 +246,16 @@ function MainLayout() {
                 <Route path="/cash-drawer" element={<LazyRoute component={CashDrawerPage} message="جاري تحميل الخزينة..." />} />
                 <Route path="/roles" element={<LazyRoute component={RolesPage} message="جاري تحميل الأدوار..." />} />
                 <Route path="/activity-logs" element={<LazyRoute component={ActivityLogsPage} message="جاري تحميل سجل النشاط..." />} />
-                <Route path="/purchase-orders" element={<LazyRoute component={PurchaseOrdersPage} message="جاري تحميل أوامر الشراء..." />} />
+                <Route
+                  path="/purchase-orders"
+                  element={
+                    <PurchaseOrdersRoute>
+                      <LazyRoute component={PurchaseOrdersPage} message="Loading purchase orders..." />
+                    </PurchaseOrdersRoute>
+                  }
+                />
                 <Route path="/supplier-purchase-invoices" element={<LazyRoute component={SupplierPurchaseInvoicesPage} message="جاري تحميل فواتير المشتريات..." />} />
+                <Route path="/supplier-replenishment-requests" element={<SupplierReplenishmentRequestsRoute><LazyRoute component={SupplierReplenishmentRequestsPage} message="جاري تحميل طلبات المورد..." /></SupplierReplenishmentRequestsRoute>} />
                 <Route path="/aging-report" element={<LazyRoute component={AgingReportPage} message="جاري تحميل تقرير الأعمار..." />} />
                 <Route path="/installments" element={<LazyRoute component={InstallmentsDashboardPage} message="جاري تحميل الأقساط..." />} />
                 <Route path="/admin/dashboard" element={<LazyRoute component={AdminDashboardPage} message="جاري تحميل لوحة الإدارة..." />} />
@@ -228,6 +272,9 @@ function MainLayout() {
                 <Route path="/super-admin/requests" element={<LazyRoute component={SubscriptionRequestsPage} message="جاري تحميل الطلبات..." />} />
                 <Route path="/super-admin/notifications" element={<LazyRoute component={SuperAdminNotificationSettingsPage} message="جاري تحميل إعدادات الإشعارات..." />} />
                 <Route path="/portal-orders" element={<LazyRoute component={PortalOrdersAdminPage} message="جاري تحميل طلبات البوابة..." />} />
+                <Route path="/portal-orders/:id" element={<LazyRoute component={PortalOrderConfirmationPage} message="جاري تحميل تأكيد الطلب..." />} />
+                <Route path="/stock-transfers" element={<StockTransfersRoute><LazyRoute component={StockTransfersPage} message="جاري تحميل تحويلات المخزون..." /></StockTransfersRoute>} />
+                <Route path="/stock-transfers/:id" element={<StockTransfersRoute><LazyRoute component={StockTransfersPage} message="جاري تحميل تحويلات المخزون..." /></StockTransfersRoute>} />
                 <Route path="/returns-management" element={<LazyRoute component={ReturnsManagementPage} message="جاري تحميل إدارة المرتجعات..." />} />
                 <Route path="/kyc-review" element={<LazyRoute component={KYCReviewPage} message="جاري تحميل مراجعة الهوية..." />} />
                 <Route path="/support-messages" element={<LazyRoute component={SupportMessagesPage} message="جاري تحميل رسائل الدعم..." />} />
@@ -241,7 +288,7 @@ function MainLayout() {
                 <Route path="/admin-shifts" element={<LazyRoute component={AdminShiftsPage} message="جاري تحميل مراقبة الورديات..." />} />
                 <Route path="/supplier-aging-report" element={<LazyRoute component={SupplierAgingReportPage} message="جاري تحميل تقرير الموردين..." />} />
                 <Route path="/purchase-returns" element={<LazyRoute component={PurchaseReturnsPage} message="جاري تحميل مرتجعات الشراء..." />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </ErrorBoundary>
           </main>
@@ -406,4 +453,9 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+
 

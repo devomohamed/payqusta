@@ -44,6 +44,14 @@ import {
 } from './guestOrderTracking';
 
 const DEFAULT_PORTAL_SHIPPING_FEE = 50;
+const EGYPT_GOVERNORATES = [
+  'القاهرة', 'الجيزة', 'الإسكندرية', 'الدقهلية', 'البحر الأحمر',
+  'البحيرة', 'الفيوم', 'الغربية', 'الإسماعيلية', 'المنوفية',
+  'المنيا', 'القليوبية', 'الوادي الجديد', 'السويس', 'أسوان',
+  'أسيوط', 'بني سويف', 'بورسعيد', 'دمياط', 'الشرقية',
+  'جنوب سيناء', 'كفر الشيخ', 'مطروح', 'الأقصر', 'قنا',
+  'شمال سيناء', 'سوهاج',
+];
 
 const STEPS = [
   { id: 'customer', title: 'بيانات العميل', icon: User },
@@ -51,19 +59,41 @@ const STEPS = [
   { id: 'summary', title: 'مراجعة الطلب', icon: CheckCircle },
 ];
 
+function formatShippingEta(summary, fallbackText = 'سيتم تأكيد الموعد بعد مراجعة الطلب') {
+  const minDays = Number(summary?.estimatedDaysMin);
+  const maxDays = Number(summary?.estimatedDaysMax);
+
+  if (Number.isFinite(maxDays) && maxDays > 0) {
+    if (!Number.isFinite(minDays) || minDays <= 0 || minDays === maxDays) {
+      return `خلال ${maxDays} يوم عمل`;
+    }
+
+    return `خلال ${minDays}-${maxDays} أيام عمل`;
+  }
+
+  return fallbackText;
+}
+
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [storefrontSettings, setStorefrontSettings] = useState(null);
+  const [shippingQuote, setShippingQuote] = useState({
+    status: 'idle',
+    summary: null,
+    message: '',
+    warningMessage: '',
+    calculationState: 'idle',
+    isEstimated: false,
+  });
 
   // Portal Context
   const isPortal = location.pathname.includes('/portal');
   const { customer, isAuthenticated } = usePortalStore();
 
   const [savedGuestProfile, setSavedGuestProfile] = useState(() => (!isPortal ? loadStorefrontGuestProfile() : null));
-  const withStorefrontContext = (options = {}) => getStorefrontTenantRequestConfig(options);
   const [form, setForm] = useState(() => ({
     customerName: savedGuestProfile?.customerName || '',
     phone: savedGuestProfile?.phone || '',
@@ -138,33 +168,37 @@ export default function Checkout() {
   const shippingConfig = !isPortal
     ? resolveStorefrontShippingSettings(storefrontSettings?.settings?.shipping)
     : null;
+  const shippingGovernorateOptions = !isPortal
+    ? (
+        shippingConfig?.pricingMode === 'dynamic_api'
+          ? EGYPT_GOVERNORATES.map((name) => ({ code: name, label: name }))
+          : (shippingConfig?.zones || [])
+      )
+    : [];
   const selectedShippingRegion = !isPortal
     ? findStorefrontShippingZone(shippingConfig?.zones, form.governorate)
     : null;
   const shippingEnabled = isPortal ? true : shippingConfig?.enabled !== false;
+  const quoteSummary = !isPortal ? shippingQuote.summary : null;
   const estimatedShippingFee = isPortal
     ? DEFAULT_PORTAL_SHIPPING_FEE
-    : shippingEnabled
-      ? (selectedShippingRegion?.fee ?? shippingConfig?.baseFee ?? DEFAULT_PORTAL_SHIPPING_FEE)
-      : 0;
-  const shipping = !isPortal && shippingEnabled && (shippingConfig?.freeShippingThreshold || 0) > 0 && subtotal >= shippingConfig.freeShippingThreshold
-    ? 0
-    : estimatedShippingFee;
+    : (quoteSummary?.carrierCost ?? quoteSummary?.shippingFee ?? 0);
+  const shipping = isPortal
+    ? DEFAULT_PORTAL_SHIPPING_FEE
+    : Math.max(0, (quoteSummary?.shippingFee || 0) - (quoteSummary?.shippingDiscount || 0));
   const shippingRegionLabel = isPortal
-    ? 'توصيل قياسي'
-    : selectedShippingRegion?.label || shippingConfig?.defaultMethodName || 'اختر المحافظة';
+    ? 'داخل مصر'
+    : quoteSummary?.zoneLabel || selectedShippingRegion?.label || shippingConfig?.defaultMethodName || 'اختر المحافظة';
   const shippingEta = isPortal
     ? 'خلال 3-5 أيام عمل'
-    : selectedShippingRegion?.eta || shippingConfig?.eta || 'اختر المحافظة أولًا لعرض الموعد المتوقع';
-  const shippingSavings = !isPortal && shippingEnabled && (shippingConfig?.freeShippingThreshold || 0) > 0 && subtotal >= shippingConfig.freeShippingThreshold
-    ? estimatedShippingFee
-    : 0;
+    : formatShippingEta(quoteSummary, selectedShippingRegion?.eta || shippingConfig?.eta || '\u0627\u062e\u062a\u0631 \u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629 \u0623\u0648\u0644\u0627\u064b \u0644\u0639\u0631\u0636 \u0627\u0644\u0645\u0648\u0639\u062f \u0627\u0644\u0645\u062a\u0648\u0642\u0639');
+  const shippingSavings = !isPortal ? (quoteSummary?.shippingDiscount || 0) : 0;
   const shippingSummary = !isPortal
     ? {
         shippingFee: shipping,
         shippingDiscount: shippingSavings,
         carrierCost: estimatedShippingFee,
-        shippingMethod: shippingConfig?.defaultMethodName || 'توصيل قياسي',
+        shippingMethod: shippingConfig?.defaultMethodName || 'شحن قياسي',
         provider: shippingConfig?.provider || 'local',
         zoneCode: selectedShippingRegion?.code || '',
         zoneLabel: selectedShippingRegion?.label || form.governorate || '',
@@ -175,12 +209,153 @@ export default function Checkout() {
         ),
       }
     : null;
+  const resolvedShippingSummary = !isPortal ? (quoteSummary || shippingSummary) : shippingSummary;
+  const effectiveShippingFee = !isPortal
+    ? Math.max(0, (resolvedShippingSummary?.shippingFee || 0) - (resolvedShippingSummary?.shippingDiscount || 0))
+    : shipping;
+  const effectiveEstimatedShippingFee = !isPortal
+    ? (resolvedShippingSummary?.carrierCost ?? resolvedShippingSummary?.shippingFee ?? estimatedShippingFee)
+    : estimatedShippingFee;
+  const effectiveShippingLabel = !isPortal
+    ? (resolvedShippingSummary?.zoneLabel || shippingRegionLabel)
+    : shippingRegionLabel;
+  const effectiveShippingEta = !isPortal
+    ? formatShippingEta(resolvedShippingSummary, shippingEta)
+    : shippingEta;
+  const effectiveShippingSavings = !isPortal
+    ? (resolvedShippingSummary?.shippingDiscount || shippingSavings)
+    : shippingSavings;
+  const hasCalculatedShipping = !isPortal && ['success', 'fallback'].includes(shippingQuote.status);
+  const shippingQuoteMessage = shippingQuote.message || shippingQuote.warningMessage;
   useEffect(() => {
     if (isPortal) return;
     if (shippingConfig?.supportsCashOnDelivery === false && form.paymentMethod === 'cash') {
       setForm((prev) => ({ ...prev, paymentMethod: 'online' }));
     }
   }, [form.paymentMethod, isPortal, shippingConfig?.supportsCashOnDelivery]);
+  useEffect(() => {
+    if (isPortal) return undefined;
+
+    if (!shippingEnabled) {
+      setShippingQuote({
+        status: 'success',
+        summary: {
+          shippingFee: 0,
+          shippingDiscount: 0,
+          carrierCost: 0,
+          shippingMethod: shippingConfig?.defaultMethodName || 'شحن قياسي',
+          provider: shippingConfig?.provider || 'local',
+          zoneCode: selectedShippingRegion?.code || '',
+          zoneLabel: selectedShippingRegion?.label || form.governorate || '',
+          estimatedDaysMin: shippingConfig?.estimatedDaysMin || 0,
+          estimatedDaysMax: shippingConfig?.estimatedDaysMax || 0,
+          estimatedDeliveryDate: null,
+        },
+        message: '',
+        warningMessage: '',
+        calculationState: 'success',
+        isEstimated: false,
+      });
+      return undefined;
+    }
+
+    const governorateLabel = selectedShippingRegion?.label || form.governorate?.trim();
+    const needsDynamicCity = shippingConfig?.pricingMode === 'dynamic_api';
+    const addressReady = Boolean(
+      governorateLabel &&
+      form.address.trim() &&
+      (!needsDynamicCity || form.city.trim())
+    );
+
+    if (!addressReady) {
+      setShippingQuote({
+        status: 'idle',
+        summary: null,
+        message: '',
+        warningMessage: '',
+        calculationState: 'idle',
+        isEstimated: false,
+      });
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setShippingQuote((prev) => ({
+        ...prev,
+        status: 'loading',
+        message: '',
+        warningMessage: '',
+        calculationState: 'loading',
+      }));
+
+      try {
+        const response = await api.post('/shipping/calculate', {
+          subtotal,
+          shippingAddress: {
+            fullName: form.customerName,
+            phone: form.phone,
+            address: form.address,
+            city: form.city || undefined,
+            area: form.city || undefined,
+            governorate: governorateLabel,
+            notes: form.notes || undefined,
+          },
+          shippingSummary: {
+            zoneCode: selectedShippingRegion?.code || '',
+            zoneLabel: selectedShippingRegion?.label || governorateLabel,
+          },
+        }, getStorefrontTenantRequestConfig({
+          headers: { 'x-source': 'online_store' },
+        }));
+
+        if (cancelled) return;
+
+        const quoteData = response?.data?.data || {};
+        setShippingQuote({
+          status: quoteData.isEstimated ? 'fallback' : 'success',
+          summary: quoteData.shippingSummary || null,
+          message: '',
+          warningMessage: quoteData.warningMessage || '',
+          calculationState: quoteData.calculationState || 'success',
+          isEstimated: Boolean(quoteData.isEstimated),
+        });
+      } catch (error) {
+        if (cancelled) return;
+
+        setShippingQuote({
+          status: 'error',
+          summary: null,
+          message: error?.response?.data?.message || 'تعذر حساب تكلفة الشحن الآن',
+          warningMessage: '',
+          calculationState: error?.response?.data?.code === 'SHIPPING_ZONE_UNMATCHED' ? 'blocked' : 'error',
+          isEstimated: false,
+        });
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    form.address,
+    form.city,
+    form.customerName,
+    form.governorate,
+    form.notes,
+    form.phone,
+    isPortal,
+    selectedShippingRegion?.code,
+    selectedShippingRegion?.label,
+    shippingConfig?.defaultMethodName,
+    shippingConfig?.estimatedDaysMax,
+    shippingConfig?.estimatedDaysMin,
+    shippingConfig?.pricingMode,
+    shippingConfig?.provider,
+    shippingEnabled,
+    subtotal,
+  ]);
   useEffect(() => {
     if (isPortal || normalizedCheckoutItems.length === 0) return;
 
@@ -195,7 +370,7 @@ export default function Checkout() {
   const volumeDiscount = !isPortal ? calculateStorefrontVolumeDiscountForItems(normalizedCheckoutItems) : 0;
   const [couponData, setCouponData] = useState(() => (!isPortal ? loadStorefrontCoupon() : null));
   const discount = !isPortal ? (couponData?.discountAmount || 0) : 0;
-  const total = Math.max(0, subtotal + shipping - volumeDiscount - discount);
+  const total = Math.max(0, subtotal + effectiveShippingFee - volumeDiscount - discount);
   const checkoutReviewSnapshot = normalizedCheckoutItems.reduce((summary, item) => {
     const reviewCount = Number(item.product?.reviewCount) || 0;
     const avgRating = Number(item.product?.avgRating) || 0;
@@ -217,7 +392,7 @@ export default function Checkout() {
       title: 'جاهزية الطلب',
       value: `${itemCount} قطعة`,
       detail: buyNowItem
-        ? 'شراء مباشر من صفحة المنتج بدون المرور على السلة'
+        ? 'هذا المنتج جاهز للمراجعة النهائية قبل تأكيد الطلب'
         : `${normalizedCheckoutItems.length} منتجًا جاهزًا للمراجعة النهائية`,
     },
     {
@@ -226,20 +401,20 @@ export default function Checkout() {
       title: 'ثقة العملاء',
       value: checkoutReviewSnapshot.reviewCount > 0 ? `${checkoutAverageRating.toFixed(1)} / 5` : 'جاري التحديث',
       detail: checkoutReviewSnapshot.reviewCount > 0
-        ? `${checkoutReviewSnapshot.reviewCount} تقييم متاح على العناصر المختارة`
+        ? `${checkoutReviewSnapshot.reviewCount} مراجعة معتمدة على العناصر المختارة`
         : 'سيظهر متوسط التقييم هنا عند توفر مراجعات معتمدة للعناصر المختارة',
     },
     {
       key: 'shipping',
       icon: Truck,
       title: 'التوصيل المتوقع',
-      value: shippingEta,
-      detail: !isPortal ? shippingRegionLabel : 'يظهر الموعد المتوقع قبل تأكيد الطلب',
+      value: effectiveShippingEta,
+      detail: !isPortal ? effectiveShippingLabel : 'يتم تجهيز الشحنة بعد تأكيد الطلب',
     },
   ];
   const branchRoutingNote = isPortal
-    ? '?????? ?????? ??? ??????? ???????? ??? ????? ?????? ????? ???????? ??? ????? ??? ?????? ????? ??????.'
-    : '????? ????? ????? ???????? ??? ??? ??????? ??????? ??? ????? ?????? ????? ????????? ?? ????? ?? ????? ????? ??????? ??? ?? ???? ?????? ???.';
+    ? 'نختار الفرع الأقرب لعنوانك أو الأقوى في الجاهزية التشغيلية قبل تسليم الطلب لشركة الشحن.'
+    : 'نحسب أقرب فرع قادر على تجهيز طلبك بالكامل، ثم نثبت سعر الشحن والوقت المتوقع قبل تأكيد الطلب مباشرة.';
 
   useEffect(() => {
     if (isPortal || subtotal <= 0) return undefined;
@@ -286,14 +461,31 @@ export default function Checkout() {
       const missingPhone = !form.phone.trim();
       const missingAddress = !isPortal && !form.address.trim();
       const missingGovernorate = !isPortal && shippingEnabled && !form.governorate.trim();
+      const missingDynamicCity =
+        !isPortal &&
+        shippingEnabled &&
+        shippingConfig?.pricingMode === 'dynamic_api' &&
+        !form.city.trim();
 
-      if (missingName || missingPhone || missingAddress || missingGovernorate) {
-        notify.error(isPortal ? 'الرجاء إدخال الاسم ورقم الهاتف' : 'الرجاء إدخال الاسم ورقم الهاتف وعنوان التوصيل');
+      if (missingName || missingPhone || missingAddress || missingGovernorate || missingDynamicCity) {
+        notify.error(isPortal ? 'برجاء استكمال البيانات المطلوبة' : 'برجاء استكمال بيانات العميل والشحن أولاً');
         return;
+      }
+
+      if (!isPortal && shippingEnabled) {
+        if (shippingQuote.status === 'loading') {
+          notify.error('انتظر حتى يكتمل حساب تكلفة الشحن');
+          return;
+        }
+
+        if (!hasCalculatedShipping) {
+          notify.error(shippingQuoteMessage || 'تعذر تحديد تكلفة الشحن الحالية');
+          return;
+        }
       }
     }
     if (false && currentStep === 0 && (!form.customerName || !form.phone)) {
-      notify.error('الرجاء إدخال الاسم ورقم الهاتف');
+      notify.error('برجاء استكمال البيانات المطلوبة');
       return;
     }
     if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
@@ -315,7 +507,7 @@ export default function Checkout() {
       governorate: '',
       city: '',
     }));
-    notify.success('تم مسح البيانات المحفوظة من هذا الجهاز');
+    notify.success('تم مسح البيانات المحفوظة بنجاح');
   };
 
   const handleSubmit = async () => {
@@ -336,11 +528,15 @@ export default function Checkout() {
         });
 
         clearCart();
-        notify.success('تم استلام طلبك بنجاح');
+        notify.success('تم تقديم طلبك بنجاح');
         navigate('/portal/dashboard');
 
       } else {
         // === PUBLIC STORE CHECKOUT FLOW ===
+        if (!hasCalculatedShipping || !resolvedShippingSummary) {
+          throw new Error('SHIPPING_QUOTE_MISSING');
+        }
+
         let customerId;
         try {
           const customerRes = await api.post('/customers', {
@@ -348,10 +544,10 @@ export default function Checkout() {
             phone: form.phone,
             email: form.email || undefined,
             address: form.address || undefined
-          }, withStorefrontContext({ headers: { 'x-source': 'online_store' } }));
+          }, getStorefrontTenantRequestConfig({ headers: { 'x-source': 'online_store' } }));
           customerId = customerRes.data.data._id;
         } catch (err) {
-          const searchRes = await api.get('/customers', withStorefrontContext({
+          const searchRes = await api.get('/customers', getStorefrontTenantRequestConfig({
             params: { search: form.phone },
             headers: { 'x-source': 'online_store' },
           }));
@@ -369,7 +565,7 @@ export default function Checkout() {
               code: couponData.coupon.code,
               orderTotal: Math.max(0, subtotal - volumeDiscount),
               customerId,
-            }, withStorefrontContext({
+            }, getStorefrontTenantRequestConfig({
               headers: { 'x-source': 'online_store' },
             }));
 
@@ -403,15 +599,15 @@ export default function Checkout() {
             phone: form.phone,
             address: form.address,
             city: form.city || undefined,
-            governorate: selectedShippingRegion?.label || form.governorate || undefined,
+            governorate: resolvedShippingSummary?.zoneLabel || selectedShippingRegion?.label || form.governorate || undefined,
             notes: form.notes
           },
-          shippingSummary,
+          shippingSummary: resolvedShippingSummary,
           source: 'online_store',
           ...(campaignAttribution ? { campaignAttribution } : {})
         };
 
-        const invoiceRes = await api.post('/invoices', invoiceData, withStorefrontContext());
+        const invoiceRes = await api.post('/invoices', invoiceData, getStorefrontTenantRequestConfig());
         const invoice = invoiceRes.data.data;
         trackStorefrontFunnelEvent('order_complete', {
           orderId: invoice?._id,
@@ -451,7 +647,7 @@ export default function Checkout() {
             customerPhone: form.phone,
             customerEmail: form.email,
             source: 'online_store',
-          }, withStorefrontContext({
+          }, getStorefrontTenantRequestConfig({
             headers: { 'x-source': 'online_store' },
           }));
           const paymentUrl = paymentRes?.data?.data?.paymentUrl || paymentRes?.data?.data?.paymentLink;
@@ -472,7 +668,7 @@ export default function Checkout() {
       }
     } catch (err) {
       console.error(err);
-      notify.error(err.response?.data?.message || 'فشل إنشاء الطلب');
+      notify.error(err.response?.data?.message || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
     }
@@ -483,12 +679,12 @@ export default function Checkout() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12" dir="rtl">
         <EmptyState
           icon={ShoppingBag}
-          title={isPortal ? 'سلة البوابة فارغة الآن' : 'سلة المتجر فارغة الآن'}
+          title={isPortal ? 'لا توجد منتجات جاهزة للدفع' : 'لا توجد منتجات في السلة'}
           description={isPortal
-            ? 'أضف منتجات إلى السلة أولًا ثم ارجع لإتمام الطلب من هذه الصفحة.'
-            : 'لم يتم العثور على عناصر جاهزة للشراء. ابدأ من صفحات المنتجات ثم ارجع لإتمام الطلب.'}
+            ? 'أضف منتجات إلى سلة البوابة أولاً حتى تتمكن من إكمال الطلب.'
+            : 'لم تعد هناك منتجات داخل سلة التسوق. تصفح المتجر وأضف ما يناسبك ثم عد لإتمام الطلب.'}
           action={{
-            label: isPortal ? 'تصفح منتجات البوابة' : 'العودة إلى المتجر',
+            label: isPortal ? 'اذهب إلى المنتجات' : 'العودة إلى المنتجات',
             onClick: () => navigate(isPortal ? '/portal/products' : storefrontPath('/products')),
             variant: 'primary',
             size: 'md',
@@ -581,7 +777,7 @@ export default function Checkout() {
                         className="w-full rounded-2xl bg-gray-50 border-2 border-transparent px-4 py-4 text-sm focus:border-indigo-500 focus:bg-white transition-all"
                       >
                         <option value="">اختر المحافظة</option>
-                        {(shippingConfig?.zones || []).map((region) => (
+                        {shippingGovernorateOptions.map((region) => (
                           <option key={region.code} value={region.code}>
                             {region.label}
                           </option>
@@ -589,8 +785,8 @@ export default function Checkout() {
                       </select>
                     </div>
                     <Input
-                      label="المنطقة / المدينة (اختياري)"
-                      placeholder="مثال: مدينة نصر"
+                      label={shippingConfig?.pricingMode === 'dynamic_api' ? '\u0627\u0644\u0645\u0646\u0637\u0642\u0629 / \u0627\u0644\u0645\u062f\u064a\u0646\u0629 *' : '\u0627\u0644\u0645\u0646\u0637\u0642\u0629 / \u0627\u0644\u0645\u062f\u064a\u0646\u0629 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)'}
+                      placeholder={shippingConfig?.pricingMode === 'dynamic_api' ? '\u0623\u062f\u062e\u0644 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0623\u0648 \u0627\u0644\u0645\u062f\u064a\u0646\u0629 \u0644\u062d\u0633\u0627\u0628 \u0627\u0644\u0634\u062d\u0646' : '\u0645\u062b\u0627\u0644: \u0645\u062f\u064a\u0646\u0629 \u0646\u0635\u0631'}
                       value={form.city}
                       onChange={(e) => setForm({ ...form, city: e.target.value })}
                       className="md:col-span-1"
@@ -600,7 +796,7 @@ export default function Checkout() {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-gray-600 mb-2">عنوان التوصيل المقابل للعقار بالتفصيل *</label>
                   <textarea
-                    placeholder="رقم العقار، اسم الشارع، المحافظة..."
+                    placeholder="اكتب العنوان مع أقرب علامة مميزة..."
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     className="w-full h-32 px-4 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white transition-all resize-none"
@@ -610,19 +806,39 @@ export default function Checkout() {
                   <div className="md:col-span-2 rounded-3xl border border-indigo-100 bg-indigo-50/70 p-5">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="text-right">
-                        <p className="text-sm font-black text-indigo-900">معاينة الشحن قبل الدفع</p>
+                        <p className="text-sm font-black text-indigo-900">{'\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0634\u062d\u0646 \u0642\u0628\u0644 \u0627\u0644\u062f\u0641\u0639'}</p>
                         <p className="mt-1 text-sm text-indigo-700">
-                          {selectedShippingRegion
-                            ? `${selectedShippingRegion.label}${form.city ? ` - ${form.city}` : ''}`
-                            : 'اختر المحافظة أولًا لعرض تكلفة التوصيل المتوقعة'}
+                          {effectiveShippingLabel !== (shippingConfig?.defaultMethodName || '\u0627\u062e\u062a\u0631 \u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629')
+                            ? `${effectiveShippingLabel}${form.city ? ` - ${form.city}` : ''}`
+                            : '\u0627\u062e\u062a\u0631 \u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629 \u0623\u0648\u0644\u0627\u064b \u0644\u0639\u0631\u0636 \u062a\u0643\u0644\u0641\u0629 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0645\u062a\u0648\u0642\u0639\u0629'}
                         </p>
-                        <p className="mt-1 text-xs font-medium text-indigo-600">{shippingEta}</p>
+                        <p className="mt-1 text-xs font-medium text-indigo-600">{effectiveShippingEta}</p>
+                        {shippingQuote.status === 'loading' && (
+                          <p className="mt-2 text-xs font-bold text-indigo-500">{'\u062c\u0627\u0631\u064a \u062d\u0633\u0627\u0628 \u062a\u0643\u0644\u0641\u0629 \u0627\u0644\u0634\u062d\u0646...'}</p>
+                        )}
+                        {shippingQuote.status === 'error' && (
+                          <p className="mt-2 text-xs font-bold text-rose-600">{shippingQuoteMessage || '\u062a\u0639\u0630\u0631 \u062d\u0633\u0627\u0628 \u062a\u0643\u0644\u0641\u0629 \u0627\u0644\u0634\u062d\u0646. \u0631\u0627\u062c\u0639 \u0627\u0644\u0639\u0646\u0648\u0627\u0646 \u0623\u0648 \u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.'}</p>
+                        )}
+                        {shippingQuote.status === 'fallback' && shippingQuoteMessage && (
+                          <p className="mt-2 text-xs font-bold text-amber-600">{shippingQuoteMessage}</p>
+                        )}
                       </div>
                       <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-sm">
-                        <p className="text-[11px] font-black text-indigo-400">التوصيل المتوقع</p>
-                        <p className="mt-1 text-lg font-black text-indigo-700">{shipping === 0 ? 'مجاني' : `${shipping} ج.م`}</p>
-                        {shippingSavings > 0 && (
-                          <p className="mt-1 text-[11px] font-bold text-emerald-600">تم تفعيل الشحن المجاني بدلًا من {estimatedShippingFee} ج.م</p>
+                        <p className="text-[11px] font-black text-indigo-400">
+                          {shippingQuote.status === 'loading' ? '\u062c\u0627\u0631\u064a \u0627\u0644\u062d\u0633\u0627\u0628' : '\u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u0627\u0644\u0645\u062a\u0648\u0642\u0639'}
+                        </p>
+                        <p className="mt-1 text-lg font-black text-indigo-700">
+                          {shippingQuote.status === 'loading'
+                            ? '...'
+                            : effectiveShippingFee === 0
+                              ? '\u0645\u062c\u0627\u0646\u064a'
+                              : `${effectiveShippingFee} \u062c.\u0645`}
+                        </p>
+                        {shippingQuote.isEstimated && shippingQuote.status === 'fallback' && (
+                          <p className="mt-1 text-[11px] font-bold text-amber-600">{'\u0633\u0639\u0631 \u062a\u0642\u062f\u064a\u0631\u064a'}</p>
+                        )}
+                        {effectiveShippingSavings > 0 && (
+                          <p className="mt-1 text-[11px] font-bold text-emerald-600">{'\u062a\u0645 \u062a\u0641\u0639\u064a\u0644 \u0627\u0644\u0634\u062d\u0646 \u0627\u0644\u0645\u062c\u0627\u0646\u064a \u0628\u062f\u0644\u0627\u064b \u0645\u0646 '} {effectiveEstimatedShippingFee} {'\u062c.\u0645'}</p>
                         )}
                       </div>
                     </div>
@@ -644,14 +860,14 @@ export default function Checkout() {
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white"><Truck className="w-6 h-6" /></div>
                       <div>
-                        <h4 className="font-bold">{shippingRegionLabel}</h4>
-                        <p className="text-sm text-gray-500">{shippingEta}</p>
+                        <h4 className="font-bold">{effectiveShippingLabel}</h4>
+                        <p className="text-sm text-gray-500">{effectiveShippingEta}</p>
                       </div>
                     </div>
-                    <span className="font-black text-indigo-600">{shipping === 0 ? 'مجاني' : `${shipping} ج.م`}</span>
+                    <span className="font-black text-indigo-600">{effectiveShippingFee === 0 ? 'مجاني' : `${effectiveShippingFee} ج.م`}</span>
                   </div>
-                  {!isPortal && shippingSavings > 0 && (
-                    <p className="text-xs font-bold text-emerald-600">طلبك فعّل الشحن المجاني، وتم إسقاط {estimatedShippingFee} ج.م من تكلفة التوصيل.</p>
+                  {!isPortal && effectiveShippingSavings > 0 && (
+                    <p className="text-xs font-bold text-emerald-600">طلبك فعّل الشحن المجاني، وتم إسقاط {effectiveEstimatedShippingFee} ج.م من تكلفة التوصيل.</p>
                   )}
                 </div>
               </Card>
@@ -714,16 +930,16 @@ export default function Checkout() {
                     {!isPortal && (
                       <>
                         <p className="text-sm text-gray-500">
-                          {selectedShippingRegion?.label || 'بدون تحديد محافظة'}{form.city ? ` - ${form.city}` : ''}
+                          {effectiveShippingLabel || '\u0628\u062f\u0648\u0646 \u062a\u062d\u062f\u064a\u062f \u0645\u062d\u0627\u0641\u0638\u0629'}{form.city ? ` - ${form.city}` : ''}
                         </p>
-                        <p className="text-xs font-bold text-indigo-600">{shippingEta}</p>
+                        <p className="text-xs font-bold text-indigo-600">{effectiveShippingEta}</p>
                       </>
                     )}
                   </div>
                   <div>
                     <h4 className="text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">طريقة الدفع</h4>
                     <p className="font-bold text-gray-900 dark:text-gray-100">
-                      {form.paymentMethod === 'cash' ? 'الدفع عند الاستلام' : form.paymentMethod === 'credit' ? 'رصيد المحفظة' : 'دفع إلكتروني'}
+                      {form.paymentMethod === 'cash' ? 'الدفع عند الاستلام' : form.paymentMethod === 'credit' ? 'خصم من الرصيد' : 'بطاقة بنكية'}
                     </p>
                   </div>
                 </div>
@@ -747,7 +963,7 @@ export default function Checkout() {
                 <div className="mt-8">
                   <label className="block text-sm font-bold text-gray-600 mb-2">هل لديك أي ملاحظات أخرى؟</label>
                   <textarea
-                    placeholder="مثال: يرجى الاتصال قبل الوصول بـ 15 دقيقة"
+                    placeholder="مثال: الدور الثالث، الشقة 15 يمين"
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
                     className="w-full h-24 px-4 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-indigo-500 transition-all resize-none"
@@ -800,12 +1016,12 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between text-indigo-200">
                   <span className="font-medium">تكلفة الشحن</span>
-                  <span className="font-bold">{shipping === 0 ? 'مجاني' : `${shipping} ج.م`}</span>
+                  <span className="font-bold">{effectiveShippingFee === 0 ? 'مجاني' : `${effectiveShippingFee} ج.م`}</span>
                 </div>
                 {!isPortal && (
                   <div className="flex justify-between text-[11px] text-indigo-300">
-                    <span>{shippingRegionLabel}</span>
-                    <span>{shippingEta}</span>
+                    <span>{effectiveShippingLabel}</span>
+                    <span>{effectiveShippingEta}</span>
                   </div>
                 )}
                 {volumeDiscount > 0 && (
@@ -839,7 +1055,7 @@ export default function Checkout() {
               <div className="flex items-start gap-3">
                 <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-500" />
                 <div className="space-y-1">
-                  <p className="text-sm font-black text-gray-900 dark:text-white">????? ??????? ????????</p>
+                  <p className="text-sm font-black text-gray-900 dark:text-white">توجيه الشحن الذكي</p>
                   <p className="text-xs leading-6 text-gray-600 dark:text-gray-300">
                     {branchRoutingNote}
                   </p>
@@ -878,7 +1094,7 @@ export default function Checkout() {
               </p>)}
               <p className="text-[10px] font-bold text-emerald-800 leading-relaxed uppercase">
                 {checkoutReviewSnapshot.reviewCount > 0
-                  ? `العناصر التي تراجعها الآن لديها ${checkoutReviewSnapshot.reviewCount} تقييمًا متاحًا، ومتوسطها ${checkoutAverageRating.toFixed(1)} من 5.`
+                  ? `متوسط تقييم المنتجات في طلبك يعتمد على ${checkoutReviewSnapshot.reviewCount} مراجعة بمتوسط ${checkoutAverageRating.toFixed(1)} من 5.`
                   : `أنت بصدد مراجعة ${itemCount} قطعة، وسيظهر لك إجمالي الشحن والتكلفة النهائية قبل التأكيد مباشرة.`}
               </p>
             </div>
@@ -897,3 +1113,4 @@ export default function Checkout() {
     </div>
   );
 }
+

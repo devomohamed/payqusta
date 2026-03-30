@@ -20,10 +20,10 @@ const {
   resolveInventoryAllocation,
 } = require('../utils/inventoryAllocation');
 const {
-  calculateTenantShippingSummary,
   getTenantShippingSettings,
   normalizeInvoiceShippingSummary,
 } = require('../utils/shippingHelpers');
+const { resolveTenantShippingQuote } = require('../utils/shippingQuoteResolver');
 const NotificationService = require('./NotificationService');
 const GamificationService = require('./GamificationService');
 const WhatsAppService = require('./WhatsAppService');
@@ -100,6 +100,8 @@ class InvoiceService {
       if (!tenant) {
         throw AppError.notFound('المتجر غير موجود');
       }
+
+      const shippingSettings = getTenantShippingSettings(tenant);
 
       // Check if sales blocked for this customer
       if (customer.salesBlocked) {
@@ -178,6 +180,7 @@ class InvoiceService {
 
       let candidateBranchIds = [];
       let forcedOnlineBranchId = null;
+      let requiresOnlineFulfillmentReview = false;
 
       if (isOnlineFulfillmentSource) {
         const branchQuery = Branch.find({
@@ -211,12 +214,37 @@ class InvoiceService {
           )) || null;
 
           if (!forcedOnlineBranchId) {
-            throw AppError.badRequest('لا يوجد فرع واحد قادر حاليًا على تنفيذ كامل الطلب من المخزون المتاح');
+            requiresOnlineFulfillmentReview = true;
           }
         }
       }
 
       for (const { item, product, variant, quantity } of preparedItems) {
+        if (isOnlineFulfillmentSource && requiresOnlineFulfillmentReview) {
+          const itemPrice = (variant && variant.price) ? variant.price : product.price;
+          const totalPrice = itemPrice * quantity;
+          subtotal += totalPrice;
+          totalProfit += (itemPrice - (product.cost || 0)) * quantity;
+
+          invoiceItems.push({
+            product: product._id,
+            variant: item.variantId,
+            allocatedBranch: null,
+            productName: product.name,
+            sku: variant ? variant.sku : product.sku,
+            barcode: variant?.internationalBarcode || variant?.barcode || product.internationalBarcode || product.barcode,
+            internationalBarcode: variant?.internationalBarcode || variant?.barcode || product.internationalBarcode || product.barcode,
+            internationalBarcodeType: variant?.internationalBarcodeType || product.internationalBarcodeType || undefined,
+            localBarcode: variant?.localBarcode || product.localBarcode,
+            localBarcodeType: variant?.localBarcodeType || product.localBarcodeType,
+            quantity,
+            unitPrice: itemPrice,
+            totalPrice,
+          });
+
+          continue;
+        }
+
         const effectiveCandidateBranchIds = isOnlineFulfillmentSource
           ? (
               forcedOnlineBranchId
@@ -339,12 +367,21 @@ class InvoiceService {
       }
 
       const tenantShippingSettings = getTenantShippingSettings(tenant);
-      const computedShippingSummary = calculateTenantShippingSummary(
-        tenant,
+      const shippingQuote = await resolveTenantShippingQuote(tenant, {
         shippingAddress,
         subtotal,
-        normalizedShippingSummary
-      );
+        requestedSummary: normalizedShippingSummary,
+      });
+
+      if (!shippingQuote.ok) {
+        throw new AppError(
+          shippingQuote.errorMessage || 'تعذر حساب تكلفة الشحن حالياً',
+          400,
+          shippingQuote.errorCode || 'SHIPPING_CALCULATION_FAILED'
+        );
+      }
+
+      const computedShippingSummary = shippingQuote.shippingSummary;
 
       if (
         source === 'online_store' &&
@@ -450,6 +487,16 @@ class InvoiceService {
             status: computedShippingSummary.trackingNumber ? 'created' : 'pending',
           };
         }
+      }
+
+      if (shippingQuote?.shippingBranch?.branchId) {
+        invoiceData.fulfillmentBranch = shippingQuote.shippingBranch.branchId;
+      } else if (shippingSettings?.defaultShippingBranchId) {
+        invoiceData.fulfillmentBranch = shippingSettings.defaultShippingBranchId;
+      }
+
+      if (source === 'online_store' || source === 'portal') {
+        invoiceData.fulfillmentStatus = 'pending_review';
       }
 
       // Handle payment method configuration

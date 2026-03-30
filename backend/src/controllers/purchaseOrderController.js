@@ -208,6 +208,7 @@ class PurchaseOrderController {
           .populate('supplier', 'name contactPerson phone')
           .populate('branch', 'name')
           .populate('items.product', 'name sku')
+          .populate('sourceSupplierReplenishmentRequest', 'requestedQty status createdAt')
           .populate('createdBy', 'name')
           .populate('approvedBy', 'name')
           .sort('-createdAt')
@@ -229,6 +230,7 @@ class PurchaseOrderController {
         .populate('supplier')
         .populate('branch', 'name')
         .populate('items.product')
+        .populate('sourceSupplierReplenishmentRequest', 'requestedQty status createdAt')
         .populate('createdBy', 'name')
         .populate('approvedBy', 'name');
 

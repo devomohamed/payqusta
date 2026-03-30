@@ -16,6 +16,7 @@ const RESOURCES = {
     STOCK_ADJUSTMENTS: 'stock_adjustments',
     CASH_SHIFTS: 'cash_shifts',
     PURCHASE_ORDERS: 'purchase_orders',
+    SUPPLIER_REPLENISHMENT_REQUESTS: 'supplier_replenishment_requests',
 };
 
 const ACTIONS = {
@@ -50,6 +51,7 @@ module.exports = {
         { resource: 'stock_adjustments', actions: ['create', 'read', 'update', 'delete'] },
         { resource: 'cash_shifts', actions: ['create', 'read', 'update'] },
         { resource: 'purchase_orders', actions: ['create', 'read', 'update', 'delete'] },
+        { resource: 'supplier_replenishment_requests', actions: ['create', 'read', 'update', 'delete'] },
       ],
     },
     COORDINATOR: {
@@ -65,6 +67,7 @@ module.exports = {
         { resource: 'stock_adjustments', actions: ['create', 'read'] },
         { resource: 'cash_shifts', actions: ['create', 'read'] },
         { resource: 'purchase_orders', actions: ['read'] },
+        { resource: 'supplier_replenishment_requests', actions: ['read'] },
       ],
     },
     CASHIER: {

@@ -356,8 +356,8 @@ export const productsApi = {
   delete: (id) => api.delete(`/products/${id}`),
   setSuspended: (id, suspended) => api.patch(`/products/${id}/suspend`, { suspended }),
   updateStock: (id, data) => api.patch(`/products/${id}/stock`, data),
-  getLowStock: () => api.get('/products/low-stock'),
-  getSummary: () => api.get('/products/summary'),
+  getLowStock: (params) => api.get('/products/low-stock', { params }),
+  getSummary: (params) => api.get('/products/summary', { params }),
   getCategories: () => api.get('/products/categories'),
   requestRestock: (id, quantity) => api.post(`/products/${id}/request-restock`, { quantity }),
   requestRestockBulk: () => api.post('/products/request-restock-bulk'),
@@ -450,6 +450,13 @@ export const purchaseOrdersApi = {
   receive: (id, data) => api.post(`/purchase-orders/${id}/receive`, data),
   delete: (id) => api.delete(`/purchase-orders/${id}`),
   getPDF: (id) => api.get(`/purchase-orders/${id}/pdf`, { responseType: 'blob' }),
+};
+
+export const supplierReplenishmentRequestsApi = {
+  getAll: (params) => api.get('/supplier-replenishment-requests', { params }),
+  create: (data) => api.post('/supplier-replenishment-requests', data),
+  updateStatus: (id, data) => api.patch(`/supplier-replenishment-requests/${id}/status`, data),
+  convertToPurchaseOrder: (id) => api.post(`/supplier-replenishment-requests/${id}/convert-to-purchase-order`),
 };
 
 // Dashboard API

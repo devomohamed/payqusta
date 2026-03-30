@@ -6,6 +6,7 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const logger = require('../utils/logger');
+const { userHasPermission } = require('../middleware/checkPermission');
 
 class NotificationService {
   constructor() {
@@ -74,19 +75,48 @@ class NotificationService {
     }
   }
 
+  async sendDeduped(payload, options = {}) {
+    const {
+      dedupeWindowMinutes = 180,
+      extraMatch = {},
+    } = options;
+
+    const since = new Date(Date.now() - (dedupeWindowMinutes * 60 * 1000));
+    const filter = {
+      recipient: payload.recipient,
+      type: payload.type,
+      title: payload.title,
+      createdAt: { $gte: since },
+      ...extraMatch,
+    };
+
+    if (payload.tenant) filter.tenant = payload.tenant;
+    if (payload.relatedId) filter.relatedId = payload.relatedId;
+    if (payload.link) filter.link = payload.link;
+
+    const existing = await Notification.findOne(filter).select('_id').lean();
+    if (existing) return existing;
+
+    return this.send(payload);
+  }
+
   /**
    * Notify all admins and the vendor of a tenant
    * This ensures that store managers and owners both see important alerts
    */
   async notifyTenantAdmins(tenantId, payload, options = {}) {
-    const { targetBranchId = null, roles = ['admin', 'vendor'] } = options;
+    const {
+      targetBranchId = null,
+      roles = ['admin', 'vendor'],
+      permission = null,
+    } = options;
     try {
       // Find all users with requested roles in this tenant
       const recipients = await User.find({
         tenant: tenantId,
         role: { $in: roles },
         isActive: true
-      }).select('_id role branch');
+      }).select('_id role branch customRole tenant isSuperAdmin email');
 
       if (!recipients.length) return;
 
@@ -102,7 +132,15 @@ class NotificationService {
         return true;
       });
 
-      const notifications = validRecipients.map(user =>
+      const permissionEligibleRecipients = permission
+        ? (await Promise.all(
+            validRecipients.map(async (user) => (
+              (await userHasPermission(user, permission.resource, permission.action)) ? user : null
+            ))
+          )).filter(Boolean)
+        : validRecipients;
+
+      const notifications = permissionEligibleRecipients.map(user =>
         this.send({
           tenant: tenantId,
           recipient: user._id,
@@ -113,6 +151,54 @@ class NotificationService {
       await Promise.all(notifications);
     } catch (err) {
       logger.error(`notifyTenantAdmins error: ${err.message}`);
+    }
+  }
+
+  async notifyTenantAdminsDeduped(tenantId, payload, options = {}) {
+    const {
+      targetBranchId = null,
+      roles = ['admin', 'vendor'],
+      permission = null,
+      dedupeWindowMinutes = 180,
+      extraMatch = {},
+    } = options;
+
+    try {
+      const recipients = await User.find({
+        tenant: tenantId,
+        role: { $in: roles },
+        isActive: true
+      }).select('_id role branch customRole tenant isSuperAdmin email');
+
+      if (!recipients.length) return;
+
+      const validRecipients = recipients.filter((user) => {
+        if (user.role === 'admin') return true;
+        if (user.role === 'vendor' && targetBranchId) {
+          return user.branch && user.branch.toString() === targetBranchId.toString();
+        }
+        return true;
+      });
+
+      const permissionEligibleRecipients = permission
+        ? (await Promise.all(
+            validRecipients.map(async (user) => (
+              (await userHasPermission(user, permission.resource, permission.action)) ? user : null
+            ))
+          )).filter(Boolean)
+        : validRecipients;
+
+      await Promise.all(
+        permissionEligibleRecipients.map((user) =>
+          this.sendDeduped({
+            tenant: tenantId,
+            recipient: user._id,
+            ...payload,
+          }, { dedupeWindowMinutes, extraMatch })
+        )
+      );
+    } catch (err) {
+      logger.error(`notifyTenantAdminsDeduped error: ${err.message}`);
     }
   }
 
@@ -443,6 +529,91 @@ class NotificationService {
       color: 'warning',
       link: '/super-admin/requests',
     });
+  }
+
+  async onSupplierReplenishmentRequested(tenantId, request) {
+    if (!tenantId || !request?._id) return null;
+
+    const branchName = request.branch?.name || 'الفرع';
+    const productName = request.product?.name || 'الصنف';
+    const supplierName = request.supplier?.name || 'المورد';
+    const qty = Number(request.requestedQty || 0).toLocaleString('ar-EG');
+
+    return this.notifyTenantAdminsDeduped(tenantId, {
+      type: 'system',
+      title: 'طلب مورد جديد من الفرع',
+      message: `تم إنشاء طلب مورد جديد من ${branchName} للصنف ${productName} بكمية ${qty} من ${supplierName}.`,
+      icon: 'package-plus',
+      color: 'warning',
+      link: '/supplier-replenishment-requests',
+      relatedModel: null,
+      relatedId: request._id,
+    }, {
+      roles: ['admin', 'vendor', 'coordinator'],
+      permission: { resource: 'supplier_replenishment_requests', action: 'update' },
+      dedupeWindowMinutes: 120,
+    });
+  }
+
+  async onSupplierReplenishmentReviewed(tenantId, request, status) {
+    if (!tenantId || !request?._id || !request?.createdBy?._id) return null;
+
+    const isApproved = status === 'approved';
+    const title = isApproved ? 'تم اعتماد طلب المورد' : 'تم رفض طلب المورد';
+    const branchName = request.branch?.name || 'الفرع';
+    const productName = request.product?.name || 'الصنف';
+    const reviewerName = request.reviewedBy?.name || request.reviewedBy?.email || 'المراجعة';
+    const message = isApproved
+      ? `تم اعتماد طلب المورد الخاص بالفرع ${branchName} للصنف ${productName} بواسطة ${reviewerName}.`
+      : `تم رفض طلب المورد الخاص بالفرع ${branchName} للصنف ${productName} بواسطة ${reviewerName}.`;
+
+    return this.sendDeduped({
+      tenant: tenantId,
+      recipient: request.createdBy._id,
+      type: 'system',
+      title,
+      message,
+      icon: isApproved ? 'check-circle' : 'alert-circle',
+      color: isApproved ? 'success' : 'danger',
+      link: '/supplier-replenishment-requests',
+      relatedModel: null,
+      relatedId: request._id,
+    }, {
+      dedupeWindowMinutes: 120,
+    });
+  }
+
+  async onSupplierReplenishmentConverted(tenantId, request, purchaseOrder) {
+    if (!tenantId || !request?._id || !purchaseOrder?._id) return null;
+
+    const recipients = [
+      request.createdBy?._id,
+      request.reviewedBy?._id,
+    ].filter(Boolean);
+
+    const uniqueRecipients = [...new Set(recipients.map((id) => String(id)))];
+    if (!uniqueRecipients.length) return null;
+
+    const branchName = request.branch?.name || 'الفرع';
+    const productName = request.product?.name || 'الصنف';
+    const orderNumber = purchaseOrder.orderNumber || purchaseOrder._id;
+
+    return Promise.all(
+      uniqueRecipients.map((recipient) => this.sendDeduped({
+        tenant: tenantId,
+        recipient,
+        type: 'system',
+        title: 'تم تحويل طلب المورد إلى أمر شراء',
+        message: `تم تحويل طلب المورد الخاص بالفرع ${branchName} للصنف ${productName} إلى أمر الشراء ${orderNumber}.`,
+        icon: 'file-text',
+        color: 'primary',
+        link: `/purchase-orders?highlight=${purchaseOrder._id}`,
+        relatedModel: 'PurchaseOrder',
+        relatedId: purchaseOrder._id,
+      }, {
+        dedupeWindowMinutes: 120,
+      }))
+    );
   }
 
   async onAutoBackupFailure(tenantId, details = {}) {

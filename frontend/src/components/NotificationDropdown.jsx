@@ -30,6 +30,7 @@ const colorMap = {
   primary: { bg: 'bg-primary-50 dark:bg-primary-500/10', text: 'text-primary-500', ring: 'ring-primary-500/20' },
   success: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-500', ring: 'ring-emerald-500/20' },
   warning: { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-500', ring: 'ring-amber-500/20' },
+  info: { bg: 'bg-sky-50 dark:bg-sky-500/10', text: 'text-sky-500', ring: 'ring-sky-500/20' },
   danger: { bg: 'bg-red-50 dark:bg-red-500/10', text: 'text-red-500', ring: 'ring-red-500/20' },
   gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-500', ring: 'ring-gray-500/20' },
 };

@@ -9,7 +9,6 @@ import {
 import { usePortalStore } from '../store/portalStore';
 import { notify } from '../components/AnimatedNotification';
 import {
-    buildEstimatedDeliveryDate,
     findStorefrontShippingZone,
     resolveStorefrontShippingSettings,
 } from '../storefront/storefrontShipping';
@@ -23,10 +22,25 @@ const EGYPT_GOVERNORATES = [
     'شمال سيناء', 'سوهاج',
 ];
 
+function formatShippingEta(summary, fallbackText = 'سيتم تأكيد الموعد بعد مراجعة الطلب') {
+    const minDays = Number(summary?.estimatedDaysMin);
+    const maxDays = Number(summary?.estimatedDaysMax);
+
+    if (Number.isFinite(maxDays) && maxDays > 0) {
+        if (!Number.isFinite(minDays) || minDays <= 0 || minDays === maxDays) {
+            return `خلال ${maxDays} يوم عمل`;
+        }
+
+        return `خلال ${minDays}-${maxDays} أيام عمل`;
+    }
+
+    return fallbackText;
+}
+
 export default function PortalCheckout() {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation('portal');
-    const { cart, customer, checkout, clearCart, validateCoupon } = usePortalStore();
+    const { cart, customer, checkout, clearCart, validateCoupon, calculateShipping } = usePortalStore();
 
     const STEPS = [
         { id: 'shipping', label: t('checkout.steps.shipping'), icon: MapPin },
@@ -63,34 +77,30 @@ export default function PortalCheckout() {
     const [couponData, setCouponData] = useState(null);
     const [couponLoading, setCouponLoading] = useState(false);
     const [couponError, setCouponError] = useState('');
+    const [shippingQuote, setShippingQuote] = useState({
+        status: 'idle',
+        summary: null,
+        message: '',
+        warningMessage: '',
+        calculationState: 'idle',
+        isEstimated: false,
+    });
 
     const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
     const shippingConfig = resolveStorefrontShippingSettings(customer?.tenant?.settings?.shipping);
+    const shippingGovernorateOptions = shippingConfig?.pricingMode === 'dynamic_api'
+        ? EGYPT_GOVERNORATES.map((name) => ({ code: name, label: name }))
+        : shippingConfig.zones;
     const selectedShippingZone = findStorefrontShippingZone(shippingConfig.zones, form.governorate);
-    const shippingFeeBase = selectedShippingZone?.fee ?? shippingConfig.baseFee;
-    const shippingDiscount =
-        shippingConfig.freeShippingThreshold > 0 && subtotal >= shippingConfig.freeShippingThreshold
-            ? shippingFeeBase
-            : 0;
-    const shipping = Math.max(0, shippingFeeBase - shippingDiscount);
-    const shippingEta = selectedShippingZone?.eta || shippingConfig.eta;
-    const shippingSummary = {
-        shippingFee: shippingFeeBase,
-        shippingDiscount,
-        carrierCost: shippingFeeBase,
-        shippingMethod: shippingConfig.defaultMethodName,
-        provider: shippingConfig.provider,
-        zoneCode: selectedShippingZone?.code || '',
-        zoneLabel: selectedShippingZone?.label || form.governorate || '',
-        estimatedDaysMin: selectedShippingZone?.estimatedDaysMin ?? shippingConfig.estimatedDaysMin,
-        estimatedDaysMax: selectedShippingZone?.estimatedDaysMax ?? shippingConfig.estimatedDaysMax,
-        estimatedDeliveryDate: buildEstimatedDeliveryDate(
-            selectedShippingZone?.estimatedDaysMax ?? shippingConfig.estimatedDaysMax
-        ),
-    };
+    const shippingSummary = shippingQuote.summary;
+    const shipping = Math.max(0, (shippingSummary?.shippingFee || 0) - (shippingSummary?.shippingDiscount || 0));
+    const shippingEta = formatShippingEta(
+        shippingSummary,
+        selectedShippingZone?.eta || shippingConfig.eta
+    );
     const discount = couponData ? couponData.discountAmount : 0;
     const total = Math.max(0, subtotal + shipping - discount);
-    const branchRoutingNote = '?????? ?????? ??? ??????? ???????? ??? ????? ??????? ????? ???????? ???? ?????? ??? ??????? ???? ?? ????? ??????? ????? ?????.';
+    const branchRoutingNote = 'نختار الفرع الأقرب لعنوانك أو الأعلى في الجاهزية التشغيلية قبل تسليم الطلب لشركة الشحن.';
 
     const creditLimit = customer?.financials?.creditLimit ?? customer?.creditLimit ?? 0;
     const outstandingBalance = customer?.financials?.outstandingBalance ?? customer?.outstandingBalance ?? 0;
@@ -101,6 +111,94 @@ export default function PortalCheckout() {
             setPaymentMethod('deferred');
         }
     }, [paymentMethod, shippingConfig.supportsCashOnDelivery]);
+
+    useEffect(() => {
+        const governorateLabel = selectedShippingZone?.label || form.governorate?.trim();
+        const needsDynamicCity = shippingConfig.pricingMode === 'dynamic_api';
+        const addressReady = Boolean(
+            governorateLabel &&
+            form.address.trim() &&
+            (!needsDynamicCity || form.city.trim())
+        );
+
+        if (!addressReady) {
+            setShippingQuote({
+                status: 'idle',
+                summary: null,
+                message: '',
+                warningMessage: '',
+                calculationState: 'idle',
+                isEstimated: false,
+            });
+            return undefined;
+        }
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            setShippingQuote((prev) => ({
+                ...prev,
+                status: 'loading',
+                message: '',
+                warningMessage: '',
+                calculationState: 'loading',
+            }));
+
+            const result = await calculateShipping({
+                fullName: form.fullName,
+                phone: form.phone,
+                address: form.address,
+                city: form.city || undefined,
+                area: form.city || undefined,
+                governorate: governorateLabel,
+                notes: form.notes || undefined,
+            }, subtotal, {
+                zoneCode: selectedShippingZone?.code || '',
+                zoneLabel: selectedShippingZone?.label || governorateLabel,
+            });
+
+            if (cancelled) return;
+
+            if (result.success) {
+                const quoteData = result.data || {};
+                setShippingQuote({
+                    status: quoteData.isEstimated ? 'fallback' : 'success',
+                    summary: quoteData.shippingSummary || null,
+                    message: '',
+                    warningMessage: quoteData.warningMessage || '',
+                    calculationState: quoteData.calculationState || 'success',
+                    isEstimated: Boolean(quoteData.isEstimated),
+                });
+                return;
+            }
+
+            setShippingQuote({
+                status: 'error',
+                summary: null,
+                message: result.message || 'تعذر حساب تكلفة الشحن حالياً',
+                warningMessage: '',
+                calculationState: result.code === 'SHIPPING_ZONE_UNMATCHED' ? 'blocked' : 'error',
+                isEstimated: false,
+            });
+        }, 300);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [
+        calculateShipping,
+        form.address,
+        form.city,
+        form.fullName,
+        form.governorate,
+        form.notes,
+        form.phone,
+        selectedShippingZone?.code,
+        selectedShippingZone?.label,
+        shippingConfig.eta,
+        shippingConfig.pricingMode,
+        subtotal,
+    ]);
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
@@ -129,12 +227,21 @@ export default function PortalCheckout() {
         if (!form.phone.trim()) e.phone = t('checkout.errors.phone_required');
         if (!form.address.trim()) e.address = t('checkout.errors.address_required');
         if (!form.governorate) e.governorate = t('checkout.errors.gov_required');
+        if (shippingConfig.pricingMode === 'dynamic_api' && !form.city.trim()) e.city = t('checkout.shipping.city_placeholder');
         setErrors(e);
         return Object.keys(e).length === 0;
     };
 
     const handleNext = () => {
         if (!validate()) return;
+        if (shippingQuote.status === 'loading') {
+            notify.error('جاري حساب تكلفة الشحن، انتظر لحظة');
+            return;
+        }
+        if (!['success', 'fallback'].includes(shippingQuote.status)) {
+            notify.error(shippingQuote.message || 'أكمل بيانات الشحن أولاً لحساب التكلفة');
+            return;
+        }
         setStep('review');
         window.scrollTo(0, 0);
     };
@@ -142,6 +249,10 @@ export default function PortalCheckout() {
     const handleSubmit = async () => {
         if (cart.length === 0) { notify.error(t('checkout.errors.empty_cart')); return; }
         if (!form.signature.trim()) { notify.error(t('checkout.errors.signature_required')); return; }
+        if (!['success', 'fallback'].includes(shippingQuote.status) || !shippingSummary) {
+            notify.error(shippingQuote.message || 'تعذر تأكيد الطلب قبل حساب الشحن');
+            return;
+        }
         setLoading(true);
         try {
             const items = cart.map(i => ({
@@ -308,30 +419,54 @@ export default function PortalCheckout() {
                                     onChange={e => setForm({ ...form, governorate: e.target.value })}
                                 >
                                     <option value="">{t('checkout.shipping.choose_gov')}</option>
-                                    {shippingConfig.zones.map((zone) => (
+                                    {shippingGovernorateOptions.map((zone) => (
                                         <option key={zone.code} value={zone.code}>{zone.label}</option>
                                     ))}
                                 </select>
                                 {errors.governorate && <p className="text-red-500 text-[11px] mt-1">{errors.governorate}</p>}
                             </div>
                             <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 px-4 py-3 text-xs text-primary-700 dark:text-primary-300">
-                                <div className="flex items-center justify-between gap-3 font-bold">
-                                    <span>{shippingConfig.defaultMethodName}</span>
-                                    <span>{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
-                                </div>
-                                <div className="mt-1 flex items-center justify-between gap-3 text-[11px]">
-                                    <span>{selectedShippingZone?.label || 'سيتم اعتماد الرسوم الأساسية'}</span>
-                                    <span>{shippingEta}</span>
-                                </div>
-                                {shippingDiscount > 0 && (
-                                    <p className="mt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                                        تم تفعيل الشحن المجاني بدلًا من {shippingFeeBase.toLocaleString()} ج.م
-                                    </p>
+                                {shippingQuote.status === 'loading' ? (
+                                    <div className="flex items-center gap-2 font-bold">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>جاري حساب تكلفة الشحن...</span>
+                                    </div>
+                                ) : ['success', 'fallback'].includes(shippingQuote.status) ? (
+                                    <>
+                                        <div className="flex items-center justify-between gap-3 font-bold">
+                                            <span>{shippingSummary?.shippingMethod || shippingConfig.defaultMethodName}</span>
+                                            <span>{shipping === 0 ? 'مجاني' : `${shipping.toLocaleString()} ج.م`}</span>
+                                        </div>
+                                        <div className="mt-1 flex items-center justify-between gap-3 text-[11px]">
+                                            <span>{shippingSummary?.zoneLabel || selectedShippingZone?.label || 'اختر منطقة الشحن أولاً'}</span>
+                                            <span>{shippingEta}</span>
+                                        </div>
+                                        {shippingQuote.isEstimated && (
+                                            <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                                                {shippingQuote.warningMessage || 'سعر تقديري لحين استقرار بيانات الشحن'}
+                                            </p>
+                                        )}
+                                    </>
+                                ) : shippingQuote.status === 'error' ? (
+                                    <div className="space-y-2">
+                                        <p className="font-bold text-red-600 dark:text-red-400">{shippingQuote.message || 'تعذر حساب تكلفة الشحن الآن'}</p>
+                                        <p className="text-[11px] text-red-500">راجع العنوان أو أعد المحاولة بعد قليل.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1">
+                                        <p className="font-bold">أدخل بيانات التوصيل لعرض تكلفة الشحن.</p>
+                                        <p className="text-[11px] opacity-80">
+                                            {shippingConfig.pricingMode === 'dynamic_api'
+                                                ? 'المنطقة أو المدينة مطلوبة لحساب الشحن الديناميكي بدقة.'
+                                                : 'اختر المحافظة أولاً لعرض تكلفة الشحن المتوقعة.'}
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">{t('checkout.shipping.city')}</label>
                                 <input className={inputClass('city')} value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} placeholder={t('checkout.shipping.city_placeholder')} />
+                                {errors.city && <p className="text-red-500 text-[11px] mt-1">{errors.city}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">{t('checkout.shipping.address_details')}</label>

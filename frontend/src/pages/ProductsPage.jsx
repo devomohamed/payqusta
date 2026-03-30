@@ -72,11 +72,13 @@ export default function ProductsPage() {
   const [stepErrors, setStepErrors] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [recoveryDraftChecked, setRecoveryDraftChecked] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
   const LIMIT = 8;
   const isIncompleteTab = productTab === 'incomplete';
   const isSuspendedTab = productTab === 'suspended';
   const pricingValidationErrors = getPricingValidationErrors(form, { requireSalePrice: stepErrors.pricing });
   const branchScopeId = String(user?.branch?._id || user?.branch || '');
+  const isAdminLikeUser = user?.role === 'admin' || !!user?.isSuperAdmin;
   const draftStorageKey = useMemo(
     () => buildProductDraftStorageKey(tenant?._id, user?._id || user?.id),
     [tenant?._id, user?._id, user?.id]
@@ -90,10 +92,32 @@ export default function ProductsPage() {
     const storeName = tenant?.name || t('products.main_warehouse');
     return { _id: String(tenant._id), name: `${storeName} (${t('products.main_label')})` };
   }, [tenant?._id, tenant?.name, t]);
+  const branchOptions = useMemo(() => {
+    const normalizedBranches = Array.isArray(branches) ? branches : [];
+    return [
+      { _id: '', name: 'كل الفروع' },
+      ...(mainBranchOption ? [mainBranchOption] : []),
+      ...normalizedBranches.map((branch) => ({ _id: String(branch._id), name: branch.name })),
+    ];
+  }, [branches, mainBranchOption]);
+  const activeBranchId = branchScopeId || selectedBranchId || '';
+  const isBranchScopedView = Boolean(activeBranchId);
+  const canSwitchBranchView = !branchScopeId && (isAdminLikeUser || can('branches', 'read'));
+  const canOpenTransferRequests = can('invoices', 'update');
+  const activeBranchLabel = useMemo(() => {
+    const match = branchOptions.find((option) => String(option._id) === String(activeBranchId));
+    return match?.name || 'كل الفروع';
+  }, [activeBranchId, branchOptions]);
   const barcodeSettings = tenant?.settings?.barcode || {};
   const barcodeMode = barcodeSettings.mode || 'both';
   const localBarcodeEnabled = barcodeMode === 'both' || barcodeMode === 'local_only';
   const storeAutoGeneratesLocalBarcode = barcodeSettings.autoGenerateLocalBarcode === true;
+
+  useEffect(() => {
+    if (branchScopeId) {
+      setSelectedBranchId(branchScopeId);
+    }
+  }, [branchScopeId]);
 
   const isFormDirty = useMemo(() => {
     if (!showModal) return false;
@@ -360,6 +384,7 @@ export default function ProductsPage() {
       if (stockFilter) params.stockStatus = stockFilter;
       if (categoryFilter) params.category = categoryFilter;
       if (supplierFilter) params.supplier = supplierFilter;
+      if (activeBranchId) params.branchId = activeBranchId;
       const res = await productsApi.getAll(params);
       setProducts(res.data.data || []);
       setPagination({
@@ -371,10 +396,10 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, stockFilter, categoryFilter, supplierFilter, isIncompleteTab, isSuspendedTab, t]);
+  }, [page, debouncedSearch, stockFilter, categoryFilter, supplierFilter, isIncompleteTab, isSuspendedTab, t, activeBranchId]);
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
-  useEffect(() => { setPage(1); }, [debouncedSearch, stockFilter, categoryFilter, supplierFilter, isSuspendedTab, isIncompleteTab]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, stockFilter, categoryFilter, supplierFilter, isSuspendedTab, isIncompleteTab, activeBranchId]);
   useEffect(() => { setSelectedIds([]); }, [isSuspendedTab, isIncompleteTab]);
 
   const openEdit = (prod) => {
@@ -1050,10 +1075,17 @@ export default function ProductsPage() {
   };
 
   const getStockBadge = (prod) => {
-    const qty = prod.stock?.quantity ?? 0;
-    const min = prod.stock?.minQuantity ?? 5;
-    if (qty === 0) return <Badge variant="danger">{t('products.out_of_stock')}</Badge>;
-    if (qty <= min) return <Badge variant="warning">{t('products.low_stock')}</Badge>;
+    const scopedStock = isBranchScopedView ? prod.branchStock : null;
+    const qty = scopedStock?.quantity ?? prod.stock?.quantity ?? 0;
+    const min = scopedStock?.minQuantity ?? prod.stock?.minQuantity ?? 5;
+    const status = scopedStock?.status || (qty === 0 ? 'out_of_stock' : qty <= min ? 'low_stock' : 'in_stock');
+
+    if (status === 'out_of_stock') {
+      return <Badge variant="danger">{isBranchScopedView ? 'نفد في هذا الفرع' : t('products.out_of_stock')}</Badge>;
+    }
+    if (status === 'low_stock') {
+      return <Badge variant="warning">{isBranchScopedView ? `منخفض (${qty})` : t('products.low_stock')}</Badge>;
+    }
     return <Badge variant="success">{t('products.available')} ({qty})</Badge>;
   };
 
@@ -1090,6 +1122,11 @@ export default function ProductsPage() {
             <p className="mt-1 text-xs font-bold text-primary-600 dark:text-primary-300">
               {t('products.total_count', { count: headerProductsCount })}
             </p>
+            {isBranchScopedView ? (
+              <p className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+                عرض مخزون: {activeBranchLabel}
+              </p>
+            ) : null}
           </div>
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
             <Button variant="ghost" size="sm" onClick={() => setActivePageTab('categories')} className="w-full sm:w-auto justify-center">
@@ -1149,7 +1186,7 @@ export default function ProductsPage() {
 
       {/* Filters */}
       {!isIncompleteTab && (
-        <div className="app-surface-muted grid grid-cols-1 gap-3 rounded-2xl p-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.7fr)]">
+        <div className={`app-surface-muted grid grid-cols-1 gap-3 rounded-2xl p-3 ${canSwitchBranchView ? 'md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.75fr)_minmax(0,0.75fr)_minmax(0,0.85fr)]' : 'md:grid-cols-[minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,0.7fr)]'}`}>
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -1180,6 +1217,19 @@ export default function ProductsPage() {
               <option key={cat._id} value={cat._id}>{cat.name}</option>
             ))}
           </select>
+          {canSwitchBranchView ? (
+            <select
+              value={selectedBranchId}
+              onChange={e => setSelectedBranchId(e.target.value)}
+              className="app-surface w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto"
+            >
+              {branchOptions.map((option) => (
+                <option key={String(option._id || 'all')} value={String(option._id || '')}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
         </div>
       )}
 
@@ -1289,6 +1339,8 @@ export default function ProductsPage() {
             {products.map(prod => {
               const imageUrl = prod.thumbnail || prod.images?.[0];
               const displayUrl = resolveMediaUrl(imageUrl);
+              const displayStock = isBranchScopedView ? prod.branchStock : null;
+              const canSendSupplierRestock = !isBranchScopedView && !isSuspendedTab && prod.supplier && (isAdminLikeUser || user?.role === 'vendor');
 
               return (
                 <Card key={prod._id} className="group relative overflow-hidden hover:shadow-lg transition-all duration-200">
@@ -1335,9 +1387,14 @@ export default function ProductsPage() {
                       </span>
                       {getStockBadge(prod)}
                     </div>
+                    {displayStock ? (
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        الكمية في الفرع: {displayStock.quantity} | الحد الأدنى: {displayStock.minQuantity}
+                      </p>
+                    ) : null}
 
                     {/* Supplier restock */}
-                    {!isSuspendedTab && prod.supplier && (
+                    {canSendSupplierRestock && (
                       <button
                         onClick={() => handleRequestRestock(prod.supplier?._id || prod.supplier)}
                         disabled={sendingRestock === (prod.supplier?._id || prod.supplier)}
@@ -1351,6 +1408,31 @@ export default function ProductsPage() {
                         {t('products.restock_request')}
                       </button>
                     )}
+                    {isBranchScopedView && (displayStock?.status === 'low_stock' || displayStock?.status === 'out_of_stock') ? (
+                      <div className="space-y-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                        <p>هذا المنتج ظاهر للتشغيل وطلب التزويد حتى لو كانت الكمية منخفضة أو صفرًا.</p>
+                        {canOpenTransferRequests ? (
+                          <button
+                            onClick={() => {
+                              const nextParams = new URLSearchParams({
+                                direction: 'incoming',
+                                focusProduct: String(prod._id || ''),
+                                focusName: prod.name || '',
+                                focusSku: prod.sku || '',
+                                focusQty: String(displayStock?.quantity ?? 0),
+                                focusMin: String(displayStock?.minQuantity ?? 0),
+                                createReplenishment: '1',
+                              });
+                              navigate(`/stock-transfers?${nextParams.toString()}`);
+                            }}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-slate-800"
+                          >
+                            <Truck className="w-3.5 h-3.5" />
+                            فتح طلبات التزويد
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     {/* Actions */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">

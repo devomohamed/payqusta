@@ -67,6 +67,8 @@ export function resolveStorefrontShippingSettings(rawSettings = {}) {
 
   return {
     enabled: rawSettings?.enabled !== false,
+    pricingMode: rawSettings?.pricingMode === 'dynamic_api' ? 'dynamic_api' : 'fixed_zones',
+    defaultShippingBranchId: rawSettings?.defaultShippingBranchId || null,
     provider: rawSettings?.provider || 'local',
     providerDisplayName: rawSettings?.providerDisplayName || 'شحن محلي',
     defaultMethodName: rawSettings?.defaultMethodName || 'توصيل قياسي',
@@ -76,6 +78,9 @@ export function resolveStorefrontShippingSettings(rawSettings = {}) {
     estimatedDaysMin,
     estimatedDaysMax,
     eta: formatEtaLabel(estimatedDaysMin, estimatedDaysMax),
+    requiredAddressFields: Array.isArray(rawSettings?.requiredAddressFields)
+      ? rawSettings.requiredAddressFields
+      : (rawSettings?.pricingMode === 'dynamic_api' ? ['governorate', 'city'] : ['governorate']),
     zones: zones.filter((zone) => zone.isActive !== false),
   };
 }

@@ -155,6 +155,20 @@ const invoiceSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'],
       default: 'pending',
     },
+    fulfillmentStatus: {
+      type: String,
+      enum: [
+        'pending_review',
+        'branch_x_ready',
+        'awaiting_stock_transfer',
+        'transfer_in_progress',
+        'partial_receipt_review',
+        'ready_for_shipping',
+        'no_stock',
+        'cancelled',
+      ],
+      default: 'pending_review',
+    },
     orderStatusHistory: [{
       status: String,
       date: { type: Date, default: Date.now },
@@ -200,9 +214,34 @@ const invoiceSchema = new mongoose.Schema(
       notes: { type: String },
     },
     shippingMethod: { type: String },
+    addressChangedAfterCheckout: {
+      type: Boolean,
+      default: false,
+    },
+    addressReviewStatus: {
+      type: String,
+      enum: ['none', 'pending', 'resolved'],
+      default: 'none',
+    },
+    addressReviewNote: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1000,
+    },
+    fulfillmentBranch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
+    },
     shippingZone: {
       code: { type: String },
       label: { type: String },
+    },
+    transferRequest: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'StockTransfer',
+      default: null,
     },
     shipmentId: { type: String },
     trackingNumber: { type: String },
@@ -232,6 +271,27 @@ const invoiceSchema = new mongoose.Schema(
       waybillNumber: { type: String },
       trackingUrl: { type: String },
       status: { type: String, enum: ['pending', 'created', 'picked_up', 'in_transit', 'delivered', 'returned', 'cancelled'], default: 'pending' },
+    },
+    shipmentFailure: {
+      provider: { type: String, enum: ['bosta', 'aramex', 'local', 'manual', null], default: null },
+      lastError: { type: String, default: '', trim: true, maxlength: 1000 },
+      failedAt: { type: Date, default: null },
+      retryCount: { type: Number, default: 0, min: 0 },
+      lastAttemptAt: { type: Date, default: null },
+      lastAttemptPayloadSummary: {
+        address: { type: String, default: '', trim: true, maxlength: 300 },
+        city: { type: String, default: '', trim: true, maxlength: 80 },
+        governorate: { type: String, default: '', trim: true, maxlength: 80 },
+        itemsCount: { type: Number, default: 0, min: 0 },
+        reference: { type: String, default: '', trim: true, maxlength: 80 },
+      },
+      dismissedAt: { type: Date, default: null },
+      dismissedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+      dismissalNote: { type: String, default: '', trim: true, maxlength: 500 },
     },
     // Electronic Signature (For portal credit/installment orders)
     electronicSignature: {

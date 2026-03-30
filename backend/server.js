@@ -40,6 +40,7 @@ const InstallmentScheduler = require('./src/jobs/InstallmentScheduler');
 const StockMonitorJob = require('./src/jobs/StockMonitorJob');
 const ProductTrendsJob = require('./src/jobs/ProductTrendsJob');
 const TenantBackupJob = require('./src/jobs/TenantBackupJob');
+const StockTransferReminderJob = require('./src/jobs/StockTransferReminderJob');
 const {
   migrateLocalUploadsToDatabase,
   shouldRunLocalUploadMigration,
@@ -327,9 +328,11 @@ class PayQustaServer {
     const tenantBackupJob = new TenantBackupJob();
     tenantBackupJob.start();
 
+    StockTransferReminderJob.start();
+
     logger.info('✅ Scheduled jobs started');
     completeStartupTask('scheduled_jobs', {
-      registeredJobs: 6,
+      registeredJobs: 7,
     });
   }
 
