@@ -108,65 +108,54 @@ const InstallPrompt = () => {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
+        initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50"
+        exit={{ y: 50, opacity: 0 }}
+        className="fixed bottom-6 z-[150] px-4 w-full md:w-[380px]"
+        style={{ 
+           /* Invert position based on language to avoid overlap with FloatingContact */
+           insetInlineStart: lang === 'ar' ? 'auto' : '24px',
+           insetInlineEnd: lang === 'ar' ? '24px' : 'auto' 
+        }}
       >
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-v3-bg3 border border-brand-gold-bdr rounded-[28px] shadow-2xl overflow-hidden backdrop-blur-xl">
           {/* Header */}
-          <div className="relative p-6 pb-4">
+          <div className="relative p-6">
             <button
               onClick={handleDismiss}
-              className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-v3-text3 hover:text-v3-text transition-colors"
               aria-label="Close"
             >
               <X size={20} />
             </button>
 
             <div className="flex items-start gap-4">
-              <div className="bg-white/20 p-3 rounded-xl">
-                <Smartphone size={32} />
+              <div className="bg-brand-gold-dim p-3 rounded-2xl text-brand-gold">
+                <Download size={28} />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg mb-1">ثبت التطبيق</h3>
-                <p className="text-blue-50 text-sm leading-relaxed">
-                  احصل على تجربة أسرع وأفضل مع تطبيق PayQusta
+                <h3 className="v3-h3 text-v3-text mb-1">{lang === 'ar' ? 'ثبّت بيكوستا' : 'Install PayQusta'}</h3>
+                <p className="v3-body text-v3-text2 text-sm leading-snug">
+                  {lang === 'ar' ? 'التطبيق الأسرع لإدارة تجارتك باحترافية' : 'The fastest app to manage your business'}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Features */}
-          <div className="px-6 pb-4 space-y-2">
-            <div className="flex items-center gap-2 text-sm text-blue-50">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              <span>يعمل بدون إنترنت</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-blue-50">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              <span>تحميل فوري وسريع</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-blue-50">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              <span>إشعارات فورية</span>
-            </div>
-          </div>
-
           {/* Action Buttons */}
-          <div className="bg-white/10 backdrop-blur-sm p-4 flex gap-3">
+          <div className="p-4 flex gap-3 bg-v3-bg2/50">
             <button
               onClick={handleDismiss}
-              className="flex-1 px-4 py-2.5 rounded-lg text-white/90 hover:bg-white/10 transition-colors font-medium text-sm"
+              className="flex-1 btn-v3 border border-v3-border text-v3-text3 hover:text-v3-text py-3 text-sm"
             >
-              لاحقاً
+              {lang === 'ar' ? 'لاحقاً' : 'Later'}
             </button>
             <button
               onClick={handleInstall}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-white text-blue-600 hover:bg-blue-50 transition-colors font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+              className="flex-1 btn-v3 btn-v3-primary py-3 text-sm gap-2"
             >
-              <Download size={18} />
-              ثبت الآن
+              <Smartphone size={16} />
+              {lang === 'ar' ? 'ثبّت الآن' : 'Install Now'}
             </button>
           </div>
         </div>

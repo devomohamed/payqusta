@@ -3,6 +3,44 @@
 @tailwind utilities;
 
 :root {
+  /* PayQuota Design Tokens */
+  --c-bg:        #F7F8FA;      /* Page background */
+  --c-surface:   #FFFFFF;      /* Card / section background */
+  --c-navy:      #0B1628;      /* Primary text & dark sections */
+  --c-navy2:     #132040;      /* Navy hover state */
+  --c-teal:      #0D9B7A;      /* Primary brand color */
+  --c-teal-lt:   #E6F7F2;      /* Teal light fill */
+  --c-teal-md:   #B2E8D8;      /* Teal medium border */
+  --c-green:     #22C57A;      /* Success green */
+  --c-accent:    #00E5A0;      /* CTA accent (bright mint) */
+  --c-amber:     #F5A623;      /* Stars, warning */
+  --c-red:       #E84C3D;      /* Error/danger */
+  --c-text:      #0B1628;      /* Primary text */
+  --c-text2:     #445577;      /* Secondary text */
+  --c-text3:     #8899BB;      /* Muted/hint text */
+  --c-border:    #E2E8F0;      /* Default border */
+  --c-border2:   #CBD5E1;      /* Stronger border */
+
+  /* Border Radius */
+  --r-sm:  8px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+
+  /* Shadows */
+  --shadow-sm:   0 1px 3px rgba(11,22,40,.06), 0 1px 2px rgba(11,22,40,.04);
+  --shadow-md:   0 4px 16px rgba(11,22,40,.08), 0 2px 6px rgba(11,22,40,.04);
+  --shadow-lg:   0 12px 40px rgba(11,22,40,.12), 0 4px 16px rgba(11,22,40,.06);
+  --shadow-teal: 0 8px 32px rgba(13,155,122,.25);
+
+  /* Typography */
+  --font-display: 'Cairo', sans-serif;
+  --font-body:    'Tajawal', sans-serif;
+
+  /* Transition */
+  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+
+  /* Original Tokens Fallback/Compatibility */
   --glass-border: rgba(255, 255, 255, 0.5);
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
@@ -19,8 +57,8 @@
   --text-inverse: #f8fafc;
   --accent-strong: #4f46e5;
   --accent-soft: rgba(79, 70, 229, 0.12);
-  --hero-glow-1: rgba(79, 70, 229, 0.12);
-  --hero-glow-2: rgba(16, 185, 129, 0.08);
+  --hero-glow-1: rgba(13, 155, 122, 0.12);
+  --hero-glow-2: rgba(0, 229, 160, 0.08);
   --hero-glow-3: rgba(245, 158, 11, 0.08);
   --focus-border: #5c67e6;
   --focus-ring: rgba(92, 103, 230, 0.18);
@@ -33,6 +71,15 @@
 }
 
 .dark {
+  --c-bg: #020617;
+  --c-surface: #0f172a;
+  --c-navy: #ffffff;
+  --c-text: #ffffff;
+  --c-text2: #e5eefb;
+  --c-text3: #94a3b8;
+  --c-border: rgba(148, 163, 184, 0.18);
+  --c-teal-lt: rgba(13, 155, 122, 0.15);
+  
   --app-bg: #020617;
   --surface-1: #0f172a;
   --surface-2: rgba(15, 23, 42, 0.82);
@@ -51,6 +98,243 @@
   --hero-glow-3: rgba(251, 191, 36, 0.08);
   --focus-border: #7c8cff;
   --focus-ring: rgba(124, 140, 255, 0.24);
+}
+
+/* ============================================= */
+/* PayQusta v3 — Design System (Tokens)          */
+/* ============================================= */
+:root, html[data-theme="dark"] {
+  --bg:        #0D1B2A;
+  --bg2:       #162336;
+  --bg3:       #1A2B3C;
+  --surface:   #1E3248;
+  --surface2:  #243C56;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+  --border3:   rgba(255,255,255,0.22);
+  --text:      #FFFFFF;
+  --text2:     #8BA3BC;
+  --text3:     #4E6880;
+}
+
+html[data-theme="light"] {
+  --bg:        #F0F4F9;
+  --bg2:       #FFFFFF;
+  --bg3:       #E8EFF7;
+  --surface:   #FFFFFF;
+  --surface2:  #EEF3FA;
+  --border:    rgba(0,0,0,0.07);
+  --border2:   rgba(0,0,0,0.12);
+  --border3:   rgba(0,0,0,0.22);
+  --text:      #0D1B2A;
+  --text2:     #4E6880;
+  --text3:     #8BA3BC;
+}
+
+/* ============================================= */
+/* PayQusta v3 — Typography                      */
+/* ============================================= */
+[lang="ar"] {
+  --font-h: 'Cairo', sans-serif;
+  --font-b: 'Tajawal', sans-serif;
+}
+
+[lang="en"] {
+  --font-h: 'Plus Jakarta Sans', sans-serif;
+  --font-b: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Animations */
+@keyframes infinite-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+[dir="rtl"] .animate-infinite-scroll {
+  animation: infinite-scroll-rtl 40s linear infinite;
+}
+
+[dir="ltr"] .animate-infinite-scroll {
+  animation: infinite-scroll-ltr 40s linear infinite;
+}
+
+@keyframes infinite-scroll-ltr {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+@keyframes infinite-scroll-rtl {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+.animate-infinite-scroll {
+  display: flex;
+  width: max-content;
+}
+
+.v3-h1 {
+  font-family: var(--font-h);
+  font-weight: 900;
+  font-size: clamp(2rem, 4.2vw, 3.4rem);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.v3-h2 {
+  font-family: var(--font-h);
+  font-weight: 900;
+  font-size: clamp(1.7rem, 3.5vw, 2.5rem);
+  letter-spacing: -0.025em;
+}
+
+.v3-h3 {
+  font-family: var(--font-h);
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.v3-body {
+  font-family: var(--font-b);
+  font-weight: 400;
+  font-size: 15px;
+}
+
+.v3-small {
+  font-family: var(--font-b);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* ============================================= */
+/* PayQusta v3 — Buttons (Pill System)           */
+/* ============================================= */
+.btn-v3 {
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-v3-primary {
+  background: #C8A84B;
+  color: #0D1B2A;
+  padding: 13px 26px;
+  box-shadow: 0 4px 16px rgba(200,168,75,0.25);
+}
+
+.btn-v3-primary:hover {
+  background: #DDB955;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(200,168,75,0.35);
+}
+
+.btn-v3-secondary {
+  background: transparent;
+  color: #2ECC8F;
+  border: 1.5px solid rgba(46,204,143,0.28);
+  padding: 13px 26px;
+}
+
+.btn-v3-secondary:hover {
+  background: rgba(46,204,143,0.10);
+  border-color: #2ECC8F;
+  transform: translateY(-2px);
+}
+
+.btn-v3-ghost {
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border2);
+  padding: 13px 26px;
+}
+
+.btn-v3-ghost:hover {
+  border-color: var(--border3);
+  transform: translateY(-2px);
+}
+
+.btn-v3-sm {
+  padding: 9px 18px;
+  font-size: 13px;
+}
+
+/* ============================================= */
+/* PayQusta v3 — Animations (Reveal)            */
+/* ============================================= */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.stagger-child {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+/* ============================================= */
+/* PayQusta v3 — Brand Color Utilities           */
+/* ============================================= */
+
+/* Gold utilities */
+.bg-brand-gold-dim  { background-color: rgba(200,168,75,0.12); }
+.bg-brand-gold-glo  { background-color: rgba(200,168,75,0.25); }
+.border-brand-gold-bdr { border-color: rgba(200,168,75,0.30); }
+.shadow-brand-gold-glo { box-shadow: 0 0 40px rgba(200,168,75,0.25); }
+
+/* Teal utilities */
+.bg-brand-teal-dim  { background-color: rgba(46,204,143,0.10); }
+.bg-brand-teal-glo  { background-color: rgba(46,204,143,0.22); }
+.border-brand-teal-bdr { border-color: rgba(46,204,143,0.28); }
+.text-brand-teal-dim { color: rgba(46,204,143,0.10); }
+
+/* ============================================= */
+/* PayQusta v3 — Background classes using CSS vars */
+/* ============================================= */
+.bg-v3-bg     { background-color: var(--bg); }
+.bg-v3-bg2    { background-color: var(--bg2); }
+.bg-v3-bg3    { background-color: var(--bg3); }
+.bg-v3-surface  { background-color: var(--surface); }
+.bg-v3-surface2 { background-color: var(--surface2); }
+.text-v3-text   { color: var(--text); }
+.text-v3-text2  { color: var(--text2); }
+.text-v3-text3  { color: var(--text3); }
+.border-v3-border  { border-color: var(--border); }
+.border-v3-border2 { border-color: var(--border2); }
+.border-v3-border3 { border-color: var(--border3); }
+
+/* V3 Nav Glass Effect */
+.nav-glass {
+  background-color: var(--bg3);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+}
+@supports (backdrop-filter: blur(16px)) {
+  .nav-glass {
+    background-color: color-mix(in srgb, var(--bg3) 85%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
+
+/* Transitions for theme switch */
+*, *::before, *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Exempt animations from transition override */
+.animate-float, .animate-pulse, .animate-pulse-soft, .animate-spin {
+  transition: none;
 }
 
 body {
@@ -261,6 +545,34 @@ select:-webkit-autofill {
   50% { filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8)); }
 }
 
+/* PayQuota animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes grow {
+  from { transform: scaleY(0); transform-origin: bottom; }
+  to { transform: scaleY(1); transform-origin: bottom; }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
 .animate-logo-float { animation: logo-float 4s ease-in-out infinite; }
 .animate-logo-glow { animation: logo-glow 3s ease-in-out infinite; }
 .logo-shine-effect {
@@ -286,6 +598,54 @@ select:-webkit-autofill {
 .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
 .animate-slide-right { animation: slideRight 0.3s ease-out forwards; }
 .animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+/* Premium Logo Styles */
+.logo-premium-glow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-premium-glow::before {
+  content: '';
+  position: absolute;
+  inset: -15px;
+  background: radial-gradient(circle at center, #5c67e6 0%, #00f2fe 40%, #7028e4 100%);
+  filter: blur(20px);
+  opacity: 0.45;
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+  animation: logo-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.92); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.logo-text-v3 {
+  font-family: ' Cairo', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.logo-text-v3 .qusta {
+  color: #5c67e6; /* The specific blue/purple from the image */
+  background: linear-gradient(135deg, #7c8cff 0%, #5c67e6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-text-v3 .pay {
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .logo-text-v3 .pay {
+  color: #0D1B2A;
+}
 
 /* Product card staggered entrance */
 @keyframes fadeSlideUp {
@@ -370,6 +730,77 @@ tr.hover-row:hover td { background-color: #f1f5f9; }
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* ============================================= */
+/* PayQusta v3 — Mobile Responsive Fixes        */
+/* ============================================= */
+
+/* Prevent horizontal scroll globally */
+html, body { overflow-x: hidden; }
+
+/* Section dividers — subtle gold gradient */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to left, transparent, rgba(200,168,75,0.2) 30%, rgba(200,168,75,0.2) 70%, transparent);
+  margin: 0;
+}
+
+/* Chart containers */
+.chart-canvas-wrap { position: relative; width: 100%; height: 140px; }
+
+/* Buttons — minimum tap target */
+.btn-v3 { min-height: 44px; }
+
+/* ── Tablet (≤ 768px) ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Container safe padding */
+  .max-w-7xl { padding-left: 20px; padding-right: 20px; }
+
+  /* Section vertical padding */
+  section:not(.min-h-screen) { padding-top: 64px !important; padding-bottom: 64px !important; }
+
+  /* Chart heights */
+  .chart-canvas-wrap { height: 120px !important; }
+
+  /* Trust strip: column layout */
+  .trust-inner {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+/* ── Mobile (≤ 480px) ─────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .max-w-7xl { padding-left: 16px; padding-right: 16px; }
+
+  /* Section headers */
+  .v3-h2 {
+    font-size: clamp(1.4rem, 5.5vw, 1.8rem) !important;
+    white-space: normal !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Chart heights */
+  .chart-canvas-wrap { height: 100px !important; }
+
+  /* Social icons min tappable area */
+  .social-btn { min-width: 36px; min-height: 36px; }
+}
+
+/* ── Small Mobile (≤ 360px) ───────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .v3-h2 { font-size: 1.3rem !important; }
+  .v3-h3 { font-size: 15px !important; }
+  .v3-body { font-size: 13px !important; }
+}
+
+/* animate-float keyframes */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 4s ease-in-out infinite; }
 
 /* ============================================= */
 /* PRINT STYLES                                 */

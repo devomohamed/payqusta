@@ -24,209 +24,157 @@ function navLinkClass({ isActive }) {
 
 export default function PublicSiteLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { t } = useTranslation('public');
+  const { t, i18n } = useTranslation('public');
+  const isRtl = i18n.language === 'ar';
 
   return (
-    <div className="app-shell-bg dark:bg-[#0B1120] min-h-screen overflow-x-clip text-slate-950 transition-colors dark:text-slate-50 relative">
-      {/* Background grid */}
-      <div
-        className="pointer-events-none fixed inset-0 opacity-[0.04] dark:opacity-[0.03] z-0"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-          backgroundSize: '64px 64px',
-        }}
-      />
+    <div className={`min-h-screen bg-[color:var(--c-bg)] font-body ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* Navigation */}
+      <nav className="nav sticky top-0 z-50 h-[68px] border-bottom border-[color:var(--c-border)] bg-[rgba(247,248,250,0.92)] backdrop-blur-[16px] transition-all duration-300">
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-1 font-display text-[22px] font-[900]">
+            <span className="text-[color:var(--c-navy)]">Pay</span>
+            <span className="text-[color:var(--c-teal)]">Quota</span>
+          </Link>
 
-      {/* Floating pill navbar */}
-      <header className="sticky top-4 z-40 mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <div className="bg-white/80 dark:bg-[#0B1120]/80 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-full shadow-lg dark:shadow-[0_8px_30px_rgb(0,0,0,0.5)]">
-          <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2.5">
-            {/* Logo */}
-            <Link to="/" className="relative flex min-w-0 items-center gap-2 shrink-0" onClick={() => setMobileMenuOpen(false)}>
-              <AnimatedBrandLogo src="/logo-square.png" alt="PayQusta" size="sm" containerClassName="shrink-0" />
-              <p className="hidden sm:block truncate text-sm font-black tracking-tight">{brandDisplayName}</p>
-            </Link>
+          {/* Nav Links - Desktop */}
+          <div className="hidden items-center gap-1 lg:flex">
+            {publicNavLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) => 
+                  `px-[14px] py-[6px] font-display text-[14px] font-[600] transition-all hover:bg-[color:var(--c-teal-lt)] hover:text-[color:var(--c-navy)] rounded-[var(--r-sm)] ${
+                    isActive ? 'text-[color:var(--c-navy)] bg-[color:var(--c-teal-lt)]' : 'text-[color:var(--c-text2)]'
+                  }`
+                }
+              >
+                {t(link.i18nKey)}
+              </NavLink>
+            ))}
+          </div>
 
-            {/* Desktop nav links */}
-            <nav className="hidden items-center gap-1 xl:flex">
-              {publicNavLinks.map((item) => (
-                <NavLink key={item.to} to={item.to} className={navLinkClass} end={item.to === '/'}>
-                  {t(item.i18nKey, item.label)}
-                </NavLink>
-              ))}
-            </nav>
-
-            {/* Desktop actions */}
-            <div className="hidden items-center gap-2 xl:flex">
+          {/* Actions */}
+          <div className="flex items-center gap-4">
+            <div className="hidden items-center gap-2 sm:flex">
               <LanguageSwitcher />
               <ThemeModeSwitcher minimal />
-              <Link
-                to="/login"
-                className="text-sm font-bold transition-colors hover:text-emerald-500 text-slate-700 dark:text-slate-300 dark:hover:text-white px-2"
-              >
-                {t('nav.login', 'تسجيل الدخول')}
-              </Link>
-              <Link
-                to="/login?mode=register"
-                className="inline-flex items-center gap-2 rounded-full bg-[#00e59b] px-5 py-2 text-sm font-black text-slate-950 shadow-[0_0_20px_rgba(0,229,155,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(0,229,155,0.6)]"
-              >
-                {t('nav.startNow', 'ابدأ الآن')}
-              </Link>
             </div>
-
-            {/* Mobile hamburger */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((open) => !open)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700 dark:text-slate-100 xl:hidden hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-              aria-label="فتح القائمة"
-              aria-expanded={mobileMenuOpen}
+            
+            <Link to="/login" className="hidden font-display text-[14px] font-[600] text-[color:var(--c-text2)] hover:text-[color:var(--c-navy)] md:block">
+              {t('nav.login')}
+            </Link>
+            
+            <Link 
+              to="/login?mode=register" 
+              className="rounded-[var(--r-sm)] bg-[color:var(--c-accent)] px-5 py-[8px] font-display text-[14px] font-[700] text-[color:var(--c-navy)] shadow-[0_4px_16px_rgba(0,229,160,0.3)] transition-all hover:translate-y-[-1px] hover:bg-[#00d494]"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {t('nav.startFree')}
+            </Link>
+
+            {/* Mobile Menu Toggle */}
+            <button 
+              className="lg:hidden p-2 text-[color:var(--c-navy)]"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu — OUTSIDE the pill */}
+        {/* Mobile Menu Backdrop & Panel */}
         {mobileMenuOpen && (
-          <div className="mt-3 rounded-[1.5rem] bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-2xl p-4 xl:hidden">
-            <div className="grid gap-1">
-              {publicNavLinks.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={navLinkClass}
-                  end={item.to === '/'}
+          <div className="lg:hidden absolute top-[68px] inset-x-0 bg-white border-b border-[color:var(--c-border)] shadow-xl p-4 animate-slide-up">
+             <div className="flex flex-col gap-2">
+                {publicNavLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 font-display text-[15px] font-[600] text-[color:var(--c-text2)] hover:bg-[color:var(--c-teal-lt)] rounded-[var(--r-sm)]"
+                  >
+                    {t(link.i18nKey)}
+                  </NavLink>
+                ))}
+                <div className="h-[1px] bg-[color:var(--c-border)] my-2" />
+                <div className="flex items-center justify-between px-4">
+                  <LanguageSwitcher />
+                  <ThemeModeSwitcher minimal />
+                </div>
+                <Link 
+                  to="/login"
                   onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-3 font-display text-[15px] font-[600] text-[color:var(--c-text2)]"
                 >
-                  {t(item.i18nKey, item.label)}
-                </NavLink>
-              ))}
-            </div>
-
-            <div className="mt-4 flex items-center gap-2">
-              <LanguageSwitcher />
-              <ThemeModeSwitcher minimal />
-            </div>
-
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-full border border-slate-200 dark:border-white/10 px-4 py-3 text-center text-sm font-black transition-colors hover:bg-slate-50 dark:hover:bg-white/5"
-              >
-                {t('nav.login', 'تسجيل الدخول')}
-              </Link>
-              <Link
-                to="/login?mode=register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#00e59b] px-4 py-3 text-center text-sm font-black text-slate-950 shadow-[0_0_20px_rgba(0,229,155,0.4)]"
-              >
-                {t('nav.startNow', 'ابدأ الآن')}
-              </Link>
-            </div>
+                  {t('nav.login')}
+                </Link>
+             </div>
           </div>
         )}
-      </header>
+      </nav>
 
-      <main className="relative z-10 overflow-x-clip">{children}</main>
+      <main className="relative z-10">{children}</main>
 
-      <footer className="relative z-10 border-t border-[color:var(--surface-border)] bg-transparent">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
-          <div className="grid gap-6 xl:grid-cols-[1fr,1.4fr]">
-            <div className="overflow-hidden rounded-[2rem] border border-[color:var(--surface-border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.97),rgba(30,41,59,0.94))] p-6 text-start text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] dark:border-white/10 sm:p-8">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-black text-amber-200">
-                <Sparkles className="h-3.5 w-3.5" />
-                {t('footer.cta.badge', 'جاهز لتجربة PayQusta')}
-              </div>
-              <h2 className="mt-5 text-2xl font-black leading-tight sm:text-3xl">
-                {t('footer.cta.title', 'ابنِ حضورًا عامًا أقوى، وشغّل المبيعات والمخزون والأقساط من نفس المكان.')}
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                {t('footer.cta.description', 'الموقع العام يعرّف الزائر بالمشروع، والمتجر العام يحول الزيارة إلى طلب، بينما النظام الداخلي يربط البيع بالمخزون والتحصيل في تجربة تشغيل واحدة.')}
+      {/* Footer */}
+      <footer className="footer bg-[color:var(--c-navy)] px-4 py-16 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5">
+            {/* Brand Column */}
+            <div className="lg:col-span-2">
+              <Link to="/" className="flex items-center gap-1 font-display text-[24px] font-[900]">
+                <span className="text-white">Pay</span>
+                <span className="text-[color:var(--c-teal)]">Quota</span>
+              </Link>
+              <p className="mt-6 max-w-sm font-body text-[13px] leading-relaxed text-[rgba(255,255,255,0.45)]">
+                {t('footer.brand.desc')}
               </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-start">
-                <Link
-                  to="/login?mode=register"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#00e59b] px-6 py-3 text-sm font-black text-slate-950 shadow-[0_0_20px_rgba(0,229,155,0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(0,229,155,0.6)]"
-                >
-                  {t('footer.cta.createAccount', 'أنشئ حسابك')}
-                </Link>
-                <Link
-                  to="/features"
-                  className="rounded-full border border-white/15 px-6 py-3 text-center text-sm font-black text-white transition-colors hover:bg-white/10"
-                >
-                  {t('footer.cta.explore', 'استكشف المزايا')}
-                </Link>
+              {/* Social Icons Placeholder */}
+              <div className="mt-8 flex gap-3">
+                 {[1,2,3,4].map(i => (
+                   <div key={i} className="flex h-9 w-9 items-center justify-center rounded-[var(--r-sm)] bg-[rgba(255,255,255,0.05)] transition-all hover:bg-[color:var(--c-teal)] hover:scale-105 cursor-pointer">
+                      <div className="h-4 w-4 bg-white/20 rounded-sm" />
+                   </div>
+                 ))}
               </div>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="app-surface rounded-[1.75rem] p-6 text-start">
-                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('footer.nav.title', 'التصفح')}</p>
-                <div className="mt-4 flex flex-col gap-3">
-                  {publicNavLinks.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      className="app-text-body text-base font-bold transition-colors hover:text-[color:var(--text-strong)] dark:hover:text-white"
-                      end={item.to === '/'}
-                    >
-                      {t(item.i18nKey, item.label)}
-                    </NavLink>
+            {/* Links Columns */}
+            {['product', 'solutions', 'company', 'support'].map((col) => (
+              <div key={col}>
+                <h3 className="font-display text-[13px] font-[700] uppercase tracking-[0.06em] text-[rgba(255,255,255,0.9)]">
+                  {t(`footer.columns.${col}.title`)}
+                </h3>
+                <ul className="mt-6 flex flex-col gap-3">
+                  {t(`footer.columns.${col}.links`, { returnObjects: true })?.map((link, idx) => (
+                    <li key={idx}>
+                      <a href="#" className="font-body text-[13px] text-[rgba(255,255,255,0.45)] transition-all hover:text-[rgba(255,255,255,0.9)]">
+                        {link}
+                      </a>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
-
-              <div className="app-surface rounded-[1.75rem] p-6 text-start">
-                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('footer.trust.title', 'الثقة والسياسات')}</p>
-                <div className="mt-4 flex flex-col gap-3">
-                  {publicUtilityLinks.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      className="text-base font-bold text-slate-700 transition-colors hover:text-slate-950 dark:text-slate-100 dark:hover:text-white"
-                    >
-                      {t(item.i18nKey, item.label)}
-                    </NavLink>
-                  ))}
-                </div>
-                <p className="app-text-soft mt-5 text-sm leading-7">
-                  {t('footer.trust.description', 'هذه الصفحات تساعد الزائر على فهم الشروط والخصوصية ومسار التواصل قبل التسجيل أو الإطلاق.')}
-                </p>
-              </div>
-
-              <div className="app-surface-muted rounded-[1.75rem] p-6 text-start sm:col-span-2 xl:col-span-2 flex flex-col h-full">
-                <p className="app-text-muted text-sm font-black uppercase tracking-[0.18em]">{t('footer.brand.title', 'عن البراند')}</p>
-                <p className="mt-4 text-base font-black app-text-body">{brandDisplayName}</p>
-                <p className="app-text-soft mt-2 text-sm leading-7">
-                  {t('footer.brand.description', `${brandArabicName} هو الاسم العربي المتداول لنفس البراند. الواجهة العامة هنا موجودة لتشرح القيمة التجارية بوضوح وتدعم الظهور والبحث.`)}
-                </p>
-                <div className="mt-auto pt-6 grid gap-2">
-                  {(() => {
-                    const highlights = t('footer.highlights', { returnObjects: true });
-                    const itemsToMap = Array.isArray(highlights) ? highlights : platformHighlights;
-                    return itemsToMap.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="app-surface rounded-2xl border border-[color:var(--surface-border)] px-4 py-3 text-sm font-bold app-text-body shadow-sm dark:shadow-none"
-                      >
-                        {item}
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
-          <div className="mt-8 flex flex-col gap-2 border-t border-[color:var(--surface-border)] pt-6 text-start text-sm font-medium text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <p>PayQusta © 2026</p>
-            <p className="text-start sm:text-end">{t('footer.tagline', 'واجهة عامة قابلة للفهرسة وتجربة مناسبة للموبايل والسطح المكتبي.')}</p>
+          <div className="mt-16 h-[1px] bg-[rgba(255,255,255,0.08)]" />
+
+          <div className="mt-8 flex flex-col items-center justify-between gap-4 md:flex-row">
+            <p className="font-body text-[13px] text-[rgba(255,255,255,0.3)]">
+              {t('footer.bottom.copyright')}
+            </p>
+            <div className="flex gap-6">
+              {t('footer.bottom.links', { returnObjects: true })?.map((link, idx) => (
+                <a key={idx} href="#" className="font-body text-[13px] text-[rgba(255,255,255,0.3)] hover:text-white">
+                  {link}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
     </div>
   );
 }
+

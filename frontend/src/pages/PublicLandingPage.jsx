@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { BarChart3, Boxes, CreditCard, Store } from 'lucide-react';
-import { seoLandingCards } from '../publicSite/seoLandingPages';
+import { motion, AnimatePresence } from 'framer-motion';
 
 /* -------------------------------------------------------------------------- */
 /*                                ANIMATIONS                                  */
 /* -------------------------------------------------------------------------- */
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+
+const revealVariants = {
+  hidden: { opacity: 0, y: 32 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.65, ease: [0.4, 0, 0.2, 1] } 
+  }
 };
 
 const staggerContainer = {
@@ -22,271 +25,700 @@ const staggerContainer = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                CONSTANTS                                   */
-/* -------------------------------------------------------------------------- */
-const PILLAR_ICONS = {
-  sales: BarChart3,
-  inventory: Boxes,
-  installments: CreditCard,
-  storefront: Store,
-};
-
-const PILLAR_COLORS = {
-  sales: {
-    border: 'border-slate-200 dark:border-[#3b82f6]',
-    shadow: 'shadow-lg shadow-blue-500/10 dark:shadow-[0_0_20px_rgba(59,130,246,0.15)]',
-    hoverShadow: 'hover:shadow-blue-500/20 dark:hover:shadow-[0_0_40px_rgba(59,130,246,0.3)]',
-    iconBorder: 'border-blue-100 dark:border-[#3b82f6]',
-    iconShadow: 'dark:shadow-[0_0_20px_rgba(59,130,246,0.5)]',
-    iconBg: 'bg-blue-50 dark:bg-[#3b82f6]/10',
-    iconText: 'text-blue-600 dark:text-blue-400',
-    cardBg: 'dark:bg-[#0B1120]',
-    image: '/mockups/sales-blue.png'
-  },
-  inventory: {
-    border: 'border-slate-200 dark:border-[#00e59b]',
-    shadow: 'shadow-lg shadow-emerald-500/10 dark:shadow-[0_0_20px_rgba(0,229,155,0.15)]',
-    hoverShadow: 'hover:shadow-emerald-500/20 dark:hover:shadow-[0_0_40px_rgba(0,229,155,0.3)]',
-    iconBorder: 'border-emerald-100 dark:border-[#00e59b]',
-    iconShadow: 'dark:shadow-[0_0_20px_rgba(0,229,155,0.5)]',
-    iconBg: 'bg-emerald-50 dark:bg-[#00e59b]/10',
-    iconText: 'text-emerald-600 dark:text-[#00e59b]',
-    cardBg: 'dark:bg-[#0B1120]',
-    image: '/mockups/inventory-green.png'
-  },
-  storefront: {
-    border: 'border-slate-200 dark:border-[#a855f7]',
-    shadow: 'shadow-lg shadow-purple-500/10 dark:shadow-[0_0_20px_rgba(168,85,247,0.15)]',
-    hoverShadow: 'hover:shadow-purple-500/20 dark:hover:shadow-[0_0_40px_rgba(168,85,247,0.3)]',
-    iconBorder: 'border-purple-100 dark:border-[#a855f7]',
-    iconShadow: 'dark:shadow-[0_0_20px_rgba(168,85,247,0.5)]',
-    iconBg: 'bg-purple-50 dark:bg-[#a855f7]/10',
-    iconText: 'text-purple-600 dark:text-purple-400',
-    cardBg: 'dark:bg-[#0B1120]',
-    image: '/mockups/store-purple.png'
-  },
-  installments: {
-    border: 'border-slate-200 dark:border-[#eab308]',
-    shadow: 'shadow-lg shadow-yellow-500/10 dark:shadow-[0_0_20px_rgba(234,179,8,0.15)]',
-    hoverShadow: 'hover:shadow-yellow-500/20 dark:hover:shadow-[0_0_40px_rgba(234,179,8,0.3)]',
-    iconBorder: 'border-yellow-100 dark:border-[#eab308]',
-    iconShadow: 'dark:shadow-[0_0_20px_rgba(234,179,8,0.5)]',
-    iconBg: 'bg-yellow-50 dark:bg-[#eab308]/10',
-    iconText: 'text-yellow-600 dark:text-yellow-400',
-    cardBg: 'dark:bg-[#0B1120]',
-    image: '/mockups/installments-yellow.png'
-  },
-};
-
-const PILLAR_SLUGS = ['sales', 'inventory', 'storefront', 'installments'];
-
-/* -------------------------------------------------------------------------- */
 /*                                SUBCOMPONENTS                               */
 /* -------------------------------------------------------------------------- */
 
-const HeroSection = ({ t }) => (
-  <section className="relative mx-auto max-w-7xl px-4 pt-20 pb-16 sm:px-6 lg:px-8 lg:pt-32 lg:pb-28">
-    <motion.div 
-      className="text-center max-w-4xl mx-auto flex flex-col items-center"
-      initial="hidden" animate="visible" variants={staggerContainer}
-    >
-      <motion.h1 variants={fadeInUp} className="text-4xl font-black leading-[1.12] tracking-tight text-slate-950 dark:text-white sm:text-5xl lg:text-[4.5rem]">
-        {t('hero.title', 'مستقبل إدارة المتاجر هنا.')}
-      </motion.h1>
-
-      <motion.p variants={fadeInUp} className="mt-8 max-w-2xl text-lg leading-relaxed text-slate-500 dark:text-slate-400 sm:text-xl font-medium">
-        {t('hero.subtitle', 'بسّط التشغيل، حسّن التعاون، وتوسّع بسهولة من خلال منصة واحدة ذكية.')}
-      </motion.p>
-
-      <motion.div variants={fadeInUp} className="mt-12 flex flex-col justify-center gap-4 sm:flex-row sm:items-center w-full sm:w-auto">
-        <Link to="/login?mode=register" className="inline-flex items-center justify-center rounded-full bg-[#00e59b] px-8 py-4 text-base font-black text-slate-950 shadow-[0_0_30px_rgba(0,229,155,0.4)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_45px_rgba(0,229,155,0.6)] w-full sm:w-auto">
-          {t('hero.cta', 'ابدأ حسابك')}
-        </Link>
-        <Link to="/features" className="inline-flex items-center justify-center rounded-full border border-slate-300 dark:border-white/20 bg-white/50 dark:bg-transparent backdrop-blur-md px-8 py-4 text-base font-black text-slate-800 dark:text-white transition-all duration-300 hover:bg-slate-100 dark:hover:bg-white/10 w-full sm:w-auto">
-          {t('hero.learnMore', 'استكشف المزايا')}
-        </Link>
-      </motion.div>
-    </motion.div>
-
-    <motion.div initial={{ opacity: 0, scaleX: 0 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }} className="pointer-events-none mt-24 hidden lg:block">
-      <div className="relative mx-auto h-[1px] max-w-5xl bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent">
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-emerald-500/70 shadow-[0_0_15px_rgba(0,229,155,0.6)]" />
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-emerald-500/70 shadow-[0_0_15px_rgba(0,229,155,0.6)]" />
+const HeroSection = ({ t, isRtl }) => {
+  return (
+    <section className="hero relative overflow-hidden bg-[color:var(--c-bg)] py-24 sm:py-32">
+      {/* Background Effects */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        {/* Grid Pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(13,155,122,1) 1px, transparent 1px), linear-gradient(90deg, rgba(13,155,122,1) 1px, transparent 1px)',
+            backgroundSize: '48px 48px'
+          }}
+        />
+        {/* Orb 1 */}
+        <div 
+          className="absolute -left-[100px] -top-[100px] h-[500px] w-[500px] rounded-full blur-[80px]"
+          style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.12) 0%, transparent 70%)' }}
+        />
+        {/* Orb 2 */}
+        <div 
+          className="absolute -right-[100px] -bottom-[80px] h-[400px] w-[400px] rounded-full blur-[60px]"
+          style={{ background: 'radial-gradient(circle, rgba(13,155,122,0.08) 0%, transparent 70%)' }}
+        />
       </div>
-    </motion.div>
-  </section>
-);
 
-const WorkflowSection = ({ t }) => (
-  <motion.section 
-    initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer}
-    className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-32"
-  >
-    <motion.div variants={fadeInUp} className="text-center mb-14 max-w-3xl mx-auto">
-      <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-        {t('workflow.eyebrow', 'كيف يعمل')}
-      </p>
-      <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-        {t('workflow.title', 'من التجهيز إلى النمو في 4 خطوات')}
-      </h2>
-    </motion.div>
-
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {[0, 1, 2, 3].map((idx) => (
-        <motion.div variants={fadeInUp} key={idx} className="rounded-[1.75rem] border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0B1120]/70 backdrop-blur-md p-8 text-start transition-all duration-300 hover:shadow-xl hover:border-emerald-500/30">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 mb-6">
-            <span className="text-lg font-black text-[#00e59b]">{`0${idx + 1}`}</span>
-          </div>
-          <h3 className="text-xl font-black text-slate-950 dark:text-white mb-3 tracking-tight">
-            {t(`workflow.steps.${idx}.title`)}
-          </h3>
-          <p className="text-base leading-relaxed text-slate-600 dark:text-slate-400">
-            {t(`workflow.steps.${idx}.text`)}
-          </p>
-        </motion.div>
-      ))}
-    </div>
-  </motion.section>
-);
-
-const PillarsSection = ({ t }) => (
-  <motion.section 
-    initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer}
-    className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-32"
-  >
-    <motion.div variants={fadeInUp} className="text-center mb-16 max-w-3xl mx-auto">
-      <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-        {t('pillars.eyebrow', 'الركائز الأساسية')}
-      </p>
-      <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
-        {t('pillars.title', 'من أول فاتورة إلى إدارة التشغيل')}
-      </h2>
-      <p className="mt-5 text-lg leading-relaxed text-slate-500 dark:text-slate-400">
-        {t('pillars.subtitle', 'جزء يخدم العميل أمامك، وجزء يخدم التشغيل داخل النشاط، وكلاهما يتحركان معًا.')}
-      </p>
-    </motion.div>
-
-    <div className="grid gap-6 sm:grid-cols-2">
-      {PILLAR_SLUGS.map((slug) => {
-        const colors = PILLAR_COLORS[slug];
-        const Icon = PILLAR_ICONS[slug];
-
-        return (
-          <motion.article
-            variants={fadeInUp} key={slug}
-            className={`group relative overflow-hidden rounded-[2rem] border transition-all duration-500 hover:-translate-y-2 bg-white/70 backdrop-blur-xl ${colors.border} ${colors.shadow} ${colors.hoverShadow} ${colors.cardBg}`}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
+          
+          {/* Left Column (Content) */}
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="flex flex-col text-start"
           >
-            <div className="absolute top-8 bottom-8 end-4 sm:end-6 lg:end-10 w-1/2 overflow-hidden rounded-[1rem] pointer-events-none opacity-40 dark:opacity-80 mix-blend-screen transition-opacity duration-500 group-hover:opacity-100 flex items-center justify-end">
-              <div className="absolute inset-y-0 start-0 w-24 bg-gradient-to-r from-white dark:from-[#0B1120] to-transparent z-10" />
-              <img src={colors.image} alt="Dashboard UI" className="h-full w-auto object-cover object-left opacity-90 brightness-[1.8] contrast-125" />
-            </div>
-
-            <div className="relative z-20 flex flex-col h-full min-h-[16rem] p-6 sm:p-8 sm:pe-[40%] text-start">
-              <div className={`flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-[1.25rem] border transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3 ${colors.iconBorder} ${colors.iconShadow} ${colors.iconBg} ${colors.iconText}`}>
-                <Icon className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={1.5} />
-              </div>
-
-              <div className="mt-8 mb-4">
-                <h3 className="text-xl font-black text-slate-900 dark:text-white sm:text-[1.5rem] tracking-tight leading-snug">
-                  {t(`pillars.${slug}.title`)}
-                </h3>
-                <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300 w-full md:w-[90%]">
-                  {t(`pillars.${slug}.summary`)}
-                </p>
-              </div>
-            </div>
-          </motion.article>
-        );
-      })}
-    </div>
-  </motion.section>
-);
-
-const PathsSection = ({ t }) => (
-  <motion.section 
-    initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={staggerContainer}
-    className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-32"
-  >
-    <motion.div variants={fadeInUp} className="rounded-[2.5rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1120] p-8 sm:p-12 shadow-2xl shadow-black/5 dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-      <div className="max-w-3xl text-start">
-        <p className="text-sm font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-          {t('paths.eyebrow', 'ابدأ من الجزء الأقرب لاحتياجك')}
-        </p>
-        <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-          {t('paths.title', 'اختر المسار الذي يشبه طريقة عمل نشاطك الآن')}
-        </h2>
-        <p className="mt-4 text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-          {t('paths.subtitle', 'إذا كان تركيزك الآن على المبيعات، أو المخزون، أو الأقساط، أو المتجر الإلكتروني، ستجد صفحة تبدأ من نفس الزاوية التي تفكر منها.')}
-        </p>
-      </div>
-
-      <motion.div variants={staggerContainer} className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {seoLandingCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <motion.div variants={fadeInUp} key={card.path}>
-              <Link to={card.path} className="group block h-full rounded-[1.75rem] border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-6 text-start transition-all duration-300 hover:-translate-y-1 hover:bg-white dark:hover:bg-white/[0.04] hover:border-slate-300 dark:hover:border-white/15 hover:shadow-xl dark:hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                <div className="inline-flex rounded-2xl bg-slate-900 dark:bg-white/10 p-3.5 text-white transition-transform group-hover:scale-110">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <p className="mt-6 text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{card.eyebrow}</p>
-                <h3 className="mt-2.5 text-xl font-black text-slate-950 dark:text-white">{card.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-400">{card.description}</p>
-              </Link>
+            {/* Eyebrow Pill */}
+            <motion.div variants={revealVariants} className="inline-flex items-center self-start rounded-full border border-[color:var(--c-teal-md)] bg-[color:var(--c-teal-lt)] px-4 py-1.5 shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--c-teal)] opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[color:var(--c-teal)]"></span>
+              </span>
+              <span className="ms-2 font-display text-[13px] font-[600] text-[color:var(--c-teal)]">
+                {t('hero.eyebrow')}
+              </span>
             </motion.div>
-          );
-        })}
-      </motion.div>
-    </motion.div>
-  </motion.section>
-);
 
-const CtaSection = ({ t }) => (
-  <motion.section 
-    initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeInUp}
-    className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-32"
-  >
-    <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-950 border border-slate-800 dark:border-white/10 px-6 py-14 text-center text-white shadow-[0_32px_90px_rgba(15,23,42,0.18)] sm:px-12 sm:py-20">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(0,229,155,0.15)_0%,_transparent_70%)] pointer-events-none" />
-      
-      <div className="relative z-10">
-        <p className="text-sm font-black uppercase tracking-[0.2em] text-[#00e59b]">
-          {t('finalCta.eyebrow', 'الخطوة التالية')}
-        </p>
-        <h2 className="mt-5 text-4xl font-black leading-[1.15] tracking-tight sm:text-5xl">
-          {t('finalCta.title', 'جاهز لتجربة PayQusta؟')}
-        </h2>
-        <p className="mt-6 mx-auto max-w-2xl text-lg leading-relaxed text-slate-400">
-          {t('finalCta.description', 'الواجهة العامة تعرّف العميل بالبراند بسرعة، والمتجر يساعده على الطلب، بينما يظل التشغيل الداخلي مرتبًا لفريقك.')}
-        </p>
-        <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
-          <Link to="/login?mode=register" className="inline-flex items-center justify-center rounded-full bg-[#00e59b] px-8 py-4 text-base font-black text-slate-950 shadow-[0_0_30px_rgba(0,229,155,0.4)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_45px_rgba(0,229,155,0.6)]">
-            {t('finalCta.cta', 'أنشئ حسابك')}
-          </Link>
-          <Link to="/features" className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-4 text-base font-black text-white transition-all duration-300 hover:bg-white/10">
-            {t('finalCta.explore', 'استكشف المزايا')}
-          </Link>
+            {/* H1 Title */}
+            <motion.h1 
+              variants={revealVariants}
+              className="mt-8 font-display text-[clamp(2.25rem,4.5vw,3.625rem)] font-[900] leading-[1.18] text-[color:var(--c-navy)]"
+            >
+              {isRtl ? (
+                <>
+                  برنامج <span className="relative text-[color:var(--c-teal)]">نقطة البيع<span className="absolute -bottom-1 left-0 h-[3px] w-full rounded-sm bg-gradient-to-r from-[color:var(--c-teal)] to-[color:var(--c-accent)]"></span></span> <br /> 
+                  والمتجر الإلكتروني <br /> 
+                  في منصة واحدة
+                </>
+              ) : (
+                <>
+                  Unified <span className="relative text-[color:var(--c-teal)]">POS<span className="absolute -bottom-1 left-0 h-[3px] w-full rounded-sm bg-gradient-to-r from-[color:var(--c-teal)] to-[color:var(--c-accent)]"></span></span> <br /> 
+                  & E-commerce <br /> 
+                  Platform
+                </>
+              )}
+            </motion.h1>
+
+            {/* Description */}
+            <motion.p 
+              variants={revealVariants}
+              className="mt-8 max-w-[500px] font-body text-[17px] leading-[1.85] text-[color:var(--c-text2)]"
+            >
+              {t('hero.description')}
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div variants={revealVariants} className="mt-10 flex flex-wrap gap-4">
+              <Link 
+                to="/login?mode=register"
+                className="group flex items-center gap-2 rounded-[var(--r-md)] bg-[color:var(--c-accent)] px-7 py-3.5 font-display text-[15px] font-[700] text-[color:var(--c-navy)] shadow-[var(--shadow-teal)] transition-all hover:translate-y-[-2px] hover:bg-[#00d494] hover:shadow-[0_12px_40px_rgba(0,229,160,0.35)]"
+              >
+                {t('hero.cta')}
+                <svg className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${isRtl ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+              <button className="flex items-center gap-2 rounded-[var(--r-md)] border-[1.5px] border-[color:var(--c-border2)] bg-[color:var(--c-surface)] px-7 py-3.5 font-display text-[15px] font-[600] text-[color:var(--c-navy)] transition-all hover:border-[color:var(--c-teal)] hover:bg-[color:var(--c-teal-lt)] hover:text-[color:var(--c-teal)]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--c-teal-lt)] text-[color:var(--c-teal)]">
+                  <div className="h-0 w-0 border-y-[4px] border-y-transparent border-s-[7px] border-s-current ms-0.5" />
+                </div>
+                {t('hero.demo')}
+              </button>
+            </motion.div>
+
+            {/* Micro-copy */}
+            <motion.div variants={revealVariants} className="mt-8 flex flex-wrap gap-6">
+              {t('hero.microCopy', { returnObjects: true })?.map((text, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--c-teal-lt)]">
+                    <svg className="h-2.5 w-2.5 text-[color:var(--c-teal)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  </div>
+                  <span className="font-body text-[12px] text-[color:var(--c-text3)]">{text}</span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Stats Row */}
+            <motion.div 
+              variants={revealVariants}
+              className="mt-12 flex flex-wrap gap-12 border-t border-[color:var(--c-border)] pt-8"
+            >
+              {Object.entries(t('hero.stats', { returnObjects: true }) || {}).map(([key, stat]) => (
+                <div key={key}>
+                  <div className="font-display text-[28px] font-[800] text-[color:var(--c-teal)]">{stat.value}</div>
+                  <div className="font-body text-[13px] text-[color:var(--c-text3)]">{stat.label}</div>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Right Column (Visual) */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
+            className="relative flex justify-center"
+          >
+            {/* Main Dashboard Card */}
+            <div className="relative z-10 w-full max-w-[420px] rounded-[var(--r-xl)] bg-[color:var(--c-navy)] p-7 shadow-[var(--shadow-lg)]">
+              <div className="flex items-center justify-between">
+                <span className="font-display text-[15px] font-[900] text-white">PayQuota</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,229,160,0.3)] bg-[rgba(0,229,160,0.15)] px-3 py-1 text-[11px] font-bold text-[color:var(--c-accent)]">
+                   <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--c-accent)]"></span>
+                   {t('hero.card.live')}
+                </span>
+              </div>
+
+              {/* Metric Card */}
+              <div className="mt-8 rounded-[var(--r-md)] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] p-5">
+                <div className="text-[12px] text-[rgba(255,255,255,0.5)]">{t('hero.card.salesTitle')}</div>
+                <div className="mt-1 flex items-end justify-between">
+                   <div className="font-display text-[22px] font-[800] text-white">{t('hero.card.salesValue')}</div>
+                   <div className="rounded-md bg-[rgba(0,229,160,0.12)] px-2 py-0.5 text-[12px] font-[700] text-[color:var(--c-accent)]">{t('hero.card.salesChange')}</div>
+                </div>
+
+                {/* Bar Chart Mockup */}
+                <div className="mt-6 flex h-[60px] items-end gap-1.5">
+                   {[40, 55, 45, 70, 60, 90, 75].map((h, i) => (
+                     <motion.div 
+                       key={i}
+                       initial={{ scaleY: 0 }}
+                       animate={{ scaleY: 1 }}
+                       transition={{ duration: 1, delay: 0.5 + (i * 0.05), ease: "easeOut" }}
+                       style={{ height: `${h}%` }}
+                       className={`w-full rounded-t-[4px] ${i === 5 ? 'bg-[color:var(--c-accent)]' : 'bg-[rgba(255,255,255,0.12)]'}`}
+                     />
+                   ))}
+                </div>
+              </div>
+
+              <div className="my-6 h-[1px] bg-[rgba(255,255,255,0.08)]" />
+
+              {/* Branch Data */}
+              <div className="flex flex-col gap-4">
+                {t('hero.card.branches', { returnObjects: true })?.map((branch, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <div className={`h-2 w-2 rounded-full ${i === 0 ? 'bg-[color:var(--c-accent)]' : i === 1 ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                       <span className="text-[13px] text-white/70">{branch.name}</span>
+                    </div>
+                    <span className="font-display text-[13px] font-bold text-white">{branch.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Floating Cards */}
+            <motion.div 
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className={`absolute -top-6 ${isRtl ? 'left-4' : 'right-4'} z-20 flex gap-3 rounded-[var(--r-md)] border border-[color:var(--c-border)] bg-[color:var(--c-surface)] p-3.5 shadow-[var(--shadow-md)]`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--c-teal-lt)] text-[20px]">📦</div>
+              <div>
+                 <div className="text-[11px] text-[color:var(--c-text3)]">{t('hero.card.inventory.label')}</div>
+                 <div className="font-display text-[13px] font-bold text-[color:var(--c-navy)]">{t('hero.card.inventory.value')}</div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, delay: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className={`absolute -bottom-6 ${isRtl ? 'right-0' : 'left-0'} z-20 flex gap-3 rounded-[var(--r-md)] border border-[color:var(--c-border)] bg-[color:var(--c-surface)] p-3.5 shadow-[var(--shadow-md)]`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-[20px]">💳</div>
+              <div>
+                 <div className="text-[11px] text-[color:var(--c-text3)]">{t('hero.card.installments.label')}</div>
+                 <div className="font-display text-[13px] font-bold text-[color:var(--c-navy)]">{t('hero.card.installments.value')}</div>
+              </div>
+            </motion.div>
+          </motion.div>
+
         </div>
       </div>
-    </div>
-  </motion.section>
-);
+    </section>
+  );
+};
+
+const TrustBar = ({ t }) => {
+  return (
+     <div className="trust-bar border-y border-[color:var(--c-border)] bg-[color:var(--c-surface)] py-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8 px-4 sm:px-6 lg:px-8">
+           <div className="font-display text-[12px] font-[600] uppercase tracking-[0.08em] text-[color:var(--c-text3)]">
+              {t('trust.label')}
+           </div>
+           
+           <div className="flex flex-wrap items-center gap-8 md:gap-12">
+              {t('trust.brands', { returnObjects: true })?.map((brand, i) => (
+                <div key={i} className="font-display text-[14px] font-[700] text-[color:var(--c-text3)] opacity-60 transition-all hover:text-[color:var(--c-navy)] hover:opacity-100">
+                  {brand}
+                </div>
+              ))}
+           </div>
+
+           <div className="flex items-center gap-2">
+              <div className="flex text-[color:var(--c-amber)]">★★★★★</div>
+              <div className="font-display text-[13px] font-[600] text-[color:var(--c-text2)]">
+                {t('trust.rating')}
+              </div>
+           </div>
+        </div>
+     </div>
+  );
+};
+
+const HowItWorks = ({ t, isRtl }) => {
+  return (
+    <section className="how-it-works relative bg-[color:var(--c-bg)] py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
+          className="text-center"
+        >
+          <motion.div variants={revealVariants} className="font-display text-[14px] font-[600] uppercase tracking-[0.08em] text-[color:var(--c-teal)]">
+            {t('workflow.eyebrow')}
+          </motion.div>
+          <motion.h2 variants={revealVariants} className="mt-4 font-display text-[32px] font-[900] tracking-tight text-[color:var(--c-navy)] sm:text-[40px]">
+            {t('workflow.title')}
+          </motion.h2>
+        </motion.div>
+
+        <div className="relative mt-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Connecting Line (Desktop) */}
+          <div className="absolute top-10 left-[12%] right-[12%] z-0 hidden h-[1px] bg-gradient-to-r from-[color:var(--c-teal-md)] via-[color:var(--c-teal)] to-[color:var(--c-teal-md)] lg:block" />
+
+          {t('workflow.steps', { returnObjects: true })?.map((step, i) => (
+            <motion.div 
+              key={i}
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+              className="relative z-10 rounded-[var(--r-lg)] border border-[color:var(--c-border)] bg-[color:var(--c-surface)] p-8 transition-all hover:-translate-y-1 hover:border-[color:var(--c-teal-md)] hover:shadow-[var(--shadow-md)]"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--c-teal)] font-display text-[18px] font-[800] text-white shadow-[0_4px_16px_rgba(13,155,122,0.35)]">
+                {step.number}
+              </div>
+              <div className="mt-6 text-[24px]">
+                {i === 0 ? '📝' : i === 1 ? '🏪' : i === 2 ? '🛒' : '📈'}
+              </div>
+              <h3 className="mt-4 font-display text-[18px] font-[700] text-[color:var(--c-navy)]">
+                {step.title}
+              </h3>
+              <p className="mt-3 font-body text-[14px] leading-relaxed text-[color:var(--c-text2)]">
+                {step.text}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Features = ({ t, isRtl }) => {
+  const pillars = ['pos', 'inventory', 'installments', 'store'];
+  const colors = {
+    pos: 'teal',
+    inventory: 'amber',
+    installments: 'blue',
+    store: 'purple'
+  };
+  const icons = { pos: '🏪', inventory: '📦', installments: '💳', store: '🛒' };
+
+  return (
+    <section className="features bg-[color:var(--c-surface)] py-24 sm:py-32" id="features">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {pillars.map((key) => (
+            <motion.div 
+               key={key}
+               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+               className="group relative overflow-hidden rounded-[var(--r-xl)] border border-[color:var(--c-border)] bg-[color:var(--c-bg)] p-8 transition-all hover:-translate-y-1 hover:border-[color:var(--c-teal-md)] hover:shadow-[var(--shadow-md)]"
+            >
+               <div className={`flex h-14 w-14 items-center justify-center rounded-[var(--r-md)] border text-[24px] ${
+                 key === 'pos' ? 'border-[color:var(--c-teal-md)] bg-[color:var(--c-teal-lt)]' : 
+                 key === 'inventory' ? 'border-amber-200 bg-amber-50' : 
+                 key === 'installments' ? 'border-blue-200 bg-blue-50' : 'border-purple-200 bg-purple-50'
+               }`}>
+                 {icons[key]}
+               </div>
+               
+               <h3 className="mt-6 font-display text-[20px] font-[700] text-[color:var(--c-navy)]">
+                 {t(`pillars.${key}.title`)}
+               </h3>
+               <p className="mt-4 font-body text-[15px] leading-relaxed text-[color:var(--c-text2)]">
+                 {t(`pillars.${key}.body`)}
+               </p>
+
+               <div className="mt-6 flex items-center justify-between">
+                  <div className="rounded-full border border-[color:var(--c-border)] bg-[color:var(--c-surface)] px-3 py-1 font-display text-[13px] font-[700] text-[color:var(--c-teal)]">
+                    {t(`pillars.${key}.stat`)}
+                  </div>
+                  <div className="flex gap-2">
+                    {t(`pillars.${key}.tags`, { returnObjects: true })?.map((tag, i) => (
+                      <span key={i} className="rounded-full border border-[color:var(--c-teal-md)] bg-[color:var(--c-teal-lt)] px-3 py-0.5 font-body text-[12px] font-[600] text-[color:var(--c-teal)]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+               </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const WhyPayQuota = ({ t, isRtl }) => {
+  return (
+    <section className="why-us relative overflow-hidden bg-[color:var(--c-navy)] py-24 sm:py-32" id="why-us">
+      {/* Background Orb */}
+      <div 
+        className="absolute -left-[10%] top-[10%] h-[400px] w-[400px] rounded-full blur-[100px]"
+        style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 70%)' }}
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
+          
+          {/* Left: Content */}
+          <motion.div 
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
+            className="text-start"
+          >
+            <motion.div variants={revealVariants} className="inline-flex rounded-full border border-[rgba(0,229,160,0.25)] bg-[rgba(0,229,160,0.1)] px-4 py-1.5 font-display text-[13px] font-[600] text-[color:var(--c-accent)]">
+               {t('whyPayQuota.eyebrow')}
+            </motion.div>
+            <motion.h2 variants={revealVariants} className="mt-6 font-display text-[32px] font-[900] leading-tight text-white sm:text-[40px]">
+               {t('whyPayQuota.title')}
+            </motion.h2>
+            <motion.p variants={revealVariants} className="mt-4 font-body text-[16px] leading-[1.65] text-white/60">
+               {t('whyPayQuota.subtitle')}
+            </motion.p>
+
+            <div className="mt-10 grid gap-6">
+               {t('whyPayQuota.items', { returnObjects: true })?.map((item, i) => (
+                 <motion.div key={i} variants={revealVariants} className="flex gap-4">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[rgba(0,229,160,0.3)] bg-[rgba(0,229,160,0.15)] text-[color:var(--c-accent)] font-bold">✓</div>
+                    <div>
+                       <h4 className="font-display text-[15px] font-[700] text-white">{item.title}</h4>
+                       <p className="mt-1 font-body text-[14px] leading-relaxed text-white/55">{item.body}</p>
+                    </div>
+                 </motion.div>
+               ))}
+            </div>
+          </motion.div>
+
+          {/* Right: Comparison Table */}
+          <motion.div 
+             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+             className="rounded-[var(--r-xl)] border border-white/10 bg-white/5 p-1 shadow-2xl"
+          >
+             <div className="overflow-hidden rounded-[calc(var(--r-xl)-4px)]">
+                <table className="w-full text-[14px]">
+                   <thead className="bg-white/5 border-b border-white/10">
+                      <tr>
+                         <th className="py-4 ps-6 text-start font-display text-[12px] font-bold uppercase tracking-wider text-white/40">{t('whyPayQuota.comparison.label')}</th>
+                         <th className="py-4 text-center font-display text-[12px] font-bold uppercase tracking-wider text-white/40">{t('whyPayQuota.comparison.competitors')}</th>
+                         <th className="py-4 pe-6 text-center font-display text-[12px] font-bold uppercase tracking-wider text-[color:var(--c-accent)]">{t('whyPayQuota.comparison.payQuota')}</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-white/10">
+                      {t('whyPayQuota.comparison.rows', { returnObjects: true })?.map((row, i) => (
+                        <tr key={i} className="transition-colors hover:bg-white/5">
+                           <td className="py-4 ps-6 text-start font-body font-[600] text-white/80">{row}</td>
+                           <td className="py-4 text-center text-[18px] opacity-25">✗</td>
+                           <td className="py-4 pe-6 text-center text-[18px] font-bold text-[color:var(--c-accent)]">✓</td>
+                        </tr>
+                      ))}
+                   </tbody>
+                </table>
+             </div>
+          </motion.div>
+
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Pricing = ({ t, isRtl }) => {
+  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'annual'
+
+  return (
+    <section className="pricing bg-[color:var(--c-bg)] py-24 sm:py-32" id="pricing">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
+          <div className="font-display text-[14px] font-[600] uppercase tracking-[0.08em] text-[color:var(--c-teal)]">
+            {t('pricing.eyebrow')}
+          </div>
+          <h2 className="mt-4 font-display text-[32px] font-[900] tracking-tight text-[color:var(--c-navy)] sm:text-[40px]">
+            {t('pricing.title')}
+          </h2>
+        </motion.div>
+
+        {/* Toggle */}
+        <div className="mt-10 flex justify-center">
+          <div className="relative flex rounded-full border border-[color:var(--c-border)] bg-[color:var(--c-surface)] p-1">
+            <button 
+              onClick={() => setBillingCycle('monthly')}
+              className={`relative z-10 rounded-full px-6 py-2 font-display text-[14px] font-[600] transition-all ${billingCycle === 'monthly' ? 'text-white' : 'text-[color:var(--c-text2)]'}`}
+            >
+              {t('pricing.toggle.monthly')}
+            </button>
+            <button 
+              onClick={() => setBillingCycle('annual')}
+              className={`relative z-10 rounded-full px-6 py-2 font-display text-[14px] font-[600] transition-all ${billingCycle === 'annual' ? 'text-white' : 'text-[color:var(--c-text2)]'}`}
+            >
+              {t('pricing.toggle.annual')}
+            </button>
+            <motion.div 
+               animate={{ x: billingCycle === 'monthly' ? (isRtl ? '100%' : '0%') : (isRtl ? '0%' : '100%') }}
+               className="absolute top-1 bottom-1 start-1 w-[calc(50%-4px)] rounded-full bg-[color:var(--c-navy)]"
+            />
+          </div>
+          {billingCycle === 'annual' && (
+            <div className="ms-4 flex items-center gap-1.5 rounded-full bg-[color:var(--c-teal-lt)] px-3 py-1 font-display text-[12px] font-[700] text-[color:var(--c-teal)] scale-95">
+               {t('pricing.toggle.save')}
+            </div>
+          )}
+        </div>
+
+        {/* Plans Grid */}
+        <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {['starter', 'growth', 'enterprise'].map((planKey) => {
+            const plan = t(`pricing.plans.${planKey}`, { returnObjects: true });
+            const isFeatured = planKey === 'growth';
+
+            return (
+              <motion.div 
+                 key={planKey}
+                 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+                 className={`relative flex flex-col rounded-[var(--r-xl)] border p-8 text-start transition-all ${
+                   isFeatured ? 'border-[color:var(--c-teal)] bg-[color:var(--c-surface)] shadow-[var(--shadow-lg)] scale-105 z-10' : 'border-[color:var(--c-border)] bg-[color:var(--c-surface)] shadow-[var(--shadow-sm)]'
+                 }`}
+              >
+                 {isFeatured && (
+                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--c-teal)] px-4 py-1 font-display text-[12px] font-[700] text-white">
+                      {plan.badge}
+                   </div>
+                 )}
+                 <h3 className="font-display text-[18px] font-[700] text-[color:var(--c-navy)]">{plan.name}</h3>
+                 <div className="mt-6 flex items-baseline gap-1">
+                    <span className="font-display text-[36px] font-[900] text-[color:var(--c-navy)]">
+                       {planKey === 'enterprise' ? plan.price.monthly : plan.price[billingCycle]}
+                    </span>
+                    {planKey !== 'enterprise' && <span className="font-body text-[14px] text-[color:var(--c-text3)]">ر.س / {t('pricing.toggle.monthly')}</span>}
+                 </div>
+                 <p className="mt-2 font-body text-[13px] text-[color:var(--c-text3)]">{plan.period}</p>
+
+                 <div className="mt-8 flex flex-col gap-4">
+                    {plan.features?.map((feat, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                         <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--c-teal-lt)] text-[color:var(--c-teal)]">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                         </div>
+                         <span className="font-body text-[14px] text-[color:var(--c-text2)]">{feat}</span>
+                      </div>
+                    ))}
+                 </div>
+
+                 <div className="mt-auto pt-10">
+                    <Link 
+                      to="/login?mode=register"
+                      className={`block w-full rounded-[var(--r-md)] py-4 text-center font-display text-[15px] font-[700] transition-all ${
+                        isFeatured 
+                          ? 'bg-[color:var(--c-teal)] text-white shadow-[var(--shadow-teal)] hover:bg-[color:var(--c-navy)]' 
+                          : 'border-[1.5px] border-[color:var(--c-border2)] bg-transparent text-[color:var(--c-navy)] hover:border-[color:var(--c-teal)] hover:bg-[color:var(--c-teal-lt)]'
+                      }`}
+                    >
+                      {plan.cta}
+                    </Link>
+                 </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Testimonials = ({ t, isRtl }) => {
+  const gradients = [
+    'from-[#0D9B7A] to-[#00E5A0]',
+    'from-[#3B82F6] to-[#8B5CF6]',
+    'from-[#F59E0B] to-[#EF4444]'
+  ];
+
+  return (
+    <section className="testimonials bg-[color:var(--c-surface)] py-24 sm:py-32" id="testimonials">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <div className="font-display text-[14px] font-[600] uppercase tracking-[0.08em] text-[color:var(--c-teal)]">
+            {t('testimonials.eyebrow')}
+          </div>
+          <h2 className="mt-4 font-display text-[32px] font-[900] tracking-tight text-[color:var(--c-navy)] sm:text-[40px]">
+             {t('testimonials.title')}
+          </h2>
+        </div>
+
+        <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {t('testimonials.items', { returnObjects: true })?.map((item, i) => (
+             <motion.div 
+                key={i}
+                initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+                className="rounded-[var(--r-xl)] border border-[color:var(--c-border)] bg-[color:var(--c-bg)] p-8 transition-all hover:border-[color:var(--c-teal-md)] hover:shadow-[var(--shadow-md)]"
+             >
+                <div className="flex gap-1 text-[color:var(--c-amber)] text-[14px] tracking-wider">★★★★★</div>
+                <p className="mt-6 font-body text-[15px] italic leading-[1.8] text-[color:var(--c-text2)]">
+                   "{item.quote}"
+                </p>
+                <div className="mt-8 flex items-center gap-4">
+                   <div className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br ${gradients[i]} font-display text-[16px] font-[800] text-white`}>
+                      {item.initials}
+                   </div>
+                   <div>
+                      <div className="font-display text-[14px] font-[700] text-[color:var(--c-navy)]">{item.name}</div>
+                      <div className="font-body text-[12px] text-[color:var(--c-text3)]">{item.role}</div>
+                   </div>
+                </div>
+             </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const Faq = ({ t, isRtl }) => {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  return (
+    <section className="faq bg-[color:var(--c-bg)] py-24 sm:py-32" id="faq">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-20 lg:grid-cols-[1fr,2fr]">
+          
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}>
+            <div className="font-display text-[14px] font-[600] uppercase tracking-[0.08em] text-[color:var(--c-teal)]">
+               {t('faq.eyebrow')}
+            </div>
+            <h2 className="mt-4 font-display text-[32px] font-[900] tracking-tight text-[color:var(--c-navy)]">
+               {t('faq.title')}
+            </h2>
+            <div className="mt-10 flex flex-col gap-4">
+               <button className="rounded-full bg-[color:var(--c-teal)] px-6 py-3 font-display text-[14px] font-[700] text-white shadow-[var(--shadow-teal)] hover:bg-[color:var(--c-navy)]">
+                  {t('faq.supportCta')}
+               </button>
+               <button className="rounded-full border border-[color:var(--c-border)] bg-[color:var(--c-surface)] px-6 py-3 font-display text-[14px] font-[700] text-[color:var(--c-navy)] hover:bg-[color:var(--c-teal-lt)] hover:text-[color:var(--c-teal)]">
+                  {t('faq.helpCenter')}
+               </button>
+            </div>
+          </motion.div>
+
+          <div className="flex flex-col gap-2">
+             {t('faq.items', { returnObjects: true })?.map((item, i) => (
+               <motion.div 
+                  key={i}
+                  initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+                  className="overflow-hidden rounded-[var(--r-md)] border border-[color:var(--c-border)] bg-[color:var(--c-surface)]"
+               >
+                  <button 
+                    onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                    className="flex w-full items-center justify-between p-6 text-start"
+                  >
+                    <span className="font-display text-[16px] font-[700] text-[color:var(--c-navy)]">{item.q}</span>
+                    <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--c-teal-lt)] text-[color:var(--c-teal)] transition-transform duration-300 ${openIndex === i ? 'rotate-180' : ''}`}>
+                       ▾
+                    </div>
+                  </button>
+                  <AnimatePresence>
+                    {openIndex === i && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.35, ease: "easeInOut" }}
+                      >
+                         <div className="px-6 pb-6 font-body text-[15px] leading-relaxed text-[color:var(--c-text2)] border-t border-[color:var(--c-border)] pt-4">
+                            {item.a}
+                         </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+               </motion.div>
+             ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const CtaBanner = ({ t, isRtl }) => {
+  return (
+    <section className="cta-banner relative bg-[color:var(--c-surface)] py-20 px-4 sm:px-6 lg:px-8">
+       <motion.div 
+          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={revealVariants}
+          className="relative mx-auto max-w-5xl overflow-hidden rounded-[var(--r-xl)] bg-[color:var(--c-navy)] py-16 px-8 text-center sm:py-20 sm:px-16"
+       >
+          {/* Decorative Orb */}
+          <div 
+             className="absolute top-0 left-1/2 -translate-x-1/2 h-[200px] w-full max-w-[500px] rounded-full blur-[80px]"
+             style={{ background: 'radial-gradient(circle, rgba(0,229,160,0.12) 0%, transparent 70%)' }}
+          />
+
+          <h2 className="relative z-10 font-display text-[clamp(28px,3.5vw,44px)] font-[900] leading-tight text-white">
+             {isRtl ? (
+               <>أدر تجارتك بشكل <span className="text-[color:var(--c-accent)]">أذكى</span> اليوم</>
+             ) : (
+               <>Manage Your Business <span className="text-[color:var(--c-accent)]">Smarter</span> Today</>
+             )}
+          </h2>
+          <p className="relative z-10 mt-6 font-body text-[16px] text-white/60">
+             {t('ctaBanner.subtitle')}
+          </p>
+
+          <div className="relative z-10 mt-10 flex flex-wrap justify-center gap-4">
+             <Link 
+               to="/login?mode=register"
+               className="rounded-full bg-[color:var(--c-accent)] px-8 py-4 font-display text-[15px] font-[700] text-[color:var(--c-navy)] shadow-[0_8px_32px_rgba(0,229,160,0.35)] transition-all hover:translate-y-[-2px] hover:bg-[#00d494]"
+             >
+                {t('ctaBanner.cta')}
+             </Link>
+             <button className="rounded-full border border-white/20 px-8 py-4 font-display text-[15px] font-[600] text-white transition-all hover:bg-white/10">
+                {t('ctaBanner.demo')}
+             </button>
+          </div>
+
+          <div className="relative z-10 mt-8 font-body text-[12px] text-[rgba(255,255,255,0.35)]">
+             {t('ctaBanner.microCopy')}
+          </div>
+       </motion.div>
+    </section>
+  );
+};
 
 /* -------------------------------------------------------------------------- */
 /*                                MAIN COMPONENT                              */
 /* -------------------------------------------------------------------------- */
 
 export default function PublicLandingPage() {
-  const { t } = useTranslation('public');
+  const { t, i18n } = useTranslation('public');
+  const isRtl = i18n.language === 'ar';
 
   return (
-    <main>
-      <HeroSection t={t} />
-      {/* Product Marketing Re-sort: How it Works -> Core Pillars -> Use Cases -> CTA */}
-      <WorkflowSection t={t} />
-      <PillarsSection t={t} />
-      <PathsSection t={t} />
-      <CtaSection t={t} />
-    </main>
+    <div className="landing-page font-body">
+      <HeroSection t={t} isRtl={isRtl} />
+      <TrustBar t={t} />
+      <HowItWorks t={t} isRtl={isRtl} />
+      <Features t={t} isRtl={isRtl} />
+      <WhyPayQuota t={t} isRtl={isRtl} />
+      <Pricing t={t} isRtl={isRtl} />
+      <Testimonials t={t} isRtl={isRtl} />
+      <Faq t={t} isRtl={isRtl} />
+      <CtaBanner t={t} isRtl={isRtl} />
+    </div>
   );
 }
+
+

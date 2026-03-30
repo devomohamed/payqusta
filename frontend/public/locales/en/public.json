@@ -3,125 +3,280 @@
     "home": "Home",
     "features": "Features",
     "pricing": "Pricing",
-    "demo": "Demo",
-    "useCases": "Use Cases",
-    "howItWorks": "How It Works",
+    "whyUs": "Why PayQuota",
+    "testimonials": "Testimonials",
     "faq": "FAQ",
-    "contact": "Contact",
-    "privacy": "Privacy",
-    "terms": "Terms"
+    "blog": "Blog"
   },
   "nav": {
-    "login": "Sign In",
-    "startNow": "Start Free"
+    "login": "Login",
+    "startFree": "Start Free"
   },
   "hero": {
-    "badge": "Smart Operating Platform for Modern Stores",
-    "title": "Run your store. Track sales. Collect installments.",
-    "subtitle": "Everything you need to manage sales, inventory, installments, and your online store — in one unified platform that works from day one.",
-    "cta": "Start for Free",
-    "learnMore": "See How It Works"
-  },
-  "pillars": {
-    "eyebrow": "Everything in One Place",
-    "title": "Four Pillars to Build Your Business On",
-    "subtitle": "No need for scattered tools — sales, inventory, installments, and your storefront move together seamlessly.",
-    "sales": {
-      "title": "Faster Sales & Smarter Invoices",
-      "summary": "Create invoices in seconds, track every payment, and link sales to inventory and customers automatically — no Excel sheets needed.",
-      "bullets": [
-        "Cash and installment invoices from one screen",
-        "Record partial and full payments instantly",
-        "Automatic syncing with inventory and customer records"
-      ]
+    "eyebrow": "Trusted by over 2,400 merchants in the region",
+    "title": "POS and E-commerce in One Unified Platform",
+    "description": "Manage your inventory, invoices, and installments — from POS to E-commerce — all in one place. Start your first sale within one day.",
+    "cta": "Start Free — No Credit Card",
+    "demo": "Watch Demo",
+    "microCopy": [
+      "Cancel anytime, no contracts",
+      "14-day free trial",
+      "24/7 Arabic support"
+    ],
+    "stats": {
+      "merchants": { "value": "+2,400", "label": "Active Merchants" },
+      "satisfaction": { "value": "98%", "label": "Satisfaction Rate" },
+      "speed": { "value": "1 Day", "label": "To First Sale" }
     },
-    "inventory": {
-      "title": "Your Inventory, Always Under Control",
-      "summary": "Know what's moving and what's running low before you lose a sale — with smart alerts and real-time updates.",
-      "bullets": [
-        "Instant alerts for low stock levels",
-        "Manage images, prices, and details centrally",
-        "Smart organization by categories and sections"
-      ]
-    },
-    "storefront": {
-      "title": "An Online Store Working 24/7",
-      "summary": "A professional storefront that showcases your products and accepts orders — even while you sleep. Linked directly to your real inventory.",
-      "bullets": [
-        "Clean product pages ready to share",
-        "Shopping cart and direct mobile ordering",
-        "Automatic syncing with inventory and shipping"
-      ]
-    },
-    "installments": {
-      "title": "Clear Installments & Painless Collection",
-      "summary": "Track who paid, who's late, and when the next installment is due — everything is in front of you instead of scattered spreadsheets.",
-      "bullets": [
-        "Flexible payment schedules linked to invoices",
-        "Instant view of overdue customers",
-        "Clear collection metrics ready for export"
+    "card": {
+      "live": "Live",
+      "salesTitle": "Total Sales — This Month",
+      "salesValue": "84,230 SAR",
+      "salesChange": "↑ 23%",
+      "inventory": { "label": "Inventory", "value": "1,248 Items" },
+      "installments": { "label": "Collections", "value": "Automatic ✓" },
+      "branches": [
+        { "name": "Riyadh Branch — Al Malqa", "value": "32,100 SAR" },
+        { "name": "Jeddah Branch — Al Aruba", "value": "28,450 SAR" },
+        { "name": "E-commerce Store", "value": "23,680 SAR" }
       ]
     }
   },
+  "trust": {
+    "label": "Trusted By",
+    "brands": ["Noon Retail", "Al Sharq Restaurants", "Gulf Fashion", "Store Pro", "Al Fardan Group"],
+    "rating": "4.9 / 5 — G2 Reviews"
+  },
   "workflow": {
-    "eyebrow": "Ready in Minutes",
-    "title": "From Signup to First Sale in 4 Steps",
+    "eyebrow": "How It Works",
+    "title": "From Setup to Growth in 4 Steps",
     "steps": [
       {
-        "title": "Sign Up & Set Up",
-        "text": "One account is all you need. Add your store name, products, and categories — and start immediately."
+        "number": "1",
+        "title": "Register and Add Your Business Details",
+        "text": "Enter your name and store details in 2 minutes — no credit card required to start."
       },
       {
-        "title": "Start Selling Instantly",
-        "text": "Create invoices, record payments, and monitor sales from a single screen instead of multiple disjointed tools."
+        "number": "2",
+        "title": "Start Selling from Your First Invoice",
+        "text": "Add your products and choose your payment method — POS is ready to work instantly."
       },
       {
-        "title": "Launch Your Online Store",
-        "text": "Showcase your products in a professional storefront that customers can easily access and order from."
+        "number": "3",
+        "title": "Activate Your Online Store",
+        "text": "Choose shipping and payment providers — your inventory syncs automatically between branches and the store."
       },
       {
-        "title": "Track Growth & Decide Better",
-        "text": "Indicators and alerts tell you where sales are moving, what needs restocking, and who is late on payments."
+        "number": "4",
+        "title": "Monitor Growth and Make Smart Decisions",
+        "text": "Unified dashboard for all branches and the store — real-time reports and stock alerts."
       }
     ]
   },
-  "paths": {
-    "eyebrow": "Start From Your Strongest Angle",
-    "title": "Choose the Path That Fits Your Needs",
-    "subtitle": "Whether you focus on sales, inventory, installments, or your online store — you'll find a starting point designed exactly for you."
+  "pillars": {
+    "title": "Four Pillars of Success",
+    "pos": {
+      "title": "Smart POS for Every Branch",
+      "body": "Create unlimited points of sale for all your branches with a fast and simple interface.",
+      "stat": "⚡ Invoice in less than 8 seconds",
+      "tags": ["Barcode", "Multi-payment", "Unlimited Branches"]
+    },
+    "inventory": {
+      "title": "Inventory Always Under Control",
+      "body": "Real-time synchronization between POS and the store to ensure accurate stock at every moment.",
+      "stat": "📊 Stock accuracy up to 99.8%",
+      "tags": ["Real-time Sync", "Smart Alerts", "Daily Reports"]
+    },
+    "installments": {
+      "title": "Installments and Collections Without Manual Follow-up",
+      "body": "Offer installment options to your customers and collect payments automatically without manual intervention.",
+      "stat": "💰 98% Automatic Collection",
+      "tags": ["Tamara", "Tabby", "BNPL"]
+    },
+    "store": {
+      "title": "Online Store Working for You 24/7",
+      "body": "Choose from over 15 global and local shipping and payment providers to launch your store.",
+      "stat": "🌍 +15 Shipping & Payment Providers",
+      "tags": ["Aramex", "SMSA", "Mada", "Visa/MC"]
+    }
   },
-  "finalCta": {
-    "eyebrow": "Start Today",
-    "title": "Your store deserves a smarter system.",
-    "description": "Join over 1,000 merchants managing their sales, inventory, and installments effortlessly with PayQusta. Try it yourself for free.",
-    "cta": "Sign Up for Free",
-    "explore": "Explore Features"
+  "whyPayQuota": {
+    "eyebrow": "Why Us?",
+    "title": "More Than Just Billing Software",
+    "subtitle": "We are your partner in growth and scaling your business in the Saudi market and the region.",
+    "items": [
+      {
+        "title": "Multi-POS for Every Plan",
+        "body": "One plan covers multiple branches — no extra fees for each new point of sale."
+      },
+      {
+        "title": "Unified Inventory Between Branches and Store",
+        "body": "Real-time sync — what's sold in-store is instantly deducted from the online store."
+      },
+      {
+        "title": "Fully Integrated Installment Collection",
+        "body": "No external service needed — offer installments and collect automatically from the same platform."
+      },
+      {
+        "title": "24/7 Authentic Arabic Support",
+        "body": "Arabic support team that understands the local market and its requirements."
+      }
+    ],
+    "comparison": {
+      "label": "Feature",
+      "competitors": "Competitors",
+      "payQuota": "PayQuota",
+      "rows": [
+        "POS + Online Store in One Platform",
+        "Unified Inventory Between Branches",
+        "Integrated Installment Collection",
+        "Unlimited Branches on Same Plan",
+        "15+ Arabic Shipping/Payment Providers",
+        "24/7 Arabic Support"
+      ]
+    }
+  },
+  "pricing": {
+    "eyebrow": "Pricing",
+    "title": "A Plan for Every Stage of Your Growth",
+    "toggle": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save": "Save 20%"
+    },
+    "plans": {
+      "starter": {
+        "name": "Starter — Beginner",
+        "price": { "monthly": "199", "annual": "159" },
+        "period": "Billed Monthly",
+        "features": [
+          "1 Point of Sale",
+          "Full Online Store",
+          "Up to 500 Products",
+          "2 Shipping Providers",
+          "Basic Reports",
+          "Arabic Support"
+        ],
+        "cta": "Start Free"
+      },
+      "growth": {
+        "name": "Growth — Scale",
+        "price": { "monthly": "499", "annual": "399" },
+        "badge": "⭐ Most Popular",
+        "features": [
+          "Up to 5 Points of Sale",
+          "Advanced Online Store",
+          "Unlimited Products",
+          "All Shipping Providers",
+          "Integrated Collections",
+          "Advanced Reports",
+          "24/7 Priority Support"
+        ],
+        "cta": "Start Free — 14 Days"
+      },
+      "enterprise": {
+        "name": "Enterprise — Scale",
+        "price": { "monthly": "Custom Pricing", "annual": "Custom Pricing" },
+        "features": [
+          "Unlimited Points of Sale",
+          "Multiple Online Stores",
+          "Custom API and Integrations",
+          "Dedicated Account Manager",
+          "Guaranteed 99.9% SLA",
+          "Full Training and Onboarding"
+        ],
+        "cta": "Talk to Sales"
+      }
+    }
+  },
+  "testimonials": {
+    "eyebrow": "Testimonials",
+    "title": "Success Stories from Merchants Who Trust Us",
+    "items": [
+      {
+        "name": "Ahmed Al-Harthi",
+        "role": "Owner of Clothing Chain — Riyadh, 4 Branches",
+        "quote": "Before PayQuota, I was using 3 different programs and struggling with chaos. Now everything is in one place — my sales rose 35% in the first 3 months.",
+        "initials": "AA"
+      },
+      {
+        "name": "Sara Al-Rashidi",
+        "role": "Operations Manager — Online Store + 2 Branches, Jeddah",
+        "quote": "The inventory sync feature between the online store and our branches changed our way of working completely. No quantity issues, no angry customers.",
+        "initials": "SR"
+      },
+      {
+        "name": "Fahad Al-Ali",
+        "role": "Owner of Furniture Center — Dammam",
+        "quote": "Automatic installment collection saved me from hours of manual follow-up. Now 98% of my installments are collected automatically.",
+        "initials": "FA"
+      }
+    ]
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Everything You Need to Know About PayQuota",
+    "supportCta": "Talk to Support",
+    "helpCenter": "Browse Help Center",
+    "items": [
+      {
+        "q": "Can I create more than one point of sale on the same account?",
+        "a": "Yes, each plan allows a set number of POS terminals. The Starter plan starts with one, Growth up to 5, and Enterprise is unlimited."
+      },
+      {
+        "q": "Does inventory sync automatically between branches and the store?",
+        "a": "Yes, synchronization is instantaneous. Once a product is sold from any POS or the online store, the quantity is updated across all interfaces automatically."
+      },
+      {
+        "q": "Which shipping and payment providers are supported?",
+        "a": "We support over 15 shipping and payment providers, including Aramex, SMSA, Mada, Visa/Mastercard, plus support for Tamara and Tabby for installments."
+      },
+      {
+        "q": "Is there a contract or long-term commitment?",
+        "a": "Not at all. You can cancel at any time. Subscriptions are monthly or annual without long-term binding contracts."
+      },
+      {
+        "q": "Is PayQuota suitable for restaurants?",
+        "a": "Yes, we have a custom plan and add-ons that support the restaurant and cafe sector, including table and kitchen management."
+      },
+      {
+        "q": "How does the free trial work?",
+        "a": "You can try all the features of the system for 14 days for free without needing to enter your credit card details."
+      }
+    ]
+  },
+  "ctaBanner": {
+    "title": "Manage Your Business Smarter Today",
+    "subtitle": "Join over 2,400 merchants managing their business with ease and control.",
+    "cta": "Start Your 14-Day Free Trial",
+    "demo": "Watch Demo",
+    "microCopy": "✓ Cancel anytime · ✓ No credit card · ✓ 24/7 Support"
   },
   "footer": {
-    "cta": {
-      "badge": "Ready to Experience PayQusta?",
-      "title": "Build a stronger digital presence and manage your operations from one place.",
-      "description": "The website introduces customers to your store, and the internal system automatically connects sales to inventory and billing.",
-      "createAccount": "Sign Up for Free",
-      "explore": "Explore Features"
-    },
-    "nav": {
-      "title": "Navigation"
-    },
-    "trust": {
-      "title": "Trust & Policies",
-      "description": "Pages that help you understand our terms and privacy guidelines before you begin."
-    },
     "brand": {
-      "title": "About the Brand",
-      "description": "PayQusta is an integrated operational platform tailored for modern retail stores."
+      "desc": "The integrated platform for managing points of sale, inventory, and retail in the Arab world."
     },
-    "highlights": [
-      "Sales & Invoices linked to Inventory",
-      "Installments & Daily Collection tracking",
-      "E-commerce Store with Trackable Orders",
-      "Reports & Alerts to aid decision-making"
-    ],
-    "tagline": "Professional operating platform for stores — designed to work flawlessly on all devices."
+    "columns": {
+      "product": {
+        "title": "Product",
+        "links": ["Features", "Pricing", "POS", "E-commerce", "Inventory Management"]
+      },
+      "solutions": {
+        "title": "Solutions",
+        "links": ["Retail", "Restaurants", "Fashion", "Furniture", "Electronics"]
+      },
+      "company": {
+        "title": "Company",
+        "links": ["About Us", "Blog", "Jobs", "Press", "Success Partners"]
+      },
+      "support": {
+        "title": "Support",
+        "links": ["Help Center", "Contact Us", "FAQ", "System Status", "API"]
+      }
+    },
+    "bottom": {
+      "copyright": "PayQuota © 2026. All rights reserved.",
+      "links": ["Privacy", "Terms", "Cookies"]
+    }
   }
 }

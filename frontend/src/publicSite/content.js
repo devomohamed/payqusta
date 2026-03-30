@@ -2,10 +2,10 @@ export const publicNavLinks = [
   { to: '/', label: 'الرئيسية', i18nKey: 'navLinks.home' },
   { to: '/features', label: 'المزايا', i18nKey: 'navLinks.features' },
   { to: '/pricing', label: 'الأسعار', i18nKey: 'navLinks.pricing' },
-  { to: '/demo', label: 'الديمو', i18nKey: 'navLinks.demo' },
-  { to: '/use-cases', label: 'الحالات العملية', i18nKey: 'navLinks.useCases' },
-  { to: '/how-it-works', label: 'كيف يعمل', i18nKey: 'navLinks.howItWorks' },
-  { to: '/faq', label: 'الأسئلة الشائعة', i18nKey: 'navLinks.faq' },
+  { to: '/#why-us', label: 'لماذا PayQuota', i18nKey: 'navLinks.whyUs' },
+  { to: '/#testimonials', label: 'آراء العملاء', i18nKey: 'navLinks.testimonials' },
+  { to: '/#faq', label: 'الأسئلة الشائعة', i18nKey: 'navLinks.faq' },
+  { to: '/#blog', label: 'المدونة', i18nKey: 'navLinks.blog' },
 ];
 
 export const publicUtilityLinks = [

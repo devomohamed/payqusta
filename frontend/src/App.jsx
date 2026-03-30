@@ -20,7 +20,7 @@ const PublicSiteLayout = React.lazy(() => import('./publicSite/PublicSiteLayout'
 const StorefrontLayout = React.lazy(() => import('./storefront/StorefrontLayout'));
 const PortalLayout = React.lazy(() => import('./portal/PortalLayout'));
 const LoginPage = React.lazy(() => import('./pages/LoginPage'));
-const PublicLandingPage = React.lazy(() => import('./pages/PublicLandingPage'));
+const PublicLandingPage = React.lazy(() => import('./pages/PublicLandingPageV3'));
 const PublicFeaturesPage = React.lazy(() => import('./pages/PublicFeaturesPage'));
 const PublicUseCasesPage = React.lazy(() => import('./pages/PublicUseCasesPage'));
 const PublicHowItWorksPage = React.lazy(() => import('./pages/PublicHowItWorksPage'));
@@ -377,7 +377,7 @@ export default function App() {
                 <MainLayout />
               </ProtectedRoute>
             ) : (
-              <LazyLayoutRoute layout={PublicSiteLayout} component={PublicLandingPage} message="جاري تحميل الصفحة الرئيسية..." />
+              <LazyRoute component={PublicLandingPage} message="جاري تحميل الصفحة الرئيسية..." />
             )
           } />
           <Route path="/features" element={<LazyLayoutRoute layout={PublicSiteLayout} component={PublicFeaturesPage} message="جاري تحميل المزايا..." />} />
