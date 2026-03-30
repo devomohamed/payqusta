@@ -906,5 +906,12 @@ When work resumes, do this in order:
   - `backend/src/controllers/purchaseOrderController.js`
   - `backend/src/controllers/supplierReplenishmentRequestController.js`
   - `docs/shipping-stock-transfer-worklog.md`
+- 2026-03-29 follow-up:
+  - cleaned `frontend/src/pages/PortalOrderConfirmationPage.jsx` user-facing portal labels and fallbacks after a bad-encoding regression
+  - replaced visible `\\u...` labels with runtime Arabic labels via JSX expressions
+  - replaced raw `Branch X` with `فرع التنفيذ` on the order detail screen
+  - mapped raw carrier status codes such as `in_transit` to friendly Arabic labels
+  - normalized empty branch / tracking / shipping values to safe fallbacks instead of broken glyphs
+  - re-encoded the page source cleanly so `npm --prefix frontend run sanity:check` passes again
  
  
