@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { usePayQusta } from '../../context/PayQustaContext';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import { homepageCredibilityCopy } from '../../lib/payqusta-v3/homepage-config';
 
 /* ── Animated number counter hook ──────────────────────────────────────── */
 function useCountUp(target, duration = 1200, started) {
@@ -53,10 +54,11 @@ const MetricCard = ({ stat, started }) => {
 
 /* ── Metrics Section ─────────────────────────────────────────────────── */
 const Metrics = () => {
-  const { t } = usePayQusta();
+  const { t, lang } = usePayQusta();
   const reveal = useScrollReveal();
   const gridRef = useRef(null);
   const [started, setStarted] = useState(false);
+  const credibilityCopy = homepageCredibilityCopy[lang] || homepageCredibilityCopy.en;
 
   useEffect(() => {
     const el = gridRef.current;
@@ -79,6 +81,9 @@ const Metrics = () => {
           </span>
           <h2 className="v3-h2 text-v3-text mb-6">{t.metrics.h2}</h2>
           <p className="v3-body text-v3-text2 max-w-2xl mx-auto leading-relaxed">{t.metrics.sub}</p>
+          <p className="text-[12px] font-semibold text-v3-text3 max-w-2xl mx-auto mt-4">
+            {credibilityCopy.metrics.note}
+          </p>
         </header>
 
         {/*

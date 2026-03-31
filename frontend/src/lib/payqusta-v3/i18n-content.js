@@ -23,8 +23,8 @@ export const content = {
       h1Line1: 'بِع أكثر.',
       h1Line2: 'أدِر بذكاء.',
       h1Line3: 'انمُ بثقة.',
-      sub: 'منصة بيكوستا تجمع نقطة البيع الاحترافية، المتجر الإلكتروني، وإدارة المخزون في مكان واحد — دون خبرة تقنية، دون عمولات.',
-      ctaPrimary: 'ابدأ مجاناً — 14 يوم ←',
+      sub: 'منصة بيكوستا تجمع نقطة البيع، المتجر الإلكتروني، وإدارة المخزون في مسار تشغيل أوضح وأسهل للبدء.',
+      ctaPrimary: 'ابدأ الآن ←',
       ctaSecondary: 'شاهد كيف يعمل ▶',
       stats: [
         { num: '+5000', label: 'تاجر يثق بنا', accent: 'تاجر' },
@@ -40,9 +40,9 @@ export const content = {
     },
     trust: 'تكامل سلس مع',
     highlights: [
-      { title: 'بدون عمولات', desc: 'ادفع رسوماً ثابتة فقط - مبيعاتك كلها لك' },
+      { title: 'خطط أوضح', desc: 'اختر الباقة المناسبة لنشاطك مع تسعير أبسط ومسار بدء أوضح' },
       { title: 'يعمل بدون إنترنت', desc: 'POS يعمل أوفلاين ويتزامن تلقائياً' },
-      { title: 'آمن ومعتمد', desc: 'SSL كامل، PCI-DSS معتمد' },
+      { title: 'تشغيل آمن', desc: 'صلاحيات واضحة وسير عمل منظم يساعدك على إدارة التشغيل بثقة' },
       { title: 'فروع متعددة', desc: 'لوحة تحكم مركزية لجميع فروعك' },
     ],
     platform: {
@@ -99,7 +99,7 @@ export const content = {
     metrics: {
       tag: 'ثقتك معنا',
       h2: 'أرقام تتحدث عن نفسها',
-      sub: 'نحن فخورون بدعم آلاف التجار في رحلتهم نحو التحول الرقمي.',
+      sub: 'أمثلة توضيحية على نوع المؤشرات التي يمكن متابعتها مع نمو نشاطك.',
       items: [
         { num: '10K', span: '+', label: 'مستخدم نشط' },
         { num: '150M', span: 'ج.م', label: 'حجم العمليات' },
@@ -119,11 +119,11 @@ export const content = {
       ]
     },
     testimonials: {
-      h2: 'تجار يشاركونك تجربتهم',
+      h2: 'سيناريوهات استخدام من تجار مختلفين',
       items: [
-        { name: 'محمد علي', role: 'صاحب محل فاشن', company: 'بيكوستا غيرت طريقة إدارتي للمحل تماماً، الكاشير سريع جداً.', initials: 'م.ع' },
-        { name: 'أحمد محمود', role: 'مدير سوبر ماركت', company: 'إدارة المخزون والجرد أصبحت أسهل بكتير باستخدام الموبايل.', initials: 'أ.م' },
-        { name: 'سارة حسن', role: 'تاجرة إلكترونية', company: 'المتجر الإلكتروني احترافي جداً وساعدني أزود مبيعاتي 40%.', initials: 'س.ح' },
+        { name: 'محمد علي', role: 'صاحب محل فاشن', company: 'سيناريو لمتجر أزياء يحتاج سرعة أوضح في الكاشير وتنظيماً أفضل للمبيعات اليومية.', initials: 'م.ع' },
+        { name: 'أحمد محمود', role: 'مدير سوبر ماركت', company: 'سيناريو لسوبر ماركت يريد متابعة المخزون والجرد من الهاتف بشكل أبسط وأسرع.', initials: 'أ.م' },
+        { name: 'سارة حسن', role: 'تاجرة إلكترونية', company: 'سيناريو لتاجر إلكتروني يريد واجهة بيع أوضح ومتابعة أفضل للطلبات والقنوات.', initials: 'س.ح' },
       ]
     },
     pricing: {
@@ -163,22 +163,22 @@ export const content = {
     faq: {
       h2: 'الأسئلة الشائعة',
       items: [
-        { q: 'هل يمكنني تجربة المنصة مجاناً؟', a: 'نعم، نوفر فترة تجريبية مجانية لمدة 14 يوماً تشمل جميع المميزات.' },
-        { q: 'هل أحتاج لأجهزة معينة لتشغيل الكاشير؟', a: 'لا، بيكوستا يعمل على أي جهاز متصل بالإنترنت (تابلت، موبايل، أو كمبيوتر).' },
-        { q: 'هل يوجد عمولات على مبيعات المتجر؟', a: 'لا يوجد أي عمولات من بيكوستا على مبيعاتك، فقط اشتراك الباقة.' },
-        { q: 'كيف يمكنني التواصل مع الدعم الفني؟', a: 'فريق الدعم متاح 24/7 عبر المحادثة المباشرة، واتساب، أو الهاتف.' },
+        { q: 'كيف أبدأ التجهيز على بيكوستا؟', a: 'يمكنك البدء بإنشاء حساب، ثم إدخال بيانات المتجر أو الفرع الأول، ثم مراجعة الباقة المنشورة الأنسب لحجم التشغيل. وإذا أردت ترتيب المسار قبل البدء فيمكنك التواصل مع الفريق من صفحة التواصل.' },
+        { q: 'هل أحتاج أجهزة خاصة للكاشير أو المخزون؟', a: 'يعمل بيكوستا عبر المتصفح على الكمبيوتر أو التابلت أو الهاتف. وحسب طبيعة النشاط يمكن إضافة أدوات مثل طابعة الفواتير أو قارئ الباركود، لكن التجهيز الدقيق يتحدد بحسب طريقة التشغيل عندك.' },
+        { q: 'كيف تعمل الباقات والفوترة؟', a: 'الباقات المعروضة في الهوم بيدج هي نفس الباقات المنشورة فعليًا من داخل النظام. كل باقة تظهر بالسعر ودورة الفوترة المجهزة في الإدارة، أما الاحتياجات الأكبر أو الخاصة فيمكن ترتيبها عبر التواصل مع المبيعات.' },
+        { q: 'كيف أتواصل مع الفريق إذا احتجت توضيحًا أو تجهيزًا؟', a: 'أفضل مسار هو صفحة التواصل، ومن خلالها يصل الطلب للفريق المناسب بحسب نوع النشاط وحجم التشغيل. يمكن ترتيب المسار وتوضيح خطوات البدء قبل الانتقال للاشتراك أو التفعيل.' },
       ]
     },
     ctaSection: {
       h2: 'جاهز لرفع <span class="text-brand-gold">كفاءة تجارتك</span> اليوم؟',
-      h2Alt: 'انضم لآلاف التجار الناجحين مع بيكوستا',
+      h2Alt: 'ابدأ بخطة أوضح لتشغيل متجرك مع بيكوستا',
       sub: 'لا بطاقة ائتمانية · إعداد في 5 دقائق · إلغاء في أي وقت',
-      primary: 'ابدأ تجربتك المجانية',
+      primary: 'ابدأ رحلتك',
       secondary: 'تواصل مع المبيعات',
       features: [
-        { icon: 'Zap', text: 'إعداد في 5 دقائق' },
-        { icon: 'ShieldCheck', text: 'لا بطاقة ائتمانية' },
-        { icon: 'Clock', text: 'إلغاء في أي وقت' }
+        { icon: 'Zap', text: 'بدء سريع' },
+        { icon: 'ShieldCheck', text: 'تسجيل بسيط' },
+        { icon: 'Clock', text: 'مسار مرن' }
       ]
     },
     footer: {
@@ -211,8 +211,8 @@ export const content = {
       h1Line1: 'Sell More.',
       h1Line2: 'Manage Smart.',
       h1Line3: 'Grow Confidently.',
-      sub: 'PayQusta unifies your POS, online store, and inventory in one place — no technical expertise, no commissions.',
-      ctaPrimary: 'Start Free — 14 days →',
+      sub: 'PayQusta brings POS, online selling, and inventory workflows into one clearer operating path.',
+      ctaPrimary: 'Get Started →',
       ctaSecondary: 'See how it works ▶',
       stats: [
         { num: '+5000', label: 'Trusting Merchants', accent: 'Merchants' },
@@ -228,9 +228,9 @@ export const content = {
     },
     trust: 'Integrated With',
     highlights: [
-      { title: 'Zero Commissions', desc: 'Pay fixed fees only - all sales are yours' },
+      { title: 'Clear Plans', desc: 'Choose the plan that fits your business with simpler pricing and a clearer starting path' },
       { title: 'Offline Ready', desc: 'Cloud POS works offline & syncs auto' },
-      { title: 'Secure & Certified', desc: 'SSL & PCI-DSS certified' },
+      { title: 'Secure Operations', desc: 'Clear access controls and practical safeguards to help teams operate with confidence' },
       { title: 'Multi-branch', desc: 'Centralized control for all locations' },
     ],
     platform: {
@@ -287,7 +287,7 @@ export const content = {
     metrics: {
       tag: 'Your Trust',
       h2: 'Numbers that speak for themselves',
-      sub: 'We are proud to support thousands of merchants on their digital transformation journey.',
+      sub: 'Illustrative examples of the kinds of indicators merchants may track as operations grow.',
       items: [
         { num: '10K', span: '+', label: 'Active Users' },
         { num: '150M', span: 'EGP', label: 'Transaction Volume' },
@@ -307,11 +307,11 @@ export const content = {
       ]
     },
     testimonials: {
-      h2: 'Merchants sharing their experience',
+      h2: 'Illustrative merchant scenarios',
       items: [
-        { name: 'Mohamed Ali', role: 'Fashion Shop Owner', company: 'PayQusta changed how I manage my shop, the POS is very fast.', initials: 'M.A' },
-        { name: 'Ahmed Mahmoud', role: 'Supermarket Manager', company: 'Inventory and stocktake became much easier using the mobile app.', initials: 'A.M' },
-        { name: 'Sarah Hassan', role: 'E-commerce Seller', company: 'The online store is very professional and helped me grow sales by 40%.', initials: 'S.H' },
+        { name: 'Mohamed Ali', role: 'Fashion Shop Owner', company: 'Illustrative scenario for a fashion store that needs faster checkout and clearer day-to-day sales flow.', initials: 'M.A' },
+        { name: 'Ahmed Mahmoud', role: 'Supermarket Manager', company: 'Illustrative scenario for a supermarket that wants simpler stock follow-up and faster stocktake from mobile.', initials: 'A.M' },
+        { name: 'Sarah Hassan', role: 'E-commerce Seller', company: 'Illustrative scenario for an online seller who wants clearer order visibility across store and sales channels.', initials: 'S.H' },
       ]
     },
     pricing: {
@@ -351,22 +351,22 @@ export const content = {
     faq: {
       h2: 'FAQ',
       items: [
-        { q: 'Can I try for free?', a: 'Yes, we offer a 14-day free trial including all features.' },
-        { q: 'Do I need specific hardware?', a: 'No, PayQusta works on any device with internet (Tablet, Mobile, or PC).' },
-        { q: 'Are there sales commissions?', a: 'No commissions on your sales from PayQusta, only the plan subscription.' },
-        { q: 'How can I contact support?', a: 'Support is available 24/7 via live chat, WhatsApp, or phone.' },
+        { q: 'How do I start setting up on PayQusta?', a: 'You can begin by creating an account, adding your first store or branch details, then reviewing the published plan that matches your current operating size. If you want help mapping the rollout first, you can start from the contact page.' },
+        { q: 'Do I need special hardware for POS or inventory?', a: 'PayQusta runs in the browser on desktop, tablet, or mobile. Some businesses may also connect tools like a receipt printer or barcode scanner, but the exact hardware setup depends on how your team operates day to day.' },
+        { q: 'How do pricing and billing work?', a: 'The plans shown on the homepage are the same plans currently published from the admin side of the system. Each plan price and billing cycle reflects the live configuration, while larger or custom operating setups can be arranged through the sales team.' },
+        { q: 'How do I reach the team for setup or clarification?', a: 'The contact page is the best starting point. From there the request can be routed to the right team based on your business type and operating size, so you can clarify the rollout path before moving into subscription or activation.' },
       ]
     },
     ctaSection: {
       h2: 'Ready to boost your <span class="text-brand-gold">business efficiency</span> today?',
-      h2Alt: 'Join thousands of successful merchants with PayQusta',
+      h2Alt: 'Start with a clearer rollout path for your store',
       sub: 'No credit card · 5 min setup · Cancel anytime',
-      primary: 'Start your free trial',
+      primary: 'Start your setup',
       secondary: 'Contact Sales',
       features: [
-        { icon: 'Zap', text: '5 min setup' },
-        { icon: 'ShieldCheck', text: 'No credit card' },
-        { icon: 'Clock', text: 'Cancel anytime' }
+        { icon: 'Zap', text: 'Quick start' },
+        { icon: 'ShieldCheck', text: 'Simple onboarding' },
+        { icon: 'Clock', text: 'Flexible rollout' }
       ]
     },
     footer: {

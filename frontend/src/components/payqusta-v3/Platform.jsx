@@ -11,15 +11,15 @@ const PlatformCard = ({ item, isFeatured }) => {
   if (!item) return null;
 
   const iconsMapping = {
-    'Professional POS':             { icon: <Monitor size={24} />, color: '#C8A84B', bg: 'rgba(200,168,75,0.12)' },
-    'نقطة بيع احترافية (POS)':      { icon: <Monitor size={24} />, color: '#C8A84B', bg: 'rgba(200,168,75,0.12)' },
+    'Professional POS':             { icon: <Monitor size={24} />, color: '#0D9B7A', bg: 'rgba(13,155,122,0.12)' },
+    'نقطة بيع احترافية (POS)':      { icon: <Monitor size={24} />, color: '#0D9B7A', bg: 'rgba(13,155,122,0.12)' },
     'Complete Online Store':         { icon: <Smartphone size={24} />, color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
     'متجر إلكتروني متكامل':         { icon: <Smartphone size={24} />, color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
     'Smart Inventory Management':    { icon: <LayoutGrid size={24} />, color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
     'إدارة المخزون الذكية':         { icon: <LayoutGrid size={24} />, color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
   };
 
-  const config = iconsMapping[item.title] || { icon: <Zap size={24} />, color: '#C8A84B', bg: 'rgba(200,168,75,0.12)' };
+  const config = iconsMapping[item.title] || { icon: <Zap size={24} />, color: '#0D9B7A', bg: 'rgba(13,155,122,0.12)' };
 
   return (
     <div className={`group relative bg-v3-bg p-6 md:p-8 transition-all hover:bg-v3-bg2 ${isFeatured ? 'lg:col-span-2' : ''}`}>

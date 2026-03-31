@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { usePayQusta } from '../../context/PayQustaContext';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import { homepageCredibilityCopy } from '../../lib/payqusta-v3/homepage-config';
 
 ChartJS.register(
   CategoryScale,
@@ -29,6 +30,7 @@ const Reports = () => {
   const { t, theme, lang } = usePayQusta();
   const reveal = useScrollReveal();
   const [chartKey, setChartKey] = useState(0);
+  const credibilityCopy = homepageCredibilityCopy[lang] || homepageCredibilityCopy.en;
 
   // Re-render charts on theme/lang change so colors update
   useEffect(() => {
@@ -47,8 +49,8 @@ const Reports = () => {
       {
         label: lang === 'ar' ? 'نقاط البيع' : 'POS',
         data: [28, 32, 29, 38, 44, 51, 60],
-        borderColor: '#C8A84B',
-        backgroundColor: 'rgba(200,168,75,0.08)',
+        borderColor: '#0D9B7A',
+        backgroundColor: 'rgba(13,155,122,0.08)',
         fill: true,
         tension: 0.4,
         pointRadius: 3,
@@ -58,8 +60,8 @@ const Reports = () => {
       {
         label: lang === 'ar' ? 'المتجر الإلكتروني' : 'Online Store',
         data: [12, 18, 22, 28, 35, 42, 55],
-        borderColor: '#2ECC8F',
-        backgroundColor: 'rgba(46,204,143,0.06)',
+        borderColor: '#5C67E6',
+        backgroundColor: 'rgba(92,103,230,0.06)',
         fill: true,
         tension: 0.4,
         pointRadius: 3,
@@ -74,7 +76,7 @@ const Reports = () => {
     datasets: [
       {
         data: [55, 35, 10],
-        backgroundColor: ['#C8A84B', '#2ECC8F', '#4D9EFF'],
+        backgroundColor: ['#0D9B7A', '#5C67E6', '#4D9EFF'],
         borderWidth: 0,
         hoverOffset: 4,
       }
@@ -146,6 +148,9 @@ const Reports = () => {
           <span className="text-brand-gold text-[13px] font-bold uppercase tracking-widest mb-4 block">
             {t.reports.tag}
           </span>
+          <span className="inline-flex items-center rounded-full border border-brand-teal/20 bg-brand-teal/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-brand-teal mb-5">
+            {credibilityCopy.reports.badge}
+          </span>
           <h2
             className="v3-h2 text-v3-text max-w-xl mx-auto"
             dangerouslySetInnerHTML={{ __html: t.reports.h2 }}
@@ -162,6 +167,9 @@ const Reports = () => {
           {/* Stats Column */}
           <div ref={reveal} className="reveal order-2 lg:order-1 flex flex-col gap-4 min-w-0">
             <p className="v3-body text-v3-text2 mb-4 leading-relaxed">{t.reports.desc}</p>
+            <p className="text-[12px] font-semibold text-v3-text3 border-s-2 border-brand-gold/40 ps-3 mb-2">
+              {credibilityCopy.reports.note}
+            </p>
             <div className="grid gap-3">
               {t.reports.stats.map((stat, idx) => (
                 <div

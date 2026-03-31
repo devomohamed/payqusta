@@ -14,12 +14,11 @@ import Footer from '../components/payqusta-v3/Footer';
 
 const PublicLandingPageV3 = () => {
   useEffect(() => {
-    // Apply saved theme or default to dark
     const savedTheme = localStorage.getItem('payqusta_v3_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    // Sync body background to v3 theme variable
     document.body.style.background = 'var(--bg)';
     window.scrollTo(0, 0);
+
     return () => {
       document.body.style.background = '';
     };
@@ -35,19 +34,18 @@ const PublicLandingPageV3 = () => {
         <main>
           <Hero />
           <TrustStrip />
-          <div id="highlights"><Highlights /></div>
-          <div id="platform"><Platform /></div>
+          <div id="highlights" className="homepage-section-anchor" tabIndex={-1}><Highlights /></div>
+          <div id="platform" className="homepage-section-anchor" tabIndex={-1}><Platform /></div>
           <Steps />
           <Reports />
           <Metrics />
           <Paths />
           <Testimonials />
-          <div id="pricing"><Pricing /></div>
-          <div id="faq"><FAQ /></div>
+          <div id="pricing" className="homepage-section-anchor" tabIndex={-1}><Pricing /></div>
+          <div id="faq" className="homepage-section-anchor" tabIndex={-1}><FAQ /></div>
           <CTA />
         </main>
         <Footer />
-        {/* Floating WhatsApp contact button — always visible */}
         <FloatingContact />
       </div>
     </PayQustaProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu, X, Globe, Moon, Sun,
   LayoutGrid, Compass, Tag, MessageSquare, HelpCircle,
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { usePayQusta } from '../../context/PayQustaContext';
 import AnimatedBrandLogo from '../AnimatedBrandLogo';
+import { publicHomepageActions } from '../../lib/payqusta-v3/public-links';
+import { homepageSectionTargets } from '../../lib/payqusta-v3/homepage-config';
 
 /* ── Scroll-progress bar ──────────────────────────────────────────────────── */
 const ScrollProgress = () => {
@@ -21,7 +23,7 @@ const ScrollProgress = () => {
   return (
     <div
       className="fixed z-[199] top-16 left-0 h-[2px] pointer-events-none"
-      style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#C8A84B,#2ECC8F)', transition: 'width 0.1s linear' }}
+      style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#0D9B7A,#5C67E6)', transition: 'width 0.1s linear' }}
     />
   );
 };
@@ -31,15 +33,23 @@ const Nav = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('');
+  const mobileMenuId = 'public-homepage-mobile-menu';
+  const mobileMenuRef = useRef(null);
 
   /* ── Nav links with icons ─────────────────────────────────────────────── */
-  const navLinks = [
-    { icon: <LayoutGrid size={15} />,    label: t.nav.platform,  href: '#platform'  },
-    { icon: <Compass size={15} />,       label: t.nav.solutions, href: '#highlights' },
-    { icon: <Tag size={15} />,           label: t.nav.pricing,   href: '#pricing'   },
-    { icon: <MessageSquare size={15} />, label: t.nav.success,   href: '#testi'     },
-    { icon: <HelpCircle size={15} />,    label: t.nav.faq,       href: '#faq'       },
-  ];
+  const navIcons = {
+    LayoutGrid: <LayoutGrid size={15} />,
+    Compass: <Compass size={15} />,
+    Tag: <Tag size={15} />,
+    MessageSquare: <MessageSquare size={15} />,
+    HelpCircle: <HelpCircle size={15} />,
+  };
+
+  const navLinks = homepageSectionTargets.map((item) => ({
+    href: `#${item.id}`,
+    icon: navIcons[item.icon],
+    label: t.nav[item.labelKey],
+  }));
 
   /* ── Scroll tracking ──────────────────────────────────────────────────── */
   useEffect(() => {
@@ -50,7 +60,7 @@ const Nav = () => {
 
   /* ── Active section via IntersectionObserver ─────────────────────────── */
   useEffect(() => {
-    const sections = ['platform', 'highlights', 'pricing', 'faq', 'testi'];
+    const sections = homepageSectionTargets.map((section) => section.id);
     const observers = sections.map(id => {
       const el = document.getElementById(id);
       if (!el) return null;
@@ -71,11 +81,67 @@ const Nav = () => {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+
+    return () => {
+      document.body.style.overflow = previousOverflow || '';
+    };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen || !mobileMenuRef.current) return undefined;
+
+    const focusableSelectors = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    const focusableElements = Array.from(mobileMenuRef.current.querySelectorAll(focusableSelectors));
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    firstElement?.focus();
+
+    const handleTrap = (event) => {
+      if (event.key !== 'Tab' || focusableElements.length === 0) return;
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement?.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTrap);
+    return () => document.removeEventListener('keydown', handleTrap);
+  }, [mobileMenuOpen]);
+
   const scrollTo = (href) => {
     setMobileMenuOpen(false);
     const id = href.replace('#', '');
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (!el) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const navOffset = 88;
+    const targetTop = el.getBoundingClientRect().top + window.scrollY - navOffset;
+
+    window.scrollTo({
+      top: Math.max(targetTop, 0),
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+
+    if (typeof el.focus === 'function') {
+      el.focus({ preventScroll: true });
+    }
   };
 
   return (
@@ -88,15 +154,17 @@ const Nav = () => {
         <div className="max-w-7xl mx-auto h-full px-4 md:px-6 flex items-center justify-between">
 
           {/* ── Logo ── */}
-          <div
+          <button
+            type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="flex items-center gap-2 group cursor-pointer"
+            aria-label={lang === 'ar' ? 'العودة إلى أعلى الصفحة' : 'Back to top'}
           >
             <AnimatedBrandLogo size="sm" />
             <span className="font-black text-[19px] tracking-tight text-v3-text hidden sm:block">
               {lang === 'ar' ? 'بيكوستا' : 'PayQusta'}
             </span>
-          </div>
+          </button>
 
           {/* ── Desktop Links ── */}
           <div className="hidden lg:flex items-center gap-4 xl:gap-8">
@@ -108,6 +176,7 @@ const Nav = () => {
                   href={link.href}
                   onClick={(e) => { e.preventDefault(); scrollTo(link.href); }}
                   className="flex items-center gap-1.5 text-[13px] font-bold transition-colors"
+                  aria-current={isActive ? 'location' : undefined}
                   style={{ color: isActive ? 'var(--brand-gold)' : 'var(--text2)' }}
                 >
                   <span style={{ opacity: isActive ? 1 : 0.7, color: isActive ? 'var(--brand-gold)' : 'inherit', flexShrink: 0 }}>
@@ -125,6 +194,7 @@ const Nav = () => {
             <div className="flex items-center bg-v3-surface p-1 rounded-full border border-v3-border">
               <button
                 onClick={() => toggleTheme('dark')}
+                aria-pressed={theme === 'dark'}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
                   theme === 'dark' ? 'bg-brand-gold text-v3-bg shadow-sm' : 'text-v3-text3 hover:text-v3-text'
                 }`}
@@ -134,6 +204,7 @@ const Nav = () => {
               </button>
               <button
                 onClick={() => toggleTheme('light')}
+                aria-pressed={theme === 'light'}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
                   theme === 'light' ? 'bg-brand-gold text-v3-bg shadow-sm' : 'text-v3-text3 hover:text-v3-text'
                 }`}
@@ -152,12 +223,12 @@ const Nav = () => {
               {lang === 'ar' ? 'EN' : 'عربي'}
             </button>
 
-            <a href="/login" className="text-v3-text hover:text-brand-gold transition-colors text-[13px] font-bold px-2">
+            <a href={publicHomepageActions.loginPath} className="text-v3-text hover:text-brand-gold transition-colors text-[13px] font-bold px-2">
               {t.nav.login}
             </a>
 
             <button
-              onClick={() => window.location.href = '/login?mode=register'}
+              onClick={() => window.location.assign(publicHomepageActions.registerPath)}
               className="btn-v3 btn-v3-primary btn-v3-sm flex items-center gap-2"
             >
               {t.nav.cta}
@@ -171,7 +242,9 @@ const Nav = () => {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="w-10 h-10 flex items-center justify-center rounded-xl bg-v3-surface border border-v3-border text-v3-text"
-              aria-label="Toggle menu"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls={mobileMenuId}
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -180,9 +253,14 @@ const Nav = () => {
 
         {/* ── Mobile Menu Overlay ── */}
         <div
+          id={mobileMenuId}
+          ref={mobileMenuRef}
           className={`fixed top-16 inset-x-0 bottom-0 lg:hidden z-[190] overflow-y-auto bg-v3-bg transition-all duration-300 ${
             mobileMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'
           }`}
+          role="dialog"
+          aria-modal="true"
+          aria-hidden={!mobileMenuOpen}
         >
           <div className="flex flex-col px-4 pt-6 pb-12 gap-2 min-h-full">
             
@@ -194,6 +272,7 @@ const Nav = () => {
                   href={link.href}
                   onClick={(e) => { e.preventDefault(); scrollTo(link.href); }}
                   className="flex items-center gap-4 p-4 rounded-[18px] hover:bg-v3-bg3 active:bg-v3-bg2 transition-colors text-v3-text font-bold text-[15px]"
+                  aria-current={activeSection === link.href ? 'location' : undefined}
                 >
                   <div className="w-10 h-10 rounded-xl bg-v3-bg2 border border-v3-border flex items-center justify-center text-brand-gold shadow-sm flex-shrink-0">
                     {link.icon}
@@ -208,6 +287,7 @@ const Nav = () => {
             <div className="grid grid-cols-2 gap-3 mb-8">
               <button
                 onClick={() => { toggleTheme(); }}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                 className="py-4 bg-v3-surface/50 border border-v3-border rounded-2xl flex flex-col items-center justify-center gap-2 text-v3-text font-bold text-[13px] active:scale-95 transition-transform"
               >
                 {theme === 'dark' ? <Sun size={20} className="text-brand-gold" /> : <Moon size={20} className="text-brand-gold" />}
@@ -216,6 +296,7 @@ const Nav = () => {
               
               <button
                 onClick={toggleLang}
+                aria-label={lang === 'ar' ? 'Switch language to English' : 'Switch language to Arabic'}
                 className="py-4 bg-v3-surface/50 border border-v3-border rounded-2xl flex flex-col items-center justify-center gap-2 text-v3-text font-bold text-[13px] active:scale-95 transition-transform"
               >
                 <div className="w-5 h-5 flex items-center justify-center rounded-md border border-v3-border2 text-v3-text text-[10px] uppercase font-black">
@@ -228,13 +309,14 @@ const Nav = () => {
             {/* Primary Action */}
             <div className="flex flex-col gap-3 mt-auto">
               <a
-                href="/login"
+                href={publicHomepageActions.loginPath}
+                onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-4 bg-v3-surface border border-v3-border rounded-2xl flex items-center justify-center font-bold text-v3-text text-[15px]"
               >
                 {t.nav.login}
               </a>
               <button
-                onClick={() => { window.location.href = '/login?mode=register'; setMobileMenuOpen(false); }}
+                onClick={() => { window.location.assign(publicHomepageActions.registerPath); setMobileMenuOpen(false); }}
                 className="btn-v3 btn-v3-primary w-full py-4 text-[16px] font-black flex items-center justify-center gap-2"
               >
                 {t.nav.cta}

@@ -104,6 +104,8 @@
 /* PayQusta v3 — Design System (Tokens)          */
 /* ============================================= */
 :root, html[data-theme="dark"] {
+  --brand-gold:#0D9B7A;
+  --brand-teal:#5C67E6;
   --bg:        #0D1B2A;
   --bg2:       #162336;
   --bg3:       #1A2B3C;
@@ -118,6 +120,8 @@
 }
 
 html[data-theme="light"] {
+  --brand-gold:#0D9B7A;
+  --brand-teal:#5C67E6;
   --bg:        #F0F4F9;
   --bg2:       #FFFFFF;
   --bg3:       #E8EFF7;
@@ -221,28 +225,28 @@ html[data-theme="light"] {
 }
 
 .btn-v3-primary {
-  background: #C8A84B;
+  background: #0D9B7A;
   color: #0D1B2A;
   padding: 13px 26px;
-  box-shadow: 0 4px 16px rgba(200,168,75,0.25);
+  box-shadow: 0 4px 16px rgba(13,155,122,0.25);
 }
 
 .btn-v3-primary:hover {
-  background: #DDB955;
+  background: #0FB08B;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(200,168,75,0.35);
+  box-shadow: 0 6px 20px rgba(13,155,122,0.35);
 }
 
 .btn-v3-secondary {
   background: transparent;
-  color: #2ECC8F;
-  border: 1.5px solid rgba(46,204,143,0.28);
+  color: #5C67E6;
+  border: 1.5px solid rgba(92,103,230,0.28);
   padding: 13px 26px;
 }
 
 .btn-v3-secondary:hover {
-  background: rgba(46,204,143,0.10);
-  border-color: #2ECC8F;
+  background: rgba(92,103,230,0.10);
+  border-color: #5C67E6;
   transform: translateY(-2px);
 }
 
@@ -288,16 +292,16 @@ html[data-theme="light"] {
 /* ============================================= */
 
 /* Gold utilities */
-.bg-brand-gold-dim  { background-color: rgba(200,168,75,0.12); }
-.bg-brand-gold-glo  { background-color: rgba(200,168,75,0.25); }
-.border-brand-gold-bdr { border-color: rgba(200,168,75,0.30); }
-.shadow-brand-gold-glo { box-shadow: 0 0 40px rgba(200,168,75,0.25); }
+.bg-brand-gold-dim  { background-color: rgba(13,155,122,0.12); }
+.bg-brand-gold-glo  { background-color: rgba(13,155,122,0.25); }
+.border-brand-gold-bdr { border-color: rgba(13,155,122,0.30); }
+.shadow-brand-gold-glo { box-shadow: 0 0 40px rgba(13,155,122,0.25); }
 
 /* Teal utilities */
-.bg-brand-teal-dim  { background-color: rgba(46,204,143,0.10); }
-.bg-brand-teal-glo  { background-color: rgba(46,204,143,0.22); }
-.border-brand-teal-bdr { border-color: rgba(46,204,143,0.28); }
-.text-brand-teal-dim { color: rgba(46,204,143,0.10); }
+.bg-brand-teal-dim  { background-color: rgba(92,103,230,0.10); }
+.bg-brand-teal-glo  { background-color: rgba(92,103,230,0.22); }
+.border-brand-teal-bdr { border-color: rgba(92,103,230,0.28); }
+.text-brand-teal-dim { color: rgba(92,103,230,0.10); }
 
 /* ============================================= */
 /* PayQusta v3 — Background classes using CSS vars */
@@ -394,6 +398,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   box-shadow: 0 0 0 4px var(--focus-ring);
   border-color: var(--focus-border);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+  border-color: var(--focus-border);
+}
+
+.homepage-section-anchor {
+  scroll-margin-top: 88px;
+}
+
+.homepage-section-anchor:focus-visible {
+  outline: none;
 }
 
 .app-shell-bg {
@@ -741,7 +760,7 @@ html, body { overflow-x: hidden; }
 /* Section dividers — subtle gold gradient */
 .section-divider {
   height: 1px;
-  background: linear-gradient(to left, transparent, rgba(200,168,75,0.2) 30%, rgba(200,168,75,0.2) 70%, transparent);
+  background: linear-gradient(to left, transparent, rgba(13,155,122,0.2) 30%, rgba(92,103,230,0.2) 70%, transparent);
   margin: 0;
 }
 
@@ -801,6 +820,26 @@ html, body { overflow-x: hidden; }
   50% { transform: translateY(-8px); }
 }
 .animate-float { animation: float 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-infinite-scroll,
+  .animate-float,
+  .animate-pulse,
+  .animate-pulse-soft,
+  .animate-spin,
+  .animate-logo-float,
+  .animate-logo-glow {
+    animation: none !important;
+  }
+
+  .reveal,
+  .reveal-visible,
+  .transition-all,
+  .transition-transform,
+  .transition-opacity {
+    transition-duration: 0ms !important;
+  }
+}
 
 /* ============================================= */
 /* PRINT STYLES                                 */
