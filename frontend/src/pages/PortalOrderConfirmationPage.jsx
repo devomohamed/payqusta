@@ -165,6 +165,9 @@ export default function PortalOrderConfirmationPage() {
   const [reviewActionId, setReviewActionId] = useState(null);
   const [fulfillmentAnalysis, setFulfillmentAnalysis] = useState(null);
   const [selectedSourceBranchId, setSelectedSourceBranchId] = useState('');
+  const [availablePickupBranches, setAvailablePickupBranches] = useState([]);
+  const [pickupBranchesLoading, setPickupBranchesLoading] = useState(true);
+  const [selectedPickupBranchId, setSelectedPickupBranchId] = useState('');
 
   const loadOrder = useCallback(async () => {
     if (!id) return;
@@ -178,8 +181,13 @@ export default function PortalOrderConfirmationPage() {
       ]);
       setOrder(orderRes.data?.data || null);
       const nextAnalysis = analysisRes?.data?.data || null;
+      const nextRecommendedBranches = nextAnalysis?.recommendedBranches || [];
       setFulfillmentAnalysis(nextAnalysis);
-      setSelectedSourceBranchId((current) => current || nextAnalysis?.recommendedBranches?.[0]?.branchId || '');
+      setSelectedSourceBranchId((current) => {
+        if (!nextRecommendedBranches.length) return '';
+        if (nextRecommendedBranches.some((branch) => branch.branchId === current)) return current;
+        return nextRecommendedBranches[0].branchId;
+      });
     } catch (error) {
       setOrder(null);
       setFulfillmentAnalysis(null);
@@ -193,6 +201,36 @@ export default function PortalOrderConfirmationPage() {
   useEffect(() => {
     loadOrder();
   }, [loadOrder]);
+
+  const loadPickupBranches = useCallback(async () => {
+    setPickupBranchesLoading(true);
+    try {
+      const res = await api.get('/branches', { params: { isActive: true, limit: 200 } });
+      const branchList = res.data?.data?.branches || [];
+      setAvailablePickupBranches(branchList.filter((branch) => branch?.pickupEnabled));
+    } catch (error) {
+      setAvailablePickupBranches([]);
+    } finally {
+      setPickupBranchesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPickupBranches();
+  }, [loadPickupBranches]);
+
+  useEffect(() => {
+    if (!order) return;
+
+    const orderPickupBranchId =
+      (typeof order.fulfillmentBranch === 'object' ? order.fulfillmentBranch?._id : order.fulfillmentBranch) ||
+      fulfillmentAnalysis?.branchX?.branchId ||
+      '';
+
+    if (!orderPickupBranchId) return;
+
+    setSelectedPickupBranchId((current) => current || orderPickupBranchId);
+  }, [fulfillmentAnalysis?.branchX?.branchId, order]);
 
   const updateStatus = useCallback(async (newStatus) => {
     if (!order?._id) return;
@@ -214,7 +252,9 @@ export default function PortalOrderConfirmationPage() {
 
     setShippingActionId(`create:${order._id}`);
     try {
-      const res = await api.post(`/invoices/${order._id}/shipping/bosta`, {});
+      const res = await api.post(`/invoices/${order._id}/shipping/bosta`, {
+        pickupBranchId: selectedPickupBranchId || undefined,
+      });
       notify.success(`تم إنشاء الشحنة: ${res.data?.data?.waybillNumber || 'نجاح'}`);
       await loadOrder();
     } catch (error) {
@@ -222,7 +262,7 @@ export default function PortalOrderConfirmationPage() {
     } finally {
       setShippingActionId(null);
     }
-  }, [loadOrder, order?._id]);
+  }, [loadOrder, order?._id, selectedPickupBranchId]);
 
   const syncShipment = useCallback(async () => {
     if (!order?._id) return;
@@ -376,9 +416,11 @@ export default function PortalOrderConfirmationPage() {
     rose: 'border-rose-200 bg-rose-50/80 text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-100',
     slate: 'border-slate-200 bg-slate-50/80 text-slate-900 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100',
   }[fulfillmentCard.tone];
-  const selectedRecommendedBranch = fulfillmentAnalysis?.recommendedBranches?.find(
+  const recommendedBranches = fulfillmentAnalysis?.recommendedBranches || [];
+  const selectedRecommendedBranch = recommendedBranches.find(
     (branch) => branch.branchId === selectedSourceBranchId
   ) || null;
+  const selectedPickupBranch = availablePickupBranches.find((branch) => branch._id === selectedPickupBranchId) || null;
   const canCreateShipment =
     order?.fulfillmentStatus === 'ready_for_shipping' ||
     fulfillmentAnalysis?.scenario === 'branch_x_ready';
@@ -577,8 +619,8 @@ export default function PortalOrderConfirmationPage() {
                 <h3 className="text-lg font-black text-gray-900 dark:text-white">بيانات العميل</h3>
               </div>
               <div className="space-y-3 text-sm">
-                <DetailRow label={'\u0627\u0644\u0627\u0633\u0645'} value={formatDisplayValue(order.customer?.name)} />
-                <DetailRow label={'\u0627\u0644\u0647\u0627\u062a\u0641'} value={formatDisplayValue(order.customer?.phone || order.shippingAddress?.phone)} dir="ltr" />
+                <DetailRow label={'\u0627\u0644\u0627\u0633\u0645'} value={formatDisplayValue(order.shippingAddress?.fullName || order.customer?.name)} />
+                <DetailRow label={'\u0627\u0644\u0647\u0627\u062a\u0641'} value={formatDisplayValue(order.shippingAddress?.phone || order.customer?.phone)} dir="ltr" />
                 <DetailRow label={'\u0645\u0646\u0634\u0626 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629'} value={formatDisplayValue(order.createdBy?.name)} />
                 <DetailRow label={'\u0627\u0644\u0641\u0631\u0639'} value={formatDisplayValue(order.branch?.name, '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')} />
               </div>
@@ -647,13 +689,36 @@ export default function PortalOrderConfirmationPage() {
                   </p>
                 </div>
 
-                {(fulfillmentAnalysis.recommendedBranches || []).length > 0 && (
+                {recommendedBranches.length > 0 && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <h4 className="text-sm font-black text-gray-900 dark:text-white">الفروع المقترحة</h4>
                       <span className="text-xs font-bold text-gray-400">القرب ثم التغطية</span>
                     </div>
-                    <div className="space-y-3">
+                    <div className="rounded-3xl border border-slate-200/70 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                      <label
+                        htmlFor="portal-order-source-branch"
+                        className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300"
+                      >
+                        فرع بديل لتغذية فرع التنفيذ
+                      </label>
+                      <select
+                        id="portal-order-source-branch"
+                        value={selectedSourceBranchId}
+                        onChange={(event) => setSelectedSourceBranchId(event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:border-white/10 dark:bg-slate-950/40 dark:text-white dark:focus:ring-primary-900/30"
+                      >
+                        {recommendedBranches.map((branch) => (
+                          <option key={branch.branchId} value={branch.branchId}>
+                            {branch.branchName} - {branch.distanceLabel} - تغطية {branch.totalCoverageQty}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-300">
+                        هذا الاختيار يحدد مصدر التحويل الداخلي فقط. الشحنة النهائية تظل خارجة من {PRIMARY_BRANCH_LABEL}.
+                      </p>
+                    </div>
+                    <div className="hidden space-y-3">
                       {fulfillmentAnalysis.recommendedBranches.map((branch) => {
                         const isSelected = branch.branchId === selectedSourceBranchId;
                         return (
@@ -683,19 +748,32 @@ export default function PortalOrderConfirmationPage() {
                   </div>
                 )}
 
-                {selectedRecommendedBranch && fulfillmentAnalysis.scenario === 'single_source_transfer_available' && (
+                {selectedRecommendedBranch && (
                   <div className="rounded-3xl border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
                     <p className="text-sm font-black text-amber-900 dark:text-amber-200">الفرع المحدد للتحويل</p>
                     <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">{selectedRecommendedBranch.branchName} • {selectedRecommendedBranch.distanceLabel}</p>
-                    <button
-                      type="button"
-                      onClick={createTransferRequest}
-                      disabled={transferActionId === order._id}
-                      className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700 disabled:opacity-50"
-                    >
-                      {transferActionId === order._id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
-                      إنشاء طلب تحويل
-                    </button>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="rounded-full">
+                        تجهيز {selectedRecommendedBranch.preparationTimeMinutes} دقيقة
+                      </Badge>
+                      <Badge variant={selectedRecommendedBranch.canFulfillAll ? 'success' : 'warning'} className="rounded-full">
+                        تغطية {selectedRecommendedBranch.totalCoverageQty}
+                      </Badge>
+                      {selectedRecommendedBranch.canFulfillAll && (
+                        <Badge variant="success" className="rounded-full">يغطي كل النواقص</Badge>
+                      )}
+                    </div>
+                    {fulfillmentAnalysis.scenario === 'single_source_transfer_available' && (
+                      <button
+                        type="button"
+                        onClick={createTransferRequest}
+                        disabled={transferActionId === order._id}
+                        className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        {transferActionId === order._id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
+                        إنشاء طلب تحويل
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -771,6 +849,35 @@ export default function PortalOrderConfirmationPage() {
 
           <Card className="rounded-[2rem] border-0 p-6 shadow-sm">
             <h3 className="text-lg font-black text-gray-900 dark:text-white">ملخص التسعير</h3>
+            {!order.shippingDetails?.waybillNumber && (
+              <div className="mt-5 rounded-3xl border border-slate-200/70 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <label
+                  htmlFor="portal-order-pickup-branch"
+                  className="mb-2 block text-xs font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300"
+                >
+                  فرع استلام شركة الشحن
+                </label>
+                <select
+                  id="portal-order-pickup-branch"
+                  value={selectedPickupBranchId}
+                  onChange={(event) => setSelectedPickupBranchId(event.target.value)}
+                  disabled={pickupBranchesLoading || availablePickupBranches.length === 0}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/40 dark:text-white dark:focus:ring-primary-900/30"
+                >
+                  <option value="" disabled>
+                    {pickupBranchesLoading ? 'جاري تحميل الفروع...' : 'اختر الفرع الذي ستذهب إليه شركة الشحن'}
+                  </option>
+                  {availablePickupBranches.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name} - {branch.shippingOrigin?.city || branch.shippingOrigin?.governorate || 'بدون عنوان شحن'}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-300">
+                  عند إنشاء الشحنة سيتم اعتماد هذا الفرع كفرع الاستلام الذي تذهب إليه شركة الشحن.
+                </p>
+              </div>
+            )}
             <div className="mt-5 space-y-3 text-sm">
               <DetailRow label={'\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0641\u0631\u0639\u064a'} value={`${formatMoney(summary.subtotal)} \u062c.\u0645`} />
               <DetailRow label={'\u0627\u0644\u0634\u062d\u0646'} value={`${formatMoney(summary.shippingFee)} \u062c.\u0645`} />
@@ -787,6 +894,7 @@ export default function PortalOrderConfirmationPage() {
             <h3 className="text-lg font-black text-gray-900 dark:text-white">بيانات الشحنة</h3>
             <div className="mt-5 space-y-3 text-sm">
               <DetailRow label={'\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0634\u062d\u0646'} value={formatDisplayValue(order.shippingMethod, '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')} />
+              <DetailRow label={'\u0641\u0631\u0639 \u0627\u0633\u062a\u0644\u0627\u0645 \u0627\u0644\u0634\u062d\u0646'} value={formatDisplayValue(selectedPickupBranch?.name || (typeof order.fulfillmentBranch === 'object' ? order.fulfillmentBranch?.name : ''), '\u063a\u064a\u0631 \u0645\u062d\u062f\u062f')} />
               <DetailRow label={'\u0631\u0642\u0645 \u0627\u0644\u062a\u062a\u0628\u0639'} value={formatDisplayValue(order.trackingNumber || order.shippingDetails?.waybillNumber)} dir="ltr" />
               <DetailRow label={'\u062d\u0627\u0644\u0629 \u0634\u0631\u0643\u0629 \u0627\u0644\u0634\u062d\u0646'} value={getShippingStatusLabel(order.shippingDetails?.status)} />
               <DetailRow label={'\u0645\u0648\u0639\u062f \u0645\u062a\u0648\u0642\u0639'} value={order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleDateString('ar-EG') : FALLBACK_VALUE} />

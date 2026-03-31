@@ -6,6 +6,7 @@ import {
 import { useAuthStore, api as globalApi } from '../store';
 import { Card, LoadingSpinner, EmptyState, Modal } from '../components/UI';
 import { notify } from '../components/AnimatedNotification';
+import { useLivePolling } from '../hooks/useLivePolling';
 
 const STATUS_CONFIG = {
   open: { label: 'مفتوحة', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: Clock },
@@ -43,34 +44,65 @@ export default function SupportMessagesPage() {
     []
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+    }
     try {
       const { data } = await api('get', `/manage/support?status=${statusFilter}`);
       const payload = data.data || data;
       setMessages(payload.messages || []);
       setStats(payload.stats || {});
     } catch {
+      if (silent) return;
       notify.error('فشل تحميل الرسائل');
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [api, statusFilter]);
 
   useEffect(() => { load(); }, [load]);
 
-  const openMessage = async (msg) => {
-    setDetailLoading(true);
-    setSelected(msg);
-    try {
-      const { data } = await api('get', `/manage/support/${msg._id}`);
-      setSelected(data.data || data);
-    } catch {
-      // use the list data
-    } finally {
-      setDetailLoading(false);
+  const refreshSelectedMessage = useCallback(async (id, { silent = false } = {}) => {
+    if (!id) return null;
+
+    if (!silent) {
+      setDetailLoading(true);
     }
+
+    try {
+      const { data } = await api('get', `/manage/support/${id}`);
+      const nextMessage = data.data || data;
+      setSelected(nextMessage);
+      setMessages((prev) => prev.map((item) => (item._id === nextMessage._id ? { ...item, ...nextMessage } : item)));
+      return nextMessage;
+    } catch {
+      return null;
+    } finally {
+      if (!silent) {
+        setDetailLoading(false);
+      }
+    }
+  }, [api]);
+
+  const openMessage = async (msg) => {
+    setSelected(msg);
+    await refreshSelectedMessage(msg._id);
   };
+
+  useLivePolling(() => load({ silent: true }), {
+    enabled: true,
+    intervalMs: 12000,
+    runImmediately: false,
+  });
+
+  useLivePolling(() => refreshSelectedMessage(selected?._id, { silent: true }), {
+    enabled: Boolean(selected?._id),
+    intervalMs: 4000,
+    runImmediately: false,
+  });
 
   const sendReply = async () => {
     if (!replyText.trim()) return;

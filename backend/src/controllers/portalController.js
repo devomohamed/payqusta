@@ -1597,11 +1597,11 @@ class PortalController {
             tenant: tenantId,
             recipient: admin._id,
             type: 'order',
-            title: 'New portal order',
-            message: `New order #${invoice.invoiceNumber} worth ${finalTotalAmount.toLocaleString()} from ${customer.name}`,
+            title: 'طلب جديد من البوابة',
+            message: `تم استلام طلب جديد #${invoice.invoiceNumber} باسم ${invoice.shippingAddress?.fullName || customer.name} بقيمة ${finalTotalAmount.toLocaleString('ar-EG')} ج.م`,
             icon: 'shopping-bag',
             color: 'primary',
-            link: `/invoices/${invoice._id}`,
+            link: `/portal-orders/${invoice._id}`,
           }))
         );
       }

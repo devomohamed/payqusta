@@ -282,6 +282,7 @@ const invoiceSchema = new mongoose.Schema(
         address: { type: String, default: '', trim: true, maxlength: 300 },
         city: { type: String, default: '', trim: true, maxlength: 80 },
         governorate: { type: String, default: '', trim: true, maxlength: 80 },
+        pickupBranchName: { type: String, default: '', trim: true, maxlength: 120 },
         itemsCount: { type: Number, default: 0, min: 0 },
         reference: { type: String, default: '', trim: true, maxlength: 80 },
       },

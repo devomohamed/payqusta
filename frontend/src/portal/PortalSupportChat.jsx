@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
@@ -6,6 +6,7 @@ import { MessageCircle, Send, ChevronRight, Clock, CheckCircle2, User, FileText 
 import { notify } from '../components/AnimatedNotification';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
+import { useLivePolling } from '../hooks/useLivePolling';
 
 export default function PortalSupportChat() {
     const { id } = useParams();
@@ -20,23 +21,34 @@ export default function PortalSupportChat() {
     const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
 
     useEffect(() => {
-        loadTicket();
-    }, [id]);
-
-    useEffect(() => {
         scrollToBottom();
     }, [ticket]);
 
-    const loadTicket = async () => {
-        setLoading(true);
+    const loadTicket = useCallback(async ({ silent = false } = {}) => {
+        if (!silent) {
+            setLoading(true);
+        }
+
         const data = await fetchSupportMessageById(id);
         if (data) {
             setTicket(data);
-        } else {
+        } else if (!silent) {
             notify.error(t('supportChat.not_found'));
         }
-        setLoading(false);
-    };
+        if (!silent) {
+            setLoading(false);
+        }
+    }, [fetchSupportMessageById, id, t]);
+
+    useEffect(() => {
+        loadTicket();
+    }, [loadTicket]);
+
+    useLivePolling(() => loadTicket({ silent: true }), {
+        enabled: !!id,
+        intervalMs: 4000,
+        runImmediately: false,
+    });
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

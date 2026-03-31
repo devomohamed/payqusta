@@ -2,6 +2,10 @@ jest.mock('../../src/models/Invoice', () => ({
   findOne: jest.fn(),
 }));
 
+jest.mock('../../src/models/Branch', () => ({
+  findOne: jest.fn(),
+}));
+
 jest.mock('../../src/models/Customer', () => ({
   find: jest.fn(),
 }));
@@ -30,6 +34,7 @@ jest.mock('../../src/utils/orderLifecycle', () => ({
 }));
 
 const Invoice = require('../../src/models/Invoice');
+const Branch = require('../../src/models/Branch');
 const ShippingService = require('../../src/services/ShippingService');
 const invoiceController = require('../../src/controllers/invoiceController');
 
@@ -167,6 +172,87 @@ describe('InvoiceController operational shipping actions', () => {
       note: 'سيتم إعادة المحاولة لاحقًا',
     }));
     expect(invoice.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('uses the selected pickup branch when creating a shipment', async () => {
+    const invoice = {
+      _id: 'invoice-3',
+      tenant: 'tenant-1',
+      invoiceNumber: 'INV-3001',
+      remainingAmount: 180,
+      notes: '',
+      items: [{ quantity: 1 }],
+      customer: {
+        name: 'عميل',
+        phone: '0100000000',
+        email: 'customer@example.com',
+        address: 'القاهرة',
+      },
+      shippingAddress: {
+        fullName: 'مستلم الطلب',
+        phone: '0100000000',
+        address: 'مدينة نصر',
+        city: 'القاهرة',
+        governorate: 'القاهرة',
+      },
+      orderStatus: 'processing',
+      orderStatusHistory: [],
+      save: jest.fn().mockResolvedValue(undefined),
+      shippingDetails: {},
+      shipmentFailure: {},
+      shippingMethod: null,
+      fulfillmentBranch: null,
+    };
+
+    Invoice.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(invoice),
+    });
+
+    Branch.findOne.mockReturnValue({
+      lean: jest.fn().mockResolvedValue({
+        _id: 'branch-pickup-1',
+        name: 'فرع مدينة نصر',
+        pickupEnabled: true,
+        address: 'العنوان الداخلي',
+        shippingOrigin: {
+          addressLine: 'شارع مكرم عبيد',
+          city: 'القاهرة',
+          governorate: 'القاهرة',
+        },
+      }),
+    });
+
+    ShippingService.createDelivery.mockResolvedValue({
+      deliveryId: 'delivery-1',
+      trackingNumber: 'TRACK-1',
+      state: 'created',
+    });
+
+    const req = {
+      params: { id: 'invoice-3' },
+      tenantFilter: { tenant: 'tenant-1' },
+      tenantId: 'tenant-1',
+      body: {
+        pickupBranchId: 'branch-pickup-1',
+      },
+    };
+    const res = createResponse();
+    const next = jest.fn();
+
+    invoiceController.createBostaWaybill(req, res, next);
+    await flushAsync();
+
+    expect(next).not.toHaveBeenCalled();
+    expect(invoice.fulfillmentBranch).toBe('branch-pickup-1');
+    expect(ShippingService.createDelivery).toHaveBeenCalledWith(expect.objectContaining({
+      pickupBranchName: 'فرع مدينة نصر',
+      notes: expect.stringContaining('فرع الاستلام: فرع مدينة نصر'),
+    }));
+    expect(invoice.shipmentFailure.lastAttemptPayloadSummary).toEqual(expect.objectContaining({
+      pickupBranchName: 'فرع مدينة نصر',
+    }));
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });

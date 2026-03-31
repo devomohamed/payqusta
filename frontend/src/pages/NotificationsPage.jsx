@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, Check, CheckCheck, Trash2, Clock, AlertTriangle, CreditCard,
-  FileText, Package, Truck, UserPlus, Star, Store, CheckCircle, AlertCircle,
+  FileText, Package, Truck, UserPlus, Star, Store, CheckCircle, AlertCircle, ShoppingBag,
 } from 'lucide-react';
 import { api } from '../store';
 import { notify } from '../components/AnimatedNotification';
@@ -22,6 +22,7 @@ const iconMap = {
   'check-circle': CheckCircle,
   'alert-circle': AlertCircle,
   bell: Bell,
+  'shopping-bag': ShoppingBag,
 };
 
 const colorMap = {

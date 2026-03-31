@@ -246,6 +246,22 @@ class NotificationService {
    */
   async onInvoiceCreated(tenantId, invoice, customerName) {
     const fmt = (n) => (n || 0).toLocaleString('ar-EG');
+    const isPortalOrder = invoice?.source === 'portal' || invoice?.source === 'online_store';
+    const orderRecipientName = invoice?.shippingAddress?.fullName || customerName;
+
+    if (isPortalOrder) {
+      return this.notifyTenantAdmins(tenantId, {
+        type: 'order',
+        title: 'طلب جديد من البوابة',
+        message: `تم استلام طلب جديد #${invoice.invoiceNumber} باسم ${orderRecipientName || 'عميل'} بقيمة ${fmt(invoice.totalAmount)} ج.م`,
+        icon: 'shopping-bag',
+        color: 'primary',
+        link: `/portal-orders/${invoice._id}`,
+        relatedModel: 'Invoice',
+        relatedId: invoice._id,
+      }, { targetBranchId: invoice.branch });
+    }
+
     return this.notifyTenantAdmins(tenantId, {
       type: 'invoice_created',
       title: 'فاتورة جديدة',

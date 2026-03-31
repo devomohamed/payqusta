@@ -5,6 +5,7 @@
 
 const crypto = require('crypto');
 const Invoice = require('../models/Invoice');
+const Branch = require('../models/Branch');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const AppError = require('../utils/AppError');
@@ -153,6 +154,7 @@ const buildShipmentAttemptSummary = (deliveryData = {}) => ({
   address: String(deliveryData.address || '').slice(0, 300),
   city: String(deliveryData.city || '').slice(0, 80),
   governorate: String(deliveryData.governorate || '').slice(0, 80),
+  pickupBranchName: String(deliveryData.pickupBranchName || '').slice(0, 120),
   itemsCount: Number(deliveryData.itemsCount) || 0,
   reference: String(deliveryData.reference || '').slice(0, 80),
 });
@@ -328,6 +330,8 @@ class InvoiceController {
 
       filter.$or = [
         { invoiceNumber: { $regex: search, $options: 'i' } },
+        { 'shippingAddress.fullName': { $regex: search, $options: 'i' } },
+        { 'shippingAddress.phone': { $regex: search, $options: 'i' } },
         ...(customerIds.length > 0 ? [{ customer: { $in: customerIds } }] : [])
       ];
     }
@@ -752,6 +756,33 @@ class InvoiceController {
       return next(AppError.badRequest('يوجد بوليصة شحن مسجلة بالفعل لهذه الفاتورة'));
     }
 
+    const requestedPickupBranchId = req.body?.pickupBranchId || req.body?.fulfillmentBranchId || null;
+    let pickupBranch = null;
+
+    if (requestedPickupBranchId) {
+      pickupBranch = await Branch.findOne({
+        _id: requestedPickupBranchId,
+        tenant: req.tenantId,
+        isActive: true,
+      }).lean();
+
+      if (!pickupBranch) {
+        return next(AppError.badRequest('فرع استلام الشحنة غير موجود أو غير متاح'));
+      }
+
+      if (!pickupBranch.pickupEnabled) {
+        return next(AppError.badRequest('هذا الفرع غير متاح لاستلام شركة الشحن'));
+      }
+
+      invoice.fulfillmentBranch = pickupBranch._id;
+    } else if (invoice.fulfillmentBranch) {
+      pickupBranch = await Branch.findOne({
+        _id: invoice.fulfillmentBranch,
+        tenant: req.tenantId,
+        isActive: true,
+      }).lean();
+    }
+
     // Default to invoice shipping address or customer address
     const customer = invoice.customer;
     const addr = invoice.shippingAddress || {};
@@ -772,10 +803,27 @@ class InvoiceController {
       customerPhone: addr.phone || customer.phone,
       customerEmail: customer.email || 'customer@example.com',
       reference: invoice.invoiceNumber,
+      pickupBranchName: pickupBranch?.name || '',
     };
 
     // We can also let the frontend pass overrides via req.body
     Object.assign(deliveryData, req.body);
+    delete deliveryData.pickupBranchId;
+    delete deliveryData.fulfillmentBranchId;
+
+    if (pickupBranch) {
+      const pickupAddressParts = [
+        pickupBranch.shippingOrigin?.addressLine,
+        pickupBranch.address,
+        pickupBranch.shippingOrigin?.area,
+        pickupBranch.shippingOrigin?.city,
+        pickupBranch.shippingOrigin?.governorate,
+      ].filter(Boolean);
+
+      const pickupNote = `فرع الاستلام: ${pickupBranch.name}${pickupAddressParts.length ? ` - ${pickupAddressParts.join(' / ')}` : ''}`;
+      deliveryData.notes = [deliveryData.notes, pickupNote].filter(Boolean).join(' | ');
+      deliveryData.pickupBranchName = pickupBranch.name;
+    }
     const attemptSummary = buildShipmentAttemptSummary(deliveryData);
 
     try {

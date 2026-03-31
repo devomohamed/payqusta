@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Bell, CheckCheck, Clock, AlertTriangle, CreditCard,
-  FileText, Package, Truck, UserPlus, Star, X, Trash2,
+  FileText, Package, Truck, UserPlus, Star, X, Trash2, ShoppingBag,
   Store, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { api, API_URL } from '../store';
@@ -24,6 +24,7 @@ const iconMap = {
   'check-circle': CheckCircle,
   'alert-circle': AlertCircle,
   bell: Bell,
+  'shopping-bag': ShoppingBag,
 };
 
 const colorMap = {

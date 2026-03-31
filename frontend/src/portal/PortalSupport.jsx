@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePortalStore } from '../store/portalStore';
 import { MessageCircle, Phone, Mail, Send, HelpCircle, Package, CreditCard, AlertTriangle, FileText, Clock, CheckCircle2, ChevronLeft } from 'lucide-react';
@@ -6,6 +6,7 @@ import { notify } from '../components/AnimatedNotification';
 import { Link } from 'react-router-dom';
 import PortalEmptyState from './components/PortalEmptyState';
 import PortalSkeleton from './components/PortalSkeleton';
+import { useLivePolling } from '../hooks/useLivePolling';
 
 export default function PortalSupport() {
     const { sendSupportMessage, fetchSupportMessages, loading } = usePortalStore();
@@ -26,18 +27,28 @@ export default function PortalSupport() {
         { value: 'complaint', label: t('support.types.complaint'), icon: AlertTriangle },
     ];
 
+    const loadTickets = useCallback(async ({ silent = false } = {}) => {
+        if (!silent) {
+            setLoadingTickets(true);
+        }
+        const data = await fetchSupportMessages();
+        setTickets(data);
+        if (!silent) {
+            setLoadingTickets(false);
+        }
+    }, [fetchSupportMessages]);
+
     useEffect(() => {
         if (activeTab === 'tickets') {
             loadTickets();
         }
-    }, [activeTab]);
+    }, [activeTab, loadTickets]);
 
-    const loadTickets = async () => {
-        setLoadingTickets(true);
-        const data = await fetchSupportMessages();
-        setTickets(data);
-        setLoadingTickets(false);
-    };
+    useLivePolling(() => loadTickets({ silent: true }), {
+        enabled: activeTab === 'tickets',
+        intervalMs: 12000,
+        runImmediately: false,
+    });
 
     const handleSubmit = async (e) => {
         e.preventDefault();

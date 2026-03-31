@@ -20,7 +20,7 @@ Use it to:
 
 ## Frozen Decisions
 
-- `Branch X` is the only shipping branch used for courier handoff in V1.
+- `Branch X` remains the default shipping branch in V1, but admin can override the pickup branch per order before shipment creation from the portal-order detail page.
 - Pricing mode is exclusive: `fixed_zones` or `dynamic_api`.
 - Shipping cost is frozen on order creation.
 - Address changes after order creation require admin review.
@@ -37,7 +37,7 @@ Use it to:
 - Shipment creation is manual in V1, even after the order becomes `ready_for_shipping`.
 - Dynamic pricing requires sufficiently complete destination data; `governorate` plus `city/area` is the minimum target input.
 - If dynamic pricing input is incomplete, checkout blocks price calculation until the required address fields are completed.
-- Customer-facing shipping handoff remains tied to `Branch X` even if stock originated from `Branch Y`.
+- Customer-facing shipping handoff defaults to `Branch X`, but an admin-selected per-order pickup branch now takes precedence when the shipment is created manually.
 - The temporary fulfillment status after partial receipt is `partial_receipt_review`.
 - Dynamic-pricing checkout requires `governorate` plus one `city/area` field in V1; deeper area granularity is sent when available but not required as a separate field.
 - Overdue transfer reminders use a platform default and allow tenant-level override.
@@ -835,6 +835,12 @@ When work resumes, do this in order:
   - re-ran backend syntax checks successfully for `backend/src/routes/index.js` and repeated `frontend` sanity/route-contract checks successfully after the purchase-order guard and route fixes
   - improved readability in `PortalOrderConfirmationPage` by strengthening muted text contrast on the dark order-detail layout, adding clearer information rows for customer/shipping/pricing/shipment details, and making product line pricing easier to scan without changing the underlying workflow
   - verified the portal-order detail follow-up through `npm --prefix frontend run sanity:check`
+  - refined `PortalOrderConfirmationPage` so the branch recommendation step now exposes a direct source-branch dropdown inside the same order detail screen instead of relying only on recommendation cards
+  - kept the fulfillment rule intact: the chosen branch is the transfer source only, while courier handoff remains tied to `Branch X / فرع التنفيذ`
+  - tightened portal order detail customer defaults so recipient snapshot name/phone are preferred where available during shipping review
+  - re-ran `npm --prefix frontend run sanity:check` successfully after the portal-order branch-selection update
+  - added a dedicated pickup-branch dropdown on `PortalOrderConfirmationPage` so admins can choose the actual branch that the shipping company should collect from before creating the shipment
+  - updated `createBostaWaybill` to accept `pickupBranchId`, validate branch pickup readiness, persist the branch on `invoice.fulfillmentBranch`, and append pickup-branch context into shipment notes and failure-attempt summaries
 - Next recommended step:
   - run `SR-004` manual live workflow validation in the browser because the remaining highest-risk gap is now behavioral confirmation rather than missing backend wiring
   - after the manual pass, decide whether `SR-005` variant-aware UI needs to be implemented now or can stay deferred until branch shortage flows actually expose variant selection in the product and low-stock screens

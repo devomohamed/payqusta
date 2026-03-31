@@ -75,19 +75,25 @@ export default function PortalOrdersAdminPage() {
     useEffect(() => { setPage(1); }, [statusFilter, search]);
 
     const refreshSelectedOrder = useCallback(async (orderId) => {
-        if (!orderId) return;
+        if (!orderId) return null;
         try {
             const res = await api.get(`/invoices/${orderId}`);
-            setSelected(res.data?.data || null);
+            const nextOrder = res.data?.data || null;
+            setSelected(nextOrder);
+            return nextOrder;
         } catch {
             // Keep current modal data if refresh fails.
+            return null;
         }
     }, []);
 
     const openOrderDetails = async (order) => {
-        setSelected(order);
-        await refreshSelectedOrder(order._id);
+        navigate(`/portal-orders/${order._id}`);
     };
+
+    const closeOrderDetails = useCallback(() => {
+        setSelected(null);
+    }, []);
 
     const updateStatus = async (orderId, newStatus) => {
         setUpdatingId(orderId);
@@ -252,11 +258,14 @@ export default function PortalOrdersAdminPage() {
                                                 #{order.invoiceNumber}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <div className="font-bold text-gray-800 dark:text-gray-200">{order.customer?.name || '—'}</div>
+                                                <div className="font-bold text-gray-800 dark:text-gray-200">{order.shippingAddress?.fullName || order.customer?.name || '—'}</div>
                                                 <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                                                     <Phone className="w-3 h-3" />
                                                     {order.shippingAddress?.phone || order.customer?.phone || '—'}
                                                 </div>
+                                                {order.shippingAddress?.fullName && order.customer?.name && order.shippingAddress.fullName !== order.customer.name ? (
+                                                    <div className="text-[10px] text-gray-400 mt-1">الحساب: {order.customer.name}</div>
+                                                ) : null}
                                             </td>
                                             <td className="px-5 py-4">
                                                 {order.shippingAddress ? (
@@ -279,7 +288,7 @@ export default function PortalOrdersAdminPage() {
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
-                                                        onClick={() => navigate(`/portal-orders/${order._id}`)}
+                                                        onClick={() => openOrderDetails(order)}
                                                         className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition"
                                                         title="عرض التفاصيل"
                                                     >
@@ -341,7 +350,7 @@ export default function PortalOrdersAdminPage() {
             )}
 
             {/* Order Detail Modal */}
-            <Modal open={!!selected} onClose={() => setSelected(null)} title={`تفاصيل الطلب #${selected?.invoiceNumber}`} size="lg">
+            <Modal open={!!selected} onClose={closeOrderDetails} title={`تفاصيل الطلب #${selected?.invoiceNumber}`} size="lg">
                 {selected && (
                     <div className="space-y-5">
                         {/* Status */}
@@ -392,8 +401,11 @@ export default function PortalOrdersAdminPage() {
                             <div className="app-surface-muted rounded-2xl p-4">
                                 <h4 className="font-bold text-xs text-gray-400 uppercase mb-3 flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> بيانات العميل</h4>
                                 <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between"><span className="text-gray-400">الاسم</span><span className="font-bold">{selected.customer?.name}</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-400">التليفون</span><span className="font-bold" dir="ltr">{selected.customer?.phone}</span></div>
+                                    <div className="flex justify-between gap-3"><span className="text-gray-400">الاسم</span><span className="font-bold text-left">{selected.shippingAddress?.fullName || selected.customer?.name || '—'}</span></div>
+                                    <div className="flex justify-between gap-3"><span className="text-gray-400">التليفون</span><span className="font-bold" dir="ltr">{selected.shippingAddress?.phone || selected.customer?.phone || '—'}</span></div>
+                                    {selected.shippingAddress?.fullName && selected.customer?.name && selected.shippingAddress.fullName !== selected.customer.name ? (
+                                        <div className="flex justify-between gap-3"><span className="text-gray-400">اسم الحساب</span><span className="font-bold text-left">{selected.customer.name}</span></div>
+                                    ) : null}
                                 </div>
                             </div>
                                 <div className="app-surface-muted rounded-2xl p-4">
