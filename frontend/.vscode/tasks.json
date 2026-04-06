@@ -21,6 +21,17 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "build frontend",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

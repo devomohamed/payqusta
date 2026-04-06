@@ -28,6 +28,7 @@
         "support_messages": "رسائل الدعم",
         "reviews": "التقييمات",
         "coupons": "كوبونات الخصم",
+        "affiliates": "المسوقون بالعمولة",
         "suppliers": "الموردين",
         "expenses": "المصروفات",
         "system_analytics": "تحليلات النظام",
@@ -71,6 +72,71 @@
         },
         "ui": {
             "k17zto7": "تصفح متجري"
+        }
+    },
+    "affiliate_page": {
+        "title": "برنامج التسويق بالعمولة",
+        "subtitle": "أنشئ روابط للمسوقين، واربط طلبات المتجر بهم، وتابع أداء العمولات من مكان واحد.",
+        "new_affiliate": "مسوق جديد",
+        "edit_affiliate": "تعديل بيانات المسوق",
+        "empty": "لا يوجد مسوقون حتى الآن. أضف أول شريك وابدأ بمشاركة روابط المتجر المتتبعة.",
+        "list_title": "قائمة المسوقين",
+        "conversions_title": "الطلبات المنسوبة للمسوق",
+        "fields": {
+            "name": "الاسم",
+            "code": "الكود",
+            "email": "البريد الإلكتروني",
+            "phone": "الهاتف",
+            "commission_type": "نوع العمولة",
+            "commission_value": "قيمة العمولة",
+            "status": "الحالة",
+            "payout_method": "طريقة الدفع",
+            "payout_details": "تفاصيل الدفع",
+            "notes": "ملاحظات"
+        },
+        "stats": {
+            "total_affiliates": "إجمالي المسوقين",
+            "total_conversions": "الطلبات المنسوبة",
+            "revenue_attributed": "المبيعات المنسوبة",
+            "pending_commission": "العمولات المعلقة"
+        },
+        "status": {
+            "pending": "قيد المراجعة",
+            "active": "نشط",
+            "suspended": "موقوف",
+            "approved": "معتمد",
+            "paid": "مدفوع",
+            "reversed": "ملغي"
+        },
+        "commission_type": {
+            "percentage": "نسبة مئوية",
+            "fixed": "مبلغ ثابت"
+        },
+        "payout_method": {
+            "none": "غير محدد",
+            "bank_transfer": "تحويل بنكي",
+            "wallet": "محفظة",
+            "cash": "نقدي",
+            "manual": "يدوي"
+        },
+        "actions": {
+            "create": "إنشاء مسوق",
+            "update": "حفظ التعديلات",
+            "cancel": "إلغاء",
+            "copy_link": "نسخ الرابط",
+            "view_conversions": "عرض الطلبات",
+            "suspend": "إيقاف",
+            "activate": "تفعيل",
+            "edit": "تعديل"
+        },
+        "toasts": {
+            "load_failed": "فشل تحميل بيانات المسوقين",
+            "save_failed": "فشل حفظ بيانات المسوق",
+            "create_success": "تم إنشاء المسوق بنجاح",
+            "update_success": "تم تحديث بيانات المسوق",
+            "copy_success": "تم نسخ رابط المسوق",
+            "conversions_failed": "فشل تحميل طلبات المسوق",
+            "status_updated": "تم تحديث حالة المسوق"
         }
     },
     "header": {

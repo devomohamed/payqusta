@@ -7,6 +7,8 @@ const Invoice = require('../models/Invoice');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
+const AffiliateProfile = require('../models/AffiliateProfile');
+const AffiliateConversion = require('../models/AffiliateConversion');
 const Tenant = require('../models/Tenant');
 const Branch = require('../models/Branch');
 const AppError = require('../utils/AppError');
@@ -62,6 +64,7 @@ class InvoiceService {
     let reservedCouponUsage = false;
     let couponDiscountAmount = 0;
     let discountAmount = Number(discount) || 0;
+    let affiliateAttribution = null;
     const normalizedCampaignAttribution = this.normalizeCampaignAttribution(campaignAttribution);
     const normalizedShippingSummary = normalizeInvoiceShippingSummary(shippingSummary);
 
@@ -360,6 +363,34 @@ class InvoiceService {
       );
       const totalAmount = Math.max(0, subtotal + effectiveShippingAmount - discountAmount);
 
+      if (
+        normalizedCampaignAttribution?.affiliateCode &&
+        (source === 'online_store' || source === 'portal')
+      ) {
+        const affiliate = await AffiliateProfile.findOne({
+          tenant: tenantId,
+          code: normalizedCampaignAttribution.affiliateCode,
+          status: 'active',
+        });
+
+        if (affiliate) {
+          const commissionBase = Math.max(0, subtotal - discountAmount);
+          const commissionAmount = affiliate.commissionType === 'fixed'
+            ? Math.max(0, Number(affiliate.commissionValue) || 0)
+            : Math.max(0, (commissionBase * (Number(affiliate.commissionValue) || 0)) / 100);
+
+          affiliateAttribution = {
+            affiliate,
+            code: affiliate.code,
+            commissionType: affiliate.commissionType,
+            commissionValue: Number(affiliate.commissionValue) || 0,
+            commissionBase,
+            commissionAmount,
+            attributedAt: normalizedCampaignAttribution.lastSeenAt || new Date(),
+          };
+        }
+      }
+
       // Check Credit Limit
       let transactionPendingAmount = 0;
       if (paymentMethod === PAYMENT_METHODS.INSTALLMENT) {
@@ -503,9 +534,49 @@ class InvoiceService {
         };
       }
 
+      if (affiliateAttribution) {
+        invoiceData.affiliate = {
+          affiliate: affiliateAttribution.affiliate._id,
+          code: affiliateAttribution.code,
+          status: invoiceData.status === INVOICE_STATUS.PAID ? 'approved' : 'pending',
+          commissionType: affiliateAttribution.commissionType,
+          commissionValue: affiliateAttribution.commissionValue,
+          commissionAmount: affiliateAttribution.commissionAmount,
+          attributedAt: affiliateAttribution.attributedAt,
+        };
+      }
+
       // Create Invoice FIRST (inside transaction)
       const createOptions = session ? { session } : undefined;
       const [invoice] = await Invoice.create([invoiceData], createOptions);
+
+      if (affiliateAttribution) {
+        const [conversion] = await AffiliateConversion.create([
+          {
+            tenant: tenantId,
+            affiliate: affiliateAttribution.affiliate._id,
+            invoice: invoice._id,
+            customer: customer._id,
+            code: affiliateAttribution.code,
+            source: source === 'portal' ? 'portal' : 'online_store',
+            status: invoice.status === INVOICE_STATUS.PAID ? 'approved' : 'pending',
+            orderSubtotal: subtotal,
+            orderTotal: totalAmount,
+            commissionBase: affiliateAttribution.commissionBase,
+            commissionType: affiliateAttribution.commissionType,
+            commissionValue: affiliateAttribution.commissionValue,
+            commissionAmount: affiliateAttribution.commissionAmount,
+            attributedAt: affiliateAttribution.attributedAt,
+            approvedAt: invoice.status === INVOICE_STATUS.PAID ? new Date() : undefined,
+          },
+        ], createOptions);
+
+        invoice.affiliate = {
+          ...invoice.affiliate,
+          conversion: conversion._id,
+        };
+        await invoice.save(createOptions);
+      }
 
       // NOW deduct stock (after invoice is created successfully)
       for (const { product, quantity, branchId, variantId } of productsToUpdate) {
@@ -638,6 +709,7 @@ class InvoiceService {
       utmTerm: normalizeString(campaignAttribution.utmTerm),
       utmContent: normalizeString(campaignAttribution.utmContent),
       campaignMessage: normalizeString(campaignAttribution.campaignMessage, 240),
+      affiliateCode: normalizeString(campaignAttribution.affiliateCode || campaignAttribution.aff, 80).toUpperCase(),
       ref: normalizeString(campaignAttribution.ref),
       gclid: normalizeString(campaignAttribution.gclid, 240),
       fbclid: normalizeString(campaignAttribution.fbclid, 240),
@@ -655,6 +727,7 @@ class InvoiceService {
       normalized.utmTerm,
       normalized.utmContent,
       normalized.campaignMessage,
+      normalized.affiliateCode,
       normalized.ref,
       normalized.gclid,
       normalized.fbclid,

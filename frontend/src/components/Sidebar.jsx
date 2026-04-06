@@ -140,7 +140,8 @@ export default function Sidebar({ open, onClose }) {
     location.pathname === '/kyc-review' ||
     location.pathname === '/support-messages' ||
     location.pathname === '/reviews' ||
-    location.pathname === '/coupons'
+    location.pathname === '/coupons' ||
+    location.pathname === '/affiliates'
   );
   const [storeOpen, setStoreOpen] = useState(
     location.pathname === '/expenses' ||
@@ -179,7 +180,8 @@ export default function Sidebar({ open, onClose }) {
     location.pathname === '/kyc-review' ||
     location.pathname === '/support-messages' ||
     location.pathname === '/reviews' ||
-    location.pathname === '/coupons';
+    location.pathname === '/coupons' ||
+    location.pathname === '/affiliates';
   const isStoreActive =
     location.pathname === '/expenses' ||
     location.pathname === '/branches' ||
@@ -368,7 +370,7 @@ export default function Sidebar({ open, onClose }) {
             tone="violet"
             label={t('sidebar.form.kzbcmsr')}
           />
-          <div className={`overflow-hidden transition-all duration-200 ${portalOpen ? 'max-h-72 mt-1' : 'max-h-0'}`}>
+          <div className={`overflow-hidden transition-all duration-200 ${portalOpen ? 'max-h-96 mt-1' : 'max-h-0'}`}>
             <div className="space-y-1 py-1">
               {(user?.role === 'admin' || isSystemSuperAdmin) && (
                 <SubNavItem to="/portal-orders" icon={ShoppingBag} label={t('sidebar.portal_orders')} tone="violet" />
@@ -380,6 +382,7 @@ export default function Sidebar({ open, onClose }) {
                   <SubNavItem to="/support-messages" icon={MessageCircle} label={t('sidebar.support_messages')} tone="violet" />
                   <SubNavItem to="/reviews" icon={Star} label={t('sidebar.reviews')} tone="violet" />
                   <SubNavItem to="/coupons" icon={Tag} label={t('sidebar.coupons')} tone="violet" />
+                  <SubNavItem to="/affiliates" icon={Share2} label={t('sidebar.affiliates')} tone="violet" />
                 </>
               )}
             </div>

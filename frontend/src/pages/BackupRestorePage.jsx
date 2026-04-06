@@ -451,14 +451,16 @@ export default function BackupRestorePage() {
                 type="button"
                 disabled={loadingAutoBackup || savingAutoBackup}
                 onClick={() => saveAutoBackupSettings(!autoBackup?.enabled)}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                className={`relative inline-flex h-8 w-14 shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:ring-offset-2 focus:ring-offset-transparent ${
                   autoBackup?.enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
                 } ${(loadingAutoBackup || savingAutoBackup) ? 'cursor-not-allowed opacity-60' : ''}`}
+                role="switch"
+                aria-checked={Boolean(autoBackup?.enabled)}
                 aria-pressed={Boolean(autoBackup?.enabled)}
               >
                 <span
-                  className={`inline-block h-6 w-6 rounded-full bg-white transition-transform ${
-                    autoBackup?.enabled ? 'translate-x-1' : 'translate-x-7'
+                  className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    autoBackup?.enabled ? 'translate-x-6' : 'translate-x-0'
                   }`}
                 />
               </button>

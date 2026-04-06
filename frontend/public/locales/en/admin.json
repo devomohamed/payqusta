@@ -28,6 +28,7 @@
         "support_messages": "Support Messages",
         "reviews": "Reviews",
         "coupons": "Discount Coupons",
+        "affiliates": "Affiliates",
         "suppliers": "Suppliers",
         "expenses": "Expenses",
         "system_analytics": "System Analytics",
@@ -71,6 +72,71 @@
         },
         "ui": {
             "k17zto7": "Visit My Store"
+        }
+    },
+    "affiliate_page": {
+        "title": "Affiliate Program",
+        "subtitle": "Create affiliate links, attribute storefront orders, and monitor commission performance.",
+        "new_affiliate": "New Affiliate",
+        "edit_affiliate": "Edit Affiliate",
+        "empty": "No affiliates yet. Create your first partner and start sharing tracked storefront links.",
+        "list_title": "Affiliate Directory",
+        "conversions_title": "Affiliate Conversions",
+        "fields": {
+            "name": "Name",
+            "code": "Code",
+            "email": "Email",
+            "phone": "Phone",
+            "commission_type": "Commission Type",
+            "commission_value": "Commission Value",
+            "status": "Status",
+            "payout_method": "Payout Method",
+            "payout_details": "Payout Details",
+            "notes": "Notes"
+        },
+        "stats": {
+            "total_affiliates": "Total Affiliates",
+            "total_conversions": "Conversions",
+            "revenue_attributed": "Attributed Revenue",
+            "pending_commission": "Pending Commission"
+        },
+        "status": {
+            "pending": "Pending",
+            "active": "Active",
+            "suspended": "Suspended",
+            "approved": "Approved",
+            "paid": "Paid",
+            "reversed": "Reversed"
+        },
+        "commission_type": {
+            "percentage": "Percentage",
+            "fixed": "Fixed Amount"
+        },
+        "payout_method": {
+            "none": "Not set",
+            "bank_transfer": "Bank Transfer",
+            "wallet": "Wallet",
+            "cash": "Cash",
+            "manual": "Manual"
+        },
+        "actions": {
+            "create": "Create Affiliate",
+            "update": "Save Changes",
+            "cancel": "Cancel",
+            "copy_link": "Copy Link",
+            "view_conversions": "View Conversions",
+            "suspend": "Suspend",
+            "activate": "Activate",
+            "edit": "Edit"
+        },
+        "toasts": {
+            "load_failed": "Failed to load affiliate data",
+            "save_failed": "Failed to save affiliate",
+            "create_success": "Affiliate created successfully",
+            "update_success": "Affiliate updated successfully",
+            "copy_success": "Affiliate link copied",
+            "conversions_failed": "Failed to load affiliate conversions",
+            "status_updated": "Affiliate status updated"
         }
     },
     "header": {

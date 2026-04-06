@@ -18,6 +18,7 @@ function normalizeAttribution(data) {
     utmTerm: normalizeValue(data.utmTerm),
     utmContent: normalizeValue(data.utmContent),
     campaignMessage: normalizeValue(data.campaignMessage, 220),
+    affiliateCode: normalizeValue(data.affiliateCode || data.aff, 80).toUpperCase(),
     ref: normalizeValue(data.ref),
     gclid: normalizeValue(data.gclid, 220),
     fbclid: normalizeValue(data.fbclid, 220),
@@ -35,6 +36,7 @@ function normalizeAttribution(data) {
     normalized.utmTerm,
     normalized.utmContent,
     normalized.campaignMessage,
+    normalized.affiliateCode,
     normalized.ref,
     normalized.gclid,
     normalized.fbclid,
@@ -54,6 +56,7 @@ function parseTrackedParams(search = '') {
     utmTerm: params.get('utm_term') || '',
     utmContent: params.get('utm_content') || '',
     campaignMessage: params.get('campaign_message') || '',
+    affiliateCode: params.get('aff') || params.get('affiliate') || '',
     ref: params.get('ref') || '',
     gclid: params.get('gclid') || '',
     fbclid: params.get('fbclid') || '',
@@ -184,6 +187,7 @@ export function getStorefrontCampaignBanner(attribution = loadStorefrontCampaign
 
   const title = attribution.campaignMessage
     || (attribution.utmCampaign ? `عرض خاص: ${formatCampaignLabel(attribution.utmCampaign)}` : '')
+    || (attribution.affiliateCode ? `تم تفعيل رابط شريك: ${formatCampaignLabel(attribution.affiliateCode)}` : '')
     || (attribution.utmSource ? `وصلت من ${formatCampaignLabel(attribution.utmSource)}` : '');
 
   if (!title) return null;

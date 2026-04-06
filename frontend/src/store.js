@@ -632,6 +632,17 @@ export const couponsApi = {
   validate: (data) => api.post('/coupons/validate', data),
 };
 
+// Affiliates API
+export const affiliatesApi = {
+  getAll: (params) => api.get('/affiliates', { params }),
+  getStats: () => api.get('/affiliates/stats'),
+  getById: (id) => api.get(`/affiliates/${id}`),
+  getConversions: (id) => api.get(`/affiliates/${id}/conversions`),
+  create: (data) => api.post('/affiliates', data),
+  update: (id, data) => api.put(`/affiliates/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/affiliates/${id}/status`, { status }),
+};
+
 // Reviews API
 export const reviewsApi = {
   getAll: (params) => api.get('/reviews', { params }),

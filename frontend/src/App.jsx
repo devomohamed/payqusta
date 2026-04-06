@@ -110,6 +110,7 @@ const KYCReviewPage = React.lazy(() => import('./pages/KYCReviewPage'));
 const SupportMessagesPage = React.lazy(() => import('./pages/SupportMessagesPage'));
 const ReviewsPage = React.lazy(() => import('./pages/ReviewsPage'));
 const CouponsPage = React.lazy(() => import('./pages/CouponsPage'));
+const AffiliatesPage = React.lazy(() => import('./pages/AffiliatesPage'));
 const ReferralPage = React.lazy(() => import('./pages/ReferralPage'));
 const RevenueAnalyticsPage = React.lazy(() => import('./pages/RevenueAnalyticsPage'));
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'));
@@ -235,6 +236,7 @@ function MainLayout() {
                 <Route path="/support-messages" element={<LazyRoute component={SupportMessagesPage} message={t('app.loading.route_generic')} />} />
                 <Route path="/reviews" element={<LazyRoute component={ReviewsPage} message={t('app.loading.route_generic')} />} />
                 <Route path="/coupons" element={<LazyRoute component={CouponsPage} message={t('app.loading.route_generic')} />} />
+                <Route path="/affiliates" element={<LazyRoute component={AffiliatesPage} message={t('app.loading.route_generic')} />} />
                 <Route path="/referral" element={<LazyRoute component={ReferralPage} message={t('app.loading.route_generic')} />} />
                 <Route path="/revenue-analytics" element={<LazyRoute component={RevenueAnalyticsPage} message={t('app.loading.route_generic')} />} />
                 <Route path="/notifications" element={<LazyRoute component={NotificationsPage} message={t('app.loading.route_generic')} />} />

@@ -24,6 +24,7 @@ import {
   loadStorefrontSettings,
 } from './storefrontDataClient';
 import { getStorefrontLandingPagePath } from './storefrontLandingPages';
+import { captureStorefrontCampaignAttribution } from './storefrontCampaignAttribution';
 
 export default function StorefrontLayout({ children }) {
   const { t } = useTranslation('admin');
@@ -110,6 +111,14 @@ export default function StorefrontLayout({ children }) {
   useEffect(() => {
     setMobileMenuOpen(false);
     setSearchOpen(false);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    captureStorefrontCampaignAttribution({
+      search: location.search,
+      pathname: location.pathname,
+      href: window.location.href,
+    });
   }, [location.pathname, location.search]);
 
   useEffect(() => {

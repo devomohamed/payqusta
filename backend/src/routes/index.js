@@ -23,6 +23,7 @@ const paymentController = require('../controllers/paymentController');
 const couponController = require('../controllers/couponController');
 const addonController = require('../controllers/addonController');
 const referralController = require('../controllers/referralController');
+const affiliateController = require('../controllers/affiliateController');
 const purchaseReturnController = require('../controllers/purchaseReturnController');
 const ownerMgmt = require('../controllers/ownerManagementController');
 const roleController = require('../controllers/roleController');
@@ -263,6 +264,16 @@ router.post('/addons/:key/purchase', authorize('vendor', 'admin'), addonControll
 router.get('/referrals/my-code', authorize('vendor', 'admin'), referralController.getMyCode);
 router.get('/referrals/stats', authorize('vendor', 'admin'), referralController.getStats);
 router.post('/referrals/apply', referralController.applyCode);
+
+// --- Affiliate Program ---
+router.get('/affiliates', authorize('vendor', 'admin'), affiliateController.getAll);
+router.get('/affiliates/stats', authorize('vendor', 'admin'), affiliateController.getStats);
+router.get('/affiliates/:id', authorize('vendor', 'admin'), affiliateController.getById);
+router.get('/affiliates/:id/conversions', authorize('vendor', 'admin'), affiliateController.getConversions);
+router.get('/affiliates/:id/link', authorize('vendor', 'admin'), affiliateController.getLink);
+router.post('/affiliates', authorize('vendor', 'admin'), auditLog('create', 'affiliate'), affiliateController.create);
+router.put('/affiliates/:id', authorize('vendor', 'admin'), auditLog('update', 'affiliate'), affiliateController.update);
+router.patch('/affiliates/:id/status', authorize('vendor', 'admin'), auditLog('update', 'affiliate'), affiliateController.updateStatus);
 
 // --- Owner Management (Returns, KYC, Support) ---
 router.get('/manage/returns', authorize('vendor', 'admin', 'coordinator'), ownerMgmt.getReturns);

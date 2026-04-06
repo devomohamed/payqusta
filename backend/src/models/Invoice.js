@@ -181,6 +181,7 @@ const invoiceSchema = new mongoose.Schema(
       utmTerm: { type: String },
       utmContent: { type: String },
       campaignMessage: { type: String },
+      affiliateCode: { type: String },
       ref: { type: String },
       gclid: { type: String },
       fbclid: { type: String },
@@ -189,6 +190,31 @@ const invoiceSchema = new mongoose.Schema(
       landingUrl: { type: String },
       firstSeenAt: { type: Date },
       lastSeenAt: { type: Date },
+    },
+    affiliate: {
+      affiliate: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AffiliateProfile',
+        default: null,
+      },
+      code: { type: String },
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'reversed', 'paid'],
+        default: 'pending',
+      },
+      commissionType: {
+        type: String,
+        enum: ['percentage', 'fixed'],
+      },
+      commissionValue: { type: Number, default: 0 },
+      commissionAmount: { type: Number, default: 0 },
+      attributedAt: { type: Date },
+      conversion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AffiliateConversion',
+        default: null,
+      },
     },
     // Shipping / Delivery details (portal orders)
     shippingAddress: {
@@ -266,6 +292,8 @@ invoiceSchema.index({ tenant: 1, branch: 1 });
 invoiceSchema.index({ tenant: 1, customer: 1 });
 invoiceSchema.index({ tenant: 1, status: 1 });
 invoiceSchema.index({ tenant: 1, createdAt: -1 });
+invoiceSchema.index({ tenant: 1, 'affiliate.affiliate': 1, createdAt: -1 });
+invoiceSchema.index({ tenant: 1, 'campaignAttribution.affiliateCode': 1, createdAt: -1 });
 invoiceSchema.index({ 'installments.dueDate': 1, 'installments.status': 1 });
 // Compound indexes for common queries
 invoiceSchema.index({ tenant: 1, customer: 1, status: 1 });
